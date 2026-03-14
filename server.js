@@ -99,11 +99,11 @@ app.post('/api/projects/:projectId/tasks', (req, res) => {
   const project = projectQueries.getById(req.params.projectId);
   if (!project) return res.status(404).json({ error: 'Project not found' });
 
-  const { title, description = '', priority = 0, task_type = 'feature', acceptance_criteria = '' } = req.body;
+  const { title, description = '', priority = 0, task_type = 'feature', acceptance_criteria = '', model = 'sonnet', thinking_effort = 'medium' } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'Title is required' });
 
   const result = queries.createTask.run(
-    project.id, title.trim(), description.trim(), priority, task_type, acceptance_criteria.trim()
+    project.id, title.trim(), description.trim(), priority, task_type, acceptance_criteria.trim(), model, thinking_effort
   );
   const task = queries.getTaskById.get(result.lastInsertRowid);
   io.emit('task:created', task);
@@ -113,13 +113,15 @@ app.post('/api/projects/:projectId/tasks', (req, res) => {
 app.put('/api/tasks/:id', (req, res) => {
   const task = queries.getTaskById.get(req.params.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
-  const { title, description, priority, task_type, acceptance_criteria } = req.body;
+  const { title, description, priority, task_type, acceptance_criteria, model, thinking_effort } = req.body;
   queries.updateTask.run(
     title ?? task.title,
     description ?? task.description,
     priority ?? task.priority,
     task_type ?? task.task_type,
     acceptance_criteria ?? task.acceptance_criteria,
+    model ?? task.model,
+    thinking_effort ?? task.thinking_effort,
     task.id
   );
   const updated = queries.getTaskById.get(task.id);
@@ -220,6 +222,8 @@ app.get('/api/projects/:projectId/stats', (req, res) => {
   const duration = statsQueries.getAvgDuration(projectId);
   const timeline = statsQueries.getCompletionTimeline(projectId);
   const recentCompleted = statsQueries.getRecentCompleted(projectId);
+  const claudeUsage = statsQueries.getClaudeUsage(projectId);
+  const modelBreakdown = statsQueries.getModelBreakdown(projectId);
 
   res.json({
     byStatus,
@@ -228,6 +232,8 @@ app.get('/api/projects/:projectId/stats', (req, res) => {
     duration,
     timeline,
     recentCompleted,
+    claudeUsage,
+    modelBreakdown,
   });
 });
 

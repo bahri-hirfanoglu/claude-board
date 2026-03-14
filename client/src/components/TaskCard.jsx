@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock } from 'lucide-react';
+import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins } from 'lucide-react';
 
 const priorityColors = {
   0: '',
@@ -17,6 +17,12 @@ const typeColors = {
   docs: 'bg-green-500/15 text-green-400',
   test: 'bg-yellow-500/15 text-yellow-400',
   chore: 'bg-surface-500/15 text-surface-400',
+};
+
+const modelColors = {
+  haiku: 'text-green-400',
+  sonnet: 'text-blue-400',
+  opus: 'text-purple-400',
 };
 
 const STATUS_OPTIONS = [
@@ -41,6 +47,13 @@ function formatDuration(startedAt, completedAt) {
   return '<1m';
 }
 
+function formatTokens(n) {
+  if (!n || n === 0) return null;
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
+}
+
 export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange }) {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
@@ -63,6 +76,10 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
 
   const duration = formatDuration(task.started_at, task.completed_at);
   const taskType = task.task_type || 'feature';
+  const totalTokens = (task.input_tokens || 0) + (task.output_tokens || 0);
+  const hasUsage = totalTokens > 0;
+  const modelDisplay = task.model_used || task.model || 'sonnet';
+  const modelColorClass = modelColors[modelDisplay] || modelColors[task.model] || 'text-surface-400';
 
   return (
     <>
@@ -88,6 +105,9 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
               {task.priority > 0 && (
                 <span className="text-[9px] text-surface-500">{priorityLabels[task.priority]}</span>
               )}
+              <span className={`text-[9px] ${modelColorClass}`}>
+                {modelDisplay}
+              </span>
             </div>
             <h3 className="text-sm font-medium text-surface-100 truncate">{task.title}</h3>
             {task.description && (
@@ -98,7 +118,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
         </div>
 
         <div className="flex items-center justify-between mt-2.5">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {task.is_running && (
               <span className="flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
                 <Activity size={10} className="animate-pulse" />
@@ -109,6 +129,18 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
               <span className="flex items-center gap-1 text-[10px] text-surface-500">
                 <Clock size={9} />
                 {duration}
+              </span>
+            )}
+            {hasUsage && (
+              <span className="flex items-center gap-1 text-[10px] text-surface-500" title={`${(task.input_tokens || 0).toLocaleString()} in / ${(task.output_tokens || 0).toLocaleString()} out`}>
+                <Cpu size={9} />
+                {formatTokens(totalTokens)}
+              </span>
+            )}
+            {task.total_cost > 0 && (
+              <span className="flex items-center gap-1 text-[10px] text-surface-500">
+                <Coins size={9} />
+                ${task.total_cost.toFixed(4)}
               </span>
             )}
           </div>
@@ -137,6 +169,20 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
             </button>
           </div>
         </div>
+
+        {/* Usage stats bar for completed tasks */}
+        {task.status === 'done' && hasUsage && (
+          <div className="mt-2 pt-2 border-t border-surface-700/50">
+            <div className="flex items-center gap-3 text-[9px] text-surface-500">
+              <span>{(task.input_tokens || 0).toLocaleString()} in</span>
+              <span>{(task.output_tokens || 0).toLocaleString()} out</span>
+              {task.num_turns > 0 && <span>{task.num_turns} turns</span>}
+              {task.rate_limit_hits > 0 && (
+                <span className="text-amber-500">{task.rate_limit_hits} rate limits</span>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="text-[10px] text-surface-600 mt-1.5">
           #{task.id}

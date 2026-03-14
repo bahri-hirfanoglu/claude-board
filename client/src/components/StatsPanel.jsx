@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, RefreshCw, BarChart3, Clock, CheckCircle2, TrendingUp, Layers } from 'lucide-react';
+import { X, RefreshCw, BarChart3, Clock, CheckCircle2, TrendingUp, Layers, Cpu, Coins, AlertTriangle, Zap } from 'lucide-react';
 import { api } from '../api';
 
 const STATUS_LABELS = { backlog: 'Backlog', in_progress: 'In Progress', testing: 'Testing', done: 'Done' };
@@ -7,6 +7,7 @@ const STATUS_COLORS = { backlog: '#918678', in_progress: '#f59e0b', testing: '#D
 const TYPE_COLORS = { feature: '#3b82f6', bugfix: '#ef4444', refactor: '#a855f7', docs: '#22c55e', test: '#eab308', chore: '#6b7280' };
 const PRIORITY_LABELS = { 0: 'None', 1: 'Low', 2: 'Medium', 3: 'High' };
 const PRIORITY_COLORS = { 0: '#6b7280', 1: '#eab308', 2: '#f97316', 3: '#ef4444' };
+const MODEL_COLORS = { haiku: '#22c55e', sonnet: '#3b82f6', opus: '#a855f7', unknown: '#6b7280' };
 
 function formatDuration(minutes) {
   if (minutes == null || isNaN(minutes)) return '-';
@@ -17,6 +18,13 @@ function formatDuration(minutes) {
   if (h < 24) return `${h}h ${m}m`;
   const d = Math.floor(h / 24);
   return `${d}d ${h % 24}h`;
+}
+
+function formatTokens(n) {
+  if (!n || n === 0) return '0';
+  if (n >= 1000000) return `${(n / 1000000).toFixed(2)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
 }
 
 function BarChart({ data, colorMap, labelMap, maxVal }) {
@@ -104,6 +112,9 @@ export default function StatsPanel({ projectId, onClose }) {
   const typeData = (stats?.byType || []).map(s => ({ key: s.task_type || 'feature', count: s.count }));
   const priorityData = (stats?.byPriority || []).map(s => ({ key: String(s.priority), count: s.count }));
 
+  const usage = stats?.claudeUsage || {};
+  const totalAllTokens = (usage.total_input_tokens || 0) + (usage.total_output_tokens || 0);
+
   return (
     <div className="w-[420px] flex-shrink-0 flex flex-col bg-surface-900 border-l border-surface-800">
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-800">
@@ -160,6 +171,91 @@ export default function StatsPanel({ projectId, onClose }) {
               </div>
             </div>
 
+            {/* Claude Usage Overview */}
+            {totalAllTokens > 0 && (
+              <div>
+                <h4 className="text-xs font-medium text-surface-400 mb-2">Claude Usage</h4>
+                <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <Cpu size={10} className="text-blue-400" />
+                        <span className="text-[10px] text-surface-500">Total Tokens</span>
+                      </div>
+                      <div className="text-sm font-semibold text-surface-200">{formatTokens(totalAllTokens)}</div>
+                      <div className="text-[9px] text-surface-600 mt-0.5">
+                        {formatTokens(usage.total_input_tokens || 0)} in / {formatTokens(usage.total_output_tokens || 0)} out
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <Coins size={10} className="text-emerald-400" />
+                        <span className="text-[10px] text-surface-500">Total Cost</span>
+                      </div>
+                      <div className="text-sm font-semibold text-emerald-400">
+                        ${(usage.total_cost || 0).toFixed(4)}
+                      </div>
+                      <div className="text-[9px] text-surface-600 mt-0.5">
+                        {usage.tasks_with_usage || 0} tasks tracked
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <Zap size={10} className="text-amber-400" />
+                        <span className="text-[10px] text-surface-500">Turns</span>
+                      </div>
+                      <div className="text-xs font-medium text-surface-300">{usage.total_turns || 0}</div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <AlertTriangle size={10} className="text-red-400" />
+                        <span className="text-[10px] text-surface-500">Rate Limits</span>
+                      </div>
+                      <div className={`text-xs font-medium ${(usage.total_rate_limits || 0) > 0 ? 'text-red-400' : 'text-surface-300'}`}>
+                        {usage.total_rate_limits || 0}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <Cpu size={10} className="text-surface-400" />
+                        <span className="text-[10px] text-surface-500">Cache</span>
+                      </div>
+                      <div className="text-xs font-medium text-surface-300">{formatTokens(usage.total_cache_read || 0)}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Model Breakdown */}
+            {stats?.modelBreakdown?.length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium text-surface-400 mb-2">By Model</h4>
+                <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50 space-y-2">
+                  {stats.modelBreakdown.map((m, i) => {
+                    const name = m.model_name || 'unknown';
+                    const displayName = name.includes('claude') ? name.split('-').slice(-1)[0] : name;
+                    return (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: MODEL_COLORS[displayName] || MODEL_COLORS[name] || '#6b7280' }} />
+                          <span className="text-xs text-surface-300 font-medium">{name}</span>
+                          <span className="text-[10px] text-surface-600">{m.count} tasks</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] text-surface-500">
+                          <span>{formatTokens(m.total_tokens)} tokens</span>
+                          {m.total_cost > 0 && <span>${m.total_cost.toFixed(4)}</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Completion Timeline */}
             <div>
               <h4 className="text-xs font-medium text-surface-400 mb-2">Completion Timeline (14 days)</h4>
@@ -192,25 +288,39 @@ export default function StatsPanel({ projectId, onClose }) {
               </div>
             </div>
 
-            {/* Recent Completed */}
+            {/* Recent Completed with usage */}
             {stats?.recentCompleted?.length > 0 && (
               <div>
                 <h4 className="text-xs font-medium text-surface-400 mb-2">Recently Completed</h4>
                 <div className="space-y-1.5">
-                  {stats.recentCompleted.map((task, i) => (
-                    <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-surface-800 border border-surface-700/50">
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium text-surface-200 truncate">{task.title}</div>
-                        <div className="text-[10px] text-surface-500 mt-0.5">
-                          {task.task_type || 'feature'} &middot; {new Date(task.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {stats.recentCompleted.map((task, i) => {
+                    const taskTokens = (task.input_tokens || 0) + (task.output_tokens || 0);
+                    return (
+                      <div key={i} className="p-2.5 rounded-lg bg-surface-800 border border-surface-700/50">
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-surface-200 truncate">{task.title}</div>
+                            <div className="text-[10px] text-surface-500 mt-0.5">
+                              {task.task_type || 'feature'} &middot; {task.model_used || task.model || 'sonnet'} &middot; {new Date(task.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 text-[10px] text-surface-400 ml-2 flex-shrink-0">
+                            <Clock size={10} />
+                            {formatDuration(task.duration_minutes)}
+                          </div>
                         </div>
+                        {taskTokens > 0 && (
+                          <div className="flex items-center gap-3 mt-1.5 text-[9px] text-surface-600">
+                            <span>{formatTokens(taskTokens)} tokens</span>
+                            <span>{(task.input_tokens || 0).toLocaleString()} in / {(task.output_tokens || 0).toLocaleString()} out</span>
+                            {task.total_cost > 0 && <span>${task.total_cost.toFixed(4)}</span>}
+                            {task.num_turns > 0 && <span>{task.num_turns} turns</span>}
+                            {task.rate_limit_hits > 0 && <span className="text-amber-500">{task.rate_limit_hits} rate limits</span>}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1 text-[10px] text-surface-400 ml-2 flex-shrink-0">
-                        <Clock size={10} />
-                        {formatDuration(task.duration_minutes)}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

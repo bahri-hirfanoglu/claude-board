@@ -25,6 +25,13 @@ function addLog(taskId, message, logType, io) {
   io.emit('task:log', { taskId, message, logType, created_at: new Date().toISOString() });
 }
 
+// Map UI model names to Claude CLI model flags
+const MODEL_MAP = {
+  'opus': 'opus',
+  'sonnet': 'sonnet',
+  'haiku': 'haiku',
+};
+
 export function startClaude(task, io, workingDir) {
   if (activeProcesses.has(task.id)) {
     addLog(task.id, 'Claude is already running for this task.', 'system', io);
@@ -32,16 +39,25 @@ export function startClaude(task, io, workingDir) {
   }
 
   const prompt = buildPrompt(task);
+  const model = task.model || 'sonnet';
+  const effort = task.thinking_effort || 'medium';
 
   addLog(task.id, `Starting Claude for task: ${task.title}`, 'system', io);
-  addLog(task.id, `Working directory: ${workingDir}`, 'info', io);
+  addLog(task.id, `Model: ${model} | Effort: ${effort} | Dir: ${workingDir}`, 'info', io);
 
-  const proc = spawn('claude', [
+  const args = [
     '-p', prompt,
     '--output-format', 'stream-json',
     '--no-input',
-    '--verbose'
-  ], {
+    '--verbose',
+  ];
+
+  // Set model
+  if (MODEL_MAP[model]) {
+    args.push('--model', MODEL_MAP[model]);
+  }
+
+  const proc = spawn('claude', args, {
     cwd: workingDir,
     shell: true,
     env: { ...process.env },
@@ -71,7 +87,13 @@ export function startClaude(task, io, workingDir) {
   proc.stderr.on('data', (data) => {
     const msg = data.toString().trim();
     if (msg) {
-      addLog(task.id, msg, 'error', io);
+      // Detect rate limit hits
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('429') || msg.toLowerCase().includes('overloaded')) {
+        queries.incrementRateLimitHits.run(task.id);
+        addLog(task.id, `Rate limit hit: ${msg}`, 'error', io);
+      } else {
+        addLog(task.id, msg, 'error', io);
+      }
     }
   });
 
@@ -116,14 +138,50 @@ function handleClaudeEvent(taskId, event, io) {
       break;
     }
     case 'result': {
+      // Extract usage statistics from the result event
+      const usage = event.usage || {};
+      const inputTokens = usage.input_tokens || 0;
+      const outputTokens = usage.output_tokens || 0;
+      const cacheRead = usage.cache_read_input_tokens || 0;
+      const cacheCreation = usage.cache_creation_input_tokens || 0;
+      const totalCost = event.total_cost || 0;
+      const numTurns = event.num_turns || 0;
+      const modelUsed = event.model || '';
+      const sessionId = event.session_id || '';
+
+      if (inputTokens > 0 || outputTokens > 0) {
+        queries.updateTaskUsage.run(
+          inputTokens, outputTokens, cacheRead, cacheCreation,
+          totalCost, numTurns, modelUsed, taskId
+        );
+
+        if (sessionId) {
+          queries.updateTaskClaudeSession.run(sessionId, taskId);
+        }
+
+        // Log usage summary
+        const totalTokens = inputTokens + outputTokens;
+        const costStr = totalCost > 0 ? ` | Cost: $${totalCost.toFixed(4)}` : '';
+        addLog(taskId, `Usage: ${totalTokens.toLocaleString()} tokens (${inputTokens.toLocaleString()} in / ${outputTokens.toLocaleString()} out)${costStr} | Turns: ${numTurns} | Model: ${modelUsed}`, 'system', io);
+
+        // Emit updated task with usage data
+        const updated = queries.getTaskById.get(taskId);
+        if (updated) io.emit('task:updated', updated);
+      }
+
       if (event.result) {
         addLog(taskId, `Result: ${String(event.result).substring(0, 500)}`, 'success', io);
       }
       break;
     }
     case 'system': {
-      if (event.message) {
-        addLog(taskId, event.message, 'system', io);
+      const msg = event.message || '';
+      // Detect rate limits in system messages
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('429') || msg.toLowerCase().includes('overloaded')) {
+        queries.incrementRateLimitHits.run(taskId);
+      }
+      if (msg) {
+        addLog(taskId, msg, 'system', io);
       }
       break;
     }

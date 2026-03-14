@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Sparkles } from 'lucide-react';
+import { X, Sparkles, Cpu, Zap } from 'lucide-react';
 
 const TASK_TYPES = [
   { value: 'feature', label: 'Feature', color: 'bg-blue-500/20 text-blue-300' },
@@ -17,12 +17,26 @@ const PRIORITIES = [
   { value: 3, label: 'High', style: 'bg-red-500/20 text-red-300' },
 ];
 
+const MODELS = [
+  { value: 'haiku', label: 'Haiku', desc: 'Fast & lightweight', color: 'bg-green-500/20 text-green-300' },
+  { value: 'sonnet', label: 'Sonnet', desc: 'Balanced', color: 'bg-blue-500/20 text-blue-300' },
+  { value: 'opus', label: 'Opus', desc: 'Most capable', color: 'bg-purple-500/20 text-purple-300' },
+];
+
+const EFFORTS = [
+  { value: 'low', label: 'Low', desc: 'Quick tasks', color: 'bg-green-500/20 text-green-300' },
+  { value: 'medium', label: 'Medium', desc: 'Default', color: 'bg-amber-500/20 text-amber-300' },
+  { value: 'high', label: 'High', desc: 'Complex tasks', color: 'bg-red-500/20 text-red-300' },
+];
+
 export default function TaskModal({ task, onSubmit, onClose }) {
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
   const [priority, setPriority] = useState(task?.priority || 0);
   const [taskType, setTaskType] = useState(task?.task_type || 'feature');
   const [acceptanceCriteria, setAcceptanceCriteria] = useState(task?.acceptance_criteria || '');
+  const [model, setModel] = useState(task?.model || 'sonnet');
+  const [thinkingEffort, setThinkingEffort] = useState(task?.thinking_effort || 'medium');
   const [loading, setLoading] = useState(false);
   const titleRef = useRef(null);
 
@@ -41,6 +55,8 @@ export default function TaskModal({ task, onSubmit, onClose }) {
         priority,
         task_type: taskType,
         acceptance_criteria: acceptanceCriteria.trim(),
+        model,
+        thinking_effort: thinkingEffort,
       });
     } catch (err) {
       console.error(err);
@@ -128,6 +144,59 @@ export default function TaskModal({ task, onSubmit, onClose }) {
               rows={3}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none"
             />
+          </div>
+
+          {/* Model & Effort Row */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Model */}
+            <div>
+              <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5">
+                <Cpu size={11} />
+                Model
+              </label>
+              <div className="flex flex-col gap-1">
+                {MODELS.map(m => (
+                  <button
+                    key={m.value}
+                    type="button"
+                    onClick={() => setModel(m.value)}
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+                      model === m.value
+                        ? `${m.color} ring-1 ring-current`
+                        : 'bg-surface-800 text-surface-500 hover:text-surface-300'
+                    }`}
+                  >
+                    <span className="font-medium">{m.label}</span>
+                    <span className={`text-[10px] ${model === m.value ? 'opacity-80' : 'text-surface-600'}`}>{m.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Thinking Effort */}
+            <div>
+              <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5">
+                <Zap size={11} />
+                Thinking Effort
+              </label>
+              <div className="flex flex-col gap-1">
+                {EFFORTS.map(e => (
+                  <button
+                    key={e.value}
+                    type="button"
+                    onClick={() => setThinkingEffort(e.value)}
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+                      thinkingEffort === e.value
+                        ? `${e.color} ring-1 ring-current`
+                        : 'bg-surface-800 text-surface-500 hover:text-surface-300'
+                    }`}
+                  >
+                    <span className="font-medium">{e.label}</span>
+                    <span className={`text-[10px] ${thinkingEffort === e.value ? 'opacity-80' : 'text-surface-600'}`}>{e.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Priority */}

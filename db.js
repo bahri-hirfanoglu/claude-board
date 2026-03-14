@@ -39,9 +39,19 @@ db.run(`
     priority INTEGER DEFAULT 0,
     task_type TEXT DEFAULT 'feature' CHECK(task_type IN ('feature','bugfix','refactor','docs','test','chore')),
     acceptance_criteria TEXT DEFAULT '',
+    model TEXT DEFAULT 'sonnet',
+    thinking_effort TEXT DEFAULT 'medium',
     sort_order INTEGER DEFAULT 0,
     branch_name TEXT,
     claude_session_id TEXT,
+    input_tokens INTEGER DEFAULT 0,
+    output_tokens INTEGER DEFAULT 0,
+    cache_read_tokens INTEGER DEFAULT 0,
+    cache_creation_tokens INTEGER DEFAULT 0,
+    total_cost REAL DEFAULT 0,
+    num_turns INTEGER DEFAULT 0,
+    rate_limit_hits INTEGER DEFAULT 0,
+    model_used TEXT,
     started_at DATETIME,
     completed_at DATETIME,
     created_at DATETIME DEFAULT (datetime('now','localtime')),
@@ -72,17 +82,25 @@ function columnExists(table, column) {
   return result[0].values.some(row => row[1] === column);
 }
 
-if (!columnExists('tasks', 'started_at')) {
-  db.run('ALTER TABLE tasks ADD COLUMN started_at DATETIME');
-}
-if (!columnExists('tasks', 'completed_at')) {
-  db.run('ALTER TABLE tasks ADD COLUMN completed_at DATETIME');
-}
-if (!columnExists('tasks', 'task_type')) {
-  db.run("ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'feature'");
-}
-if (!columnExists('tasks', 'acceptance_criteria')) {
-  db.run("ALTER TABLE tasks ADD COLUMN acceptance_criteria TEXT DEFAULT ''");
+const migrations = [
+  ['tasks', 'started_at', 'ALTER TABLE tasks ADD COLUMN started_at DATETIME'],
+  ['tasks', 'completed_at', 'ALTER TABLE tasks ADD COLUMN completed_at DATETIME'],
+  ['tasks', 'task_type', "ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'feature'"],
+  ['tasks', 'acceptance_criteria', "ALTER TABLE tasks ADD COLUMN acceptance_criteria TEXT DEFAULT ''"],
+  ['tasks', 'model', "ALTER TABLE tasks ADD COLUMN model TEXT DEFAULT 'sonnet'"],
+  ['tasks', 'thinking_effort', "ALTER TABLE tasks ADD COLUMN thinking_effort TEXT DEFAULT 'medium'"],
+  ['tasks', 'input_tokens', 'ALTER TABLE tasks ADD COLUMN input_tokens INTEGER DEFAULT 0'],
+  ['tasks', 'output_tokens', 'ALTER TABLE tasks ADD COLUMN output_tokens INTEGER DEFAULT 0'],
+  ['tasks', 'cache_read_tokens', 'ALTER TABLE tasks ADD COLUMN cache_read_tokens INTEGER DEFAULT 0'],
+  ['tasks', 'cache_creation_tokens', 'ALTER TABLE tasks ADD COLUMN cache_creation_tokens INTEGER DEFAULT 0'],
+  ['tasks', 'total_cost', 'ALTER TABLE tasks ADD COLUMN total_cost REAL DEFAULT 0'],
+  ['tasks', 'num_turns', 'ALTER TABLE tasks ADD COLUMN num_turns INTEGER DEFAULT 0'],
+  ['tasks', 'rate_limit_hits', 'ALTER TABLE tasks ADD COLUMN rate_limit_hits INTEGER DEFAULT 0'],
+  ['tasks', 'model_used', 'ALTER TABLE tasks ADD COLUMN model_used TEXT'],
+];
+
+for (const [table, col, sql] of migrations) {
+  if (!columnExists(table, col)) db.run(sql);
 }
 
 function save() {
@@ -151,15 +169,15 @@ export const queries = {
     all: (status) => queryAll('SELECT * FROM tasks WHERE status = ? ORDER BY sort_order, id', [status]),
   },
   createTask: {
-    run: (projectId, title, description, priority, taskType, acceptanceCriteria) => run(
-      'INSERT INTO tasks (project_id, title, description, priority, task_type, acceptance_criteria) VALUES (?, ?, ?, ?, ?, ?)',
-      [projectId, title, description, priority, taskType || 'feature', acceptanceCriteria || '']
+    run: (projectId, title, description, priority, taskType, acceptanceCriteria, model, thinkingEffort) => run(
+      'INSERT INTO tasks (project_id, title, description, priority, task_type, acceptance_criteria, model, thinking_effort) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [projectId, title, description, priority, taskType || 'feature', acceptanceCriteria || '', model || 'sonnet', thinkingEffort || 'medium']
     ),
   },
   updateTask: {
-    run: (title, description, priority, taskType, acceptanceCriteria, id) => run(
-      "UPDATE tasks SET title = ?, description = ?, priority = ?, task_type = ?, acceptance_criteria = ?, updated_at = datetime('now','localtime') WHERE id = ?",
-      [title, description, priority, taskType || 'feature', acceptanceCriteria || '', id]
+    run: (title, description, priority, taskType, acceptanceCriteria, model, thinkingEffort, id) => run(
+      "UPDATE tasks SET title = ?, description = ?, priority = ?, task_type = ?, acceptance_criteria = ?, model = ?, thinking_effort = ?, updated_at = datetime('now','localtime') WHERE id = ?",
+      [title, description, priority, taskType || 'feature', acceptanceCriteria || '', model || 'sonnet', thinkingEffort || 'medium', id]
     ),
   },
   updateTaskStatus: {
@@ -177,6 +195,27 @@ export const queries = {
   setTaskCompleted: {
     run: (id) => run(
       "UPDATE tasks SET completed_at = datetime('now','localtime'), updated_at = datetime('now','localtime') WHERE id = ?",
+      [id]
+    ),
+  },
+  updateTaskUsage: {
+    run: (inputTokens, outputTokens, cacheRead, cacheCreation, totalCost, numTurns, modelUsed, id) => run(
+      `UPDATE tasks SET
+        input_tokens = COALESCE(input_tokens, 0) + ?,
+        output_tokens = COALESCE(output_tokens, 0) + ?,
+        cache_read_tokens = COALESCE(cache_read_tokens, 0) + ?,
+        cache_creation_tokens = COALESCE(cache_creation_tokens, 0) + ?,
+        total_cost = COALESCE(total_cost, 0) + ?,
+        num_turns = ?,
+        model_used = ?,
+        updated_at = datetime('now','localtime')
+      WHERE id = ?`,
+      [inputTokens, outputTokens, cacheRead, cacheCreation, totalCost, numTurns, modelUsed, id]
+    ),
+  },
+  incrementRateLimitHits: {
+    run: (id) => run(
+      "UPDATE tasks SET rate_limit_hits = COALESCE(rate_limit_hits, 0) + 1, updated_at = datetime('now','localtime') WHERE id = ?",
       [id]
     ),
   },
@@ -248,10 +287,34 @@ export const statsQueries = {
     [projectId]
   ),
   getRecentCompleted: (projectId) => queryAll(
-    `SELECT id, title, task_type, priority, started_at, completed_at,
+    `SELECT id, title, task_type, priority, model, model_used, input_tokens, output_tokens,
+            cache_read_tokens, cache_creation_tokens, total_cost, num_turns, rate_limit_hits,
+            started_at, completed_at,
             ROUND((julianday(completed_at) - julianday(started_at)) * 24 * 60, 1) as duration_minutes
      FROM tasks WHERE project_id = ? AND started_at IS NOT NULL AND completed_at IS NOT NULL
      ORDER BY completed_at DESC LIMIT 10`,
+    [projectId]
+  ),
+  getClaudeUsage: (projectId) => queryOne(
+    `SELECT
+       SUM(COALESCE(input_tokens, 0)) as total_input_tokens,
+       SUM(COALESCE(output_tokens, 0)) as total_output_tokens,
+       SUM(COALESCE(cache_read_tokens, 0)) as total_cache_read,
+       SUM(COALESCE(cache_creation_tokens, 0)) as total_cache_creation,
+       SUM(COALESCE(total_cost, 0)) as total_cost,
+       SUM(COALESCE(num_turns, 0)) as total_turns,
+       SUM(COALESCE(rate_limit_hits, 0)) as total_rate_limits,
+       COUNT(CASE WHEN input_tokens > 0 THEN 1 END) as tasks_with_usage
+     FROM tasks WHERE project_id = ?`,
+    [projectId]
+  ),
+  getModelBreakdown: (projectId) => queryAll(
+    `SELECT COALESCE(model_used, model, 'unknown') as model_name,
+            COUNT(*) as count,
+            SUM(COALESCE(input_tokens, 0) + COALESCE(output_tokens, 0)) as total_tokens,
+            SUM(COALESCE(total_cost, 0)) as total_cost
+     FROM tasks WHERE project_id = ? AND (input_tokens > 0 OR status IN ('in_progress','testing','done'))
+     GROUP BY model_name`,
     [projectId]
   ),
 };
