@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import TaskCard from './TaskCard';
 
-export default function Column({ column, tasks, draggedTask, onDragStart, onDragEnd, onDrop, onViewLogs, onEditTask, onDeleteTask, onStatusChange }) {
+export default function Column({ column, tasks, draggedTask, onDragStart, onDragEnd, onDrop, onViewLogs, onEditTask, onDeleteTask, onStatusChange, onReviewTask }) {
   const [dragOver, setDragOver] = useState(false);
 
   const handleDragOver = (e) => {
@@ -48,6 +48,7 @@ export default function Column({ column, tasks, draggedTask, onDragStart, onDrag
             onEdit={() => onEditTask(task)}
             onDelete={() => onDeleteTask(task)}
             onStatusChange={onStatusChange}
+            onReview={() => onReviewTask(task)}
           />
         ))}
         {tasks.length === 0 && (

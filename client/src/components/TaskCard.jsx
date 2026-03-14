@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins } from 'lucide-react';
+import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw } from 'lucide-react';
 
 const priorityColors = {
   0: '',
@@ -54,7 +54,7 @@ function formatTokens(n) {
   return String(n);
 }
 
-export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange }) {
+export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange, onReview }) {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuRef = useRef(null);
@@ -108,6 +108,11 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
               <span className={`text-[9px] ${modelColorClass}`}>
                 {modelDisplay}
               </span>
+              {task.revision_count > 0 && (
+                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400" title={`${task.revision_count} revision(s)`}>
+                  Rev {task.revision_count}
+                </span>
+              )}
             </div>
             <h3 className="text-sm font-medium text-surface-100 truncate">{task.title}</h3>
             {task.description && (
@@ -146,6 +151,15 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           </div>
 
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            {task.status === 'testing' && onReview && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onReview(); }}
+                className="p-1 rounded hover:bg-emerald-500/20 text-surface-400 hover:text-emerald-400 transition-colors"
+                title="Review Task"
+              >
+                <CheckCircle size={13} />
+              </button>
+            )}
             <button
               onClick={(e) => { e.stopPropagation(); onViewLogs(); }}
               className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-claude transition-colors"
@@ -208,6 +222,15 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
             </button>
           ))}
           <div className="border-t border-surface-700 my-1" />
+          {task.status === 'testing' && onReview && (
+            <button
+              onClick={() => { setShowMenu(false); onReview(); }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-emerald-400 hover:bg-surface-700 transition-colors"
+            >
+              <CheckCircle size={11} />
+              Review
+            </button>
+          )}
           <button
             onClick={() => { setShowMenu(false); onViewLogs(); }}
             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-300 hover:bg-surface-700 transition-colors"

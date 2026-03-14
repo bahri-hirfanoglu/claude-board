@@ -1,11 +1,49 @@
-import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, Wifi, WifiOff, Activity, Search, ChevronDown, Settings, Trash2, FolderPlus, FileText, LayoutGrid } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { Plus, BarChart3, Wifi, WifiOff, Activity, Search, ChevronDown, Settings, Trash2, FolderPlus, FileText, LayoutGrid, Cpu, Coins, Clock } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from './Dashboard';
 
+function fmtTokens(n) {
+  if (!n) return '0';
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+  return String(n);
+}
+
+function ProjectUsage({ tasks }) {
+  const totals = useMemo(() => {
+    if (!tasks || tasks.length === 0) return null;
+    let tokens = 0, cost = 0;
+    for (const t of tasks) {
+      tokens += (t.input_tokens || 0) + (t.output_tokens || 0);
+      cost += t.total_cost || 0;
+    }
+    return tokens > 0 ? { tokens, cost } : null;
+  }, [tasks]);
+
+  if (!totals) return null;
+
+  return (
+    <div className="flex items-center gap-2 text-[11px] text-surface-500 bg-surface-800/50 px-2.5 py-1 rounded-lg">
+      <span className="flex items-center gap-1">
+        <Cpu size={10} />
+        {fmtTokens(totals.tokens)}
+      </span>
+      {totals.cost > 0 && (
+        <span className="flex items-center gap-1">
+          <Coins size={10} />
+          ${totals.cost.toFixed(4)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function Header({
   connected, taskCount, runningCount, onNewTask, onToggleStats, statsActive,
-  search, onSearchChange, projects, currentProject, onSelectProject, onBackToDashboard, onNewProject, onEditProject, onDeleteProject, onEditClaudeMd
+  onToggleActivity, activityActive,
+  search, onSearchChange, projects, currentProject, onSelectProject, onBackToDashboard, onNewProject, onEditProject, onDeleteProject, onEditClaudeMd,
+  tasks
 }) {
   const [showProjectMenu, setShowProjectMenu] = useState(false);
   const menuRef = useRef(null);
@@ -150,7 +188,21 @@ export default function Header({
           </div>
         )}
 
+        <ProjectUsage tasks={tasks} />
+
         <span className="text-xs text-surface-500">{taskCount} tasks</span>
+
+        <button
+          onClick={onToggleActivity}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+            activityActive
+              ? 'bg-claude/20 text-claude-light'
+              : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
+          }`}
+        >
+          <Clock size={14} />
+          Activity
+        </button>
 
         <button
           onClick={onToggleStats}

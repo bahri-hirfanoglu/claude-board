@@ -8,7 +8,7 @@ const COLUMNS = [
   { id: 'done', label: 'Done', color: 'text-emerald-400', bg: 'bg-emerald-400' },
 ];
 
-export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, onDeleteTask }) {
+export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, onDeleteTask, onReviewTask }) {
   const [draggedTask, setDraggedTask] = useState(null);
 
   return (
@@ -31,6 +31,7 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
           onEditTask={onEditTask}
           onDeleteTask={onDeleteTask}
           onStatusChange={onStatusChange}
+          onReviewTask={onReviewTask}
         />
       ))}
     </div>

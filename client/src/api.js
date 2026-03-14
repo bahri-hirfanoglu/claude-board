@@ -31,9 +31,12 @@ export const api = {
   getTaskLogs: (id, limit = 500) => request(`/api/tasks/${id}/logs?limit=${limit}`),
   stopTask: (id) => request(`/api/tasks/${id}/stop`, { method: 'POST' }),
   restartTask: (id) => request(`/api/tasks/${id}/restart`, { method: 'POST' }),
+  requestChanges: (id, feedback) => request(`/api/tasks/${id}/request-changes`, { method: 'POST', body: JSON.stringify({ feedback }) }),
+  getRevisions: (id) => request(`/api/tasks/${id}/revisions`),
 
-  // Stats
+  // Stats & Activity
   getStats: (projectId) => request(`/api/projects/${projectId}/stats`),
+  getActivity: (projectId, limit = 50, offset = 0) => request(`/api/projects/${projectId}/activity?limit=${limit}&offset=${offset}`),
 
   // CLAUDE.md
   getClaudeMd: (projectId) => request(`/api/projects/${projectId}/claude-md`),
