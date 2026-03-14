@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, FolderOpen } from 'lucide-react';
+import { X, FolderOpen, RefreshCw } from 'lucide-react';
+import Avatar from 'boring-avatars';
+import { AVATAR_VARIANTS, AVATAR_COLORS } from './Dashboard';
 
 export default function ProjectModal({ project, onSubmit, onClose }) {
   const [name, setName] = useState(project?.name || '');
   const [slug, setSlug] = useState(project?.slug || '');
   const [workingDir, setWorkingDir] = useState(project?.working_dir || '');
+  const [icon, setIcon] = useState(project?.icon || 'marble');
+  const [iconSeed, setIconSeed] = useState(project?.icon_seed || '');
   const [loading, setLoading] = useState(false);
   const [autoSlug, setAutoSlug] = useState(!project);
   const nameRef = useRef(null);
@@ -18,6 +22,12 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
     if (autoSlug) setSlug(generateSlug(val));
   };
 
+  const randomizeSeed = () => {
+    setIconSeed(Math.random().toString(36).substring(2, 10));
+  };
+
+  const avatarSeed = iconSeed || name || 'project';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !slug.trim() || !workingDir.trim()) return;
@@ -27,6 +37,8 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         name: name.trim(),
         slug: slug.trim(),
         working_dir: workingDir.trim(),
+        icon,
+        icon_seed: iconSeed,
       });
     } catch (err) {
       console.error(err);
@@ -38,7 +50,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-surface-900 border border-surface-700 rounded-xl w-full max-w-md mx-4 shadow-2xl"
+        className="bg-surface-900 border border-surface-700 rounded-xl w-full max-w-md mx-4 shadow-2xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-800">
@@ -52,6 +64,43 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Avatar Picker */}
+          <div>
+            <label className="block text-xs font-medium text-surface-400 mb-2">Project Icon</label>
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl overflow-hidden ring-2 ring-surface-700 flex-shrink-0">
+                <Avatar size={56} name={avatarSeed} variant={icon} colors={AVATAR_COLORS} />
+              </div>
+              <div className="flex-1">
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {AVATAR_VARIANTS.map(v => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setIcon(v)}
+                      className={`p-1 rounded-lg transition-all ${
+                        icon === v
+                          ? 'ring-2 ring-claude bg-claude/10'
+                          : 'hover:bg-surface-800'
+                      }`}
+                      title={v}
+                    >
+                      <Avatar size={28} name={avatarSeed} variant={v} colors={AVATAR_COLORS} />
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={randomizeSeed}
+                  className="flex items-center gap-1 text-[10px] text-surface-500 hover:text-surface-300 transition-colors"
+                >
+                  <RefreshCw size={10} />
+                  Randomize
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-medium text-surface-400 mb-1.5">Project Name</label>
             <input

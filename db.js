@@ -83,6 +83,8 @@ function columnExists(table, column) {
 }
 
 const migrations = [
+  ['projects', 'icon', "ALTER TABLE projects ADD COLUMN icon TEXT DEFAULT 'marble'"],
+  ['projects', 'icon_seed', "ALTER TABLE projects ADD COLUMN icon_seed TEXT DEFAULT ''"],
   ['tasks', 'started_at', 'ALTER TABLE tasks ADD COLUMN started_at DATETIME'],
   ['tasks', 'completed_at', 'ALTER TABLE tasks ADD COLUMN completed_at DATETIME'],
   ['tasks', 'task_type', "ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'feature'"],
@@ -143,15 +145,30 @@ export const projectQueries = {
   getAll: () => queryAll('SELECT * FROM projects ORDER BY name'),
   getById: (id) => queryOne('SELECT * FROM projects WHERE id = ?', [id]),
   getBySlug: (slug) => queryOne('SELECT * FROM projects WHERE slug = ?', [slug]),
-  create: (name, slug, workingDir) => run(
-    'INSERT INTO projects (name, slug, working_dir) VALUES (?, ?, ?)',
-    [name, slug, workingDir]
+  create: (name, slug, workingDir, icon, iconSeed) => run(
+    'INSERT INTO projects (name, slug, working_dir, icon, icon_seed) VALUES (?, ?, ?, ?, ?)',
+    [name, slug, workingDir, icon || 'marble', iconSeed || '']
   ),
-  update: (id, name, slug, workingDir) => run(
-    "UPDATE projects SET name = ?, slug = ?, working_dir = ?, updated_at = datetime('now','localtime') WHERE id = ?",
-    [name, slug, workingDir, id]
+  update: (id, name, slug, workingDir, icon, iconSeed) => run(
+    "UPDATE projects SET name = ?, slug = ?, working_dir = ?, icon = ?, icon_seed = ?, updated_at = datetime('now','localtime') WHERE id = ?",
+    [name, slug, workingDir, icon || 'marble', iconSeed || '', id]
   ),
   delete: (id) => run('DELETE FROM projects WHERE id = ?', [id]),
+  getSummary: () => queryAll(
+    `SELECT p.*,
+       COUNT(t.id) as total_tasks,
+       COUNT(CASE WHEN t.status = 'done' THEN 1 END) as done_tasks,
+       COUNT(CASE WHEN t.status = 'in_progress' THEN 1 END) as active_tasks,
+       COUNT(CASE WHEN t.status = 'backlog' THEN 1 END) as backlog_tasks,
+       COUNT(CASE WHEN t.status = 'testing' THEN 1 END) as testing_tasks,
+       SUM(COALESCE(t.input_tokens, 0) + COALESCE(t.output_tokens, 0)) as total_tokens,
+       SUM(COALESCE(t.total_cost, 0)) as total_cost,
+       MAX(t.updated_at) as last_activity
+     FROM projects p
+     LEFT JOIN tasks t ON t.project_id = p.id
+     GROUP BY p.id
+     ORDER BY p.name`
+  ),
 };
 
 // ============ Tasks ============

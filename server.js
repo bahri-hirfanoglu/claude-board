@@ -31,6 +31,11 @@ app.get('/api/projects', (req, res) => {
   res.json(projects);
 });
 
+app.get('/api/projects/summary', (req, res) => {
+  const summary = projectQueries.getSummary();
+  res.json(summary);
+});
+
 app.get('/api/projects/:id', (req, res) => {
   const project = projectQueries.getById(req.params.id);
   if (!project) return res.status(404).json({ error: 'Project not found' });
@@ -38,7 +43,7 @@ app.get('/api/projects/:id', (req, res) => {
 });
 
 app.post('/api/projects', (req, res) => {
-  const { name, slug, working_dir } = req.body;
+  const { name, slug, working_dir, icon, icon_seed } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
   if (!slug?.trim()) return res.status(400).json({ error: 'Slug is required' });
   if (!working_dir?.trim()) return res.status(400).json({ error: 'Working directory is required' });
@@ -46,7 +51,7 @@ app.post('/api/projects', (req, res) => {
   const existing = projectQueries.getBySlug(slug.trim());
   if (existing) return res.status(400).json({ error: 'Slug already exists' });
 
-  const result = projectQueries.create(name.trim(), slug.trim(), working_dir.trim());
+  const result = projectQueries.create(name.trim(), slug.trim(), working_dir.trim(), icon, icon_seed);
   const project = projectQueries.getById(result.lastInsertRowid);
   io.emit('project:created', project);
   res.status(201).json(project);
@@ -56,12 +61,14 @@ app.put('/api/projects/:id', (req, res) => {
   const project = projectQueries.getById(req.params.id);
   if (!project) return res.status(404).json({ error: 'Project not found' });
 
-  const { name, slug, working_dir } = req.body;
+  const { name, slug, working_dir, icon, icon_seed } = req.body;
   projectQueries.update(
     project.id,
     name ?? project.name,
     slug ?? project.slug,
-    working_dir ?? project.working_dir
+    working_dir ?? project.working_dir,
+    icon ?? project.icon,
+    icon_seed ?? project.icon_seed
   );
   const updated = projectQueries.getById(project.id);
   io.emit('project:updated', updated);

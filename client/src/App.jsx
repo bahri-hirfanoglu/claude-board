@@ -10,6 +10,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import Toast from './components/Toast';
 import ProjectModal from './components/ProjectModal';
 import ClaudeMdEditor from './components/ClaudeMdEditor';
+import Dashboard from './components/Dashboard';
 
 export default function App() {
   const [projects, setProjects] = useState([]);
@@ -37,13 +38,10 @@ export default function App() {
     try {
       const data = await api.getProjects();
       setProjects(data);
-      if (!currentProject && data.length > 0) {
-        setCurrentProject(data[0]);
-      }
     } catch (err) {
       console.error('Failed to load projects:', err);
     }
-  }, [currentProject]);
+  }, []);
 
   const loadTasks = useCallback(async () => {
     if (!currentProject) { setTasks([]); return; }
@@ -256,6 +254,7 @@ export default function App() {
         projects={projects}
         currentProject={currentProject}
         onSelectProject={(p) => { setCurrentProject(p); setActivePanel(null); setSelectedTask(null); }}
+        onBackToDashboard={() => { setCurrentProject(null); setActivePanel(null); setSelectedTask(null); }}
         onNewProject={() => { setEditingProject(null); setShowProjectModal(true); }}
         onEditProject={handleEditProject}
         onDeleteProject={handleDeleteProject}
@@ -273,19 +272,11 @@ export default function App() {
               onDeleteTask={handleDeleteTask}
             />
           ) : (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-4xl mb-4 text-surface-600">&#10022;</div>
-                <h2 className="text-lg font-medium text-surface-300 mb-2">No project selected</h2>
-                <p className="text-sm text-surface-500 mb-4">Create a project to get started</p>
-                <button
-                  onClick={() => { setEditingProject(null); setShowProjectModal(true); }}
-                  className="px-4 py-2 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors"
-                >
-                  Create Project
-                </button>
-              </div>
-            </div>
+            <Dashboard
+              projects={projects}
+              onSelectProject={(p) => { setCurrentProject(p); setActivePanel(null); setSelectedTask(null); }}
+              onNewProject={() => { setEditingProject(null); setShowProjectModal(true); }}
+            />
           )}
         </div>
 
