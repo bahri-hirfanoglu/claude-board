@@ -32,7 +32,7 @@ const MODEL_MAP = {
   'haiku': 'haiku',
 };
 
-export function startClaude(task, io, workingDir) {
+export function startClaude(task, io, workingDir, project = {}) {
   if (activeProcesses.has(task.id)) {
     addLog(task.id, 'Claude is already running for this task.', 'system', io);
     return;
@@ -41,9 +41,10 @@ export function startClaude(task, io, workingDir) {
   const prompt = buildPrompt(task);
   const model = task.model || 'sonnet';
   const effort = task.thinking_effort || 'medium';
+  const permissionMode = project.permission_mode || 'auto-accept';
 
   addLog(task.id, `Starting Claude for task: ${task.title}`, 'system', io);
-  addLog(task.id, `Model: ${model} | Effort: ${effort} | Dir: ${workingDir}`, 'info', io);
+  addLog(task.id, `Model: ${model} | Effort: ${effort} | Permissions: ${permissionMode} | Dir: ${workingDir}`, 'info', io);
 
   const args = [
     '-p', prompt,
@@ -56,6 +57,24 @@ export function startClaude(task, io, workingDir) {
   if (MODEL_MAP[model]) {
     args.push('--model', MODEL_MAP[model]);
   }
+
+  // Permission handling
+  if (permissionMode === 'auto-accept') {
+    // Full autonomy - skip all permission prompts
+    args.push('--dangerously-skip-permissions');
+  } else if (permissionMode === 'allow-tools') {
+    // Allow specific tool categories
+    const allowedTools = (project.allowed_tools || '').split(',').map(t => t.trim()).filter(Boolean);
+    if (allowedTools.length > 0) {
+      for (const tool of allowedTools) {
+        args.push('--allowedTools', tool);
+      }
+    } else {
+      // No specific tools configured, fall back to auto-accept
+      args.push('--dangerously-skip-permissions');
+    }
+  }
+  // permissionMode === 'default' → no extra flags, Claude uses its default permission settings
 
   const proc = spawn('claude', args, {
     cwd: workingDir,

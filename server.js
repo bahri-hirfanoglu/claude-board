@@ -43,7 +43,7 @@ app.get('/api/projects/:id', (req, res) => {
 });
 
 app.post('/api/projects', (req, res) => {
-  const { name, slug, working_dir, icon, icon_seed } = req.body;
+  const { name, slug, working_dir, icon, icon_seed, permission_mode, allowed_tools } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
   if (!slug?.trim()) return res.status(400).json({ error: 'Slug is required' });
   if (!working_dir?.trim()) return res.status(400).json({ error: 'Working directory is required' });
@@ -51,7 +51,7 @@ app.post('/api/projects', (req, res) => {
   const existing = projectQueries.getBySlug(slug.trim());
   if (existing) return res.status(400).json({ error: 'Slug already exists' });
 
-  const result = projectQueries.create(name.trim(), slug.trim(), working_dir.trim(), icon, icon_seed);
+  const result = projectQueries.create(name.trim(), slug.trim(), working_dir.trim(), icon, icon_seed, permission_mode, allowed_tools);
   const project = projectQueries.getById(result.lastInsertRowid);
   io.emit('project:created', project);
   res.status(201).json(project);
@@ -61,14 +61,16 @@ app.put('/api/projects/:id', (req, res) => {
   const project = projectQueries.getById(req.params.id);
   if (!project) return res.status(404).json({ error: 'Project not found' });
 
-  const { name, slug, working_dir, icon, icon_seed } = req.body;
+  const { name, slug, working_dir, icon, icon_seed, permission_mode, allowed_tools } = req.body;
   projectQueries.update(
     project.id,
     name ?? project.name,
     slug ?? project.slug,
     working_dir ?? project.working_dir,
     icon ?? project.icon,
-    icon_seed ?? project.icon_seed
+    icon_seed ?? project.icon_seed,
+    permission_mode ?? project.permission_mode,
+    allowed_tools ?? project.allowed_tools
   );
   const updated = projectQueries.getById(project.id);
   io.emit('project:updated', updated);
@@ -170,7 +172,7 @@ app.patch('/api/tasks/:id/status', (req, res) => {
   if (status === 'in_progress' && prevStatus !== 'in_progress') {
     const project = projectQueries.getById(task.project_id);
     const workingDir = project?.working_dir || join(__dirname, '..');
-    startClaude(updated, io, workingDir);
+    startClaude(updated, io, workingDir, project);
   }
 
   // Stop Claude if moved away from in_progress

@@ -85,6 +85,8 @@ function columnExists(table, column) {
 const migrations = [
   ['projects', 'icon', "ALTER TABLE projects ADD COLUMN icon TEXT DEFAULT 'marble'"],
   ['projects', 'icon_seed', "ALTER TABLE projects ADD COLUMN icon_seed TEXT DEFAULT ''"],
+  ['projects', 'permission_mode', "ALTER TABLE projects ADD COLUMN permission_mode TEXT DEFAULT 'auto-accept'"],
+  ['projects', 'allowed_tools', "ALTER TABLE projects ADD COLUMN allowed_tools TEXT DEFAULT ''"],
   ['tasks', 'started_at', 'ALTER TABLE tasks ADD COLUMN started_at DATETIME'],
   ['tasks', 'completed_at', 'ALTER TABLE tasks ADD COLUMN completed_at DATETIME'],
   ['tasks', 'task_type', "ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'feature'"],
@@ -145,13 +147,13 @@ export const projectQueries = {
   getAll: () => queryAll('SELECT * FROM projects ORDER BY name'),
   getById: (id) => queryOne('SELECT * FROM projects WHERE id = ?', [id]),
   getBySlug: (slug) => queryOne('SELECT * FROM projects WHERE slug = ?', [slug]),
-  create: (name, slug, workingDir, icon, iconSeed) => run(
-    'INSERT INTO projects (name, slug, working_dir, icon, icon_seed) VALUES (?, ?, ?, ?, ?)',
-    [name, slug, workingDir, icon || 'marble', iconSeed || '']
+  create: (name, slug, workingDir, icon, iconSeed, permissionMode, allowedTools) => run(
+    'INSERT INTO projects (name, slug, working_dir, icon, icon_seed, permission_mode, allowed_tools) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [name, slug, workingDir, icon || 'marble', iconSeed || '', permissionMode || 'auto-accept', allowedTools || '']
   ),
-  update: (id, name, slug, workingDir, icon, iconSeed) => run(
-    "UPDATE projects SET name = ?, slug = ?, working_dir = ?, icon = ?, icon_seed = ?, updated_at = datetime('now','localtime') WHERE id = ?",
-    [name, slug, workingDir, icon || 'marble', iconSeed || '', id]
+  update: (id, name, slug, workingDir, icon, iconSeed, permissionMode, allowedTools) => run(
+    "UPDATE projects SET name = ?, slug = ?, working_dir = ?, icon = ?, icon_seed = ?, permission_mode = ?, allowed_tools = ?, updated_at = datetime('now','localtime') WHERE id = ?",
+    [name, slug, workingDir, icon || 'marble', iconSeed || '', permissionMode || 'auto-accept', allowedTools || '', id]
   ),
   delete: (id) => run('DELETE FROM projects WHERE id = ?', [id]),
   getSummary: () => queryAll(
