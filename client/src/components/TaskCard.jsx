@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight } from 'lucide-react';
+import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock } from 'lucide-react';
 
 const priorityColors = {
   0: '',
@@ -8,7 +8,16 @@ const priorityColors = {
   3: 'border-l-red-500',
 };
 
-const priorityLabels = ['Normal', 'Low', 'Medium', 'High'];
+const priorityLabels = ['', 'Low', 'Medium', 'High'];
+
+const typeColors = {
+  feature: 'bg-blue-500/15 text-blue-400',
+  bugfix: 'bg-red-500/15 text-red-400',
+  refactor: 'bg-purple-500/15 text-purple-400',
+  docs: 'bg-green-500/15 text-green-400',
+  test: 'bg-yellow-500/15 text-yellow-400',
+  chore: 'bg-surface-500/15 text-surface-400',
+};
 
 const STATUS_OPTIONS = [
   { id: 'backlog', label: 'Backlog', dot: 'bg-surface-400' },
@@ -16,6 +25,21 @@ const STATUS_OPTIONS = [
   { id: 'testing', label: 'Testing', dot: 'bg-claude' },
   { id: 'done', label: 'Done', dot: 'bg-emerald-400' },
 ];
+
+function formatDuration(startedAt, completedAt) {
+  if (!startedAt) return null;
+  const start = new Date(startedAt);
+  const end = completedAt ? new Date(completedAt) : new Date();
+  const diffMs = end - start;
+  const mins = Math.floor(diffMs / 60000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days}d ${hours % 24}h`;
+  if (hours > 0) return `${hours}h ${mins % 60}m`;
+  if (mins > 0) return `${mins}m`;
+  return '<1m';
+}
 
 export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -37,6 +61,9 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
     return () => window.removeEventListener('mousedown', close);
   }, [showMenu]);
 
+  const duration = formatDuration(task.started_at, task.completed_at);
+  const taskType = task.task_type || 'feature';
+
   return (
     <>
       <div
@@ -54,6 +81,14 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${typeColors[taskType]}`}>
+                {taskType}
+              </span>
+              {task.priority > 0 && (
+                <span className="text-[9px] text-surface-500">{priorityLabels[task.priority]}</span>
+              )}
+            </div>
             <h3 className="text-sm font-medium text-surface-100 truncate">{task.title}</h3>
             {task.description && (
               <p className="text-xs text-surface-400 mt-1 line-clamp-2">{task.description}</p>
@@ -70,8 +105,11 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
                 Running
               </span>
             )}
-            {task.priority > 0 && (
-              <span className="text-[10px] text-surface-500">{priorityLabels[task.priority]}</span>
+            {duration && (
+              <span className="flex items-center gap-1 text-[10px] text-surface-500">
+                <Clock size={9} />
+                {duration}
+              </span>
             )}
           </div>
 

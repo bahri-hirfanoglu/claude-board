@@ -4,11 +4,12 @@ import { api } from './api';
 import Board from './components/Board';
 import TaskModal from './components/TaskModal';
 import LiveLog from './components/LiveLog';
-import PRPanel from './components/PRPanel';
+import StatsPanel from './components/StatsPanel';
 import Header from './components/Header';
 import ConfirmDialog from './components/ConfirmDialog';
 import Toast from './components/Toast';
 import ProjectModal from './components/ProjectModal';
+import ClaudeMdEditor from './components/ClaudeMdEditor';
 
 export default function App() {
   const [projects, setProjects] = useState([]);
@@ -24,6 +25,7 @@ export default function App() {
   const [connected, setConnected] = useState(socket.connected);
   const [search, setSearch] = useState('');
   const [toasts, setToasts] = useState([]);
+  const [showClaudeMd, setShowClaudeMd] = useState(false);
 
   const addToast = useCallback((message, type = 'info') => {
     const id = Date.now();
@@ -247,8 +249,8 @@ export default function App() {
         taskCount={tasks.length}
         runningCount={tasks.filter(t => t.is_running).length}
         onNewTask={currentProject ? openCreateModal : null}
-        onTogglePRs={() => setActivePanel(prev => prev === 'prs' ? null : 'prs')}
-        prActive={activePanel === 'prs'}
+        onToggleStats={() => setActivePanel(prev => prev === 'stats' ? null : 'stats')}
+        statsActive={activePanel === 'stats'}
         search={search}
         onSearchChange={setSearch}
         projects={projects}
@@ -257,6 +259,7 @@ export default function App() {
         onNewProject={() => { setEditingProject(null); setShowProjectModal(true); }}
         onEditProject={handleEditProject}
         onDeleteProject={handleDeleteProject}
+        onEditClaudeMd={() => setShowClaudeMd(true)}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -293,8 +296,8 @@ export default function App() {
           />
         )}
 
-        {activePanel === 'prs' && currentProject && (
-          <PRPanel projectId={currentProject.id} onClose={() => setActivePanel(null)} />
+        {activePanel === 'stats' && currentProject && (
+          <StatsPanel projectId={currentProject.id} onClose={() => setActivePanel(null)} />
         )}
       </div>
 
@@ -311,6 +314,14 @@ export default function App() {
           project={editingProject}
           onSubmit={editingProject ? handleUpdateProject : handleCreateProject}
           onClose={() => { setShowProjectModal(false); setEditingProject(null); }}
+        />
+      )}
+
+      {showClaudeMd && currentProject && (
+        <ClaudeMdEditor
+          projectId={currentProject.id}
+          projectName={currentProject.name}
+          onClose={() => setShowClaudeMd(false)}
         />
       )}
 

@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, GitPullRequest, Wifi, WifiOff, Activity, Search, ChevronDown, Settings, Trash2, FolderPlus } from 'lucide-react';
+import { Plus, BarChart3, Wifi, WifiOff, Activity, Search, ChevronDown, Settings, Trash2, FolderPlus, FileText } from 'lucide-react';
 
 export default function Header({
-  connected, taskCount, runningCount, onNewTask, onTogglePRs, prActive,
-  search, onSearchChange, projects, currentProject, onSelectProject, onNewProject, onEditProject, onDeleteProject
+  connected, taskCount, runningCount, onNewTask, onToggleStats, statsActive,
+  search, onSearchChange, projects, currentProject, onSelectProject, onNewProject, onEditProject, onDeleteProject, onEditClaudeMd
 }) {
   const [showProjectMenu, setShowProjectMenu] = useState(false);
   const menuRef = useRef(null);
@@ -27,7 +27,7 @@ export default function Header({
           >
             <span className="text-claude text-lg">&#10022;</span>
             <h1 className="text-base font-semibold tracking-tight">
-              {currentProject?.name || 'Task Manager'}
+              {currentProject?.name || 'Claude Board'}
             </h1>
             <ChevronDown size={14} className="text-surface-400" />
           </button>
@@ -70,6 +70,13 @@ export default function Header({
                       Project Settings
                     </button>
                     <button
+                      onClick={() => { onEditClaudeMd(); setShowProjectMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-surface-400 hover:bg-surface-700 hover:text-surface-200 transition-colors"
+                    >
+                      <FileText size={12} />
+                      CLAUDE.md
+                    </button>
+                    <button
                       onClick={() => { onDeleteProject(); setShowProjectMenu(false); }}
                       className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-surface-700 transition-colors"
                     >
@@ -89,7 +96,7 @@ export default function Header({
           ) : (
             <WifiOff size={13} className="text-red-400" />
           )}
-          <span>{connected ? 'Live' : 'Offline'}</span>
+          <span>{connected ? 'Connected' : 'Offline'}</span>
         </div>
       </div>
 
@@ -100,7 +107,7 @@ export default function Header({
             id="search-input"
             value={search}
             onChange={e => onSearchChange(e.target.value)}
-            placeholder="Search... (/)"
+            placeholder="Search tasks... (/)"
             className="w-48 pl-8 pr-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600"
           />
         </div>
@@ -116,15 +123,15 @@ export default function Header({
 
         {currentProject && (
           <button
-            onClick={onTogglePRs}
+            onClick={onToggleStats}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-              prActive
+              statsActive
                 ? 'bg-claude/20 text-claude-light'
                 : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
             }`}
           >
-            <GitPullRequest size={14} />
-            MRs
+            <BarChart3 size={14} />
+            Stats
           </button>
         )}
 

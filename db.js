@@ -24,9 +24,6 @@ db.run(`
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     working_dir TEXT NOT NULL,
-    gitlab_token TEXT DEFAULT '',
-    gitlab_url TEXT DEFAULT 'https://gitlab.com',
-    gitlab_project_ids TEXT DEFAULT '[]',
     created_at DATETIME DEFAULT (datetime('now','localtime')),
     updated_at DATETIME DEFAULT (datetime('now','localtime'))
   )
@@ -40,12 +37,13 @@ db.run(`
     description TEXT DEFAULT '',
     status TEXT DEFAULT 'backlog' CHECK(status IN ('backlog','in_progress','testing','done')),
     priority INTEGER DEFAULT 0,
+    task_type TEXT DEFAULT 'feature' CHECK(task_type IN ('feature','bugfix','refactor','docs','test','chore')),
+    acceptance_criteria TEXT DEFAULT '',
     sort_order INTEGER DEFAULT 0,
     branch_name TEXT,
-    pr_url TEXT,
-    pr_server_url TEXT,
-    pr_client_url TEXT,
     claude_session_id TEXT,
+    started_at DATETIME,
+    completed_at DATETIME,
     created_at DATETIME DEFAULT (datetime('now','localtime')),
     updated_at DATETIME DEFAULT (datetime('now','localtime')),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
@@ -66,6 +64,26 @@ db.run(`
 db.run('CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id)');
 db.run('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)');
 db.run('CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id)');
+
+// Migrations for existing databases
+function columnExists(table, column) {
+  const result = db.exec(`PRAGMA table_info(${table})`);
+  if (!result.length) return false;
+  return result[0].values.some(row => row[1] === column);
+}
+
+if (!columnExists('tasks', 'started_at')) {
+  db.run('ALTER TABLE tasks ADD COLUMN started_at DATETIME');
+}
+if (!columnExists('tasks', 'completed_at')) {
+  db.run('ALTER TABLE tasks ADD COLUMN completed_at DATETIME');
+}
+if (!columnExists('tasks', 'task_type')) {
+  db.run("ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'feature'");
+}
+if (!columnExists('tasks', 'acceptance_criteria')) {
+  db.run("ALTER TABLE tasks ADD COLUMN acceptance_criteria TEXT DEFAULT ''");
+}
 
 function save() {
   const data = db.export();
@@ -107,13 +125,13 @@ export const projectQueries = {
   getAll: () => queryAll('SELECT * FROM projects ORDER BY name'),
   getById: (id) => queryOne('SELECT * FROM projects WHERE id = ?', [id]),
   getBySlug: (slug) => queryOne('SELECT * FROM projects WHERE slug = ?', [slug]),
-  create: (name, slug, workingDir, gitlabToken, gitlabUrl, gitlabProjectIds) => run(
-    'INSERT INTO projects (name, slug, working_dir, gitlab_token, gitlab_url, gitlab_project_ids) VALUES (?, ?, ?, ?, ?, ?)',
-    [name, slug, workingDir, gitlabToken || '', gitlabUrl || 'https://gitlab.com', gitlabProjectIds || '[]']
+  create: (name, slug, workingDir) => run(
+    'INSERT INTO projects (name, slug, working_dir) VALUES (?, ?, ?)',
+    [name, slug, workingDir]
   ),
-  update: (id, name, slug, workingDir, gitlabToken, gitlabUrl, gitlabProjectIds) => run(
-    "UPDATE projects SET name = ?, slug = ?, working_dir = ?, gitlab_token = ?, gitlab_url = ?, gitlab_project_ids = ?, updated_at = datetime('now','localtime') WHERE id = ?",
-    [name, slug, workingDir, gitlabToken || '', gitlabUrl || 'https://gitlab.com', gitlabProjectIds || '[]', id]
+  update: (id, name, slug, workingDir) => run(
+    "UPDATE projects SET name = ?, slug = ?, working_dir = ?, updated_at = datetime('now','localtime') WHERE id = ?",
+    [name, slug, workingDir, id]
   ),
   delete: (id) => run('DELETE FROM projects WHERE id = ?', [id]),
 };
@@ -133,15 +151,15 @@ export const queries = {
     all: (status) => queryAll('SELECT * FROM tasks WHERE status = ? ORDER BY sort_order, id', [status]),
   },
   createTask: {
-    run: (projectId, title, description, priority) => run(
-      'INSERT INTO tasks (project_id, title, description, priority) VALUES (?, ?, ?, ?)',
-      [projectId, title, description, priority]
+    run: (projectId, title, description, priority, taskType, acceptanceCriteria) => run(
+      'INSERT INTO tasks (project_id, title, description, priority, task_type, acceptance_criteria) VALUES (?, ?, ?, ?, ?, ?)',
+      [projectId, title, description, priority, taskType || 'feature', acceptanceCriteria || '']
     ),
   },
   updateTask: {
-    run: (title, description, priority, id) => run(
-      "UPDATE tasks SET title = ?, description = ?, priority = ?, updated_at = datetime('now','localtime') WHERE id = ?",
-      [title, description, priority, id]
+    run: (title, description, priority, taskType, acceptanceCriteria, id) => run(
+      "UPDATE tasks SET title = ?, description = ?, priority = ?, task_type = ?, acceptance_criteria = ?, updated_at = datetime('now','localtime') WHERE id = ?",
+      [title, description, priority, taskType || 'feature', acceptanceCriteria || '', id]
     ),
   },
   updateTaskStatus: {
@@ -150,16 +168,22 @@ export const queries = {
       [status, id]
     ),
   },
+  setTaskStarted: {
+    run: (id) => run(
+      "UPDATE tasks SET started_at = datetime('now','localtime'), updated_at = datetime('now','localtime') WHERE id = ?",
+      [id]
+    ),
+  },
+  setTaskCompleted: {
+    run: (id) => run(
+      "UPDATE tasks SET completed_at = datetime('now','localtime'), updated_at = datetime('now','localtime') WHERE id = ?",
+      [id]
+    ),
+  },
   updateTaskBranch: {
     run: (branchName, id) => run(
       "UPDATE tasks SET branch_name = ?, updated_at = datetime('now','localtime') WHERE id = ?",
       [branchName, id]
-    ),
-  },
-  updateTaskPR: {
-    run: (prServerUrl, prClientUrl, id) => run(
-      "UPDATE tasks SET pr_server_url = ?, pr_client_url = ?, updated_at = datetime('now','localtime') WHERE id = ?",
-      [prServerUrl, prClientUrl, id]
     ),
   },
   updateTaskClaudeSession: {
@@ -192,6 +216,44 @@ export const queries = {
   clearTaskLogs: {
     run: (taskId) => run('DELETE FROM task_logs WHERE task_id = ?', [taskId]),
   },
+};
+
+// ============ Stats ============
+export const statsQueries = {
+  getTasksByStatus: (projectId) => queryAll(
+    'SELECT status, COUNT(*) as count FROM tasks WHERE project_id = ? GROUP BY status',
+    [projectId]
+  ),
+  getTasksByPriority: (projectId) => queryAll(
+    'SELECT priority, COUNT(*) as count FROM tasks WHERE project_id = ? GROUP BY priority',
+    [projectId]
+  ),
+  getTasksByType: (projectId) => queryAll(
+    'SELECT task_type, COUNT(*) as count FROM tasks WHERE project_id = ? GROUP BY task_type',
+    [projectId]
+  ),
+  getAvgDuration: (projectId) => queryOne(
+    `SELECT AVG((julianday(completed_at) - julianday(started_at)) * 24 * 60) as avg_minutes,
+            MIN((julianday(completed_at) - julianday(started_at)) * 24 * 60) as min_minutes,
+            MAX((julianday(completed_at) - julianday(started_at)) * 24 * 60) as max_minutes,
+            COUNT(*) as count
+     FROM tasks WHERE project_id = ? AND started_at IS NOT NULL AND completed_at IS NOT NULL`,
+    [projectId]
+  ),
+  getCompletionTimeline: (projectId) => queryAll(
+    `SELECT date(completed_at) as day, COUNT(*) as count
+     FROM tasks WHERE project_id = ? AND completed_at IS NOT NULL
+     AND completed_at >= datetime('now', '-14 days')
+     GROUP BY date(completed_at) ORDER BY day`,
+    [projectId]
+  ),
+  getRecentCompleted: (projectId) => queryAll(
+    `SELECT id, title, task_type, priority, started_at, completed_at,
+            ROUND((julianday(completed_at) - julianday(started_at)) * 24 * 60, 1) as duration_minutes
+     FROM tasks WHERE project_id = ? AND started_at IS NOT NULL AND completed_at IS NOT NULL
+     ORDER BY completed_at DESC LIMIT 10`,
+    [projectId]
+  ),
 };
 
 save();

@@ -34,7 +34,7 @@ export function startClaude(task, io, workingDir) {
   const prompt = buildPrompt(task);
 
   addLog(task.id, `Starting Claude for task: ${task.title}`, 'system', io);
-  addLog(task.id, `Prompt: ${prompt.substring(0, 200)}...`, 'info', io);
+  addLog(task.id, `Working directory: ${workingDir}`, 'info', io);
 
   const proc = spawn('claude', [
     '-p', prompt,
@@ -80,6 +80,7 @@ export function startClaude(task, io, workingDir) {
     if (code === 0) {
       addLog(task.id, 'Claude finished successfully.', 'success', io);
       queries.updateTaskStatus.run('testing', task.id);
+      queries.setTaskCompleted.run(task.id);
       io.emit('task:updated', queries.getTaskById.get(task.id));
     } else {
       addLog(task.id, `Claude exited with code ${code}.`, 'error', io);
@@ -104,7 +105,7 @@ function handleClaudeEvent(taskId, event, io) {
         addLog(taskId, event.text, 'claude', io);
       } else if (subtype === 'tool_use') {
         const toolName = event.tool_name || event.name || 'unknown';
-        addLog(taskId, `🔧 Tool: ${toolName}`, 'tool', io);
+        addLog(taskId, `Tool: ${toolName}`, 'tool', io);
       }
       break;
     }
@@ -116,7 +117,7 @@ function handleClaudeEvent(taskId, event, io) {
     }
     case 'result': {
       if (event.result) {
-        addLog(taskId, `✅ Result: ${String(event.result).substring(0, 500)}`, 'success', io);
+        addLog(taskId, `Result: ${String(event.result).substring(0, 500)}`, 'success', io);
       }
       break;
     }
@@ -127,7 +128,6 @@ function handleClaudeEvent(taskId, event, io) {
       break;
     }
     default: {
-      // Forward raw event for debugging
       io.emit('claude:event', { taskId, event });
       break;
     }
@@ -135,5 +135,22 @@ function handleClaudeEvent(taskId, event, io) {
 }
 
 function buildPrompt(task) {
-  return `${task.title}\n\n${task.description}\n\nBu görevi tamamla. Geliştirme bitince yeni bir branch aç, commit at ve push yap. Branch adı: feature/task-${task.id}`;
+  const parts = [`# Task: ${task.title}`];
+
+  if (task.description) {
+    parts.push(`\n## Description\n${task.description}`);
+  }
+
+  if (task.acceptance_criteria) {
+    parts.push(`\n## Acceptance Criteria\n${task.acceptance_criteria}`);
+  }
+
+  parts.push(`\n## Instructions`);
+  parts.push(`- Task type: ${task.task_type || 'feature'}`);
+  parts.push(`- Complete this task thoroughly and commit your changes.`);
+  parts.push(`- Create a new branch named \`${task.task_type || 'feature'}/task-${task.id}\`, commit, and push.`);
+  parts.push(`- Write clear commit messages describing what was done.`);
+  parts.push(`- If acceptance criteria are provided, ensure all criteria are met.`);
+
+  return parts.join('\n');
 }

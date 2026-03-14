@@ -5,7 +5,8 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { queries, projectQueries } from './db.js';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { queries, projectQueries, statsQueries } from './db.js';
 import { startClaude, stopClaude, isTaskRunning, getActiveProcess } from './claude-runner.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -37,7 +38,7 @@ app.get('/api/projects/:id', (req, res) => {
 });
 
 app.post('/api/projects', (req, res) => {
-  const { name, slug, working_dir, gitlab_token, gitlab_url, gitlab_project_ids } = req.body;
+  const { name, slug, working_dir } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
   if (!slug?.trim()) return res.status(400).json({ error: 'Slug is required' });
   if (!working_dir?.trim()) return res.status(400).json({ error: 'Working directory is required' });
@@ -45,11 +46,7 @@ app.post('/api/projects', (req, res) => {
   const existing = projectQueries.getBySlug(slug.trim());
   if (existing) return res.status(400).json({ error: 'Slug already exists' });
 
-  const result = projectQueries.create(
-    name.trim(), slug.trim(), working_dir.trim(),
-    gitlab_token || '', gitlab_url || 'https://gitlab.com',
-    JSON.stringify(gitlab_project_ids || [])
-  );
+  const result = projectQueries.create(name.trim(), slug.trim(), working_dir.trim());
   const project = projectQueries.getById(result.lastInsertRowid);
   io.emit('project:created', project);
   res.status(201).json(project);
@@ -59,15 +56,12 @@ app.put('/api/projects/:id', (req, res) => {
   const project = projectQueries.getById(req.params.id);
   if (!project) return res.status(404).json({ error: 'Project not found' });
 
-  const { name, slug, working_dir, gitlab_token, gitlab_url, gitlab_project_ids } = req.body;
+  const { name, slug, working_dir } = req.body;
   projectQueries.update(
     project.id,
     name ?? project.name,
     slug ?? project.slug,
-    working_dir ?? project.working_dir,
-    gitlab_token ?? project.gitlab_token,
-    gitlab_url ?? project.gitlab_url,
-    gitlab_project_ids ? JSON.stringify(gitlab_project_ids) : project.gitlab_project_ids
+    working_dir ?? project.working_dir
   );
   const updated = projectQueries.getById(project.id);
   io.emit('project:updated', updated);
@@ -89,43 +83,43 @@ app.delete('/api/projects/:id', (req, res) => {
 
 // ============ Tasks API ============
 
-// GET tasks by project
 app.get('/api/projects/:projectId/tasks', (req, res) => {
   const tasks = queries.getTasksByProject.all(req.params.projectId);
   const enriched = tasks.map(t => ({ ...t, is_running: isTaskRunning(t.id) }));
   res.json(enriched);
 });
 
-// GET single task
 app.get('/api/tasks/:id', (req, res) => {
   const task = queries.getTaskById.get(req.params.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
   res.json({ ...task, is_running: isTaskRunning(task.id) });
 });
 
-// POST create task for project
 app.post('/api/projects/:projectId/tasks', (req, res) => {
   const project = projectQueries.getById(req.params.projectId);
   if (!project) return res.status(404).json({ error: 'Project not found' });
 
-  const { title, description = '', priority = 0 } = req.body;
+  const { title, description = '', priority = 0, task_type = 'feature', acceptance_criteria = '' } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'Title is required' });
 
-  const result = queries.createTask.run(project.id, title.trim(), description.trim(), priority);
+  const result = queries.createTask.run(
+    project.id, title.trim(), description.trim(), priority, task_type, acceptance_criteria.trim()
+  );
   const task = queries.getTaskById.get(result.lastInsertRowid);
   io.emit('task:created', task);
   res.status(201).json(task);
 });
 
-// PUT update task
 app.put('/api/tasks/:id', (req, res) => {
   const task = queries.getTaskById.get(req.params.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
-  const { title, description, priority } = req.body;
+  const { title, description, priority, task_type, acceptance_criteria } = req.body;
   queries.updateTask.run(
     title ?? task.title,
     description ?? task.description,
     priority ?? task.priority,
+    task_type ?? task.task_type,
+    acceptance_criteria ?? task.acceptance_criteria,
     task.id
   );
   const updated = queries.getTaskById.get(task.id);
@@ -133,7 +127,6 @@ app.put('/api/tasks/:id', (req, res) => {
   res.json(updated);
 });
 
-// PATCH update task status
 app.patch('/api/tasks/:id/status', (req, res) => {
   const task = queries.getTaskById.get(req.params.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
@@ -146,6 +139,22 @@ app.patch('/api/tasks/:id/status', (req, res) => {
 
   const prevStatus = task.status;
   queries.updateTaskStatus.run(status, task.id);
+
+  // Track time: set started_at when first moved to in_progress
+  if (status === 'in_progress' && !task.started_at) {
+    queries.setTaskStarted.run(task.id);
+  }
+
+  // Track time: set completed_at when moved to done
+  if (status === 'done' && !task.completed_at) {
+    queries.setTaskCompleted.run(task.id);
+  }
+
+  // Clear completed_at if moved back from done
+  if (prevStatus === 'done' && status !== 'done') {
+    queries.setTaskCompleted.run(task.id); // will re-stamp, acceptable
+  }
+
   const updated = queries.getTaskById.get(task.id);
 
   // Auto-start Claude when moved to in_progress
@@ -164,7 +173,6 @@ app.patch('/api/tasks/:id/status', (req, res) => {
   res.json(updated);
 });
 
-// DELETE task
 app.delete('/api/tasks/:id', (req, res) => {
   const task = queries.getTaskById.get(req.params.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
@@ -174,20 +182,17 @@ app.delete('/api/tasks/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-// GET task logs
 app.get('/api/tasks/:id/logs', (req, res) => {
   const limit = parseInt(req.query.limit) || 500;
   const logs = queries.getRecentTaskLogs.all(req.params.id, limit).reverse();
   res.json(logs);
 });
 
-// POST stop claude for task
 app.post('/api/tasks/:id/stop', (req, res) => {
   stopClaude(parseInt(req.params.id), io);
   res.json({ ok: true });
 });
 
-// POST restart claude for task
 app.post('/api/tasks/:id/restart', (req, res) => {
   const task = queries.getTaskById.get(req.params.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
@@ -202,48 +207,62 @@ app.post('/api/tasks/:id/restart', (req, res) => {
   res.json(updated);
 });
 
-// GET GitLab MRs for a project
-app.get('/api/projects/:projectId/merge-requests', async (req, res) => {
+// ============ Stats API ============
+
+app.get('/api/projects/:projectId/stats', (req, res) => {
+  const projectId = req.params.projectId;
+  const project = projectQueries.getById(projectId);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+
+  const byStatus = statsQueries.getTasksByStatus(projectId);
+  const byPriority = statsQueries.getTasksByPriority(projectId);
+  const byType = statsQueries.getTasksByType(projectId);
+  const duration = statsQueries.getAvgDuration(projectId);
+  const timeline = statsQueries.getCompletionTimeline(projectId);
+  const recentCompleted = statsQueries.getRecentCompleted(projectId);
+
+  res.json({
+    byStatus,
+    byPriority,
+    byType,
+    duration,
+    timeline,
+    recentCompleted,
+  });
+});
+
+// ============ CLAUDE.md API ============
+
+app.get('/api/projects/:projectId/claude-md', (req, res) => {
   const project = projectQueries.getById(req.params.projectId);
   if (!project) return res.status(404).json({ error: 'Project not found' });
 
-  const token = project.gitlab_token;
-  const gitlabUrl = project.gitlab_url || 'https://gitlab.com';
-
-  if (!token) {
-    return res.json([]);
-  }
-
+  const filePath = join(project.working_dir, 'CLAUDE.md');
   try {
-    let projectIds = [];
-    try { projectIds = JSON.parse(project.gitlab_project_ids); } catch { projectIds = []; }
-
-    const allMRs = [];
-    for (const pid of projectIds) {
-      const encodedId = encodeURIComponent(pid);
-      const response = await fetch(
-        `${gitlabUrl}/api/v4/projects/${encodedId}/merge_requests?state=opened&per_page=20`,
-        { headers: { 'PRIVATE-TOKEN': token } }
-      );
-      if (response.ok) {
-        const mrs = await response.json();
-        allMRs.push(...mrs.map(mr => ({
-          id: mr.iid,
-          title: mr.title,
-          source_branch: mr.source_branch,
-          target_branch: mr.target_branch,
-          web_url: mr.web_url,
-          state: mr.state,
-          author: mr.author?.name || 'Unknown',
-          created_at: mr.created_at,
-          project: pid.split('/').pop(),
-        })));
-      }
+    if (existsSync(filePath)) {
+      const content = readFileSync(filePath, 'utf-8');
+      res.json({ exists: true, content });
+    } else {
+      res.json({ exists: false, content: '' });
     }
-    res.json(allMRs);
   } catch (err) {
-    console.error('GitLab API error:', err.message);
-    res.json([]);
+    res.status(500).json({ error: `Failed to read CLAUDE.md: ${err.message}` });
+  }
+});
+
+app.put('/api/projects/:projectId/claude-md', (req, res) => {
+  const project = projectQueries.getById(req.params.projectId);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+
+  const { content } = req.body;
+  if (typeof content !== 'string') return res.status(400).json({ error: 'Content is required' });
+
+  const filePath = join(project.working_dir, 'CLAUDE.md');
+  try {
+    writeFileSync(filePath, content, 'utf-8');
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: `Failed to write CLAUDE.md: ${err.message}` });
   }
 });
 
@@ -270,5 +289,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\n  Task Manager running at http://localhost:${PORT}\n`);
+  console.log(`\n  Claude Board running at http://localhost:${PORT}\n`);
 });

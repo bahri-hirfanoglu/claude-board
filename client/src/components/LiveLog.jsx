@@ -136,7 +136,7 @@ export default function LiveLog({ task, onClose }) {
           filteredLogs.map((log, i) => (
             <div key={i} className={`py-0.5 ${LOG_COLORS[log.log_type] || 'text-surface-300'}`}>
               <span className="text-surface-600 select-none">
-                {log.created_at ? new Date(log.created_at).toLocaleTimeString('tr-TR') : ''}{' '}
+                {log.created_at ? new Date(log.created_at).toLocaleTimeString('en-US', { hour12: false }) : ''}{' '}
               </span>
               <span className="whitespace-pre-wrap break-words">{log.message}</span>
             </div>
