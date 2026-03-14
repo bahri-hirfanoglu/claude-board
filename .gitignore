@@ -1,0 +1,5 @@
+node_modules/
+tasks.db
+client/dist/
+client/node_modules/
+.env
