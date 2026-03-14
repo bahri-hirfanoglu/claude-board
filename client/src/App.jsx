@@ -12,6 +12,11 @@ import ProjectModal from './components/ProjectModal';
 import ClaudeMdEditor from './components/ClaudeMdEditor';
 import Dashboard from './components/Dashboard';
 
+function getSlugFromPath() {
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+  return path || null;
+}
+
 export default function App() {
   const [projects, setProjects] = useState([]);
   const [currentProject, setCurrentProject] = useState(null);
@@ -27,6 +32,7 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [toasts, setToasts] = useState([]);
   const [showClaudeMd, setShowClaudeMd] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const addToast = useCallback((message, type = 'info') => {
     const id = Date.now();
@@ -34,12 +40,32 @@ export default function App() {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
   }, []);
 
+  // Navigate to a project (update URL)
+  const navigateToProject = useCallback((project) => {
+    setCurrentProject(project);
+    setActivePanel(null);
+    setSelectedTask(null);
+    if (project) {
+      window.history.pushState({ slug: project.slug }, '', `/${project.slug}`);
+    }
+  }, []);
+
+  // Navigate to dashboard (update URL)
+  const navigateToDashboard = useCallback(() => {
+    setCurrentProject(null);
+    setActivePanel(null);
+    setSelectedTask(null);
+    window.history.pushState({}, '', '/');
+  }, []);
+
   const loadProjects = useCallback(async () => {
     try {
       const data = await api.getProjects();
       setProjects(data);
+      return data;
     } catch (err) {
       console.error('Failed to load projects:', err);
+      return [];
     }
   }, []);
 
@@ -54,13 +80,48 @@ export default function App() {
     }
   }, [currentProject, addToast]);
 
+  // Initial load: fetch projects then resolve URL slug
   useEffect(() => {
-    loadProjects();
+    loadProjects().then(data => {
+      const slug = getSlugFromPath();
+      if (slug && data.length > 0) {
+        const match = data.find(p => p.slug === slug);
+        if (match) {
+          setCurrentProject(match);
+          // Replace state so we don't double-push
+          window.history.replaceState({ slug: match.slug }, '', `/${match.slug}`);
+        }
+      }
+      setInitialLoad(false);
+    });
   }, []);
 
   useEffect(() => {
     loadTasks();
   }, [currentProject]);
+
+  // Handle browser back/forward
+  useEffect(() => {
+    const handlePopState = (e) => {
+      const slug = getSlugFromPath();
+      if (slug) {
+        const match = projects.find(p => p.slug === slug);
+        if (match) {
+          setCurrentProject(match);
+          setActivePanel(null);
+          setSelectedTask(null);
+        } else {
+          setCurrentProject(null);
+        }
+      } else {
+        setCurrentProject(null);
+        setActivePanel(null);
+        setSelectedTask(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [projects]);
 
   useEffect(() => {
     socket.on('connect', () => setConnected(true));
@@ -94,7 +155,10 @@ export default function App() {
     socket.on('project:deleted', ({ id }) => {
       setProjects(prev => prev.filter(p => p.id !== id));
       setCurrentProject(prev => {
-        if (prev?.id === id) return null;
+        if (prev?.id === id) {
+          window.history.pushState({}, '', '/');
+          return null;
+        }
         return prev;
       });
     });
@@ -200,7 +264,7 @@ export default function App() {
   const handleCreateProject = async (data) => {
     const project = await api.createProject(data);
     setShowProjectModal(false);
-    setCurrentProject(project);
+    navigateToProject(project);
     addToast('Project created', 'success');
   };
 
@@ -209,6 +273,10 @@ export default function App() {
     setEditingProject(null);
     setShowProjectModal(false);
     addToast('Project updated', 'success');
+    // Update URL if slug changed
+    if (data.slug && currentProject && data.slug !== currentProject.slug) {
+      window.history.replaceState({ slug: data.slug }, '', `/${data.slug}`);
+    }
   };
 
   const handleDeleteProject = () => {
@@ -220,7 +288,7 @@ export default function App() {
       onConfirm: async () => {
         setConfirm(null);
         await api.deleteProject(currentProject.id);
-        setCurrentProject(projects.find(p => p.id !== currentProject.id) || null);
+        navigateToDashboard();
         addToast('Project deleted', 'info');
       },
       onCancel: () => setConfirm(null),
@@ -240,6 +308,14 @@ export default function App() {
       )
     : tasks;
 
+  if (initialLoad) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-surface-950">
+        <div className="text-claude text-2xl animate-pulse">&#10022;</div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Header
@@ -253,8 +329,8 @@ export default function App() {
         onSearchChange={setSearch}
         projects={projects}
         currentProject={currentProject}
-        onSelectProject={(p) => { setCurrentProject(p); setActivePanel(null); setSelectedTask(null); }}
-        onBackToDashboard={() => { setCurrentProject(null); setActivePanel(null); setSelectedTask(null); }}
+        onSelectProject={navigateToProject}
+        onBackToDashboard={navigateToDashboard}
         onNewProject={() => { setEditingProject(null); setShowProjectModal(true); }}
         onEditProject={handleEditProject}
         onDeleteProject={handleDeleteProject}
@@ -274,7 +350,7 @@ export default function App() {
           ) : (
             <Dashboard
               projects={projects}
-              onSelectProject={(p) => { setCurrentProject(p); setActivePanel(null); setSelectedTask(null); }}
+              onSelectProject={navigateToProject}
               onNewProject={() => { setEditingProject(null); setShowProjectModal(true); }}
             />
           )}
