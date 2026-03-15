@@ -57,6 +57,12 @@ export const api = {
   getClaudeMd: (projectId) => request(`/api/projects/${projectId}/claude-md`),
   saveClaudeMd: (projectId, content) => request(`/api/projects/${projectId}/claude-md`, { method: 'PUT', body: JSON.stringify({ content }) }),
 
+  // Snippets
+  getSnippets: (projectId) => request(`/api/projects/${projectId}/snippets`),
+  createSnippet: (projectId, data) => request(`/api/projects/${projectId}/snippets`, { method: 'POST', body: JSON.stringify(data) }),
+  updateSnippet: (id, data) => request(`/api/snippets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteSnippet: (id) => request(`/api/snippets/${id}`, { method: 'DELETE' }),
+
   // Auth
   getAuthStatus: () => request('/api/auth/status'),
   enableAuth: () => request('/api/auth/enable', { method: 'POST' }),

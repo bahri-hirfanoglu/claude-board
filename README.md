@@ -4,7 +4,7 @@
 
 **AI-powered task management platform that orchestrates Claude to autonomously execute development tasks.**
 
-[![Version](https://img.shields.io/badge/version-3.0.0-DA7756?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
+[![Version](https://img.shields.io/badge/version-3.2.0-DA7756?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green?style=flat-square)](https://nodejs.org)
 [![Docker](https://img.shields.io/badge/docker-supported-2496ED?style=flat-square)](Dockerfile)
@@ -26,9 +26,13 @@ Think of it as **Jira meets AI pair programming**: you define what needs to be d
 ## Features
 
 - **Kanban Board** &mdash; Drag-and-drop tasks across Backlog, In Progress, Testing, Done
+- **Multiple Views** &mdash; Switch between Board, List, Timeline, and Summary views
+- **Timeline View** &mdash; Gantt-style visualization of task durations and parallel execution
 - **Autonomous Execution** &mdash; Claude CLI auto-starts when tasks move to In Progress
 - **Live Terminal** &mdash; Watch Claude's tool calls, file edits, and bash commands in real-time with collapsible detail cards
+- **Diff Preview** &mdash; See file change statistics (insertions/deletions) for completed tasks
 - **Review System** &mdash; Approve completed work or request changes with revision feedback (Jira-style)
+- **Context Snippets** &mdash; Define project rules and context that auto-inject into every Claude prompt
 - **Task Queue** &mdash; Enable auto-queue to chain tasks &mdash; when one finishes, the next starts automatically
 - **Live Token Tracking** &mdash; Real-time token consumption and cost updates, saved even if stopped mid-task
 - **Activity Timeline** &mdash; Chronological event feed of all project actions
@@ -140,6 +144,7 @@ claude-board/
       tasks.js                      # Task queries
       stats.js                      # Statistics queries
       activity.js                   # Activity log queries
+      snippets.js                   # Context snippet queries
       index.js                      # Barrel export
     claude/
       runner.js                     # Claude CLI process management
@@ -149,6 +154,7 @@ claude-board/
       projects.js                   # /api/projects
       tasks.js                      # /api/tasks
       stats.js                      # /api/stats, activity, CLAUDE.md
+      snippets.js                   # /api/snippets
 
   client/src/                       # React frontend
     app/                            # Application shell
@@ -166,7 +172,8 @@ claude-board/
       constants.js                  # Shared constants
       formatters.js                 # Number/date formatters
     features/                       # Feature modules
-      board/                        # Kanban board
+      board/                        # Kanban, List, Timeline, Summary views
+      snippets/                     # Context snippets manager
       terminal/                     # Live output viewer
       stats/                        # Statistics panel
       activity/                     # Activity timeline
@@ -231,6 +238,15 @@ User creates task
 | `POST` | `/api/tasks/:id/request-changes` | Request revision with feedback |
 | `GET` | `/api/tasks/:id/revisions` | Get revision history |
 | `GET` | `/api/tasks/:id/logs` | Get task logs |
+
+### Context Snippets
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/projects/:id/snippets` | List project snippets |
+| `POST` | `/api/projects/:id/snippets` | Create snippet |
+| `PUT` | `/api/snippets/:id` | Update snippet |
+| `DELETE` | `/api/snippets/:id` | Delete snippet |
 
 ### Stats & Activity
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, GitCommit, GitPullRequest, ExternalLink, Clock, Cpu, Coins, Activity, RotateCcw, Tag, User, Calendar } from 'lucide-react';
+import { X, GitCommit, GitPullRequest, ExternalLink, Clock, Cpu, Coins, Activity, RotateCcw, Tag, User, Calendar, FileCode } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatTokens, formatDuration } from '../../lib/formatters';
 
@@ -127,8 +127,36 @@ export default function TaskDetailModal({ task, onClose }) {
               </div>
             )}
 
+            {/* Diff Preview */}
+            {detail?.diff_stat && (
+              <div>
+                <h3 className="text-xs font-semibold text-surface-300 mb-2 flex items-center gap-1.5">
+                  <FileCode size={13} className="text-blue-400" />
+                  File Changes
+                </h3>
+                <div className="bg-surface-800/40 rounded-lg px-4 py-3 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-[250px] overflow-y-auto">
+                  {detail.diff_stat.split('\n').map((line, i) => {
+                    const isInsert = line.includes('+') && !line.includes('changed');
+                    const isDelete = line.includes('-') && !line.includes('-->');
+                    const isSummary = line.includes('file') && line.includes('changed');
+                    return (
+                      <div key={i} className={`whitespace-pre ${
+                        isSummary ? 'text-surface-300 font-semibold border-t border-surface-700/50 pt-2 mt-1' : 'text-surface-400'
+                      }`}>
+                        {line.split('').map((ch, j) => {
+                          if (ch === '+') return <span key={j} className="text-emerald-400">{ch}</span>;
+                          if (ch === '-' && !isSummary) return <span key={j} className="text-red-400">{ch}</span>;
+                          return ch;
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* No git info message */}
-            {commits.length === 0 && !d.pr_url && (d.status === 'testing' || d.status === 'done') && (
+            {commits.length === 0 && !d.pr_url && !detail?.diff_stat && (d.status === 'testing' || d.status === 'done') && (
               <div className="text-center text-surface-600 text-xs py-3 bg-surface-800/30 rounded-lg">
                 No git commits or PRs detected for this task
               </div>

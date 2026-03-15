@@ -33,7 +33,7 @@ export const queries = {
   updateTaskNumTurns: { run: (turns, id) => run("UPDATE tasks SET num_turns=?,updated_at=datetime('now','localtime') WHERE id=?", [turns, id]) },
   incrementRateLimitHits: { run: (id) => run("UPDATE tasks SET rate_limit_hits=COALESCE(rate_limit_hits,0)+1,updated_at=datetime('now','localtime') WHERE id=?", [id]) },
   updateTaskClaudeSession: { run: (sid, id) => run("UPDATE tasks SET claude_session_id=?,updated_at=datetime('now','localtime') WHERE id=?", [sid, id]) },
-  updateTaskGitInfo: { run: (commits, prUrl, id) => run("UPDATE tasks SET commits=?,pr_url=?,updated_at=datetime('now','localtime') WHERE id=?", [JSON.stringify(commits), prUrl, id]) },
+  updateTaskGitInfo: { run: (commits, prUrl, diffStat, id) => run("UPDATE tasks SET commits=?,pr_url=?,diff_stat=?,updated_at=datetime('now','localtime') WHERE id=?", [JSON.stringify(commits), prUrl, diffStat, id]) },
 
   // Logs
   getRecentTaskLogs: {

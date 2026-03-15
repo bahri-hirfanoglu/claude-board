@@ -5,13 +5,14 @@ import cors from 'cors';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-import { queries, projectQueries, statsQueries, activityLog } from './db/index.js';
+import { queries, projectQueries, statsQueries, activityLog, snippetQueries } from './db/index.js';
 import { startClaude, stopClaude, isTaskRunning } from './claude/runner.js';
 import { authMiddleware, socketAuthMiddleware, generateApiKey, disableAuth, isAuthEnabled } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import projectRoutes from './routes/projects.js';
 import taskRoutes from './routes/tasks.js';
 import statsRoutes from './routes/stats.js';
+import snippetRoutes from './routes/snippets.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -53,7 +54,8 @@ export function createApp() {
       const updated = queries.getTaskById.get(next.id);
       const workingDir = project.working_dir || rootDir;
       const revisions = queries.getRevisions.all(next.id);
-      startClaude(updated, io, workingDir, project, revisions, {
+      const snippets = snippetQueries.getEnabledByProject(project.id);
+      startClaude(updated, io, workingDir, project, revisions, snippets, {
         queries, statsQueries, activityLog,
         onFinished: (t) => { taskStartLock.delete(t.id); startNextQueued(t.project_id); },
       });
@@ -65,7 +67,7 @@ export function createApp() {
   }
 
   const deps = {
-    queries, projectQueries, statsQueries, activityLog, io,
+    queries, projectQueries, statsQueries, activityLog, snippetQueries, io,
     startClaude, stopClaude, isTaskRunning, startNextQueued, rootDir,
   };
 
@@ -86,6 +88,7 @@ export function createApp() {
   app.use('/api/projects', authMiddleware, projectRoutes(deps));
   app.use('/api', authMiddleware, taskRoutes(deps));
   app.use('/api', authMiddleware, statsRoutes(deps));
+  app.use('/api', authMiddleware, snippetRoutes(deps));
 
   // SPA fallback
   app.get('*', (req, res) => {

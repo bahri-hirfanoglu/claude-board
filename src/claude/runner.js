@@ -83,6 +83,20 @@ function scanGitInfo(workingDir, taskId, queries) {
       commits.forEach(c => { c.url = `${repoUrl}/commit/${c.hash}`; });
     }
 
+    // Capture diff stat
+    let diffStat = null;
+    try {
+      const branch = exec('git branch --show-current');
+      if (branch && branch !== 'main' && branch !== 'master') {
+        // Diff against the base branch (main or master)
+        let baseBranch = 'main';
+        try { exec('git rev-parse --verify main'); } catch { baseBranch = 'master'; }
+        diffStat = exec(`git diff --stat ${baseBranch}...HEAD`);
+      } else if (commits.length > 0) {
+        diffStat = exec(`git diff --stat HEAD~${Math.min(commits.length, 10)}..HEAD`);
+      }
+    } catch {}
+
     // Try to find PR URL (if gh CLI is available)
     let prUrl = null;
     try {
@@ -93,21 +107,21 @@ function scanGitInfo(workingDir, taskId, queries) {
       }
     } catch {}
 
-    queries.updateTaskGitInfo.run(commits, prUrl, taskId);
-    return { commits, prUrl };
+    queries.updateTaskGitInfo.run(commits, prUrl, diffStat, taskId);
+    return { commits, prUrl, diffStat };
   } catch {
     return { commits: [], prUrl: null };
   }
 }
 
-export function startClaude(task, io, workingDir, project = {}, revisions = [], { queries, statsQueries, activityLog, onFinished } = {}) {
+export function startClaude(task, io, workingDir, project = {}, revisions = [], snippets = [], { queries, statsQueries, activityLog, onFinished } = {}) {
   if (activeProcesses.has(task.id) || startingTasks.has(task.id)) {
     addLog(task.id, 'Claude is already running for this task.', 'system', queries, io);
     return;
   }
   startingTasks.add(task.id);
 
-  const prompt = buildPrompt(task, revisions);
+  const prompt = buildPrompt(task, revisions, snippets);
   const model = task.model || 'sonnet';
   const effort = task.thinking_effort || 'medium';
   const permissionMode = project.permission_mode || 'auto-accept';

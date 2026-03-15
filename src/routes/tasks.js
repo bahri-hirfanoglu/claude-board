@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
-export default function taskRoutes({ queries, projectQueries, statsQueries, io, activityLog, startClaude, stopClaude, isTaskRunning, startNextQueued, rootDir }) {
+export default function taskRoutes({ queries, projectQueries, statsQueries, snippetQueries, io, activityLog, startClaude, stopClaude, isTaskRunning, startNextQueued, rootDir }) {
   const router = Router();
 
   router.get('/projects/:projectId/tasks', asyncHandler(async (req, res) => {
@@ -63,7 +63,8 @@ export default function taskRoutes({ queries, projectQueries, statsQueries, io, 
       const project = projectQueries.getById(task.project_id);
       const workingDir = project?.working_dir || rootDir;
       const revisions = queries.getRevisions.all(task.id);
-      startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t) => startNextQueued(t.project_id) });
+      const snippets = snippetQueries?.getEnabledByProject(task.project_id) || [];
+      startClaude(updated, io, workingDir, project, revisions, snippets, { queries, statsQueries, activityLog, onFinished: (t) => startNextQueued(t.project_id) });
       activityLog.add(task.project_id, task.id, 'task_started', `Task started: ${task.title}`);
     }
 
@@ -103,7 +104,8 @@ export default function taskRoutes({ queries, projectQueries, statsQueries, io, 
     const project = projectQueries.getById(task.project_id);
     const workingDir = project?.working_dir || rootDir;
     const revisions = queries.getRevisions.all(task.id);
-    startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t) => startNextQueued(t.project_id) });
+    const snippets = snippetQueries?.getEnabledByProject(task.project_id) || [];
+    startClaude(updated, io, workingDir, project, revisions, snippets, { queries, statsQueries, activityLog, onFinished: (t) => startNextQueued(t.project_id) });
     io.emit('task:updated', { ...updated, is_running: true });
     res.json(updated);
   }));
@@ -122,7 +124,8 @@ export default function taskRoutes({ queries, projectQueries, statsQueries, io, 
     const project = projectQueries.getById(task.project_id);
     const workingDir = project?.working_dir || rootDir;
     const revisions = queries.getRevisions.all(task.id);
-    startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t) => startNextQueued(t.project_id) });
+    const snippets = snippetQueries?.getEnabledByProject(task.project_id) || [];
+    startClaude(updated, io, workingDir, project, revisions, snippets, { queries, statsQueries, activityLog, onFinished: (t) => startNextQueued(t.project_id) });
 
     activityLog.add(task.project_id, task.id, 'revision_requested', `Revision #${revNum}: ${task.title}`, { feedback: feedback.trim() });
     io.emit('task:updated', { ...updated, is_running: isTaskRunning(updated.id) });
@@ -144,6 +147,7 @@ export default function taskRoutes({ queries, projectQueries, statsQueries, io, 
       ...task,
       commits,
       revisions,
+      diff_stat: task.diff_stat || null,
       is_running: isTaskRunning(task.id),
     });
   }));

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Plus, BarChart3, Wifi, WifiOff, Activity, Search, ChevronDown, Settings, Trash2, FolderPlus, FileText, LayoutGrid, Cpu, Coins, Clock } from 'lucide-react';
+import { Plus, BarChart3, Wifi, WifiOff, Activity, Search, ChevronDown, Settings, Trash2, FolderPlus, FileText, LayoutGrid, Cpu, Coins, Clock, BookOpen } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from '../../lib/constants';
 import { formatTokens as fmtTokens } from '../../lib/formatters';
@@ -36,7 +36,7 @@ function ProjectUsage({ tasks }) {
 export default function Header({
   connected, taskCount, runningCount, onNewTask, onToggleStats, statsActive,
   onToggleActivity, activityActive,
-  search, onSearchChange, projects, currentProject, onSelectProject, onBackToDashboard, onNewProject, onEditProject, onDeleteProject, onEditClaudeMd,
+  search, onSearchChange, projects, currentProject, onSelectProject, onBackToDashboard, onNewProject, onEditProject, onDeleteProject, onEditClaudeMd, onEditSnippets,
   tasks
 }) {
   const [showProjectMenu, setShowProjectMenu] = useState(false);
@@ -138,6 +138,13 @@ export default function Header({
                     >
                       <FileText size={12} />
                       CLAUDE.md
+                    </button>
+                    <button
+                      onClick={() => { onEditSnippets?.(); setShowProjectMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-surface-400 hover:bg-surface-700 hover:text-surface-200 transition-colors"
+                    >
+                      <BookOpen size={12} />
+                      Context Snippets
                     </button>
                     <button
                       onClick={() => { onDeleteProject(); setShowProjectMenu(false); }}

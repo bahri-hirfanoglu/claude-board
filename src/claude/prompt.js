@@ -1,4 +1,4 @@
-export function buildPrompt(task, revisions = []) {
+export function buildPrompt(task, revisions = [], snippets = []) {
   const isRevision = revisions.length > 0;
   const revisionNum = task.revision_count || revisions.length;
   const parts = [];
@@ -27,6 +27,16 @@ export function buildPrompt(task, revisions = []) {
     parts.push(`- The previous work is already in the codebase — review what was done and fix/improve based on the feedback.`);
     parts.push(`- Do NOT redo work that was already accepted — only change what the feedback asks for.`);
     parts.push(`- Commit your revision changes with a clear message referencing revision #${revisionNum}.`);
+  }
+
+  // Context snippets
+  if (snippets.length > 0) {
+    parts.push(`\n## Project Context`);
+    for (const s of snippets) {
+      parts.push(`### ${s.title}`);
+      parts.push(s.content);
+      parts.push('');
+    }
   }
 
   parts.push(`\n## Instructions`);

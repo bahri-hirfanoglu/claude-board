@@ -9,6 +9,7 @@ import ReviewModal from '../features/tasks/ReviewModal';
 import TaskDetailModal from '../features/tasks/TaskDetailModal';
 import ProjectModal from '../features/projects/ProjectModal';
 import ClaudeMdEditor from '../features/editor/ClaudeMdEditor';
+import SnippetsModal from '../features/snippets/SnippetsModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import TerminalBottomPanel from './TerminalBottomPanel';
@@ -17,14 +18,14 @@ export default function AppLayout(props) {
   const {
     connected, projects, currentProject, tasks, filteredTasks, terminal,
     selectedTask, activePanel, search, toasts, confirm,
-    showModal, editingTask, showProjectModal, editingProject, showClaudeMd, reviewTask, detailTask,
+    showModal, editingTask, showProjectModal, editingProject, showClaudeMd, showSnippets, reviewTask, detailTask,
     onSearchChange, onSetActivePanel, onSetSelectedTask,
     onNavigateToProject, onNavigateToDashboard,
     onStatusChange, onViewLogs, onCreateTask, onUpdateTask, onDeleteTask,
     onOpenCreateModal, onOpenEditModal, onCloseTaskModal,
     onReviewTask, onApproveTask, onRequestChanges, onCloseReview,
     onCreateProject, onUpdateProject, onDeleteProject, onEditProject, onNewProject, onCloseProjectModal,
-    onEditClaudeMd, onCloseClaudeMd, onViewDetail, onCloseDetail,
+    onEditClaudeMd, onCloseClaudeMd, onEditSnippets, onCloseSnippets, onViewDetail, onCloseDetail,
   } = props;
 
   return (
@@ -50,6 +51,7 @@ export default function AppLayout(props) {
         onEditProject={onEditProject}
         onDeleteProject={onDeleteProject}
         onEditClaudeMd={onEditClaudeMd}
+        onEditSnippets={onEditSnippets}
       />
 
       {/* Main content */}
@@ -115,6 +117,9 @@ export default function AppLayout(props) {
       )}
       {showClaudeMd && currentProject && (
         <ClaudeMdEditor projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseClaudeMd} />
+      )}
+      {showSnippets && currentProject && (
+        <SnippetsModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseSnippets} />
       )}
       {reviewTask && (
         <ReviewModal task={reviewTask} onApprove={onApproveTask} onRequestChanges={onRequestChanges} onClose={onCloseReview} />

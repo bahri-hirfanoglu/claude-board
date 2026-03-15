@@ -67,6 +67,15 @@ db.run(`CREATE TABLE IF NOT EXISTS activity_log (
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS context_snippets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL,
+  title TEXT NOT NULL, content TEXT NOT NULL, enabled INTEGER DEFAULT 1,
+  sort_order INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT (datetime('now','localtime')),
+  updated_at DATETIME DEFAULT (datetime('now','localtime')),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+)`);
+
 // ─── Indexes ───
 [
  'idx_task_logs_task_id ON task_logs(task_id)',
@@ -78,6 +87,7 @@ db.run(`CREATE TABLE IF NOT EXISTS activity_log (
  'idx_task_revisions_task_id ON task_revisions(task_id)',
  'idx_activity_project ON activity_log(project_id)',
  'idx_activity_created ON activity_log(created_at)',
+ 'idx_context_snippets_project ON context_snippets(project_id)',
 ].forEach(idx => db.run(`CREATE INDEX IF NOT EXISTS ${idx}`));
 
 // ─── Migrations ───
@@ -112,6 +122,7 @@ const migrations = [
   ['task_logs', 'meta', 'ALTER TABLE task_logs ADD COLUMN meta TEXT'],
   ['tasks', 'commits', "ALTER TABLE tasks ADD COLUMN commits TEXT DEFAULT '[]'"],
   ['tasks', 'pr_url', 'ALTER TABLE tasks ADD COLUMN pr_url TEXT'],
+  ['tasks', 'diff_stat', "ALTER TABLE tasks ADD COLUMN diff_stat TEXT"],
 ];
 
 for (const [table, col, sql] of migrations) {

@@ -6,3 +6,4 @@ export { projectQueries } from './projects.js';
 export { queries } from './tasks.js';
 export { statsQueries } from './stats.js';
 export { activityLog } from './activity.js';
+export { snippetQueries } from './snippets.js';

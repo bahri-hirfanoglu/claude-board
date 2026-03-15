@@ -1,0 +1,149 @@
+import { useMemo } from 'react';
+import { Activity, CheckCircle, Clock, Cpu, Coins, AlertCircle, BarChart3 } from 'lucide-react';
+import { formatTokens } from '../../lib/formatters';
+import { TYPE_COLORS, COLUMNS } from '../../lib/constants';
+
+function StatCard({ icon: Icon, label, value, sublabel, color = 'text-surface-200' }) {
+  return (
+    <div className="bg-surface-800/50 rounded-lg px-4 py-3">
+      <div className="flex items-center gap-1.5 text-[10px] text-surface-500 mb-1">
+        <Icon size={11} />
+        {label}
+      </div>
+      <div className={`text-xl font-bold ${color}`}>{value}</div>
+      {sublabel && <div className="text-[10px] text-surface-600 mt-0.5">{sublabel}</div>}
+    </div>
+  );
+}
+
+function MiniBar({ label, count, total, color }) {
+  const pct = total > 0 ? (count / total) * 100 : 0;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-surface-400 w-20 text-right">{label}</span>
+      <div className="flex-1 h-5 bg-surface-800/50 rounded overflow-hidden relative">
+        <div className={`h-full ${color} rounded transition-all duration-500`} style={{ width: `${pct}%` }} />
+        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-surface-200">
+          {count}
+        </span>
+      </div>
+      <span className="text-[10px] text-surface-600 w-10">{pct.toFixed(0)}%</span>
+    </div>
+  );
+}
+
+export default function SummaryView({ tasks }) {
+  const stats = useMemo(() => {
+    const byStatus = {};
+    const byType = {};
+    let totalTokens = 0, totalCost = 0, totalTurns = 0, running = 0;
+
+    for (const t of tasks) {
+      byStatus[t.status] = (byStatus[t.status] || 0) + 1;
+      const type = t.task_type || 'feature';
+      byType[type] = (byType[type] || 0) + 1;
+      totalTokens += (t.input_tokens || 0) + (t.output_tokens || 0);
+      totalCost += t.total_cost || 0;
+      totalTurns += t.num_turns || 0;
+      if (t.is_running) running++;
+    }
+
+    const completed = byStatus['done'] || 0;
+    const total = tasks.length;
+    const completionRate = total > 0 ? ((completed / total) * 100).toFixed(0) : 0;
+
+    // Avg duration for completed tasks
+    const completedTasks = tasks.filter(t => t.started_at && t.completed_at);
+    let avgMinutes = 0;
+    if (completedTasks.length > 0) {
+      const totalMs = completedTasks.reduce((sum, t) => sum + (new Date(t.completed_at) - new Date(t.started_at)), 0);
+      avgMinutes = Math.round(totalMs / completedTasks.length / 60000);
+    }
+
+    return { byStatus, byType, totalTokens, totalCost, totalTurns, running, completed, total, completionRate, avgMinutes };
+  }, [tasks]);
+
+  const formatMinutes = (m) => {
+    if (m === 0) return '-';
+    if (m < 60) return `${m}m`;
+    return `${Math.floor(m / 60)}h ${m % 60}m`;
+  };
+
+  const statusColors = {
+    backlog: 'bg-surface-500',
+    in_progress: 'bg-amber-500',
+    testing: 'bg-claude',
+    done: 'bg-emerald-500',
+  };
+
+  return (
+    <div className="h-full overflow-auto p-4 space-y-6">
+      {/* Top stats grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard icon={BarChart3} label="Total Tasks" value={stats.total} />
+        <StatCard icon={CheckCircle} label="Completed" value={`${stats.completionRate}%`} sublabel={`${stats.completed} of ${stats.total}`} color="text-emerald-400" />
+        <StatCard icon={Activity} label="Running" value={stats.running} color={stats.running > 0 ? 'text-amber-400' : 'text-surface-200'} />
+        <StatCard icon={Clock} label="Avg Duration" value={formatMinutes(stats.avgMinutes)} />
+      </div>
+
+      {/* Usage stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <StatCard icon={Cpu} label="Total Tokens" value={formatTokens(stats.totalTokens)} />
+        <StatCard icon={Coins} label="Total Cost" value={stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '-'} />
+        <StatCard icon={Activity} label="Total Turns" value={stats.totalTurns || '-'} />
+      </div>
+
+      {/* Status Distribution */}
+      <div>
+        <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">Status Distribution</h3>
+        {/* Progress bar */}
+        <div className="h-3 rounded-full bg-surface-800 overflow-hidden flex mb-3">
+          {COLUMNS.map(col => {
+            const count = stats.byStatus[col.id] || 0;
+            const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
+            if (pct === 0) return null;
+            return (
+              <div
+                key={col.id}
+                className={`${statusColors[col.id]} transition-all duration-500`}
+                style={{ width: `${pct}%` }}
+                title={`${col.label}: ${count}`}
+              />
+            );
+          })}
+        </div>
+        <div className="space-y-1.5">
+          {COLUMNS.map(col => (
+            <MiniBar
+              key={col.id}
+              label={col.label}
+              count={stats.byStatus[col.id] || 0}
+              total={stats.total}
+              color={statusColors[col.id]}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Type Distribution */}
+      <div>
+        <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">Type Distribution</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {Object.entries(stats.byType).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+            <div key={type} className="flex items-center gap-2 bg-surface-800/30 rounded-lg px-3 py-2">
+              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[type] || ''}`}>{type}</span>
+              <span className="text-sm font-semibold text-surface-200 ml-auto">{count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {tasks.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-surface-500">
+          <AlertCircle size={24} className="mb-2" />
+          <p className="text-sm">No tasks in this project</p>
+        </div>
+      )}
+    </div>
+  );
+}

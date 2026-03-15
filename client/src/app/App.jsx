@@ -26,6 +26,7 @@ export default function App() {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [showClaudeMd, setShowClaudeMd] = useState(false);
+  const [showSnippets, setShowSnippets] = useState(false);
   const [reviewTask, setReviewTask] = useState(null);
   const [detailTask, setDetailTask] = useState(null);
   const [confirm, setConfirm] = useState(null);
@@ -142,6 +143,7 @@ export default function App() {
       showProjectModal={showProjectModal}
       editingProject={editingProject}
       showClaudeMd={showClaudeMd}
+      showSnippets={showSnippets}
       reviewTask={reviewTask}
       detailTask={detailTask}
       // Handlers
@@ -173,6 +175,8 @@ export default function App() {
       onCloseProjectModal={() => { setShowProjectModal(false); setEditingProject(null); }}
       onEditClaudeMd={() => setShowClaudeMd(true)}
       onCloseClaudeMd={() => setShowClaudeMd(false)}
+      onEditSnippets={() => setShowSnippets(true)}
+      onCloseSnippets={() => setShowSnippets(false)}
       onViewDetail={(task) => setDetailTask(task)}
       onCloseDetail={() => setDetailTask(null)}
     />
