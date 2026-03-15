@@ -11,6 +11,8 @@
 
 [Features](#features) &bull; [Quick Start](#quick-start) &bull; [Screenshots](#screenshots) &bull; [Architecture](#architecture) &bull; [API](#api-reference) &bull; [Contributing](#contributing)
 
+![Demo](docs/demo.gif)
+
 </div>
 
 ---
