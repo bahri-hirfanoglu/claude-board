@@ -1,28 +1,28 @@
 import { Router } from 'express';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 export default function projectRoutes({ projectQueries, queries, io, activityLog, stopClaude, isTaskRunning }) {
   const router = Router();
 
-  router.get('/', (req, res) => {
+  router.get('/', asyncHandler(async (req, res) => {
     res.json(projectQueries.getAll());
-  });
+  }));
 
-  router.get('/summary', (req, res) => {
+  router.get('/summary', asyncHandler(async (req, res) => {
     res.json(projectQueries.getSummary());
-  });
+  }));
 
-  router.get('/:id', (req, res) => {
+  router.get('/:id', asyncHandler(async (req, res) => {
     const project = projectQueries.getById(req.params.id);
     if (!project) return res.status(404).json({ error: 'Project not found' });
     res.json(project);
-  });
+  }));
 
-  router.post('/', (req, res) => {
+  router.post('/', asyncHandler(async (req, res) => {
     const { name, slug, working_dir, icon, icon_seed, permission_mode, allowed_tools } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
     if (!slug?.trim()) return res.status(400).json({ error: 'Slug is required' });
     if (!working_dir?.trim()) return res.status(400).json({ error: 'Working directory is required' });
-
     if (projectQueries.getBySlug(slug.trim())) return res.status(400).json({ error: 'Slug already exists' });
 
     const result = projectQueries.create(name.trim(), slug.trim(), working_dir.trim(), icon, icon_seed, permission_mode, allowed_tools);
@@ -30,9 +30,9 @@ export default function projectRoutes({ projectQueries, queries, io, activityLog
     io.emit('project:created', project);
     activityLog.add(project.id, null, 'project_created', `Project created: ${project.name}`);
     res.status(201).json(project);
-  });
+  }));
 
-  router.put('/:id', (req, res) => {
+  router.put('/:id', asyncHandler(async (req, res) => {
     const project = projectQueries.getById(req.params.id);
     if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -48,9 +48,9 @@ export default function projectRoutes({ projectQueries, queries, io, activityLog
     const updated = projectQueries.getById(project.id);
     io.emit('project:updated', updated);
     res.json(updated);
-  });
+  }));
 
-  router.delete('/:id', (req, res) => {
+  router.delete('/:id', asyncHandler(async (req, res) => {
     const project = projectQueries.getById(req.params.id);
     if (!project) return res.status(404).json({ error: 'Project not found' });
     const tasks = queries.getTasksByProject.all(project.id);
@@ -58,7 +58,7 @@ export default function projectRoutes({ projectQueries, queries, io, activityLog
     projectQueries.delete(project.id);
     io.emit('project:deleted', { id: project.id });
     res.json({ ok: true });
-  });
+  }));
 
   return router;
 }

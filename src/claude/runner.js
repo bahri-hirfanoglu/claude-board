@@ -5,6 +5,7 @@ import { handleClaudeEvent } from './events.js';
 const activeProcesses = new Map();
 const activeToolCalls = new Map();
 const taskUsage = new Map();
+const startingTasks = new Set(); // Race condition guard
 
 const MODEL_MAP = { opus: 'opus', sonnet: 'sonnet', haiku: 'haiku' };
 
@@ -33,10 +34,11 @@ function addLog(taskId, message, logType, queries, io, meta = null) {
 }
 
 export function startClaude(task, io, workingDir, project = {}, revisions = [], { queries, statsQueries, activityLog, onFinished } = {}) {
-  if (activeProcesses.has(task.id)) {
+  if (activeProcesses.has(task.id) || startingTasks.has(task.id)) {
     addLog(task.id, 'Claude is already running for this task.', 'system', queries, io);
     return;
   }
+  startingTasks.add(task.id);
 
   const prompt = buildPrompt(task, revisions);
   const model = task.model || 'sonnet';
@@ -86,6 +88,7 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
   });
 
   activeProcesses.set(task.id, proc);
+  startingTasks.delete(task.id);
   let buffer = '';
 
   // Bind addLog for this task
@@ -122,6 +125,7 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
 
   proc.on('close', (code) => {
     activeProcesses.delete(task.id);
+    startingTasks.delete(task.id);
     taskUsage.delete(task.id);
 
     if (code === 0) {
@@ -144,6 +148,7 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
 
   proc.on('error', (err) => {
     activeProcesses.delete(task.id);
+    startingTasks.delete(task.id);
     taskUsage.delete(task.id);
     taskAddLog(task.id, `Failed to start Claude: ${err.message}`, 'error');
     io.emit('claude:finished', { taskId: task.id, exitCode: -1 });

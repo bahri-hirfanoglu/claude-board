@@ -4,7 +4,7 @@ import { useProjects } from '../hooks/useProjects';
 import { useTasks } from '../hooks/useTasks';
 import { useTerminalTabs } from '../hooks/useTerminalTabs';
 import { useToast } from '../hooks/useToast';
-import { api } from '../lib/api';
+import { api, onApiError } from '../lib/api';
 import { socket } from '../lib/socket';
 import AppLayout from './AppLayout';
 
@@ -14,6 +14,9 @@ export default function App() {
   const { projects, currentProject, initialLoad, navigateToProject, navigateToDashboard } = useProjects();
   const { tasks } = useTasks(currentProject, addToast);
   const terminal = useTerminalTabs(tasks);
+
+  // Global API error -> toast
+  useEffect(() => onApiError(msg => addToast(msg, 'error')), [addToast]);
 
   // UI state
   const [activePanel, setActivePanel] = useState(null);

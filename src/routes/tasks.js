@@ -1,27 +1,23 @@
 import { Router } from 'express';
-import { join } from 'path';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 export default function taskRoutes({ queries, projectQueries, statsQueries, io, activityLog, startClaude, stopClaude, isTaskRunning, startNextQueued, rootDir }) {
   const router = Router();
 
-  // Get tasks by project
-  router.get('/projects/:projectId/tasks', (req, res) => {
+  router.get('/projects/:projectId/tasks', asyncHandler(async (req, res) => {
     const tasks = queries.getTasksByProject.all(req.params.projectId);
     res.json(tasks.map(t => ({ ...t, is_running: isTaskRunning(t.id) })));
-  });
+  }));
 
-  // Get single task
-  router.get('/tasks/:id', (req, res) => {
+  router.get('/tasks/:id', asyncHandler(async (req, res) => {
     const task = queries.getTaskById.get(req.params.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
     res.json({ ...task, is_running: isTaskRunning(task.id) });
-  });
+  }));
 
-  // Create task
-  router.post('/projects/:projectId/tasks', (req, res) => {
+  router.post('/projects/:projectId/tasks', asyncHandler(async (req, res) => {
     const project = projectQueries.getById(req.params.projectId);
     if (!project) return res.status(404).json({ error: 'Project not found' });
-
     const { title, description = '', priority = 0, task_type = 'feature', acceptance_criteria = '', model = 'sonnet', thinking_effort = 'medium' } = req.body;
     if (!title?.trim()) return res.status(400).json({ error: 'Title is required' });
 
@@ -30,10 +26,9 @@ export default function taskRoutes({ queries, projectQueries, statsQueries, io, 
     io.emit('task:created', task);
     activityLog.add(project.id, task.id, 'task_created', `Task created: ${title.trim()}`);
     res.status(201).json(task);
-  });
+  }));
 
-  // Update task
-  router.put('/tasks/:id', (req, res) => {
+  router.put('/tasks/:id', asyncHandler(async (req, res) => {
     const task = queries.getTaskById.get(req.params.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
     const { title, description, priority, task_type, acceptance_criteria, model, thinking_effort } = req.body;
@@ -45,16 +40,13 @@ export default function taskRoutes({ queries, projectQueries, statsQueries, io, 
     const updated = queries.getTaskById.get(task.id);
     io.emit('task:updated', updated);
     res.json(updated);
-  });
+  }));
 
-  // Change status
-  router.patch('/tasks/:id/status', (req, res) => {
+  router.patch('/tasks/:id/status', asyncHandler(async (req, res) => {
     const task = queries.getTaskById.get(req.params.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
-
     const { status } = req.body;
-    const validStatuses = ['backlog', 'in_progress', 'testing', 'done'];
-    if (!validStatuses.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+    if (!['backlog', 'in_progress', 'testing', 'done'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
 
     const prevStatus = task.status;
     queries.updateTaskStatus.run(status, task.id);
@@ -71,47 +63,37 @@ export default function taskRoutes({ queries, projectQueries, statsQueries, io, 
       const project = projectQueries.getById(task.project_id);
       const workingDir = project?.working_dir || rootDir;
       const revisions = queries.getRevisions.all(task.id);
-      startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t, code) => startNextQueued(t.project_id) });
+      startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t) => startNextQueued(t.project_id) });
       activityLog.add(task.project_id, task.id, 'task_started', `Task started: ${task.title}`);
     }
 
-    if (prevStatus === 'in_progress' && status !== 'in_progress') {
-      stopClaude(task.id, io, queries);
-    }
-
-    // Auto-queue: if task moved to done/testing, try start next
-    if ((status === 'done' || status === 'testing') && prevStatus === 'in_progress') {
-      startNextQueued(task.project_id);
-    }
+    if (prevStatus === 'in_progress' && status !== 'in_progress') stopClaude(task.id, io, queries);
+    if ((status === 'done' || status === 'testing') && prevStatus === 'in_progress') startNextQueued(task.project_id);
 
     io.emit('task:updated', { ...updated, is_running: isTaskRunning(updated.id) });
     res.json(updated);
-  });
+  }));
 
-  // Delete task
-  router.delete('/tasks/:id', (req, res) => {
+  router.delete('/tasks/:id', asyncHandler(async (req, res) => {
     const task = queries.getTaskById.get(req.params.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
     if (isTaskRunning(task.id)) stopClaude(task.id, io, queries);
     queries.deleteTask.run(task.id);
     io.emit('task:deleted', { id: task.id });
     res.json({ ok: true });
-  });
+  }));
 
-  // Get logs
-  router.get('/tasks/:id/logs', (req, res) => {
+  router.get('/tasks/:id/logs', asyncHandler(async (req, res) => {
     const limit = parseInt(req.query.limit) || 500;
     res.json(queries.getRecentTaskLogs.all(req.params.id, limit).reverse());
-  });
+  }));
 
-  // Stop task
-  router.post('/tasks/:id/stop', (req, res) => {
+  router.post('/tasks/:id/stop', asyncHandler(async (req, res) => {
     stopClaude(parseInt(req.params.id), io, queries);
     res.json({ ok: true });
-  });
+  }));
 
-  // Restart task
-  router.post('/tasks/:id/restart', (req, res) => {
+  router.post('/tasks/:id/restart', asyncHandler(async (req, res) => {
     const task = queries.getTaskById.get(req.params.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
     stopClaude(task.id, io, queries);
@@ -121,39 +103,35 @@ export default function taskRoutes({ queries, projectQueries, statsQueries, io, 
     const project = projectQueries.getById(task.project_id);
     const workingDir = project?.working_dir || rootDir;
     const revisions = queries.getRevisions.all(task.id);
-    startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t, code) => startNextQueued(t.project_id) });
+    startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t) => startNextQueued(t.project_id) });
     io.emit('task:updated', { ...updated, is_running: true });
     res.json(updated);
-  });
+  }));
 
-  // Request changes (revision)
-  router.post('/tasks/:id/request-changes', (req, res) => {
+  router.post('/tasks/:id/request-changes', asyncHandler(async (req, res) => {
     const task = queries.getTaskById.get(req.params.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
     const { feedback } = req.body;
     if (!feedback?.trim()) return res.status(400).json({ error: 'Feedback is required' });
 
     queries.incrementRevisionCount.run(task.id);
-    const updatedTask = queries.getTaskById.get(task.id);
-    const revisionNumber = updatedTask.revision_count || 1;
-    queries.addRevision.run(task.id, revisionNumber, feedback.trim());
+    const revNum = (queries.getTaskById.get(task.id).revision_count) || 1;
+    queries.addRevision.run(task.id, revNum, feedback.trim());
     queries.updateTaskStatus.run('in_progress', task.id);
     const updated = queries.getTaskById.get(task.id);
-
     const project = projectQueries.getById(task.project_id);
     const workingDir = project?.working_dir || rootDir;
     const revisions = queries.getRevisions.all(task.id);
-    startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t, code) => startNextQueued(t.project_id) });
+    startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t) => startNextQueued(t.project_id) });
 
-    activityLog.add(task.project_id, task.id, 'revision_requested', `Revision #${revisionNumber} requested: ${task.title}`, { feedback: feedback.trim() });
+    activityLog.add(task.project_id, task.id, 'revision_requested', `Revision #${revNum}: ${task.title}`, { feedback: feedback.trim() });
     io.emit('task:updated', { ...updated, is_running: isTaskRunning(updated.id) });
     res.json(updated);
-  });
+  }));
 
-  // Get revisions
-  router.get('/tasks/:id/revisions', (req, res) => {
+  router.get('/tasks/:id/revisions', asyncHandler(async (req, res) => {
     res.json(queries.getRevisions.all(req.params.id));
-  });
+  }));
 
   return router;
 }

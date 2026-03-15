@@ -2,31 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { api } from '../../lib/api';
-
+import { formatTokens, formatTimeAgo as timeAgo } from '../../lib/formatters';
 import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
-
-function formatTokens(n) {
-  if (!n || n === 0) return null;
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return String(n);
-}
-
-function timeAgo(dateStr) {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now - date;
-  const mins = Math.floor(diffMs / 60000);
-  const hours = Math.floor(mins / 60);
-  const days = Math.floor(hours / 24);
-
-  if (days > 30) return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  if (days > 0) return `${days}d ago`;
-  if (hours > 0) return `${hours}h ago`;
-  if (mins > 0) return `${mins}m ago`;
-  return 'just now';
-}
 
 function MiniStatusBar({ backlog, active, testing, done, total }) {
   if (total === 0) return null;

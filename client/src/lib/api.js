@@ -1,13 +1,26 @@
 const BASE = import.meta.env.DEV ? 'http://localhost:4000' : '';
 
+// Global error listeners
+const errorListeners = new Set();
+export function onApiError(fn) { errorListeners.add(fn); return () => errorListeners.delete(fn); }
+function notifyError(msg) { errorListeners.forEach(fn => fn(msg)); }
+
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
+  let res;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+  } catch (e) {
+    notifyError('Network error — server unreachable');
+    throw e;
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || 'Request failed');
+    const msg = err.error || `Request failed (${res.status})`;
+    if (res.status >= 500) notifyError(msg);
+    throw new Error(msg);
   }
   return res.json();
 }
@@ -42,4 +55,9 @@ export const api = {
   // CLAUDE.md
   getClaudeMd: (projectId) => request(`/api/projects/${projectId}/claude-md`),
   saveClaudeMd: (projectId, content) => request(`/api/projects/${projectId}/claude-md`, { method: 'PUT', body: JSON.stringify({ content }) }),
+
+  // Auth
+  getAuthStatus: () => request('/api/auth/status'),
+  enableAuth: () => request('/api/auth/enable', { method: 'POST' }),
+  disableAuth: () => request('/api/auth/disable', { method: 'POST' }),
 };

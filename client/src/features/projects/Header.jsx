@@ -2,13 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { Plus, BarChart3, Wifi, WifiOff, Activity, Search, ChevronDown, Settings, Trash2, FolderPlus, FileText, LayoutGrid, Cpu, Coins, Clock } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from '../../lib/constants';
-
-function fmtTokens(n) {
-  if (!n) return '0';
-  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
-  return String(n);
-}
+import { formatTokens as fmtTokens } from '../../lib/formatters';
 
 function ProjectUsage({ tasks }) {
   const totals = useMemo(() => {

@@ -95,8 +95,8 @@ export default function StatsPanel({ projectId, onClose }) {
     try {
       const data = await api.getStats(projectId);
       setStats(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // API error handler shows toast
     } finally {
       setLoading(false);
     }
@@ -134,7 +134,7 @@ export default function StatsPanel({ projectId, onClose }) {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
         {loading && !stats ? (
-          <div className="text-center text-surface-600 py-12 text-sm">Loading...</div>
+          <div className="flex items-center justify-center py-12"><div className="w-5 h-5 rounded-full border-2 border-claude/20 border-t-claude animate-spin" /></div>
         ) : (
           <>
             {/* Summary Cards */}

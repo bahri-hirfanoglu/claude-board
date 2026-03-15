@@ -1,58 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw } from 'lucide-react';
+import { formatDuration, formatTokens } from '../../lib/formatters';
+import { PRIORITY_COLORS as priorityColors, PRIORITY_LABELS as priorityLabels, TYPE_COLORS as typeColors, MODEL_COLORS as modelColors, COLUMNS } from '../../lib/constants';
 
-const priorityColors = {
-  0: '',
-  1: 'border-l-yellow-500',
-  2: 'border-l-orange-500',
-  3: 'border-l-red-500',
-};
-
-const priorityLabels = ['', 'Low', 'Medium', 'High'];
-
-const typeColors = {
-  feature: 'bg-blue-500/15 text-blue-400',
-  bugfix: 'bg-red-500/15 text-red-400',
-  refactor: 'bg-purple-500/15 text-purple-400',
-  docs: 'bg-green-500/15 text-green-400',
-  test: 'bg-yellow-500/15 text-yellow-400',
-  chore: 'bg-surface-500/15 text-surface-400',
-};
-
-const modelColors = {
-  haiku: 'text-green-400',
-  sonnet: 'text-blue-400',
-  opus: 'text-purple-400',
-};
-
-const STATUS_OPTIONS = [
-  { id: 'backlog', label: 'Backlog', dot: 'bg-surface-400' },
-  { id: 'in_progress', label: 'In Progress', dot: 'bg-amber-400' },
-  { id: 'testing', label: 'Testing', dot: 'bg-claude' },
-  { id: 'done', label: 'Done', dot: 'bg-emerald-400' },
-];
-
-function formatDuration(startedAt, completedAt) {
-  if (!startedAt) return null;
-  const start = new Date(startedAt);
-  const end = completedAt ? new Date(completedAt) : new Date();
-  const diffMs = end - start;
-  const mins = Math.floor(diffMs / 60000);
-  const hours = Math.floor(mins / 60);
-  const days = Math.floor(hours / 24);
-
-  if (days > 0) return `${days}d ${hours % 24}h`;
-  if (hours > 0) return `${hours}h ${mins % 60}m`;
-  if (mins > 0) return `${mins}m`;
-  return '<1m';
-}
-
-function formatTokens(n) {
-  if (!n || n === 0) return null;
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return String(n);
-}
+const STATUS_OPTIONS = COLUMNS.map(c => ({ id: c.id, label: c.label, dot: c.bg }));
 
 export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange, onReview }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -150,7 +101,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
             )}
           </div>
 
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-0.5 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             {task.status === 'testing' && onReview && (
               <button
                 onClick={(e) => { e.stopPropagation(); onReview(); }}

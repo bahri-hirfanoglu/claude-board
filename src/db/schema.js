@@ -67,9 +67,16 @@ db.run(`CREATE TABLE IF NOT EXISTS activity_log (
 )`);
 
 // ─── Indexes ───
-['idx_task_logs_task_id ON task_logs(task_id)', 'idx_tasks_status ON tasks(status)',
- 'idx_tasks_project ON tasks(project_id)', 'idx_task_revisions_task_id ON task_revisions(task_id)',
- 'idx_activity_project ON activity_log(project_id)', 'idx_activity_created ON activity_log(created_at)',
+[
+ 'idx_task_logs_task_id ON task_logs(task_id)',
+ 'idx_tasks_status ON tasks(status)',
+ 'idx_tasks_project ON tasks(project_id)',
+ 'idx_tasks_project_status ON tasks(project_id, status)',
+ 'idx_tasks_created ON tasks(created_at)',
+ 'idx_projects_slug ON projects(slug)',
+ 'idx_task_revisions_task_id ON task_revisions(task_id)',
+ 'idx_activity_project ON activity_log(project_id)',
+ 'idx_activity_created ON activity_log(created_at)',
 ].forEach(idx => db.run(`CREATE INDEX IF NOT EXISTS ${idx}`));
 
 // ─── Migrations ───
