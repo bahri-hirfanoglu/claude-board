@@ -569,8 +569,8 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
   const totalTokens = (task.input_tokens || 0) + (task.output_tokens || 0);
   const isBottom = layout === 'bottom';
   const panelClass = isBottom
-    ? 'flex flex-col bg-surface-900 border-t border-surface-800 h-full'
-    : 'w-full md:w-[540px] flex-shrink-0 flex flex-col bg-surface-900 md:border-l border-surface-800';
+    ? 'relative flex flex-col bg-surface-900 border-t border-surface-800 h-full overflow-hidden'
+    : 'relative w-full md:w-[540px] h-full flex-shrink-0 flex flex-col bg-surface-900 md:border-l border-surface-800 overflow-hidden';
 
   const FILTERS = [
     { id: 'all', label: 'All', count: null },
@@ -675,7 +675,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
 
       {/* ═══ Content ═══ */}
       <div ref={containerRef} onScroll={handleScroll}
-        className={`flex-1 overflow-y-auto px-3 py-2 text-xs leading-relaxed ${isBottom ? 'min-h-0' : ''}`}>
+        className="flex-1 min-h-0 overflow-y-auto px-3 py-2 text-xs leading-relaxed">
 
         {groupedEntries.length === 0 ? (
           <div className="text-center text-surface-600 py-12">

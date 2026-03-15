@@ -76,7 +76,7 @@ export default function AppLayout(props) {
 
           {/* Side panels — full overlay on mobile, side panel on desktop */}
           {activePanel === 'logs' && terminal.activeTab && terminal.layout === 'side' && (
-            <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto">
+            <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto h-full">
               <LiveTerminal
                 key={terminal.activeTabId}
                 task={terminal.activeTab}
@@ -87,12 +87,12 @@ export default function AppLayout(props) {
             </div>
           )}
           {activePanel === 'stats' && currentProject && (
-            <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto">
+            <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto h-full">
               <StatsPanel projectId={currentProject.id} onClose={() => onSetActivePanel(null)} />
             </div>
           )}
           {activePanel === 'activity' && currentProject && (
-            <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto">
+            <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto h-full">
               <ActivityTimeline projectId={currentProject.id} onClose={() => onSetActivePanel(null)} />
             </div>
           )}
