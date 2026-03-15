@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, GitCommit, GitPullRequest, ExternalLink, Clock, Cpu, Coins, Activity, RotateCcw, Tag, User, Calendar, FileCode } from 'lucide-react';
+import { X, GitCommit, GitPullRequest, ExternalLink, Clock, Cpu, Coins, Activity, RotateCcw, Tag, User, Calendar, FileCode, Paperclip, Image, FileText, Trash2 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatTokens, formatDuration } from '../../lib/formatters';
 
@@ -10,6 +10,7 @@ export default function TaskDetailModal({ task, onClose }) {
   useEffect(() => {
     api.getTaskDetail(task.id).then(d => {
       setDetail(d);
+      setAttachments(d.attachments || []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [task.id]);
@@ -17,6 +18,7 @@ export default function TaskDetailModal({ task, onClose }) {
   const d = detail || task;
   const commits = detail?.commits || [];
   const revisions = detail?.revisions || [];
+  const [attachments, setAttachments] = useState(detail?.attachments || []);
   const totalTokens = (d.input_tokens || 0) + (d.output_tokens || 0);
   const duration = formatDuration(d.started_at, d.completed_at);
 
@@ -148,6 +150,54 @@ export default function TaskDetailModal({ task, onClose }) {
                           if (ch === '-' && !isSummary) return <span key={j} className="text-red-400">{ch}</span>;
                           return ch;
                         })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Attachments */}
+            {attachments.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-surface-300 mb-2 flex items-center gap-1.5">
+                  <Paperclip size={13} className="text-cyan-400" />
+                  Attachments ({attachments.length})
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {attachments.map(a => {
+                    const isImage = a.mime_type?.startsWith('image/');
+                    return (
+                      <div key={a.id} className="bg-surface-800/40 rounded-lg overflow-hidden group relative">
+                        {isImage ? (
+                          <a href={`/uploads/${a.filename}`} target="_blank" rel="noopener noreferrer" className="block">
+                            <img src={`/uploads/${a.filename}`} alt={a.original_name} className="w-full h-24 object-cover" />
+                            <div className="px-2 py-1.5">
+                              <p className="text-[10px] text-surface-300 truncate">{a.original_name}</p>
+                            </div>
+                          </a>
+                        ) : (
+                          <a href={`/uploads/${a.filename}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-3">
+                            <FileText size={16} className="text-surface-400 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-surface-300 truncate">{a.original_name}</p>
+                              <p className="text-[10px] text-surface-600">{(a.size / 1024).toFixed(1)}KB</p>
+                            </div>
+                          </a>
+                        )}
+                        <button
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            try {
+                              await api.deleteAttachment(a.id);
+                              setAttachments(prev => prev.filter(x => x.id !== a.id));
+                            } catch {}
+                          }}
+                          className="absolute top-1 right-1 p-1 rounded bg-black/60 text-surface-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                          title="Delete attachment"
+                        >
+                          <Trash2 size={11} />
+                        </button>
                       </div>
                     );
                   })}

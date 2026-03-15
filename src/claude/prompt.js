@@ -1,4 +1,4 @@
-export function buildPrompt(task, revisions = [], snippets = []) {
+export function buildPrompt(task, revisions = [], snippets = [], attachments = []) {
   const isRevision = revisions.length > 0;
   const revisionNum = task.revision_count || revisions.length;
   const parts = [];
@@ -41,6 +41,20 @@ export function buildPrompt(task, revisions = [], snippets = []) {
       parts.push(s.content);
       parts.push('');
     }
+  }
+
+  // Attachments
+  if (attachments.length > 0) {
+    parts.push(`\n## Attached Files`);
+    parts.push(`The following files have been provided as reference for this task:`);
+    for (const a of attachments) {
+      parts.push(
+        `- **${a.original_name}** (${a.mime_type}, ${(a.size / 1024).toFixed(1)}KB) → \`.claude-attachments/${a.filename}\``,
+      );
+    }
+    parts.push(
+      `\nThese files are available in the \`.claude-attachments/\` directory relative to the working directory. Read them as needed for context.`,
+    );
   }
 
   parts.push(`\n## Instructions`);

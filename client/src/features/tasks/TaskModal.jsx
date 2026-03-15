@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Sparkles, Cpu, Zap, Layers, ChevronDown } from 'lucide-react';
+import { X, Sparkles, Cpu, Zap, Layers, ChevronDown, Paperclip, Image, FileText, Trash2 } from 'lucide-react';
 
 const TASK_TYPES = [
   { value: 'feature', label: 'Feature', color: 'bg-blue-500/20 text-blue-300' },
@@ -38,6 +38,8 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
   const [model, setModel] = useState(task?.model || 'sonnet');
   const [thinkingEffort, setThinkingEffort] = useState(task?.thinking_effort || 'medium');
   const [loading, setLoading] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState([]);
+  const fileInputRef = useRef(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [templateVars, setTemplateVars] = useState({});
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
@@ -117,6 +119,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
         acceptance_criteria: acceptanceCriteria.trim(),
         model,
         thinking_effort: thinkingEffort,
+        _files: attachedFiles.length > 0 ? attachedFiles : undefined,
       });
     } catch (err) {
       console.error(err);
@@ -279,6 +282,62 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
               rows={3}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none"
             />
+          </div>
+
+          {/* Attachments */}
+          <div>
+            <label className="block text-xs font-medium text-surface-400 mb-1.5">
+              <span className="flex items-center gap-1">
+                <Paperclip size={11} />
+                Attachments
+                <span className="text-surface-600 font-normal">- images, PDFs, text files</span>
+              </span>
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.txt,.md,.csv,.json,.xml"
+              className="hidden"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                setAttachedFiles(prev => [...prev, ...files]);
+                e.target.value = '';
+              }}
+            />
+            {attachedFiles.length > 0 && (
+              <div className="space-y-1 mb-2">
+                {attachedFiles.map((file, i) => {
+                  const isImage = file.type?.startsWith('image/');
+                  return (
+                    <div key={i} className="flex items-center gap-2 bg-surface-800/60 rounded-lg px-2.5 py-1.5 group">
+                      {isImage ? (
+                        <Image size={12} className="text-blue-400 flex-shrink-0" />
+                      ) : (
+                        <FileText size={12} className="text-surface-400 flex-shrink-0" />
+                      )}
+                      <span className="text-xs text-surface-300 truncate flex-1">{file.name}</span>
+                      <span className="text-[10px] text-surface-600">{(file.size / 1024).toFixed(0)}KB</span>
+                      <button
+                        type="button"
+                        onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))}
+                        className="p-0.5 rounded hover:bg-surface-700 text-surface-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-surface-700 text-xs text-surface-400 hover:text-claude hover:border-claude/50 transition-colors w-full justify-center"
+            >
+              <Paperclip size={12} />
+              {attachedFiles.length > 0 ? 'Add More Files' : 'Attach Files'}
+            </button>
           </div>
 
           {/* Model & Effort Row */}

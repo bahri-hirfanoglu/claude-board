@@ -77,6 +77,17 @@ db.run(`CREATE TABLE IF NOT EXISTS context_snippets (
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS task_attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id INTEGER NOT NULL,
+  filename TEXT NOT NULL,
+  original_name TEXT NOT NULL,
+  mime_type TEXT,
+  size INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT (datetime('now','localtime')),
+  FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+)`);
+
 db.run(`CREATE TABLE IF NOT EXISTS prompt_templates (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   project_id INTEGER NOT NULL,
@@ -104,6 +115,7 @@ db.run(`CREATE TABLE IF NOT EXISTS prompt_templates (
   'idx_activity_project ON activity_log(project_id)',
   'idx_activity_created ON activity_log(created_at)',
   'idx_context_snippets_project ON context_snippets(project_id)',
+  'idx_task_attachments_task ON task_attachments(task_id)',
   'idx_prompt_templates_project ON prompt_templates(project_id)',
 ].forEach((idx) => db.run(`CREATE INDEX IF NOT EXISTS ${idx}`));
 

@@ -93,8 +93,27 @@ export default function App() {
     await api.updateStatus(taskId, newStatus);
   }, [tasks, addToast]);
 
-  const handleCreateTask = useCallback(async (data) => { await api.createTask(currentProject.id, data); setShowModal(false); addToast('Task created', 'success'); }, [currentProject, addToast]);
-  const handleUpdateTask = useCallback(async (data) => { await api.updateTask(editingTask.id, data); setEditingTask(null); setShowModal(false); addToast('Task updated', 'success'); }, [editingTask, addToast]);
+  const handleCreateTask = useCallback(async (data) => {
+    const files = data._files;
+    delete data._files;
+    const task = await api.createTask(currentProject.id, data);
+    if (files?.length > 0) {
+      try { await api.uploadAttachments(task.id, files); } catch (e) { addToast('File upload failed: ' + e.message, 'error'); }
+    }
+    setShowModal(false);
+    addToast('Task created', 'success');
+  }, [currentProject, addToast]);
+  const handleUpdateTask = useCallback(async (data) => {
+    const files = data._files;
+    delete data._files;
+    await api.updateTask(editingTask.id, data);
+    if (files?.length > 0) {
+      try { await api.uploadAttachments(editingTask.id, files); } catch (e) { addToast('File upload failed: ' + e.message, 'error'); }
+    }
+    setEditingTask(null);
+    setShowModal(false);
+    addToast('Task updated', 'success');
+  }, [editingTask, addToast]);
   const handleDeleteTask = useCallback((task) => {
     setConfirm({ title: 'Delete Task', message: `Are you sure you want to delete "${task.title}"?`, danger: true,
       onConfirm: async () => { setConfirm(null); await api.deleteTask(task.id); addToast('Task deleted', 'info'); },

@@ -14,7 +14,11 @@ client/dist/
 # Claude
 .claude/
 
+# Uploads
+uploads/
+
 # OS
 .DS_Store
 Thumbs.db
 scripts/
+logs/

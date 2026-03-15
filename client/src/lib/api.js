@@ -69,6 +69,17 @@ export const api = {
   updateTemplate: (id, data) => request(`/api/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTemplate: (id) => request(`/api/templates/${id}`, { method: 'DELETE' }),
 
+  // Attachments
+  uploadAttachments: async (taskId, files) => {
+    const formData = new FormData();
+    for (const file of files) formData.append('files', file);
+    const res = await fetch(`${BASE}/api/tasks/${taskId}/attachments`, { method: 'POST', body: formData });
+    if (!res.ok) throw new Error('Upload failed');
+    return res.json();
+  },
+  getAttachments: (taskId) => request(`/api/tasks/${taskId}/attachments`),
+  deleteAttachment: (id) => request(`/api/attachments/${id}`, { method: 'DELETE' }),
+
   // Auth
   getAuthStatus: () => request('/api/auth/status'),
   enableAuth: () => request('/api/auth/enable', { method: 'POST' }),

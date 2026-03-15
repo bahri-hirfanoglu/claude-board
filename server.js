@@ -17,7 +17,7 @@ server.listen(PORT, () => {
   console.log('');
   console.log(`  ${c.magenta}${c.bold}╔══════════════════════════════════════╗${c.reset}`);
   console.log(
-    `  ${c.magenta}${c.bold}║${c.reset}   ${c.cyan}${c.bold}Claude Board${c.reset} ${c.gray}v3.3.0${c.reset}               ${c.magenta}${c.bold}║${c.reset}`,
+    `  ${c.magenta}${c.bold}║${c.reset}   ${c.cyan}${c.bold}Claude Board${c.reset} ${c.gray}v3.4.0${c.reset}               ${c.magenta}${c.bold}║${c.reset}`,
   );
   console.log(`  ${c.magenta}${c.bold}╚══════════════════════════════════════╝${c.reset}`);
   console.log('');

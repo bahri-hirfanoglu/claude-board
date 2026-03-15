@@ -6,6 +6,7 @@ export default function taskRoutes({
   projectQueries,
   statsQueries,
   snippetQueries,
+  attachmentQueries,
   io,
   activityLog,
   startClaude,
@@ -113,10 +114,12 @@ export default function taskRoutes({
         const workingDir = project?.working_dir || rootDir;
         const revisions = queries.getRevisions.all(task.id);
         const snippets = snippetQueries?.getEnabledByProject(task.project_id) || [];
+        const taskAttachments = attachmentQueries?.getByTask(task.id) || [];
         startClaude(updated, io, workingDir, project, revisions, snippets, {
           queries,
           statsQueries,
           activityLog,
+          attachments: taskAttachments,
           onFinished: (t) => startNextQueued(t.project_id),
         });
         activityLog.add(task.project_id, task.id, 'task_started', `Task started: ${task.title}`);
@@ -171,10 +174,12 @@ export default function taskRoutes({
       const workingDir = project?.working_dir || rootDir;
       const revisions = queries.getRevisions.all(task.id);
       const snippets = snippetQueries?.getEnabledByProject(task.project_id) || [];
+      const taskAttachments = attachmentQueries?.getByTask(task.id) || [];
       startClaude(updated, io, workingDir, project, revisions, snippets, {
         queries,
         statsQueries,
         activityLog,
+        attachments: taskAttachments,
         onFinished: (t) => startNextQueued(t.project_id),
       });
       io.emit('task:updated', { ...updated, is_running: true });
@@ -199,10 +204,12 @@ export default function taskRoutes({
       const workingDir = project?.working_dir || rootDir;
       const revisions = queries.getRevisions.all(task.id);
       const snippets = snippetQueries?.getEnabledByProject(task.project_id) || [];
+      const taskAttachments = attachmentQueries?.getByTask(task.id) || [];
       startClaude(updated, io, workingDir, project, revisions, snippets, {
         queries,
         statsQueries,
         activityLog,
+        attachments: taskAttachments,
         onFinished: (t) => startNextQueued(t.project_id),
       });
 
@@ -228,6 +235,7 @@ export default function taskRoutes({
       const task = queries.getTaskById.get(req.params.id);
       if (!task) return res.status(404).json({ error: 'Task not found' });
       const revisions = queries.getRevisions.all(req.params.id);
+      const taskAttachments = attachmentQueries?.getByTask(req.params.id) || [];
       let commits = [];
       try {
         commits = JSON.parse(task.commits || '[]');
@@ -236,6 +244,7 @@ export default function taskRoutes({
         ...task,
         commits,
         revisions,
+        attachments: taskAttachments,
         diff_stat: task.diff_stat || null,
         is_running: isTaskRunning(task.id),
       });

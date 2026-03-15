@@ -8,3 +8,4 @@ export { statsQueries } from './stats.js';
 export { activityLog } from './activity.js';
 export { snippetQueries } from './snippets.js';
 export { templateQueries } from './templates.js';
+export { attachmentQueries } from './attachments.js';

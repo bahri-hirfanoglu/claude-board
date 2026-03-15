@@ -6,7 +6,15 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { platform, hostname, totalmem, freemem, cpus } from 'os';
 
-import { queries, projectQueries, statsQueries, activityLog, snippetQueries, templateQueries } from './db/index.js';
+import {
+  queries,
+  projectQueries,
+  statsQueries,
+  activityLog,
+  snippetQueries,
+  templateQueries,
+  attachmentQueries,
+} from './db/index.js';
 import { startClaude, stopClaude, isTaskRunning } from './claude/runner.js';
 import { authMiddleware, socketAuthMiddleware, generateApiKey, disableAuth, isAuthEnabled } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -15,6 +23,7 @@ import taskRoutes from './routes/tasks.js';
 import statsRoutes from './routes/stats.js';
 import snippetRoutes from './routes/snippets.js';
 import templateRoutes from './routes/templates.js';
+import attachmentRoutes from './routes/attachments.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -126,10 +135,12 @@ export function createApp() {
       const workingDir = project.working_dir || rootDir;
       const revisions = queries.getRevisions.all(next.id);
       const snippets = snippetQueries.getEnabledByProject(project.id);
+      const taskAttachments = attachmentQueries.getByTask(next.id) || [];
       startClaude(updated, io, workingDir, project, revisions, snippets, {
         queries,
         statsQueries,
         activityLog,
+        attachments: taskAttachments,
         onFinished: (t) => {
           taskStartLock.delete(t.id);
           startNextQueued(t.project_id);
@@ -149,6 +160,7 @@ export function createApp() {
     activityLog,
     snippetQueries,
     templateQueries,
+    attachmentQueries,
     io,
     startClaude,
     stopClaude,
@@ -176,6 +188,10 @@ export function createApp() {
   app.use('/api', authMiddleware, statsRoutes(deps));
   app.use('/api', authMiddleware, snippetRoutes(deps));
   app.use('/api', authMiddleware, templateRoutes(deps));
+  app.use('/api', authMiddleware, attachmentRoutes(deps));
+
+  // Serve uploaded files
+  app.use('/uploads', express.static(join(rootDir, 'uploads')));
 
   // SPA fallback
   app.get('*', (req, res) => {

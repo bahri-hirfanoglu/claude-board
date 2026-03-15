@@ -1,7 +1,14 @@
 import { spawn, execSync } from 'child_process';
 import { platform } from 'os';
+import { existsSync, mkdirSync, copyFileSync, rmSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { buildPrompt } from './prompt.js';
 import { handleClaudeEvent } from './events.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const UPLOADS_DIR = join(__dirname, '..', '..', 'uploads');
 
 const activeProcesses = new Map();
 const activeToolCalls = new Map();
@@ -274,7 +281,7 @@ export function startClaude(
   project = {},
   revisions = [],
   snippets = [],
-  { queries, statsQueries, activityLog, onFinished } = {},
+  { queries, statsQueries, activityLog, onFinished, attachments = [] } = {},
 ) {
   if (activeProcesses.has(task.id) || startingTasks.has(task.id)) {
     addLog(task.id, 'Claude is already running for this task.', 'system', queries, io);
@@ -283,7 +290,25 @@ export function startClaude(
   startingTasks.add(task.id);
   slog.task(`Starting #${task.id} "${task.title}" [${task.task_type}]`);
 
-  const prompt = buildPrompt(task, revisions, snippets);
+  // Copy attachments to working directory
+  const attachDir = join(workingDir, '.claude-attachments');
+  if (attachments.length > 0) {
+    try {
+      if (!existsSync(attachDir)) mkdirSync(attachDir, { recursive: true });
+      for (const a of attachments) {
+        const src = join(UPLOADS_DIR, a.filename);
+        const dest = join(attachDir, a.filename);
+        if (existsSync(src)) {
+          copyFileSync(src, dest);
+          slog.task(`Attached: ${a.original_name} → .claude-attachments/${a.filename}`);
+        }
+      }
+    } catch (e) {
+      slog.task(`${CLR.red}Attachment copy failed:${CLR.reset} ${e.message}`);
+    }
+  }
+
+  const prompt = buildPrompt(task, revisions, snippets, attachments);
   const model = task.model || 'sonnet';
   const effort = task.thinking_effort || 'medium';
   const permissionMode = project.permission_mode || 'auto-accept';
@@ -439,6 +464,13 @@ export function startClaude(
       taskAddLog(task.id, `Claude exited with code ${code}.`, 'error');
       if (activityLog)
         activityLog.add(task.project_id, task.id, 'task_failed', `Task failed (exit ${code}): ${task.title}`);
+    }
+
+    // Cleanup attachments dir
+    if (attachments.length > 0 && existsSync(attachDir)) {
+      try {
+        rmSync(attachDir, { recursive: true, force: true });
+      } catch {}
     }
 
     io.emit('claude:finished', { taskId: task.id, exitCode: code });
