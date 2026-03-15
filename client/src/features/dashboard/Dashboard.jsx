@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { api } from '../../lib/api';
 
@@ -130,6 +130,135 @@ function ProjectCard({ project, onSelect }) {
   );
 }
 
+const MODEL_COLORS = { opus: 'bg-purple-500', sonnet: 'bg-blue-500', haiku: 'bg-green-500', unknown: 'bg-surface-500' };
+
+function ClaudeUsageCard() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    api.getClaudeUsage().then(setData).catch(() => {});
+  }, []);
+
+  if (!data?.usage || !data.usage.tasks_with_usage) return null;
+
+  const u = data.usage;
+  const totalTokens = (u.input_tokens || 0) + (u.output_tokens || 0);
+  const inputPct = totalTokens > 0 ? ((u.input_tokens || 0) / totalTokens * 100) : 0;
+  const models = data.models || [];
+  const timeline = data.timeline || [];
+
+  // Sparkline: last 14 days token usage
+  const maxTokens = Math.max(...timeline.map(d => d.tokens || 0), 1);
+
+  return (
+    <div className="mb-8 rounded-xl bg-gradient-to-br from-surface-800/80 to-surface-900 border border-surface-700/50 overflow-hidden">
+      <div className="flex items-center gap-2 px-5 py-3 border-b border-surface-700/30">
+        <Zap size={14} className="text-claude" />
+        <h2 className="text-sm font-semibold">Claude Usage</h2>
+        <span className="text-[10px] text-surface-600 ml-auto">{u.tasks_with_usage} tasks used Claude</span>
+      </div>
+
+      <div className="p-5">
+        {/* Top stats row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+          <div>
+            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">Total Tokens</div>
+            <div className="text-xl font-bold text-surface-100">{formatTokens(totalTokens)}</div>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="flex-1 h-1.5 rounded-full bg-surface-700 overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${inputPct}%` }} />
+              </div>
+              <span className="text-[9px] text-surface-600">{inputPct.toFixed(0)}% in</span>
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">Total Cost</div>
+            <div className="text-xl font-bold text-surface-100">${(u.total_cost || 0).toFixed(2)}</div>
+            <div className="text-[10px] text-surface-600 mt-1">
+              ~${totalTokens > 0 ? ((u.total_cost || 0) / (totalTokens / 1e6)).toFixed(2) : '0'}/M tokens
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">Turns</div>
+            <div className="text-xl font-bold text-surface-100">{(u.total_turns || 0).toLocaleString()}</div>
+            <div className="text-[10px] text-surface-600 mt-1">
+              ~{u.tasks_with_usage > 0 ? Math.round((u.total_turns || 0) / u.tasks_with_usage) : 0} avg/task
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">Rate Limits</div>
+            <div className={`text-xl font-bold ${(u.rate_limit_hits || 0) > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+              {u.rate_limit_hits || 0}
+            </div>
+            <div className="text-[10px] text-surface-600 mt-1">
+              {(u.rate_limit_hits || 0) > 0 ? 'hits encountered' : 'no limits hit'}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {/* Model breakdown */}
+          {models.length > 0 && (
+            <div>
+              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-2">Model Breakdown</div>
+              <div className="space-y-2">
+                {models.map(m => {
+                  const modelTotal = (m.input_tokens || 0) + (m.output_tokens || 0);
+                  const pct = totalTokens > 0 ? (modelTotal / totalTokens * 100) : 0;
+                  const colorClass = MODEL_COLORS[m.model] || MODEL_COLORS.unknown;
+                  return (
+                    <div key={m.model} className="flex items-center gap-2.5">
+                      <div className={`w-2 h-2 rounded-full ${colorClass} flex-shrink-0`} />
+                      <span className="text-xs text-surface-300 w-16">{m.model}</span>
+                      <div className="flex-1 h-1.5 rounded-full bg-surface-700 overflow-hidden">
+                        <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-[10px] text-surface-500 w-12 text-right">{formatTokens(modelTotal)}</span>
+                      <span className="text-[10px] text-surface-600 w-16 text-right">${(m.cost || 0).toFixed(3)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Usage sparkline (last 30 days) */}
+          {timeline.length > 1 && (
+            <div>
+              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-2">30-Day Usage</div>
+              <div className="flex items-end gap-px h-16">
+                {timeline.slice(-30).map((d, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 bg-claude/40 hover:bg-claude/70 rounded-t-sm transition-colors cursor-default"
+                    style={{ height: `${Math.max(2, (d.tokens / maxTokens) * 100)}%` }}
+                    title={`${d.day}: ${formatTokens(d.tokens)} tokens, $${(d.cost || 0).toFixed(3)}`}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[8px] text-surface-700">{timeline[0]?.day?.slice(5)}</span>
+                <span className="text-[8px] text-surface-700">{timeline[timeline.length - 1]?.day?.slice(5)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Cache stats */}
+        {(u.cache_read || 0) > 0 && (
+          <div className="mt-4 pt-3 border-t border-surface-700/30 flex items-center gap-4 text-[10px] text-surface-500">
+            <span>Cache read: {formatTokens(u.cache_read)}</span>
+            <span>Cache created: {formatTokens(u.cache_creation)}</span>
+            <span className="text-emerald-500/70">
+              {totalTokens > 0 ? `${((u.cache_read / (totalTokens + u.cache_read)) * 100).toFixed(0)}% cache hit` : ''}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   const [summary, setSummary] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -206,6 +335,9 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
             </div>
           </div>
         )}
+
+        {/* Claude Usage */}
+        {totalProjects > 0 && <ClaudeUsageCard />}
 
         {/* Project Grid */}
         {loading ? (

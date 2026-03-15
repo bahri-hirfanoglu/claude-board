@@ -38,4 +38,31 @@ export const statsQueries = {
      FROM tasks WHERE project_id=? AND (input_tokens>0 OR status IN ('in_progress','testing','done'))
      GROUP BY model_name`, [pid]
   ),
+
+  // Global (cross-project) usage
+  getGlobalUsage: () => queryOne(
+    `SELECT SUM(COALESCE(input_tokens,0)) as input_tokens, SUM(COALESCE(output_tokens,0)) as output_tokens,
+       SUM(COALESCE(cache_read_tokens,0)) as cache_read, SUM(COALESCE(cache_creation_tokens,0)) as cache_creation,
+       SUM(COALESCE(total_cost,0)) as total_cost, SUM(COALESCE(num_turns,0)) as total_turns,
+       SUM(COALESCE(rate_limit_hits,0)) as rate_limit_hits,
+       COUNT(CASE WHEN input_tokens>0 THEN 1 END) as tasks_with_usage,
+       COUNT(*) as total_tasks
+     FROM tasks`
+  ),
+  getGlobalModelBreakdown: () => queryAll(
+    `SELECT COALESCE(model_used,model,'unknown') as model, COUNT(*) as tasks,
+            SUM(COALESCE(input_tokens,0)) as input_tokens,
+            SUM(COALESCE(output_tokens,0)) as output_tokens,
+            SUM(COALESCE(total_cost,0)) as cost
+     FROM tasks WHERE input_tokens>0
+     GROUP BY model ORDER BY cost DESC`
+  ),
+  getUsageTimeline: () => queryAll(
+    `SELECT date(started_at) as day,
+            SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)) as tokens,
+            SUM(COALESCE(total_cost,0)) as cost,
+            COUNT(*) as tasks
+     FROM tasks WHERE started_at IS NOT NULL AND started_at>=datetime('now','-30 days')
+     GROUP BY day ORDER BY day`
+  ),
 };

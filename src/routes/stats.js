@@ -23,6 +23,15 @@ export default function statsRoutes({ projectQueries, statsQueries, activityLog 
     });
   });
 
+  // Global Claude usage
+  router.get('/stats/claude-usage', (req, res) => {
+    res.json({
+      usage: statsQueries.getGlobalUsage(),
+      models: statsQueries.getGlobalModelBreakdown(),
+      timeline: statsQueries.getUsageTimeline(),
+    });
+  });
+
   // Activity timeline
   router.get('/projects/:projectId/activity', (req, res) => {
     const limit = parseInt(req.query.limit) || 50;

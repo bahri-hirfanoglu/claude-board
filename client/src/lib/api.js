@@ -37,6 +37,7 @@ export const api = {
   // Stats & Activity
   getStats: (projectId) => request(`/api/projects/${projectId}/stats`),
   getActivity: (projectId, limit = 50, offset = 0) => request(`/api/projects/${projectId}/activity?limit=${limit}&offset=${offset}`),
+  getClaudeUsage: () => request('/api/stats/claude-usage'),
 
   // CLAUDE.md
   getClaudeMd: (projectId) => request(`/api/projects/${projectId}/claude-md`),
