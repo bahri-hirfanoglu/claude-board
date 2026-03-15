@@ -57,10 +57,10 @@ export function handleClaudeEvent(taskId, event, { addLog, queries, statsQueries
       if (msgUsage) {
         const tracker = taskUsage.get(taskId);
         if (tracker) {
-          tracker.session.input += (msgUsage.input_tokens || 0);
-          tracker.session.output += (msgUsage.output_tokens || 0);
-          tracker.session.cacheRead += (msgUsage.cache_read_input_tokens || 0);
-          tracker.session.cacheCreation += (msgUsage.cache_creation_input_tokens || 0);
+          tracker.session.input += msgUsage.input_tokens || 0;
+          tracker.session.output += msgUsage.output_tokens || 0;
+          tracker.session.cacheRead += msgUsage.cache_read_input_tokens || 0;
+          tracker.session.cacheCreation += msgUsage.cache_creation_input_tokens || 0;
 
           const total = {
             input: tracker.baseline.input + tracker.session.input,
@@ -71,11 +71,23 @@ export function handleClaudeEvent(taskId, event, { addLog, queries, statsQueries
           };
 
           const modelUsed = event.message?.model || '';
-          queries.setTaskUsageLive.run(total.input, total.output, total.cacheRead, total.cacheCreation, total.cost, modelUsed, taskId);
+          queries.setTaskUsageLive.run(
+            total.input,
+            total.output,
+            total.cacheRead,
+            total.cacheCreation,
+            total.cost,
+            modelUsed,
+            taskId,
+          );
           io.emit('task:usage', {
-            taskId, input_tokens: total.input, output_tokens: total.output,
-            cache_read_tokens: total.cacheRead, cache_creation_tokens: total.cacheCreation,
-            total_tokens: total.input + total.output, total_cost: total.cost,
+            taskId,
+            input_tokens: total.input,
+            output_tokens: total.output,
+            cache_read_tokens: total.cacheRead,
+            cache_creation_tokens: total.cacheCreation,
+            total_tokens: total.input + total.output,
+            total_cost: total.cost,
           });
         }
       }
@@ -95,7 +107,11 @@ export function handleClaudeEvent(taskId, event, { addLog, queries, statsQueries
           let resultPreview = '';
           if (typeof block.content === 'string') resultPreview = block.content.substring(0, 500);
           else if (Array.isArray(block.content)) {
-            resultPreview = block.content.filter(c => c.type === 'text').map(c => c.text).join('\n').substring(0, 500);
+            resultPreview = block.content
+              .filter((c) => c.type === 'text')
+              .map((c) => c.text)
+              .join('\n')
+              .substring(0, 500);
           }
           const resultLines = resultPreview.split('\n').length;
           const isError = block.is_error === true;
@@ -139,21 +155,37 @@ export function handleClaudeEvent(taskId, event, { addLog, queries, statsQueries
       };
 
       if (sessionInput > 0 || sessionOutput > 0) {
-        queries.setTaskUsageLive.run(fin.input, fin.output, fin.cacheRead, fin.cacheCreation, fin.cost, modelUsed, taskId);
+        queries.setTaskUsageLive.run(
+          fin.input,
+          fin.output,
+          fin.cacheRead,
+          fin.cacheCreation,
+          fin.cost,
+          modelUsed,
+          taskId,
+        );
         if (numTurns > 0) queries.updateTaskNumTurns.run(numTurns, taskId);
         if (sessionId) queries.updateTaskClaudeSession.run(sessionId, taskId);
 
         const costStr = totalCost > 0 ? ` | Cost: $${totalCost.toFixed(4)}` : '';
         const durStr = durationMs > 0 ? ` | Duration: ${Math.round(durationMs / 1000)}s` : '';
-        addLog(taskId, `Usage: ${(sessionInput + sessionOutput).toLocaleString()} tokens (${sessionInput.toLocaleString()} in / ${sessionOutput.toLocaleString()} out)${costStr} | Turns: ${numTurns}${durStr} | Model: ${modelUsed}`, 'system');
+        addLog(
+          taskId,
+          `Usage: ${(sessionInput + sessionOutput).toLocaleString()} tokens (${sessionInput.toLocaleString()} in / ${sessionOutput.toLocaleString()} out)${costStr} | Turns: ${numTurns}${durStr} | Model: ${modelUsed}`,
+          'system',
+        );
 
         const updated = queries.getTaskById.get(taskId);
         if (updated) {
           io.emit('task:updated', updated);
           io.emit('task:usage', {
-            taskId, input_tokens: fin.input, output_tokens: fin.output,
-            cache_read_tokens: fin.cacheRead, cache_creation_tokens: fin.cacheCreation,
-            total_tokens: fin.input + fin.output, total_cost: fin.cost,
+            taskId,
+            input_tokens: fin.input,
+            output_tokens: fin.output,
+            cache_read_tokens: fin.cacheRead,
+            cache_creation_tokens: fin.cacheCreation,
+            total_tokens: fin.input + fin.output,
+            total_cost: fin.cost,
           });
         }
       }
@@ -165,16 +197,21 @@ export function handleClaudeEvent(taskId, event, { addLog, queries, statsQueries
         const mu = modelUsage[firstModel] || {};
         try {
           statsQueries.upsertClaudeLimits({
-            rateLimitType: '', status: 'allowed', resetsAt: 0,
-            overageStatus: '', isUsingOverage: false,
+            rateLimitType: '',
+            status: 'allowed',
+            resetsAt: 0,
+            overageStatus: '',
+            isUsingOverage: false,
             model: firstModel || modelUsed,
             costUsd: event.total_cost_usd || totalCost || 0,
             contextWindow: mu.contextWindow || 0,
             maxOutputTokens: mu.maxOutputTokens || 0,
           });
           io.emit('claude:limits', {
-            model: firstModel, costUsd: event.total_cost_usd || totalCost,
-            contextWindow: mu.contextWindow, maxOutputTokens: mu.maxOutputTokens,
+            model: firstModel,
+            costUsd: event.total_cost_usd || totalCost,
+            contextWindow: mu.contextWindow,
+            maxOutputTokens: mu.maxOutputTokens,
           });
         } catch {}
       }
@@ -186,9 +223,16 @@ export function handleClaudeEvent(taskId, event, { addLog, queries, statsQueries
     case 'system': {
       const subtype = event.subtype || '';
       if (subtype === 'hook_started' || subtype === 'hook_response') break;
-      if (subtype === 'init') { addLog(taskId, `Session initialized (${event.tools?.length || 0} tools available)`, 'system'); break; }
+      if (subtype === 'init') {
+        addLog(taskId, `Session initialized (${event.tools?.length || 0} tools available)`, 'system');
+        break;
+      }
       const msg = event.message || '';
-      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('429') || msg.toLowerCase().includes('overloaded')) {
+      if (
+        msg.toLowerCase().includes('rate limit') ||
+        msg.toLowerCase().includes('429') ||
+        msg.toLowerCase().includes('overloaded')
+      ) {
         queries.incrementRateLimitHits.run(taskId);
       }
       if (msg) addLog(taskId, msg, 'system');
@@ -206,7 +250,10 @@ export function handleClaudeEvent(taskId, event, { addLog, queries, statsQueries
           resetsAt: info.resetsAt || 0,
           overageStatus: info.overageStatus || '',
           isUsingOverage: info.isUsingOverage || false,
-          model: '', costUsd: 0, contextWindow: 0, maxOutputTokens: 0,
+          model: '',
+          costUsd: 0,
+          contextWindow: 0,
+          maxOutputTokens: 0,
         });
         io.emit('claude:limits', {
           rateLimitType: info.rateLimitType,
@@ -220,7 +267,11 @@ export function handleClaudeEvent(taskId, event, { addLog, queries, statsQueries
       if (info.status !== 'allowed') {
         queries.incrementRateLimitHits.run(taskId);
         const resetAt = info.resetsAt ? new Date(info.resetsAt * 1000).toLocaleTimeString() : '';
-        addLog(taskId, `Rate limited (${info.rateLimitType || 'unknown'})${resetAt ? ` — resets at ${resetAt}` : ''}`, 'error');
+        addLog(
+          taskId,
+          `Rate limited (${info.rateLimitType || 'unknown'})${resetAt ? ` — resets at ${resetAt}` : ''}`,
+          'error',
+        );
       }
       break;
     }

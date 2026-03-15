@@ -1,0 +1,7 @@
+node_modules/
+client/node_modules/
+client/dist/
+data/
+*.db
+package-lock.json
+client/package-lock.json

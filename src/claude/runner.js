@@ -31,12 +31,18 @@ function killProcess(proc) {
       proc.kill('SIGTERM');
     }
   } catch {
-    try { proc.kill('SIGKILL'); } catch {}
+    try {
+      proc.kill('SIGKILL');
+    } catch {}
   }
 }
 
-export function isTaskRunning(taskId) { return activeProcesses.has(taskId); }
-export function getActiveProcess(taskId) { return activeProcesses.get(taskId); }
+export function isTaskRunning(taskId) {
+  return activeProcesses.has(taskId);
+}
+export function getActiveProcess(taskId) {
+  return activeProcesses.get(taskId);
+}
 
 export function stopClaude(taskId, io, queries) {
   const proc = activeProcesses.get(taskId);
@@ -67,20 +73,28 @@ function scanGitInfo(workingDir, taskId, queries) {
 
     // Get recent commits (last 10, on current branch)
     const logOutput = exec('git log --oneline -10 --no-merges --format="%H|%h|%s|%an|%ai"');
-    const commits = logOutput.split('\n').filter(Boolean).map(line => {
-      const [hash, short, message, author, date] = line.split('|');
-      return { hash, short, message, author, date };
-    });
+    const commits = logOutput
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [hash, short, message, author, date] = line.split('|');
+        return { hash, short, message, author, date };
+      });
 
     // Try to find remote URL for commit links
     let repoUrl = '';
     try {
       const remote = exec('git remote get-url origin');
-      repoUrl = remote.replace(/\.git$/, '').replace(/^git@github\.com:/, 'https://github.com/').replace(/^git@(.+):/, 'https://$1/');
+      repoUrl = remote
+        .replace(/\.git$/, '')
+        .replace(/^git@github\.com:/, 'https://github.com/')
+        .replace(/^git@(.+):/, 'https://$1/');
     } catch {}
 
     if (repoUrl) {
-      commits.forEach(c => { c.url = `${repoUrl}/commit/${c.hash}`; });
+      commits.forEach((c) => {
+        c.url = `${repoUrl}/commit/${c.hash}`;
+      });
     }
 
     // Capture diff stat
@@ -90,7 +104,11 @@ function scanGitInfo(workingDir, taskId, queries) {
       if (branch && branch !== 'main' && branch !== 'master') {
         // Diff against the base branch (main or master)
         let baseBranch = 'main';
-        try { exec('git rev-parse --verify main'); } catch { baseBranch = 'master'; }
+        try {
+          exec('git rev-parse --verify main');
+        } catch {
+          baseBranch = 'master';
+        }
         diffStat = exec(`git diff --stat ${baseBranch}...HEAD`);
       } else if (commits.length > 0) {
         diffStat = exec(`git diff --stat HEAD~${Math.min(commits.length, 10)}..HEAD`);
@@ -114,7 +132,15 @@ function scanGitInfo(workingDir, taskId, queries) {
   }
 }
 
-export function startClaude(task, io, workingDir, project = {}, revisions = [], snippets = [], { queries, statsQueries, activityLog, onFinished } = {}) {
+export function startClaude(
+  task,
+  io,
+  workingDir,
+  project = {},
+  revisions = [],
+  snippets = [],
+  { queries, statsQueries, activityLog, onFinished } = {},
+) {
   if (activeProcesses.has(task.id) || startingTasks.has(task.id)) {
     addLog(task.id, 'Claude is already running for this task.', 'system', queries, io);
     return;
@@ -152,7 +178,10 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
   if (permissionMode === 'auto-accept') {
     args.push('--dangerously-skip-permissions');
   } else if (permissionMode === 'allow-tools') {
-    const tools = (project.allowed_tools || '').split(',').map(t => t.trim()).filter(Boolean);
+    const tools = (project.allowed_tools || '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
     if (tools.length > 0) {
       for (const t of tools) args.push('--allowedTools', t);
     } else {
@@ -184,7 +213,11 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
         const event = JSON.parse(line);
         handleClaudeEvent(task.id, event, {
           addLog: taskAddLog,
-          queries, statsQueries, io, taskUsage, activeToolCalls,
+          queries,
+          statsQueries,
+          io,
+          taskUsage,
+          activeToolCalls,
         });
       } catch {
         taskAddLog(task.id, line, 'claude');
@@ -195,7 +228,11 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
   proc.stderr.on('data', (data) => {
     const msg = data.toString().trim();
     if (!msg) return;
-    if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('429') || msg.toLowerCase().includes('overloaded')) {
+    if (
+      msg.toLowerCase().includes('rate limit') ||
+      msg.toLowerCase().includes('429') ||
+      msg.toLowerCase().includes('overloaded')
+    ) {
       queries.incrementRateLimitHits.run(task.id);
       taskAddLog(task.id, `Rate limit hit: ${msg}`, 'error');
     } else {
@@ -225,7 +262,8 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
       if (activityLog) activityLog.add(task.project_id, task.id, 'task_completed', `Task completed: ${task.title}`);
     } else {
       taskAddLog(task.id, `Claude exited with code ${code}.`, 'error');
-      if (activityLog) activityLog.add(task.project_id, task.id, 'task_failed', `Task failed (exit ${code}): ${task.title}`);
+      if (activityLog)
+        activityLog.add(task.project_id, task.id, 'task_failed', `Task failed (exit ${code}): ${task.title}`);
     }
 
     io.emit('claude:finished', { taskId: task.id, exitCode: code });

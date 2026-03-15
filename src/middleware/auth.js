@@ -22,7 +22,7 @@ export function generateApiKey() {
   run(
     `INSERT INTO auth_config (id, api_key_hash, enabled) VALUES (1, ?, 1)
      ON CONFLICT(id) DO UPDATE SET api_key_hash=excluded.api_key_hash, enabled=1`,
-    [hash]
+    [hash],
   );
   return key;
 }
@@ -32,7 +32,7 @@ export function disableAuth() {
   run(
     `INSERT INTO auth_config (id, enabled) VALUES (1, 0)
      ON CONFLICT(id) DO UPDATE SET enabled=0`,
-    []
+    [],
   );
 }
 

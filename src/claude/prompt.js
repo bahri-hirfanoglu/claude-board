@@ -15,7 +15,9 @@ export function buildPrompt(task, revisions = [], snippets = []) {
 
   if (isRevision) {
     parts.push(`\n## Revision History`);
-    parts.push(`This task has been reviewed ${revisions.length} time(s). Address ALL feedback from the latest revision.`);
+    parts.push(
+      `This task has been reviewed ${revisions.length} time(s). Address ALL feedback from the latest revision.`,
+    );
     parts.push(`Previous work has already been committed — build on top of it, do NOT start from scratch.\n`);
     for (const rev of revisions) {
       parts.push(`### Revision #${rev.revision_number} (${rev.created_at})`);
@@ -24,7 +26,9 @@ export function buildPrompt(task, revisions = [], snippets = []) {
     }
     parts.push(`\n## IMPORTANT: Revision Instructions`);
     parts.push(`- Focus on the LATEST revision feedback (#${revisionNum}) above.`);
-    parts.push(`- The previous work is already in the codebase — review what was done and fix/improve based on the feedback.`);
+    parts.push(
+      `- The previous work is already in the codebase — review what was done and fix/improve based on the feedback.`,
+    );
     parts.push(`- Do NOT redo work that was already accepted — only change what the feedback asks for.`);
     parts.push(`- Commit your revision changes with a clear message referencing revision #${revisionNum}.`);
   }

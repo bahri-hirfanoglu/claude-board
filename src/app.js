@@ -21,7 +21,7 @@ export function createApp() {
   const app = express();
   const server = createServer(app);
   const io = new Server(server, {
-    cors: { origin: process.env.CORS_ORIGIN || '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'] }
+    cors: { origin: process.env.CORS_ORIGIN || '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'] },
   });
 
   app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
@@ -56,8 +56,13 @@ export function createApp() {
       const revisions = queries.getRevisions.all(next.id);
       const snippets = snippetQueries.getEnabledByProject(project.id);
       startClaude(updated, io, workingDir, project, revisions, snippets, {
-        queries, statsQueries, activityLog,
-        onFinished: (t) => { taskStartLock.delete(t.id); startNextQueued(t.project_id); },
+        queries,
+        statsQueries,
+        activityLog,
+        onFinished: (t) => {
+          taskStartLock.delete(t.id);
+          startNextQueued(t.project_id);
+        },
       });
       activityLog.add(projectId, next.id, 'queue_auto_started', `Auto-started: ${next.title}`);
       io.emit('task:updated', { ...updated, is_running: true });
@@ -67,8 +72,17 @@ export function createApp() {
   }
 
   const deps = {
-    queries, projectQueries, statsQueries, activityLog, snippetQueries, io,
-    startClaude, stopClaude, isTaskRunning, startNextQueued, rootDir,
+    queries,
+    projectQueries,
+    statsQueries,
+    activityLog,
+    snippetQueries,
+    io,
+    startClaude,
+    stopClaude,
+    isTaskRunning,
+    startNextQueued,
+    rootDir,
   };
 
   // Auth management routes (no auth required)

@@ -12,7 +12,12 @@
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build",
     "start": "node server.js",
-    "setup": "npm install && cd client && npm install"
+    "setup": "npm install && cd client && npm install",
+    "lint": "eslint src/ server.js && cd client && npx eslint src/",
+    "lint:fix": "eslint src/ server.js --fix && cd client && npx eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.js\" \"server.js\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"server.js\"",
+    "prepare": "husky"
   },
   "dependencies": {
     "concurrently": "^9.1.0",
@@ -23,8 +28,26 @@
     "sql.js": "^1.11.0"
   },
   "devDependencies": {
+    "eslint": "^10.0.3",
+    "eslint-config-prettier": "^10.1.8",
     "gif-encoder-2": "^1.0.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "pngjs": "^7.0.0",
+    "prettier": "^3.8.1",
     "puppeteer": "^24.39.1"
+  },
+  "lint-staged": {
+    "src/**/*.js": [
+      "eslint --max-warnings 5",
+      "prettier --check"
+    ],
+    "server.js": [
+      "eslint --max-warnings 5",
+      "prettier --check"
+    ],
+    "client/src/**/*.{js,jsx}": [
+      "eslint --max-warnings 10"
+    ]
   }
 }

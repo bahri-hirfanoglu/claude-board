@@ -78,22 +78,22 @@ db.run(`CREATE TABLE IF NOT EXISTS context_snippets (
 
 // ─── Indexes ───
 [
- 'idx_task_logs_task_id ON task_logs(task_id)',
- 'idx_tasks_status ON tasks(status)',
- 'idx_tasks_project ON tasks(project_id)',
- 'idx_tasks_project_status ON tasks(project_id, status)',
- 'idx_tasks_created ON tasks(created_at)',
- 'idx_projects_slug ON projects(slug)',
- 'idx_task_revisions_task_id ON task_revisions(task_id)',
- 'idx_activity_project ON activity_log(project_id)',
- 'idx_activity_created ON activity_log(created_at)',
- 'idx_context_snippets_project ON context_snippets(project_id)',
-].forEach(idx => db.run(`CREATE INDEX IF NOT EXISTS ${idx}`));
+  'idx_task_logs_task_id ON task_logs(task_id)',
+  'idx_tasks_status ON tasks(status)',
+  'idx_tasks_project ON tasks(project_id)',
+  'idx_tasks_project_status ON tasks(project_id, status)',
+  'idx_tasks_created ON tasks(created_at)',
+  'idx_projects_slug ON projects(slug)',
+  'idx_task_revisions_task_id ON task_revisions(task_id)',
+  'idx_activity_project ON activity_log(project_id)',
+  'idx_activity_created ON activity_log(created_at)',
+  'idx_context_snippets_project ON context_snippets(project_id)',
+].forEach((idx) => db.run(`CREATE INDEX IF NOT EXISTS ${idx}`));
 
 // ─── Migrations ───
 function colExists(table, col) {
   const r = db.exec(`PRAGMA table_info(${table})`);
-  return r.length > 0 && r[0].values.some(row => row[1] === col);
+  return r.length > 0 && r[0].values.some((row) => row[1] === col);
 }
 
 const migrations = [
@@ -122,11 +122,15 @@ const migrations = [
   ['task_logs', 'meta', 'ALTER TABLE task_logs ADD COLUMN meta TEXT'],
   ['tasks', 'commits', "ALTER TABLE tasks ADD COLUMN commits TEXT DEFAULT '[]'"],
   ['tasks', 'pr_url', 'ALTER TABLE tasks ADD COLUMN pr_url TEXT'],
-  ['tasks', 'diff_stat', "ALTER TABLE tasks ADD COLUMN diff_stat TEXT"],
+  ['tasks', 'diff_stat', 'ALTER TABLE tasks ADD COLUMN diff_stat TEXT'],
 ];
 
 for (const [table, col, sql] of migrations) {
-  if (!colExists(table, col)) { try { db.run(sql); } catch {} }
+  if (!colExists(table, col)) {
+    try {
+      db.run(sql);
+    } catch {}
+  }
 }
 
 // Migrate task_logs CHECK constraint
@@ -143,6 +147,10 @@ try {
     db.run('CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id)');
     db.run('COMMIT');
   }
-} catch { try { db.run('ROLLBACK'); } catch {} }
+} catch {
+  try {
+    db.run('ROLLBACK');
+  } catch {}
+}
 
 save();
