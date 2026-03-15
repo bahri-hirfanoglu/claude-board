@@ -27,6 +27,8 @@ export default function App() {
   const [editingProject, setEditingProject] = useState(null);
   const [showClaudeMd, setShowClaudeMd] = useState(false);
   const [showSnippets, setShowSnippets] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templates, setTemplates] = useState([]);
   const [reviewTask, setReviewTask] = useState(null);
   const [detailTask, setDetailTask] = useState(null);
   const [confirm, setConfirm] = useState(null);
@@ -50,6 +52,12 @@ export default function App() {
     setActivePanel(null);
     setSelectedTask(null);
     setSearch('');
+  }, [currentProject]);
+
+  // Fetch templates when project changes
+  useEffect(() => {
+    if (!currentProject) { setTemplates([]); return; }
+    api.getTemplates(currentProject.id).then(setTemplates).catch(() => setTemplates([]));
   }, [currentProject]);
 
   // Keyboard shortcuts
@@ -144,6 +152,8 @@ export default function App() {
       editingProject={editingProject}
       showClaudeMd={showClaudeMd}
       showSnippets={showSnippets}
+      showTemplates={showTemplates}
+      templates={templates}
       reviewTask={reviewTask}
       detailTask={detailTask}
       // Handlers
@@ -177,6 +187,8 @@ export default function App() {
       onCloseClaudeMd={() => setShowClaudeMd(false)}
       onEditSnippets={() => setShowSnippets(true)}
       onCloseSnippets={() => setShowSnippets(false)}
+      onEditTemplates={() => setShowTemplates(true)}
+      onCloseTemplates={() => { setShowTemplates(false); if (currentProject) api.getTemplates(currentProject.id).then(setTemplates).catch(() => {}); }}
       onViewDetail={(task) => setDetailTask(task)}
       onCloseDetail={() => setDetailTask(null)}
     />

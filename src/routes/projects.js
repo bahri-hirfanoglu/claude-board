@@ -58,8 +58,20 @@ export default function projectRoutes({ projectQueries, queries, io, activityLog
       const project = projectQueries.getById(req.params.id);
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
-      const { name, slug, working_dir, icon, icon_seed, permission_mode, allowed_tools, auto_queue, max_concurrent } =
-        req.body;
+      const {
+        name,
+        slug,
+        working_dir,
+        icon,
+        icon_seed,
+        permission_mode,
+        allowed_tools,
+        auto_queue,
+        max_concurrent,
+        auto_branch,
+        auto_pr,
+        pr_base_branch,
+      } = req.body;
       projectQueries.update(
         project.id,
         name ?? project.name,
@@ -75,6 +87,14 @@ export default function projectRoutes({ projectQueries, queries, io, activityLog
           project.id,
           auto_queue ?? project.auto_queue,
           max_concurrent ?? project.max_concurrent,
+        );
+      }
+      if (auto_branch !== undefined || auto_pr !== undefined || pr_base_branch !== undefined) {
+        projectQueries.updateGitSettings(
+          project.id,
+          auto_branch ?? project.auto_branch,
+          auto_pr ?? project.auto_pr,
+          pr_base_branch ?? project.pr_base_branch,
         );
       }
       const updated = projectQueries.getById(project.id);

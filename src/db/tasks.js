@@ -64,6 +64,10 @@ export const queries = {
     run: (sid, id) =>
       run("UPDATE tasks SET claude_session_id=?,updated_at=datetime('now','localtime') WHERE id=?", [sid, id]),
   },
+  updateTaskBranch: {
+    run: (branchName, id) =>
+      run("UPDATE tasks SET branch_name=?,updated_at=datetime('now','localtime') WHERE id=?", [branchName, id]),
+  },
   updateTaskGitInfo: {
     run: (commits, prUrl, diffStat, id) =>
       run("UPDATE tasks SET commits=?,pr_url=?,diff_stat=?,updated_at=datetime('now','localtime') WHERE id=?", [

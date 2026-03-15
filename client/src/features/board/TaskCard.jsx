@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw } from 'lucide-react';
+import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw, GitBranch } from 'lucide-react';
 import { formatDuration, formatTokens } from '../../lib/formatters';
 import { PRIORITY_COLORS as priorityColors, PRIORITY_LABELS as priorityLabels, TYPE_COLORS as typeColors, MODEL_COLORS as modelColors, COLUMNS } from '../../lib/constants';
 
@@ -150,8 +150,14 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           </div>
         )}
 
-        <div className="text-[10px] text-surface-600 mt-1.5">
-          #{task.id}
+        <div className="flex items-center gap-2 text-[10px] text-surface-600 mt-1.5">
+          <span>#{task.id}</span>
+          {task.branch_name && (
+            <span className="flex items-center gap-0.5 text-violet-400/60 truncate max-w-[160px]" title={task.branch_name}>
+              <GitBranch size={9} />
+              {task.branch_name}
+            </span>
+          )}
         </div>
       </div>
 

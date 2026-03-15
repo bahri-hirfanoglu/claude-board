@@ -63,6 +63,12 @@ export const api = {
   updateSnippet: (id, data) => request(`/api/snippets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteSnippet: (id) => request(`/api/snippets/${id}`, { method: 'DELETE' }),
 
+  // Templates
+  getTemplates: (projectId) => request(`/api/projects/${projectId}/templates`),
+  createTemplate: (projectId, data) => request(`/api/projects/${projectId}/templates`, { method: 'POST', body: JSON.stringify(data) }),
+  updateTemplate: (id, data) => request(`/api/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteTemplate: (id) => request(`/api/templates/${id}`, { method: 'DELETE' }),
+
   // Auth
   getAuthStatus: () => request('/api/auth/status'),
   enableAuth: () => request('/api/auth/enable', { method: 'POST' }),

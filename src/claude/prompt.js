@@ -47,9 +47,17 @@ export function buildPrompt(task, revisions = [], snippets = []) {
   parts.push(`- Task type: ${task.task_type || 'feature'}`);
   parts.push(`- Complete this task thoroughly and commit your changes.`);
   if (!isRevision) {
-    parts.push(`- Create a new branch named ${task.task_type || 'feature'}/task-${task.id}, commit, and push.`);
+    if (task.branch_name) {
+      parts.push(`- You are already on branch "${task.branch_name}". Commit and push your changes to this branch.`);
+    } else {
+      parts.push(`- Create a new branch named ${task.task_type || 'feature'}/task-${task.id}, commit, and push.`);
+    }
   } else {
-    parts.push(`- Work on the existing branch. Commit and push your revision changes.`);
+    if (task.branch_name) {
+      parts.push(`- You are on branch "${task.branch_name}". Commit and push your revision changes to this branch.`);
+    } else {
+      parts.push(`- Work on the existing branch. Commit and push your revision changes.`);
+    }
   }
   parts.push(`- Write clear commit messages describing what was done.`);
   parts.push(`- If acceptance criteria are provided, ensure all criteria are met.`);

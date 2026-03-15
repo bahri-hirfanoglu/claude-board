@@ -29,6 +29,11 @@ export const projectQueries = {
       maxConcurrent || 1,
       id,
     ]),
+  updateGitSettings: (id, autoBranch, autoPr, prBaseBranch) =>
+    run(
+      "UPDATE projects SET auto_branch=?,auto_pr=?,pr_base_branch=?,updated_at=datetime('now','localtime') WHERE id=?",
+      [autoBranch ? 1 : 0, autoPr ? 1 : 0, prBaseBranch || 'main', id],
+    ),
   delete: (id) => run('DELETE FROM projects WHERE id = ?', [id]),
   getSummary: () =>
     queryAll(

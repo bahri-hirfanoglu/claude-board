@@ -5,7 +5,7 @@ import cors from 'cors';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-import { queries, projectQueries, statsQueries, activityLog, snippetQueries } from './db/index.js';
+import { queries, projectQueries, statsQueries, activityLog, snippetQueries, templateQueries } from './db/index.js';
 import { startClaude, stopClaude, isTaskRunning } from './claude/runner.js';
 import { authMiddleware, socketAuthMiddleware, generateApiKey, disableAuth, isAuthEnabled } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -13,6 +13,7 @@ import projectRoutes from './routes/projects.js';
 import taskRoutes from './routes/tasks.js';
 import statsRoutes from './routes/stats.js';
 import snippetRoutes from './routes/snippets.js';
+import templateRoutes from './routes/templates.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -77,6 +78,7 @@ export function createApp() {
     statsQueries,
     activityLog,
     snippetQueries,
+    templateQueries,
     io,
     startClaude,
     stopClaude,
@@ -103,6 +105,7 @@ export function createApp() {
   app.use('/api', authMiddleware, taskRoutes(deps));
   app.use('/api', authMiddleware, statsRoutes(deps));
   app.use('/api', authMiddleware, snippetRoutes(deps));
+  app.use('/api', authMiddleware, templateRoutes(deps));
 
   // SPA fallback
   app.get('*', (req, res) => {

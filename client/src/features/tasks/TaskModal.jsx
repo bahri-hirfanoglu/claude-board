@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Cpu, Zap } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { X, Sparkles, Cpu, Zap, Layers, ChevronDown } from 'lucide-react';
 
 const TASK_TYPES = [
   { value: 'feature', label: 'Feature', color: 'bg-blue-500/20 text-blue-300' },
@@ -29,7 +29,7 @@ const EFFORTS = [
   { value: 'high', label: 'High', desc: 'Complex tasks', color: 'bg-red-500/20 text-red-300' },
 ];
 
-export default function TaskModal({ task, onSubmit, onClose }) {
+export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
   const [priority, setPriority] = useState(task?.priority || 0);
@@ -38,20 +38,80 @@ export default function TaskModal({ task, onSubmit, onClose }) {
   const [model, setModel] = useState(task?.model || 'sonnet');
   const [thinkingEffort, setThinkingEffort] = useState(task?.thinking_effort || 'medium');
   const [loading, setLoading] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [templateVars, setTemplateVars] = useState({});
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
   const titleRef = useRef(null);
+  const templateMenuRef = useRef(null);
+
+  const isCreating = !task;
 
   useEffect(() => {
     titleRef.current?.focus();
   }, []);
 
+  // Close template menu on outside click
+  useEffect(() => {
+    if (!showTemplateMenu) return;
+    const close = (e) => {
+      if (templateMenuRef.current && !templateMenuRef.current.contains(e.target)) setShowTemplateMenu(false);
+    };
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [showTemplateMenu]);
+
+  // Parse template variables
+  const parsedVars = useMemo(() => {
+    if (!selectedTemplate?.variables) return [];
+    try { return JSON.parse(selectedTemplate.variables); } catch { return []; }
+  }, [selectedTemplate]);
+
+  // Generate description from template when variables change
+  const generatedDescription = useMemo(() => {
+    if (!selectedTemplate?.template) return '';
+    let text = selectedTemplate.template;
+    for (const v of parsedVars) {
+      if (v.name) {
+        const regex = new RegExp(`\\{\\{${v.name}\\}\\}`, 'g');
+        const value = templateVars[v.name] || v.default || '';
+        text = text.replace(regex, value);
+      }
+    }
+    return text;
+  }, [selectedTemplate, parsedVars, templateVars]);
+
+  const handleSelectTemplate = (tpl) => {
+    setSelectedTemplate(tpl);
+    setShowTemplateMenu(false);
+    // Pre-fill defaults from template
+    setTaskType(tpl.task_type || 'feature');
+    setModel(tpl.model || 'sonnet');
+    setThinkingEffort(tpl.thinking_effort || 'medium');
+    // Initialize variable values with defaults
+    const vars = {};
+    try {
+      const parsed = JSON.parse(tpl.variables || '[]');
+      for (const v of parsed) {
+        if (v.name) vars[v.name] = v.default || '';
+      }
+    } catch {}
+    setTemplateVars(vars);
+  };
+
+  const handleClearTemplate = () => {
+    setSelectedTemplate(null);
+    setTemplateVars({});
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim()) return;
     setLoading(true);
+    const finalDescription = selectedTemplate ? (description.trim() ? description.trim() + '\n\n' + generatedDescription : generatedDescription) : description.trim();
     try {
       await onSubmit({
         title: title.trim(),
-        description: description.trim(),
+        description: finalDescription,
         priority,
         task_type: taskType,
         acceptance_criteria: acceptanceCriteria.trim(),
@@ -82,6 +142,81 @@ export default function TaskModal({ task, onSubmit, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Template Selector - only when creating */}
+          {isCreating && templates.length > 0 && (
+            <div>
+              {!selectedTemplate ? (
+                <div className="relative" ref={templateMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplateMenu(!showTemplateMenu)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-surface-700 text-xs text-surface-400 hover:text-claude hover:border-claude/50 transition-colors w-full justify-center"
+                  >
+                    <Layers size={13} />
+                    Use Template
+                    <ChevronDown size={12} />
+                  </button>
+                  {showTemplateMenu && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-10 overflow-hidden max-h-48 overflow-y-auto">
+                      {templates.map(tpl => (
+                        <button
+                          key={tpl.id}
+                          type="button"
+                          onClick={() => handleSelectTemplate(tpl)}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-surface-700 transition-colors"
+                        >
+                          <span className="text-surface-200 font-medium">{tpl.name}</span>
+                          {tpl.description && <span className="text-surface-500 ml-1.5">- {tpl.description}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-claude/5 border border-claude/20 rounded-lg px-3 py-2 flex items-center justify-between">
+                  <span className="text-xs text-claude flex items-center gap-1.5">
+                    <Layers size={12} />
+                    Template: <span className="font-medium">{selectedTemplate.name}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleClearTemplate}
+                    className="text-xs text-surface-400 hover:text-surface-200 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Template Variables */}
+          {selectedTemplate && parsedVars.length > 0 && (
+            <div className="bg-surface-800/30 rounded-lg p-3 border border-surface-700/50 space-y-2.5">
+              <label className="text-xs font-medium text-surface-400 block">Template Variables</label>
+              {parsedVars.map(v => (
+                <div key={v.name}>
+                  <label className="text-[11px] text-surface-500 mb-0.5 block">{v.label || v.name}</label>
+                  <input
+                    value={templateVars[v.name] || ''}
+                    onChange={e => setTemplateVars(prev => ({ ...prev, [v.name]: e.target.value }))}
+                    placeholder={v.placeholder || ''}
+                    className="w-full px-2.5 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600"
+                  />
+                </div>
+              ))}
+              {/* Preview of generated description */}
+              {generatedDescription && (
+                <div>
+                  <label className="text-[11px] text-surface-500 mb-0.5 block">Generated Prompt Preview</label>
+                  <div className="bg-surface-900 rounded-lg px-2.5 py-2 text-xs text-surface-400 whitespace-pre-wrap max-h-24 overflow-y-auto border border-surface-700/50">
+                    {generatedDescription}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Task Type */}
           <div>
             <label className="block text-xs font-medium text-surface-400 mb-1.5">Type</label>

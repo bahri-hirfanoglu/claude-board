@@ -8,6 +8,7 @@ db.run(`CREATE TABLE IF NOT EXISTS projects (
   icon TEXT DEFAULT 'marble', icon_seed TEXT DEFAULT '',
   permission_mode TEXT DEFAULT 'auto-accept', allowed_tools TEXT DEFAULT '',
   auto_queue INTEGER DEFAULT 0, max_concurrent INTEGER DEFAULT 1,
+  auto_branch INTEGER DEFAULT 1, auto_pr INTEGER DEFAULT 0, pr_base_branch TEXT DEFAULT 'main',
   created_at DATETIME DEFAULT (datetime('now','localtime')),
   updated_at DATETIME DEFAULT (datetime('now','localtime'))
 )`);
@@ -76,6 +77,21 @@ db.run(`CREATE TABLE IF NOT EXISTS context_snippets (
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS prompt_templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  template TEXT NOT NULL,
+  variables TEXT,
+  task_type TEXT DEFAULT 'feature',
+  model TEXT DEFAULT 'sonnet',
+  thinking_effort TEXT DEFAULT 'medium',
+  created_at DATETIME DEFAULT (datetime('now','localtime')),
+  updated_at DATETIME DEFAULT (datetime('now','localtime')),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+)`);
+
 // ─── Indexes ───
 [
   'idx_task_logs_task_id ON task_logs(task_id)',
@@ -88,6 +104,7 @@ db.run(`CREATE TABLE IF NOT EXISTS context_snippets (
   'idx_activity_project ON activity_log(project_id)',
   'idx_activity_created ON activity_log(created_at)',
   'idx_context_snippets_project ON context_snippets(project_id)',
+  'idx_prompt_templates_project ON prompt_templates(project_id)',
 ].forEach((idx) => db.run(`CREATE INDEX IF NOT EXISTS ${idx}`));
 
 // ─── Migrations ───
@@ -103,6 +120,9 @@ const migrations = [
   ['projects', 'allowed_tools', "ALTER TABLE projects ADD COLUMN allowed_tools TEXT DEFAULT ''"],
   ['projects', 'auto_queue', 'ALTER TABLE projects ADD COLUMN auto_queue INTEGER DEFAULT 0'],
   ['projects', 'max_concurrent', 'ALTER TABLE projects ADD COLUMN max_concurrent INTEGER DEFAULT 1'],
+  ['projects', 'auto_branch', 'ALTER TABLE projects ADD COLUMN auto_branch INTEGER DEFAULT 1'],
+  ['projects', 'auto_pr', 'ALTER TABLE projects ADD COLUMN auto_pr INTEGER DEFAULT 0'],
+  ['projects', 'pr_base_branch', "ALTER TABLE projects ADD COLUMN pr_base_branch TEXT DEFAULT 'main'"],
   ['tasks', 'started_at', 'ALTER TABLE tasks ADD COLUMN started_at DATETIME'],
   ['tasks', 'completed_at', 'ALTER TABLE tasks ADD COLUMN completed_at DATETIME'],
   ['tasks', 'task_type', "ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'feature'"],

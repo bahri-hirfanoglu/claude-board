@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, FolderOpen, RefreshCw, Shield, ShieldAlert, ShieldCheck, Info } from 'lucide-react';
+import { X, FolderOpen, RefreshCw, Shield, ShieldAlert, ShieldCheck, Info, Zap, GitBranch } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
 
@@ -38,6 +38,11 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
   const [iconSeed, setIconSeed] = useState(project?.icon_seed || '');
   const [permissionMode, setPermissionMode] = useState(project?.permission_mode || 'auto-accept');
   const [allowedTools, setAllowedTools] = useState(project?.allowed_tools || '');
+  const [autoQueue, setAutoQueue] = useState(project?.auto_queue ? true : false);
+  const [maxConcurrent, setMaxConcurrent] = useState(project?.max_concurrent || 1);
+  const [autoBranch, setAutoBranch] = useState(project?.auto_branch !== undefined ? !!project.auto_branch : true);
+  const [autoPr, setAutoPr] = useState(project?.auto_pr ? true : false);
+  const [prBaseBranch, setPrBaseBranch] = useState(project?.pr_base_branch || 'main');
   const [loading, setLoading] = useState(false);
   const [autoSlug, setAutoSlug] = useState(!project);
   const nameRef = useRef(null);
@@ -70,6 +75,11 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         icon_seed: iconSeed,
         permission_mode: permissionMode,
         allowed_tools: allowedTools.trim(),
+        auto_queue: autoQueue ? 1 : 0,
+        max_concurrent: maxConcurrent,
+        auto_branch: autoBranch ? 1 : 0,
+        auto_pr: autoPr ? 1 : 0,
+        pr_base_branch: prBaseBranch.trim() || 'main',
       });
     } catch (err) {
       console.error(err);
@@ -223,6 +233,124 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                 />
                 <p className="text-[9px] text-surface-600 mt-1">
                   Tool names: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch, NotebookEdit
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Auto Queue */}
+          <div className="border-t border-surface-800 pt-4">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-2">
+              <Zap size={12} />
+              Task Queue
+            </label>
+            <button
+              type="button"
+              onClick={() => setAutoQueue(!autoQueue)}
+              className={`w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all ${
+                autoQueue
+                  ? 'bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30'
+                  : 'bg-surface-800 text-surface-400 hover:text-surface-300'
+              }`}
+            >
+              <div className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${autoQueue ? 'bg-emerald-500' : 'bg-surface-600'}`}>
+                <div className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-200 ${autoQueue ? 'left-[18px]' : 'left-[3px]'}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium">{autoQueue ? 'Auto Queue Enabled' : 'Auto Queue Disabled'}</div>
+                <div className={`text-[10px] mt-0.5 ${autoQueue ? 'text-emerald-400/70' : 'text-surface-600'}`}>
+                  Automatically start backlog tasks when a running task finishes
+                </div>
+              </div>
+            </button>
+
+            {autoQueue && (
+              <div className="mt-2">
+                <label className="block text-[10px] text-surface-500 mb-1">Max Concurrent Tasks</label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setMaxConcurrent(n)}
+                      className={`w-8 h-8 rounded-lg text-xs font-medium transition-all ${
+                        maxConcurrent === n
+                          ? 'bg-claude text-white'
+                          : 'bg-surface-800 text-surface-400 hover:text-surface-200 hover:bg-surface-700'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[9px] text-surface-600 mt-1">
+                  Number of tasks that can run simultaneously
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Git Workflow */}
+          <div className="border-t border-surface-800 pt-4">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-2">
+              <GitBranch size={12} />
+              Git Workflow
+            </label>
+
+            {/* Auto Branch */}
+            <button
+              type="button"
+              onClick={() => setAutoBranch(!autoBranch)}
+              className={`w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all ${
+                autoBranch
+                  ? 'bg-violet-500/10 text-violet-300 ring-1 ring-violet-500/30'
+                  : 'bg-surface-800 text-surface-400 hover:text-surface-300'
+              }`}
+            >
+              <div className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${autoBranch ? 'bg-violet-500' : 'bg-surface-600'}`}>
+                <div className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-200 ${autoBranch ? 'left-[18px]' : 'left-[3px]'}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium">{autoBranch ? 'Auto Branch Enabled' : 'Auto Branch Disabled'}</div>
+                <div className={`text-[10px] mt-0.5 ${autoBranch ? 'text-violet-400/70' : 'text-surface-600'}`}>
+                  Create a feature branch for each task before Claude starts
+                </div>
+              </div>
+            </button>
+
+            {/* Auto PR */}
+            <button
+              type="button"
+              onClick={() => setAutoPr(!autoPr)}
+              className={`w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all mt-1.5 ${
+                autoPr
+                  ? 'bg-violet-500/10 text-violet-300 ring-1 ring-violet-500/30'
+                  : 'bg-surface-800 text-surface-400 hover:text-surface-300'
+              }`}
+            >
+              <div className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${autoPr ? 'bg-violet-500' : 'bg-surface-600'}`}>
+                <div className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-all duration-200 ${autoPr ? 'left-[18px]' : 'left-[3px]'}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium">{autoPr ? 'Auto PR Enabled' : 'Auto PR Disabled'}</div>
+                <div className={`text-[10px] mt-0.5 ${autoPr ? 'text-violet-400/70' : 'text-surface-600'}`}>
+                  Automatically create a pull request when task completes (requires gh CLI)
+                </div>
+              </div>
+            </button>
+
+            {/* Base Branch */}
+            {(autoBranch || autoPr) && (
+              <div className="mt-2">
+                <label className="block text-[10px] text-surface-500 mb-1">Base Branch</label>
+                <input
+                  value={prBaseBranch}
+                  onChange={e => setPrBaseBranch(e.target.value)}
+                  placeholder="main"
+                  className="w-full px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 font-mono"
+                />
+                <p className="text-[9px] text-surface-600 mt-1">
+                  Branch to create feature branches from and merge PRs into
                 </p>
               </div>
             )}
