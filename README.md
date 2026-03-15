@@ -38,8 +38,6 @@ Think of it as **Jira meets AI pair programming**: you define what needs to be d
 
 ## Screenshots
 
-> Add your own screenshots to `docs/screenshots/` and update the paths below.
-
 ### Dashboard
 ![Dashboard](docs/screenshots/dashboard.png)
 *Project overview with Claude usage statistics, model breakdown, and 30-day usage sparkline*
@@ -48,13 +46,13 @@ Think of it as **Jira meets AI pair programming**: you define what needs to be d
 ![Board](docs/screenshots/board.png)
 *Drag-and-drop task management with live status indicators*
 
-### Live Terminal
-![Terminal](docs/screenshots/terminal.png)
-*Real-time Claude output with grouped tool calls, edit diffs, and turn separators*
+### Task Creation
+![Task Modal](docs/screenshots/task-modal.png)
+*Create tasks with type, model, thinking effort, and priority selection*
 
-### Review System
-![Review](docs/screenshots/review.png)
-*Approve or request changes with revision history tracking*
+### Project Statistics
+![Stats](docs/screenshots/stats.png)
+*Project statistics with status breakdown, model usage, and completion timeline*
 
 ### Activity Timeline
 ![Activity](docs/screenshots/activity.png)
