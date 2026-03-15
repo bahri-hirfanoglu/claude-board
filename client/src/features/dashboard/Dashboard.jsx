@@ -136,26 +136,67 @@ function ClaudeUsageCard() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    api.getClaudeUsage().then(setData).catch(() => {});
+    api.getClaudeUsage().then(setData).catch(err => console.error('Claude usage fetch failed:', err));
   }, []);
 
-  if (!data?.usage || !data.usage.tasks_with_usage) return null;
+  if (!data?.usage) return null;
 
   const u = data.usage;
+
+  if (!u.tasks_with_usage) {
+    return (
+      <div className="mb-8 rounded-xl bg-gradient-to-br from-surface-800/80 to-surface-900 border border-surface-700/50 overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-3 border-b border-surface-700/30">
+          <Zap size={14} className="text-claude" />
+          <h2 className="text-sm font-semibold">Claude Usage</h2>
+        </div>
+        <div className="p-5 text-center text-surface-600 text-sm py-8">
+          No Claude usage data yet. Start a task to see token statistics here.
+        </div>
+      </div>
+    );
+  }
   const totalTokens = (u.input_tokens || 0) + (u.output_tokens || 0);
   const inputPct = totalTokens > 0 ? ((u.input_tokens || 0) / totalTokens * 100) : 0;
   const models = data.models || [];
   const timeline = data.timeline || [];
+  const limits = data.limits || null;
 
-  // Sparkline: last 14 days token usage
+  // Sparkline
   const maxTokens = Math.max(...timeline.map(d => d.tokens || 0), 1);
+
+  // Reset countdown
+  const resetTime = limits?.resets_at ? new Date(limits.resets_at * 1000) : null;
+  const resetsIn = resetTime ? Math.max(0, Math.floor((resetTime - Date.now()) / 60000)) : null;
+  const resetLabel = resetsIn != null
+    ? resetsIn > 60 ? `${Math.floor(resetsIn / 60)}h ${resetsIn % 60}m` : `${resetsIn}m`
+    : null;
 
   return (
     <div className="mb-8 rounded-xl bg-gradient-to-br from-surface-800/80 to-surface-900 border border-surface-700/50 overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-3 border-b border-surface-700/30">
         <Zap size={14} className="text-claude" />
         <h2 className="text-sm font-semibold">Claude Usage</h2>
-        <span className="text-[10px] text-surface-600 ml-auto">{u.tasks_with_usage} tasks used Claude</span>
+        <div className="flex items-center gap-3 ml-auto">
+          {limits?.last_model && (
+            <span className="text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded font-medium">
+              {limits.last_model.replace('claude-', '').replace(/\[.*\]/, '')}
+            </span>
+          )}
+          {limits?.context_window > 0 && (
+            <span className="text-[10px] text-surface-500">{formatTokens(limits.context_window)} ctx</span>
+          )}
+          {limits?.rate_limit_type && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+              limits.status === 'allowed' ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
+            }`}>
+              {limits.status === 'allowed' ? 'Active' : 'Rate Limited'}
+            </span>
+          )}
+          {resetLabel && (
+            <span className="text-[10px] text-surface-500">resets in {resetLabel}</span>
+          )}
+        </div>
       </div>
 
       <div className="p-5">

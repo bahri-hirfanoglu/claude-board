@@ -23,12 +23,13 @@ export default function statsRoutes({ projectQueries, statsQueries, activityLog 
     });
   });
 
-  // Global Claude usage
+  // Global Claude usage + account limits
   router.get('/stats/claude-usage', (req, res) => {
     res.json({
       usage: statsQueries.getGlobalUsage(),
       models: statsQueries.getGlobalModelBreakdown(),
       timeline: statsQueries.getUsageTimeline(),
+      limits: statsQueries.getClaudeLimits(),
     });
   });
 

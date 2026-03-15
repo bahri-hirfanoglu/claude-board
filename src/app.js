@@ -45,7 +45,7 @@ export function createApp() {
       const workingDir = project.working_dir || rootDir;
       const revisions = queries.getRevisions.all(next.id);
       startClaude(updated, io, workingDir, project, revisions, {
-        queries, activityLog,
+        queries, statsQueries, activityLog,
         onFinished: (t, code) => startNextQueued(t.project_id),
       });
 

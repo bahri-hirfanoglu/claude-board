@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { join } from 'path';
 
-export default function taskRoutes({ queries, projectQueries, io, activityLog, startClaude, stopClaude, isTaskRunning, startNextQueued, rootDir }) {
+export default function taskRoutes({ queries, projectQueries, statsQueries, io, activityLog, startClaude, stopClaude, isTaskRunning, startNextQueued, rootDir }) {
   const router = Router();
 
   // Get tasks by project
@@ -71,7 +71,7 @@ export default function taskRoutes({ queries, projectQueries, io, activityLog, s
       const project = projectQueries.getById(task.project_id);
       const workingDir = project?.working_dir || rootDir;
       const revisions = queries.getRevisions.all(task.id);
-      startClaude(updated, io, workingDir, project, revisions, { queries, activityLog, onFinished: (t, code) => startNextQueued(t.project_id) });
+      startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t, code) => startNextQueued(t.project_id) });
       activityLog.add(task.project_id, task.id, 'task_started', `Task started: ${task.title}`);
     }
 
@@ -121,7 +121,7 @@ export default function taskRoutes({ queries, projectQueries, io, activityLog, s
     const project = projectQueries.getById(task.project_id);
     const workingDir = project?.working_dir || rootDir;
     const revisions = queries.getRevisions.all(task.id);
-    startClaude(updated, io, workingDir, project, revisions, { queries, activityLog, onFinished: (t, code) => startNextQueued(t.project_id) });
+    startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t, code) => startNextQueued(t.project_id) });
     io.emit('task:updated', { ...updated, is_running: true });
     res.json(updated);
   });
@@ -143,7 +143,7 @@ export default function taskRoutes({ queries, projectQueries, io, activityLog, s
     const project = projectQueries.getById(task.project_id);
     const workingDir = project?.working_dir || rootDir;
     const revisions = queries.getRevisions.all(task.id);
-    startClaude(updated, io, workingDir, project, revisions, { queries, activityLog, onFinished: (t, code) => startNextQueued(t.project_id) });
+    startClaude(updated, io, workingDir, project, revisions, { queries, statsQueries, activityLog, onFinished: (t, code) => startNextQueued(t.project_id) });
 
     activityLog.add(task.project_id, task.id, 'revision_requested', `Revision #${revisionNumber} requested: ${task.title}`, { feedback: feedback.trim() });
     io.emit('task:updated', { ...updated, is_running: isTaskRunning(updated.id) });

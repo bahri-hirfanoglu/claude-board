@@ -1,4 +1,4 @@
-import { queryAll, queryOne } from './connection.js';
+import { queryAll, queryOne, run } from './connection.js';
 
 export const statsQueries = {
   getTasksByStatus: (pid) => queryAll('SELECT status,COUNT(*) as count FROM tasks WHERE project_id=? GROUP BY status', [pid]),
@@ -57,6 +57,21 @@ export const statsQueries = {
      FROM tasks WHERE input_tokens>0
      GROUP BY model ORDER BY cost DESC`
   ),
+  // Claude account limits (singleton row)
+  getClaudeLimits: () => queryOne('SELECT * FROM claude_limits WHERE id=1'),
+  upsertClaudeLimits: (data) => run(
+    `INSERT INTO claude_limits (id,rate_limit_type,status,resets_at,overage_status,is_using_overage,last_model,last_cost_usd,context_window,max_output_tokens,updated_at)
+     VALUES (1,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
+     ON CONFLICT(id) DO UPDATE SET
+       rate_limit_type=excluded.rate_limit_type, status=excluded.status,
+       resets_at=excluded.resets_at, overage_status=excluded.overage_status,
+       is_using_overage=excluded.is_using_overage, last_model=excluded.last_model,
+       last_cost_usd=excluded.last_cost_usd, context_window=excluded.context_window,
+       max_output_tokens=excluded.max_output_tokens, updated_at=excluded.updated_at`,
+    [data.rateLimitType, data.status, data.resetsAt, data.overageStatus,
+     data.isUsingOverage ? 1 : 0, data.model, data.costUsd, data.contextWindow, data.maxOutputTokens]
+  ),
+
   getUsageTimeline: () => queryAll(
     `SELECT date(started_at) as day,
             SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)) as tokens,

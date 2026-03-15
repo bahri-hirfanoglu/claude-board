@@ -32,7 +32,7 @@ function addLog(taskId, message, logType, queries, io, meta = null) {
   io.emit('task:log', payload);
 }
 
-export function startClaude(task, io, workingDir, project = {}, revisions = [], { queries, activityLog, onFinished } = {}) {
+export function startClaude(task, io, workingDir, project = {}, revisions = [], { queries, statsQueries, activityLog, onFinished } = {}) {
   if (activeProcesses.has(task.id)) {
     addLog(task.id, 'Claude is already running for this task.', 'system', queries, io);
     return;
@@ -101,7 +101,7 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
         const event = JSON.parse(line);
         handleClaudeEvent(task.id, event, {
           addLog: taskAddLog,
-          queries, io, taskUsage, activeToolCalls,
+          queries, statsQueries, io, taskUsage, activeToolCalls,
         });
       } catch {
         taskAddLog(task.id, line, 'claude');

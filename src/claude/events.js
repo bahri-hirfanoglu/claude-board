@@ -31,7 +31,7 @@ function buildToolDisplay(toolName, meta) {
 }
 
 // ─── Main event handler ───
-export function handleClaudeEvent(taskId, event, { addLog, queries, io, taskUsage, activeToolCalls }) {
+export function handleClaudeEvent(taskId, event, { addLog, queries, statsQueries, io, taskUsage, activeToolCalls }) {
   const type = event.type;
 
   switch (type) {
@@ -158,6 +158,27 @@ export function handleClaudeEvent(taskId, event, { addLog, queries, io, taskUsag
         }
       }
 
+      // Save model info to limits table
+      const modelUsage = event.modelUsage;
+      if (modelUsage) {
+        const firstModel = Object.keys(modelUsage)[0];
+        const mu = modelUsage[firstModel] || {};
+        try {
+          statsQueries.upsertClaudeLimits({
+            rateLimitType: '', status: 'allowed', resetsAt: 0,
+            overageStatus: '', isUsingOverage: false,
+            model: firstModel || modelUsed,
+            costUsd: event.total_cost_usd || totalCost || 0,
+            contextWindow: mu.contextWindow || 0,
+            maxOutputTokens: mu.maxOutputTokens || 0,
+          });
+          io.emit('claude:limits', {
+            model: firstModel, costUsd: event.total_cost_usd || totalCost,
+            contextWindow: mu.contextWindow, maxOutputTokens: mu.maxOutputTokens,
+          });
+        } catch {}
+      }
+
       if (event.result) addLog(taskId, `Result: ${String(event.result).substring(0, 500)}`, 'success');
       break;
     }
@@ -176,6 +197,26 @@ export function handleClaudeEvent(taskId, event, { addLog, queries, io, taskUsag
 
     case 'rate_limit_event': {
       const info = event.rate_limit_info || {};
+
+      // Always save latest limit info to DB
+      try {
+        statsQueries.upsertClaudeLimits({
+          rateLimitType: info.rateLimitType || '',
+          status: info.status || '',
+          resetsAt: info.resetsAt || 0,
+          overageStatus: info.overageStatus || '',
+          isUsingOverage: info.isUsingOverage || false,
+          model: '', costUsd: 0, contextWindow: 0, maxOutputTokens: 0,
+        });
+        io.emit('claude:limits', {
+          rateLimitType: info.rateLimitType,
+          status: info.status,
+          resetsAt: info.resetsAt,
+          overageStatus: info.overageStatus,
+          isUsingOverage: info.isUsingOverage,
+        });
+      } catch {}
+
       if (info.status !== 'allowed') {
         queries.incrementRateLimitHits.run(taskId);
         const resetAt = info.resetsAt ? new Date(info.resetsAt * 1000).toLocaleTimeString() : '';

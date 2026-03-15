@@ -45,6 +45,20 @@ db.run(`CREATE TABLE IF NOT EXISTS task_revisions (
   FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS claude_limits (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  rate_limit_type TEXT,
+  status TEXT,
+  resets_at INTEGER,
+  overage_status TEXT,
+  is_using_overage INTEGER DEFAULT 0,
+  last_model TEXT,
+  last_cost_usd REAL DEFAULT 0,
+  context_window INTEGER DEFAULT 0,
+  max_output_tokens INTEGER DEFAULT 0,
+  updated_at DATETIME DEFAULT (datetime('now','localtime'))
+)`);
+
 db.run(`CREATE TABLE IF NOT EXISTS activity_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL,
   task_id INTEGER, event_type TEXT NOT NULL, message TEXT NOT NULL, metadata TEXT DEFAULT '{}',
