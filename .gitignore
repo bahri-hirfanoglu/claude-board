@@ -3,4 +3,4 @@ tasks.db
 client/dist/
 client/node_modules/
 .env
-.claude
+.claudedata.db

@@ -3,7 +3,7 @@ import {
   X, Clock, Play, CheckCircle2, AlertTriangle, RotateCcw,
   Plus, Zap, Settings, ArrowDown, Activity
 } from 'lucide-react';
-import { api } from '../api';
+import { api } from '../../lib/api';
 
 const EVENT_CONFIG = {
   task_created:       { icon: Plus,           color: 'text-blue-400',    bg: 'bg-blue-500/10' },

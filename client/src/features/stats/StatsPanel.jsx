@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, RefreshCw, BarChart3, Clock, CheckCircle2, TrendingUp, Layers, Cpu, Coins, AlertTriangle, Zap } from 'lucide-react';
-import { api } from '../api';
+import { api } from '../../lib/api';
 
 const STATUS_LABELS = { backlog: 'Backlog', in_progress: 'In Progress', testing: 'Testing', done: 'Done' };
 const STATUS_COLORS = { backlog: '#918678', in_progress: '#f59e0b', testing: '#DA7756', done: '#34d399' };

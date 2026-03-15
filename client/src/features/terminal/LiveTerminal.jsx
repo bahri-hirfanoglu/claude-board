@@ -6,8 +6,8 @@ import {
   FolderOpen, Code, Eye, Pencil, Zap, Globe, Hash,
   GitBranch, AlertTriangle, CheckCircle2, Timer, Layers
 } from 'lucide-react';
-import { socket } from '../socket';
-import { api } from '../api';
+import { socket } from '../../lib/socket';
+import { api } from '../../lib/api';
 
 // ─── Tool icon registry ───
 const TOOL_ICONS = {

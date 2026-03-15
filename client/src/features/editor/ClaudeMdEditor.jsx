@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Save, FileText, AlertCircle, Check } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
-import { api } from '../api';
+import { api } from '../../lib/api';
 
 const DEFAULT_TEMPLATE = `# CLAUDE.md
 

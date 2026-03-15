@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers } from 'lucide-react';
 import Avatar from 'boring-avatars';
-import { api } from '../api';
+import { api } from '../../lib/api';
 
-const AVATAR_VARIANTS = ['marble', 'beam', 'pixel', 'sunset', 'ring', 'bauhaus'];
-const AVATAR_COLORS = ['#DA7756', '#e5936f', '#c4624a', '#918678', '#564d40'];
+import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
 
 function formatTokens(n) {
   if (!n || n === 0) return null;
@@ -244,4 +243,3 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   );
 }
 
-export { AVATAR_VARIANTS, AVATAR_COLORS };

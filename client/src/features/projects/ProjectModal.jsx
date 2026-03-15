@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, FolderOpen, RefreshCw, Shield, ShieldAlert, ShieldCheck, Info } from 'lucide-react';
 import Avatar from 'boring-avatars';
-import { AVATAR_VARIANTS, AVATAR_COLORS } from './Dashboard';
+import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
 
 const PERMISSION_MODES = [
   {

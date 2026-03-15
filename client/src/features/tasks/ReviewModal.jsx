@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, RotateCcw, CheckCircle, Clock, MessageSquare } from 'lucide-react';
-import { api } from '../api';
+import { api } from '../../lib/api';
 
 export default function ReviewModal({ task, onApprove, onRequestChanges, onClose }) {
   const [feedback, setFeedback] = useState('');
