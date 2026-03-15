@@ -5,7 +5,7 @@ import { PRIORITY_COLORS as priorityColors, PRIORITY_LABELS as priorityLabels, T
 
 const STATUS_OPTIONS = COLUMNS.map(c => ({ id: c.id, label: c.label, dot: c.bg }));
 
-export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange, onReview }) {
+export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange, onReview, onViewDetail }) {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuRef = useRef(null);
@@ -42,8 +42,9 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           onDragStart();
         }}
         onDragEnd={onDragEnd}
+        onClick={() => onViewDetail?.()}
         onContextMenu={handleContextMenu}
-        className={`group relative bg-surface-800 rounded-lg p-3 border border-surface-700/50 hover:border-surface-600 cursor-grab active:cursor-grabbing transition-all duration-150 hover:shadow-lg hover:shadow-black/20 ${
+        className={`group relative bg-surface-800 rounded-lg p-3 border border-surface-700/50 hover:border-surface-600 cursor-pointer active:cursor-grabbing transition-all duration-150 hover:shadow-lg hover:shadow-black/20 ${
           task.priority > 0 ? `border-l-2 ${priorityColors[task.priority]}` : ''
         }`}
       >

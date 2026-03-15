@@ -110,6 +110,8 @@ const migrations = [
   ['tasks', 'revision_count', 'ALTER TABLE tasks ADD COLUMN revision_count INTEGER DEFAULT 0'],
   ['tasks', 'queue_position', 'ALTER TABLE tasks ADD COLUMN queue_position INTEGER DEFAULT 0'],
   ['task_logs', 'meta', 'ALTER TABLE task_logs ADD COLUMN meta TEXT'],
+  ['tasks', 'commits', "ALTER TABLE tasks ADD COLUMN commits TEXT DEFAULT '[]'"],
+  ['tasks', 'pr_url', 'ALTER TABLE tasks ADD COLUMN pr_url TEXT'],
 ];
 
 for (const [table, col, sql] of migrations) {

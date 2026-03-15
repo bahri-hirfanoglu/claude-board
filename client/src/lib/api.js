@@ -46,6 +46,7 @@ export const api = {
   restartTask: (id) => request(`/api/tasks/${id}/restart`, { method: 'POST' }),
   requestChanges: (id, feedback) => request(`/api/tasks/${id}/request-changes`, { method: 'POST', body: JSON.stringify({ feedback }) }),
   getRevisions: (id) => request(`/api/tasks/${id}/revisions`),
+  getTaskDetail: (id) => request(`/api/tasks/${id}/detail`),
 
   // Stats & Activity
   getStats: (projectId) => request(`/api/projects/${projectId}/stats`),

@@ -6,6 +6,7 @@ import StatsPanel from '../features/stats/StatsPanel';
 import ActivityTimeline from '../features/activity/ActivityTimeline';
 import TaskModal from '../features/tasks/TaskModal';
 import ReviewModal from '../features/tasks/ReviewModal';
+import TaskDetailModal from '../features/tasks/TaskDetailModal';
 import ProjectModal from '../features/projects/ProjectModal';
 import ClaudeMdEditor from '../features/editor/ClaudeMdEditor';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -16,14 +17,14 @@ export default function AppLayout(props) {
   const {
     connected, projects, currentProject, tasks, filteredTasks, terminal,
     selectedTask, activePanel, search, toasts, confirm,
-    showModal, editingTask, showProjectModal, editingProject, showClaudeMd, reviewTask,
+    showModal, editingTask, showProjectModal, editingProject, showClaudeMd, reviewTask, detailTask,
     onSearchChange, onSetActivePanel, onSetSelectedTask,
     onNavigateToProject, onNavigateToDashboard,
     onStatusChange, onViewLogs, onCreateTask, onUpdateTask, onDeleteTask,
     onOpenCreateModal, onOpenEditModal, onCloseTaskModal,
     onReviewTask, onApproveTask, onRequestChanges, onCloseReview,
     onCreateProject, onUpdateProject, onDeleteProject, onEditProject, onNewProject, onCloseProjectModal,
-    onEditClaudeMd, onCloseClaudeMd,
+    onEditClaudeMd, onCloseClaudeMd, onViewDetail, onCloseDetail,
   } = props;
 
   return (
@@ -64,6 +65,7 @@ export default function AppLayout(props) {
                 onEditTask={onOpenEditModal}
                 onDeleteTask={onDeleteTask}
                 onReviewTask={onReviewTask}
+                onViewDetail={onViewDetail}
               />
             ) : (
               <Dashboard
@@ -117,6 +119,7 @@ export default function AppLayout(props) {
       {reviewTask && (
         <ReviewModal task={reviewTask} onApprove={onApproveTask} onRequestChanges={onRequestChanges} onClose={onCloseReview} />
       )}
+      {detailTask && <TaskDetailModal task={detailTask} onClose={onCloseDetail} />}
       {confirm && <ConfirmDialog {...confirm} />}
       <Toast toasts={toasts} />
     </div>

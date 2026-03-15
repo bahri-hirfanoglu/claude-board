@@ -8,7 +8,7 @@ const COLUMNS = [
   { id: 'done', label: 'Done', color: 'text-emerald-400', bg: 'bg-emerald-400' },
 ];
 
-export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, onDeleteTask, onReviewTask }) {
+export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, onDeleteTask, onReviewTask, onViewDetail }) {
   const [draggedTask, setDraggedTask] = useState(null);
   const [mobileTab, setMobileTab] = useState('backlog');
 
@@ -55,6 +55,7 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
           onDeleteTask={onDeleteTask}
           onStatusChange={onStatusChange}
           onReviewTask={onReviewTask}
+          onViewDetail={onViewDetail}
           isMobile
         />
       </div>
@@ -78,6 +79,7 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
             onDeleteTask={onDeleteTask}
             onStatusChange={onStatusChange}
             onReviewTask={onReviewTask}
+          onViewDetail={onViewDetail}
           />
         ))}
       </div>

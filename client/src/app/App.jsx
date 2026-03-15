@@ -27,6 +27,7 @@ export default function App() {
   const [editingProject, setEditingProject] = useState(null);
   const [showClaudeMd, setShowClaudeMd] = useState(false);
   const [reviewTask, setReviewTask] = useState(null);
+  const [detailTask, setDetailTask] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [search, setSearch] = useState('');
 
@@ -142,6 +143,7 @@ export default function App() {
       editingProject={editingProject}
       showClaudeMd={showClaudeMd}
       reviewTask={reviewTask}
+      detailTask={detailTask}
       // Handlers
       onSearchChange={setSearch}
       onSetActivePanel={setActivePanel}
@@ -171,6 +173,8 @@ export default function App() {
       onCloseProjectModal={() => { setShowProjectModal(false); setEditingProject(null); }}
       onEditClaudeMd={() => setShowClaudeMd(true)}
       onCloseClaudeMd={() => setShowClaudeMd(false)}
+      onViewDetail={(task) => setDetailTask(task)}
+      onCloseDetail={() => setDetailTask(null)}
     />
   );
 }

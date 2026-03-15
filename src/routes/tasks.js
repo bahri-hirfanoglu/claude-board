@@ -133,5 +133,20 @@ export default function taskRoutes({ queries, projectQueries, statsQueries, io, 
     res.json(queries.getRevisions.all(req.params.id));
   }));
 
+  // Task detail (commits, PR, usage, revisions combined)
+  router.get('/tasks/:id/detail', asyncHandler(async (req, res) => {
+    const task = queries.getTaskById.get(req.params.id);
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    const revisions = queries.getRevisions.all(req.params.id);
+    let commits = [];
+    try { commits = JSON.parse(task.commits || '[]'); } catch {}
+    res.json({
+      ...task,
+      commits,
+      revisions,
+      is_running: isTaskRunning(task.id),
+    });
+  }));
+
   return router;
 }

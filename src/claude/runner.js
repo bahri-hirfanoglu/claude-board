@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { platform } from 'os';
 import { buildPrompt } from './prompt.js';
 import { handleClaudeEvent } from './events.js';
@@ -58,6 +58,46 @@ function addLog(taskId, message, logType, queries, io, meta = null) {
   const payload = { taskId, message, logType, created_at: new Date().toISOString() };
   if (meta) payload.meta = meta;
   io.emit('task:log', payload);
+}
+
+// Scan git for recent commits and PR URLs after task completes
+function scanGitInfo(workingDir, taskId, queries) {
+  try {
+    const exec = (cmd) => execSync(cmd, { cwd: workingDir, stdio: 'pipe', timeout: 5000 }).toString().trim();
+
+    // Get recent commits (last 10, on current branch)
+    const logOutput = exec('git log --oneline -10 --no-merges --format="%H|%h|%s|%an|%ai"');
+    const commits = logOutput.split('\n').filter(Boolean).map(line => {
+      const [hash, short, message, author, date] = line.split('|');
+      return { hash, short, message, author, date };
+    });
+
+    // Try to find remote URL for commit links
+    let repoUrl = '';
+    try {
+      const remote = exec('git remote get-url origin');
+      repoUrl = remote.replace(/\.git$/, '').replace(/^git@github\.com:/, 'https://github.com/').replace(/^git@(.+):/, 'https://$1/');
+    } catch {}
+
+    if (repoUrl) {
+      commits.forEach(c => { c.url = `${repoUrl}/commit/${c.hash}`; });
+    }
+
+    // Try to find PR URL (if gh CLI is available)
+    let prUrl = null;
+    try {
+      const branch = exec('git branch --show-current');
+      if (branch && branch !== 'main' && branch !== 'master') {
+        const prOutput = exec(`gh pr view ${branch} --json url --jq .url`);
+        if (prOutput.startsWith('http')) prUrl = prOutput;
+      }
+    } catch {}
+
+    queries.updateTaskGitInfo.run(commits, prUrl, taskId);
+    return { commits, prUrl };
+  } catch {
+    return { commits: [], prUrl: null };
+  }
 }
 
 export function startClaude(task, io, workingDir, project = {}, revisions = [], { queries, statsQueries, activityLog, onFinished } = {}) {
@@ -155,6 +195,14 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
     taskUsage.delete(task.id);
 
     if (code === 0) {
+      // Scan git for commits and PRs
+      const gitInfo = scanGitInfo(workingDir, task.id, queries);
+      if (gitInfo.commits.length > 0) {
+        const commitCount = gitInfo.commits.length;
+        const prInfo = gitInfo.prUrl ? ` | PR: ${gitInfo.prUrl}` : '';
+        taskAddLog(task.id, `Git: ${commitCount} commit(s) found${prInfo}`, 'system');
+      }
+
       taskAddLog(task.id, 'Claude finished successfully.', 'success');
       queries.updateTaskStatus.run('testing', task.id);
       queries.setTaskCompleted.run(task.id);
