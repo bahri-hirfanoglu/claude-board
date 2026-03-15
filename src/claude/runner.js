@@ -1,13 +1,39 @@
 import { spawn } from 'child_process';
+import { platform } from 'os';
 import { buildPrompt } from './prompt.js';
 import { handleClaudeEvent } from './events.js';
 
 const activeProcesses = new Map();
 const activeToolCalls = new Map();
 const taskUsage = new Map();
-const startingTasks = new Set(); // Race condition guard
+const startingTasks = new Set();
 
+const IS_WIN = platform() === 'win32';
 const MODEL_MAP = { opus: 'opus', sonnet: 'sonnet', haiku: 'haiku' };
+
+// Cross-platform: resolve claude executable
+function getClaudeCommand() {
+  // On Windows, spawn with shell:false needs exact executable.
+  // 'claude' works if it's a .exe in PATH.
+  // Some installs use .cmd wrapper — shell:true handles that but has escaping issues.
+  // We use shell:false with the bare command; Node resolves .exe on Windows via PATHEXT.
+  return 'claude';
+}
+
+// Cross-platform process kill
+function killProcess(proc) {
+  try {
+    if (IS_WIN) {
+      // Windows: SIGTERM doesn't reliably kill child trees. Use taskkill.
+      spawn('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+    } else {
+      // Unix: send SIGTERM to process group
+      proc.kill('SIGTERM');
+    }
+  } catch {
+    try { proc.kill('SIGKILL'); } catch {}
+  }
+}
 
 export function isTaskRunning(taskId) { return activeProcesses.has(taskId); }
 export function getActiveProcess(taskId) { return activeProcesses.get(taskId); }
@@ -15,8 +41,9 @@ export function getActiveProcess(taskId) { return activeProcesses.get(taskId); }
 export function stopClaude(taskId, io, queries) {
   const proc = activeProcesses.get(taskId);
   if (proc) {
-    proc.kill('SIGTERM');
+    killProcess(proc);
     activeProcesses.delete(taskId);
+    startingTasks.delete(taskId);
     taskUsage.delete(taskId);
     addLog(taskId, 'Claude process stopped by user.', 'system', queries, io);
   }
@@ -79,19 +106,18 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
     }
   }
 
-  const proc = spawn('claude', args, {
+  const proc = spawn(getClaudeCommand(), args, {
     cwd: workingDir,
     shell: false,
     env: { ...process.env },
     stdio: ['ignore', 'pipe', 'pipe'],
-    windowsHide: true,
+    ...(IS_WIN && { windowsHide: true }),
   });
 
   activeProcesses.set(task.id, proc);
   startingTasks.delete(task.id);
   let buffer = '';
 
-  // Bind addLog for this task
   const taskAddLog = (tid, msg, type, meta = null) => addLog(tid, msg, type, queries, io, meta);
 
   proc.stdout.on('data', (data) => {
@@ -141,8 +167,6 @@ export function startClaude(task, io, workingDir, project = {}, revisions = [], 
     }
 
     io.emit('claude:finished', { taskId: task.id, exitCode: code });
-
-    // Auto-queue: start next task if enabled
     if (onFinished) onFinished(task, code);
   });
 

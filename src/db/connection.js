@@ -49,7 +49,9 @@ export function run(sql, params = []) {
   return { lastInsertRowid: Number(result[0]?.values[0]?.[0] ?? 0) };
 }
 
-process.on('SIGTERM', saveSync);
-process.on('SIGINT', saveSync);
+// Cross-platform graceful shutdown
+process.on('SIGINT', saveSync);   // Ctrl+C on all platforms
+process.on('SIGTERM', saveSync);  // Docker/systemd stop (Unix)
+process.on('exit', saveSync);     // Final flush on any exit
 
 export default db;
