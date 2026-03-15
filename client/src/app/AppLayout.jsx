@@ -74,21 +74,27 @@ export default function AppLayout(props) {
             )}
           </div>
 
-          {/* Side panels */}
+          {/* Side panels — full overlay on mobile, side panel on desktop */}
           {activePanel === 'logs' && terminal.activeTab && terminal.layout === 'side' && (
-            <LiveTerminal
-              key={terminal.activeTabId}
-              task={terminal.activeTab}
-              layout="side"
-              onClose={() => terminal.closeTab(terminal.activeTabId)}
-              onToggleLayout={() => terminal.setLayout('bottom')}
-            />
+            <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto">
+              <LiveTerminal
+                key={terminal.activeTabId}
+                task={terminal.activeTab}
+                layout="side"
+                onClose={() => terminal.closeTab(terminal.activeTabId)}
+                onToggleLayout={() => terminal.setLayout('bottom')}
+              />
+            </div>
           )}
           {activePanel === 'stats' && currentProject && (
-            <StatsPanel projectId={currentProject.id} onClose={() => onSetActivePanel(null)} />
+            <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto">
+              <StatsPanel projectId={currentProject.id} onClose={() => onSetActivePanel(null)} />
+            </div>
           )}
           {activePanel === 'activity' && currentProject && (
-            <ActivityTimeline projectId={currentProject.id} onClose={() => onSetActivePanel(null)} />
+            <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto">
+              <ActivityTimeline projectId={currentProject.id} onClose={() => onSetActivePanel(null)} />
+            </div>
           )}
         </div>
 

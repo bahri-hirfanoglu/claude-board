@@ -570,7 +570,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
   const isBottom = layout === 'bottom';
   const panelClass = isBottom
     ? 'flex flex-col bg-surface-900 border-t border-surface-800 h-full'
-    : 'w-[540px] flex-shrink-0 flex flex-col bg-surface-900 border-l border-surface-800';
+    : 'w-full md:w-[540px] flex-shrink-0 flex flex-col bg-surface-900 md:border-l border-surface-800';
 
   const FILTERS = [
     { id: 'all', label: 'All', count: null },

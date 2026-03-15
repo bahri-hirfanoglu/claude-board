@@ -2,7 +2,9 @@
   "name": "claude-board",
   "version": "3.0.0",
   "private": true,
-  "engines": { "node": ">=18.0.0" },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
@@ -13,11 +15,16 @@
     "setup": "npm install && cd client && npm install"
   },
   "dependencies": {
-    "sql.js": "^1.11.0",
+    "concurrently": "^9.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.0",
     "socket.io": "^4.8.0",
-    "concurrently": "^9.1.0"
+    "sql.js": "^1.11.0"
+  },
+  "devDependencies": {
+    "gif-encoder-2": "^1.0.5",
+    "pngjs": "^7.0.0",
+    "puppeteer": "^24.39.1"
   }
 }

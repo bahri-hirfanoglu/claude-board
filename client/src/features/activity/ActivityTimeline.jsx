@@ -72,7 +72,7 @@ export default function ActivityTimeline({ projectId, onClose }) {
   }, {});
 
   return (
-    <div className="w-[380px] flex-shrink-0 flex flex-col bg-surface-900 border-l border-surface-800">
+    <div className="w-full md:w-[380px] flex-shrink-0 flex flex-col bg-surface-900 md:border-l border-surface-800">
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-800">
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-claude" />

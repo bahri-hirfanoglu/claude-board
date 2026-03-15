@@ -61,8 +61,8 @@ export default function Header({
   if (!currentProject) return null;
 
   return (
-    <header className="flex items-center justify-between px-6 py-3 bg-surface-900 border-b border-surface-700/50">
-      <div className="flex items-center gap-3">
+    <header className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-surface-900 border-b border-surface-700/50 gap-2">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         {/* Back to dashboard */}
         <button
           onClick={onBackToDashboard}
@@ -159,61 +159,57 @@ export default function Header({
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-surface-400">
-          {connected ? (
-            <Wifi size={13} className="text-emerald-400" />
-          ) : (
-            <WifiOff size={13} className="text-red-400" />
-          )}
-          <span>{connected ? 'Connected' : 'Offline'}</span>
+        <div className="hidden sm:flex items-center gap-1.5 text-xs text-surface-400">
+          {connected ? <Wifi size={13} className="text-emerald-400" /> : <WifiOff size={13} className="text-red-400" />}
+          <span className="hidden lg:inline">{connected ? 'Connected' : 'Offline'}</span>
         </div>
+        {!connected && <WifiOff size={13} className="text-red-400 sm:hidden" />}
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="relative">
+      <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="relative hidden sm:block">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-500" />
           <input
             id="search-input"
             value={search}
             onChange={e => onSearchChange(e.target.value)}
-            placeholder="Search tasks... (/)"
-            className="w-48 pl-8 pr-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600"
+            placeholder="Search... (/)"
+            className="w-32 lg:w-48 pl-8 pr-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600"
           />
         </div>
 
         {runningCount > 0 && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium">
-            <Activity size={12} className="animate-pulse" />
-            {runningCount} running
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] sm:text-xs font-medium">
+            <Activity size={11} className="animate-pulse" />
+            <span>{runningCount}</span>
+            <span className="hidden sm:inline">running</span>
           </div>
         )}
 
-        <ProjectUsage tasks={tasks} />
+        <div className="hidden lg:block"><ProjectUsage tasks={tasks} /></div>
 
-        <span className="text-xs text-surface-500">{taskCount} tasks</span>
+        <span className="hidden sm:inline text-xs text-surface-500">{taskCount} tasks</span>
 
         <button
           onClick={onToggleActivity}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-            activityActive
-              ? 'bg-claude/20 text-claude-light'
-              : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
+          className={`flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-sm transition-colors ${
+            activityActive ? 'bg-claude/20 text-claude-light' : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
           }`}
+          title="Activity"
         >
           <Clock size={14} />
-          Activity
+          <span className="hidden sm:inline">Activity</span>
         </button>
 
         <button
           onClick={onToggleStats}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-            statsActive
-              ? 'bg-claude/20 text-claude-light'
-              : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
+          className={`flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-sm transition-colors ${
+            statsActive ? 'bg-claude/20 text-claude-light' : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
           }`}
+          title="Stats"
         >
           <BarChart3 size={14} />
-          Stats
+          <span className="hidden sm:inline">Stats</span>
         </button>
 
         {onNewTask && (
@@ -223,7 +219,7 @@ export default function Header({
             title="New Task (N)"
           >
             <Plus size={14} />
-            New Task
+            <span className="hidden sm:inline">New Task</span>
           </button>
         )}
       </div>

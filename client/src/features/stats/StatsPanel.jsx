@@ -116,7 +116,7 @@ export default function StatsPanel({ projectId, onClose }) {
   const totalAllTokens = (usage.total_input_tokens || 0) + (usage.total_output_tokens || 0);
 
   return (
-    <div className="w-[420px] flex-shrink-0 flex flex-col bg-surface-900 border-l border-surface-800">
+    <div className="w-full md:w-[420px] flex-shrink-0 flex flex-col bg-surface-900 md:border-l border-surface-800">
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-800">
         <div className="flex items-center gap-2">
           <BarChart3 size={15} className="text-claude" />
