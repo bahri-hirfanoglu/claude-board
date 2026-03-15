@@ -1,0 +1,13 @@
+node_modules/
+client/node_modules/
+client/dist/
+*.db
+data.db
+tasks.db
+.env
+.git
+.claude
+.gitignore
+*.md
+!README.md
+docs/

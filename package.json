@@ -2,6 +2,7 @@
   "name": "claude-board",
   "version": "3.0.0",
   "private": true,
+  "engines": { "node": ">=18.0.0" },
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",

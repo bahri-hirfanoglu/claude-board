@@ -1,6 +1,19 @@
+# Dependencies
 node_modules/
-tasks.db
-client/dist/
 client/node_modules/
+
+# Build
+client/dist/
+
+# Database
+*.db
+
+# Environment
 .env
-.claudedata.db
+
+# Claude
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
