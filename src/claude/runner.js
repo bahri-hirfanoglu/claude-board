@@ -11,6 +11,26 @@ const startingTasks = new Set();
 const IS_WIN = platform() === 'win32';
 const MODEL_MAP = { opus: 'opus', sonnet: 'sonnet', haiku: 'haiku' };
 
+// Server-side logger
+const CLR = {
+  reset: '\x1b[0m',
+  gray: '\x1b[90m',
+  magenta: '\x1b[35m',
+  green: '\x1b[32m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  cyan: '\x1b[36m',
+};
+function ts() {
+  return `${CLR.gray}${new Date().toLocaleTimeString('tr-TR', { hour12: false })}${CLR.reset}`;
+}
+const slog = {
+  claude: (msg) => console.log(`${ts()} ${CLR.magenta}[CLAUDE]${CLR.reset} ${msg}`),
+  task: (msg) => console.log(`${ts()} ${CLR.yellow}[TASK]${CLR.reset} ${msg}`),
+  git: (msg) => console.log(`${ts()} ${CLR.blue}[GIT]${CLR.reset} ${msg}`),
+};
+
 // Auto-create git branch for a task before Claude starts
 function ensureTaskBranch(task, workingDir, project, queries, io) {
   if (!project.auto_branch) return null;
@@ -161,6 +181,7 @@ export function getActiveProcess(taskId) {
 export function stopClaude(taskId, io, queries) {
   const proc = activeProcesses.get(taskId);
   if (proc) {
+    slog.claude(`Stopping task #${taskId} (PID: ${proc.pid})`);
     killProcess(proc);
     activeProcesses.delete(taskId);
     startingTasks.delete(taskId);
@@ -260,11 +281,13 @@ export function startClaude(
     return;
   }
   startingTasks.add(task.id);
+  slog.task(`Starting #${task.id} "${task.title}" [${task.task_type}]`);
 
   const prompt = buildPrompt(task, revisions, snippets);
   const model = task.model || 'sonnet';
   const effort = task.thinking_effort || 'medium';
   const permissionMode = project.permission_mode || 'auto-accept';
+  slog.claude(`Config: model=${model} effort=${effort} permissions=${permissionMode}`);
 
   // Snapshot baseline usage for live tracking
   const currentTask = queries.getTaskById.get(task.id);
@@ -283,6 +306,7 @@ export function startClaude(
   const branchName = ensureTaskBranch(task, workingDir, project, queries, io);
   if (branchName) {
     task.branch_name = branchName;
+    slog.git(`Task #${task.id} → branch: ${branchName}`);
   }
 
   addLog(task.id, `Starting Claude for task: ${task.title}`, 'system', queries, io);
@@ -325,6 +349,7 @@ export function startClaude(
 
   activeProcesses.set(task.id, proc);
   startingTasks.delete(task.id);
+  slog.claude(`Task #${task.id} spawned (PID: ${proc.pid}) — ${activeProcesses.size} active process(es)`);
   let buffer = '';
 
   const taskAddLog = (tid, msg, type, meta = null) => addLog(tid, msg, type, queries, io, meta);
@@ -378,13 +403,30 @@ export function startClaude(
         const commitCount = gitInfo.commits.length;
         const prInfo = gitInfo.prUrl ? ` | PR: ${gitInfo.prUrl}` : '';
         taskAddLog(task.id, `Git: ${commitCount} commit(s) found${prInfo}`, 'system');
+        slog.git(`Task #${task.id}: ${commitCount} commit(s)${prInfo}`);
       }
 
       // Auto-create PR if enabled
       const updatedTask = queries.getTaskById.get(task.id);
       if (project.auto_pr && updatedTask.branch_name) {
+        slog.git(`Task #${task.id}: Creating PR for ${updatedTask.branch_name}`);
         createPullRequest(updatedTask, workingDir, project, queries, io);
       }
+
+      // Calculate duration
+      const taskData = queries.getTaskById.get(task.id);
+      let durationStr = '';
+      if (taskData?.started_at) {
+        const dur = Math.round((Date.now() - new Date(taskData.started_at).getTime()) / 1000);
+        const m = Math.floor(dur / 60);
+        const s = dur % 60;
+        durationStr = m > 0 ? ` in ${m}m ${s}s` : ` in ${s}s`;
+      }
+      const tokens = (taskData?.input_tokens || 0) + (taskData?.output_tokens || 0);
+      const cost = taskData?.total_cost || 0;
+      slog.task(
+        `${CLR.green}✓${CLR.reset} #${task.id} "${task.title}" completed${durationStr} | ${tokens.toLocaleString()} tokens | $${cost.toFixed(4)}`,
+      );
 
       taskAddLog(task.id, 'Claude finished successfully.', 'success');
       queries.updateTaskStatus.run('testing', task.id);
@@ -393,6 +435,7 @@ export function startClaude(
       io.emit('task:updated', updated);
       if (activityLog) activityLog.add(task.project_id, task.id, 'task_completed', `Task completed: ${task.title}`);
     } else {
+      slog.task(`${CLR.red}✗${CLR.reset} #${task.id} "${task.title}" failed (exit code: ${code})`);
       taskAddLog(task.id, `Claude exited with code ${code}.`, 'error');
       if (activityLog)
         activityLog.add(task.project_id, task.id, 'task_failed', `Task failed (exit ${code}): ${task.title}`);
@@ -406,6 +449,7 @@ export function startClaude(
     activeProcesses.delete(task.id);
     startingTasks.delete(task.id);
     taskUsage.delete(task.id);
+    slog.claude(`${CLR.red}ERROR${CLR.reset} Task #${task.id}: Failed to start — ${err.message}`);
     taskAddLog(task.id, `Failed to start Claude: ${err.message}`, 'error');
     io.emit('claude:finished', { taskId: task.id, exitCode: -1 });
     if (activityLog) activityLog.add(task.project_id, task.id, 'task_failed', `Failed to start: ${err.message}`);
