@@ -63,6 +63,8 @@ export default function taskRoutes({
       const task = queries.getTaskById.get(result.lastInsertRowid);
       io.emit('task:created', task);
       activityLog.add(project.id, task.id, 'task_created', `Task created: ${title.trim()}`);
+      // Trigger auto-queue if enabled
+      startNextQueued(project.id);
       res.status(201).json(task);
     }),
   );
