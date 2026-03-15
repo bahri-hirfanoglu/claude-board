@@ -34,6 +34,7 @@ db.run(`CREATE TABLE IF NOT EXISTS tasks (
 db.run(`CREATE TABLE IF NOT EXISTS task_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT, task_id INTEGER NOT NULL, message TEXT NOT NULL,
   log_type TEXT DEFAULT 'info' CHECK(log_type IN ('info','error','success','claude','tool','tool_result','system')),
+  meta TEXT,
   created_at DATETIME DEFAULT (datetime('now','localtime')),
   FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
 )`);
@@ -108,6 +109,7 @@ const migrations = [
   ['tasks', 'model_used', 'ALTER TABLE tasks ADD COLUMN model_used TEXT'],
   ['tasks', 'revision_count', 'ALTER TABLE tasks ADD COLUMN revision_count INTEGER DEFAULT 0'],
   ['tasks', 'queue_position', 'ALTER TABLE tasks ADD COLUMN queue_position INTEGER DEFAULT 0'],
+  ['task_logs', 'meta', 'ALTER TABLE task_logs ADD COLUMN meta TEXT'],
 ];
 
 for (const [table, col, sql] of migrations) {

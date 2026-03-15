@@ -51,7 +51,7 @@ export function stopClaude(taskId, io, queries) {
 
 function addLog(taskId, message, logType, queries, io, meta = null) {
   try {
-    queries.addTaskLog.run(taskId, message, logType);
+    queries.addTaskLog.run(taskId, message, logType, meta);
   } catch (e) {
     console.error('[Log]', e.message);
   }

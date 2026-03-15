@@ -35,8 +35,16 @@ export const queries = {
   updateTaskClaudeSession: { run: (sid, id) => run("UPDATE tasks SET claude_session_id=?,updated_at=datetime('now','localtime') WHERE id=?", [sid, id]) },
 
   // Logs
-  getRecentTaskLogs: { all: (tid, limit) => queryAll('SELECT * FROM task_logs WHERE task_id=? ORDER BY id DESC LIMIT ?', [tid, limit]) },
-  addTaskLog: { run: (tid, msg, type) => run('INSERT INTO task_logs (task_id,message,log_type) VALUES (?,?,?)', [tid, msg, type]) },
+  getRecentTaskLogs: {
+    all: (tid, limit) => queryAll('SELECT * FROM task_logs WHERE task_id=? ORDER BY id DESC LIMIT ?', [tid, limit])
+      .map(row => ({ ...row, meta: row.meta ? JSON.parse(row.meta) : null })),
+  },
+  addTaskLog: {
+    run: (tid, msg, type, meta = null) => run(
+      'INSERT INTO task_logs (task_id,message,log_type,meta) VALUES (?,?,?,?)',
+      [tid, msg, type, meta ? JSON.stringify(meta) : null]
+    ),
+  },
   clearTaskLogs: { run: (tid) => run('DELETE FROM task_logs WHERE task_id=?', [tid]) },
 
   // Revisions
