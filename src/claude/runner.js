@@ -38,11 +38,31 @@ const slog = {
   git: (msg) => console.log(`${ts()} ${CLR.blue}[GIT]${CLR.reset} ${msg}`),
 };
 
+// Generate a short, meaningful branch name from task title
+function generateBranchSlug(title) {
+  return title
+    .toLowerCase()
+    .replace(/[çÇ]/g, 'c')
+    .replace(/[ğĞ]/g, 'g')
+    .replace(/[ıİ]/g, 'i')
+    .replace(/[öÖ]/g, 'o')
+    .replace(/[şŞ]/g, 's')
+    .replace(/[üÜ]/g, 'u')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40)
+    .replace(/-$/, '');
+}
+
 // Auto-create git branch for a task before Claude starts
 function ensureTaskBranch(task, workingDir, project, queries, io) {
   if (!project.auto_branch) return null;
   const isRevision = (task.revision_count || 0) > 0;
-  const branchName = task.branch_name || `${task.task_type || 'feature'}/task-${task.id}`;
+  const slug = generateBranchSlug(task.title) || `task-${task.id}`;
+  const branchName = task.branch_name || `${task.task_type || 'feature'}/${slug}`;
 
   try {
     const exec = (cmd) => execSync(cmd, { cwd: workingDir, stdio: 'pipe', timeout: 10000 }).toString().trim();
