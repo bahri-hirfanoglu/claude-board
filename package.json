@@ -150,7 +150,8 @@
     "lint-staged": "^16.4.0",
     "pngjs": "^7.0.0",
     "prettier": "^3.8.1",
-    "puppeteer": "^24.39.1"
+    "puppeteer": "^24.39.1",
+    "sharp": "^0.34.5"
   },
   "lint-staged": {
     "src/**/*.js": [
