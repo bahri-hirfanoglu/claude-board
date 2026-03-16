@@ -4,12 +4,13 @@
 
 **AI-powered task management platform that orchestrates Claude to autonomously execute development tasks.**
 
-[![Version](https://img.shields.io/badge/version-3.2.0-DA7756?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
+[![Version](https://img.shields.io/badge/version-3.5.0-DA7756?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green?style=flat-square)](https://nodejs.org)
 [![Docker](https://img.shields.io/badge/docker-supported-2496ED?style=flat-square)](Dockerfile)
+[![Electron](https://img.shields.io/badge/electron-desktop%20app-9FEAF9?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
 
-[Features](#features) &bull; [Quick Start](#quick-start) &bull; [Screenshots](#screenshots) &bull; [Architecture](#architecture) &bull; [API](#api-reference) &bull; [Contributing](#contributing)
+[Features](#features) &bull; [Download](#download) &bull; [Quick Start](#quick-start) &bull; [Screenshots](#screenshots) &bull; [Architecture](#architecture) &bull; [API](#api-reference) &bull; [Contributing](#contributing)
 
 ![Demo](docs/demo.gif)
 
@@ -23,17 +24,39 @@ Claude Board is a self-hosted Kanban-style project management tool that integrat
 
 Think of it as **Jira meets AI pair programming**: you define what needs to be done, Claude does the coding, you review and approve.
 
+## Download
+
+### Desktop App
+
+Download the latest version for your platform:
+
+| Platform | Download | Notes |
+|----------|----------|-------|
+| **Windows** | [ClaudeBoard-Setup.exe](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | NSIS installer with desktop shortcut |
+| **Windows Portable** | [ClaudeBoard-Portable.exe](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | No installation required |
+| **macOS (Intel)** | [ClaudeBoard-x64.dmg](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Intel Macs |
+| **macOS (Apple Silicon)** | [ClaudeBoard-arm64.dmg](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | M1/M2/M3/M4 Macs |
+| **Linux** | [ClaudeBoard.AppImage](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Universal Linux |
+| **Linux (Debian)** | [ClaudeBoard.deb](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Ubuntu/Debian |
+
+> **Note:** Claude Code CLI must be installed and authenticated on your system for task execution to work.
+
 ## Features
 
 - **Kanban Board** &mdash; Drag-and-drop tasks across Backlog, In Progress, Testing, Done
 - **Multiple Views** &mdash; Switch between Board, List, Timeline, and Summary views
-- **Timeline View** &mdash; Gantt-style visualization of task durations and parallel execution
+- **Timeline View** &mdash; Gantt-style visualization with gradient bars, today marker, and status legend
 - **Autonomous Execution** &mdash; Claude CLI auto-starts when tasks move to In Progress
 - **Live Terminal** &mdash; Watch Claude's tool calls, file edits, and bash commands in real-time with collapsible detail cards
 - **Diff Preview** &mdash; See file change statistics (insertions/deletions) for completed tasks
 - **Review System** &mdash; Approve completed work or request changes with revision feedback (Jira-style)
 - **Context Snippets** &mdash; Define project rules and context that auto-inject into every Claude prompt
+- **Prompt Templates** &mdash; Reusable task templates with variable substitution
+- **File Attachments** &mdash; Attach reference files to tasks for Claude to use during execution
+- **Webhook Notifications** &mdash; Send task events to Slack, Discord, Microsoft Teams, or custom HTTP endpoints
 - **Task Queue** &mdash; Enable auto-queue to chain tasks &mdash; when one finishes, the next starts automatically
+- **Smart Timer** &mdash; Work duration pauses when tasks enter Testing, resumes on return to In Progress
+- **Git Automation** &mdash; Auto-create feature branches from task titles and optional auto-PR creation
 - **Live Token Tracking** &mdash; Real-time token consumption and cost updates, saved even if stopped mid-task
 - **Activity Timeline** &mdash; Chronological event feed of all project actions
 - **Claude Usage Dashboard** &mdash; Token stats, model breakdown, cost analysis, 30-day sparkline, rate limit status
@@ -41,6 +64,21 @@ Think of it as **Jira meets AI pair programming**: you define what needs to be d
 - **CLAUDE.md Editor** &mdash; Edit project-level Claude configuration directly from the UI
 - **Permission Modes** &mdash; Auto-accept, allow specific tools, or default Claude permissions per project
 - **Model Selection** &mdash; Choose Opus, Sonnet, or Haiku per task with thinking effort levels
+- **Desktop App** &mdash; Native Windows (.exe), macOS (.dmg), and Linux (AppImage/deb) builds via Electron
+- **Mobile Responsive** &mdash; Full mobile support with touch-friendly task move buttons
+
+### Webhook Notifications
+
+Send real-time notifications when tasks are created, started, completed, or revised:
+
+| Platform | Payload Format | Setup |
+|----------|---------------|-------|
+| **Slack** | Block Kit messages | Incoming Webhook URL |
+| **Discord** | Rich embeds with colors | Webhook URL from channel settings |
+| **Microsoft Teams** | MessageCard format | Incoming Webhook connector |
+| **Custom** | JSON payload | Any HTTP endpoint |
+
+Configure webhooks per project from the project menu. Filter which events trigger notifications, test connectivity with one click, and enable/disable without deleting.
 
 ## Screenshots
 
@@ -102,6 +140,31 @@ Or with Docker Compose:
 docker compose up -d
 ```
 
+### Desktop App (Development)
+
+```bash
+npm run build
+npm run electron:dev
+```
+
+### Build Desktop Installers
+
+```bash
+# Windows
+npm run electron:build:win
+
+# macOS
+npm run electron:build:mac
+
+# Linux
+npm run electron:build:linux
+
+# All platforms
+npm run electron:build
+```
+
+Built artifacts are saved to `dist-electron/`.
+
 ## Configuration
 
 ### Environment Variables
@@ -119,6 +182,9 @@ Each project can be configured with:
 | **Permission Mode** | `auto-accept`, `allow-tools`, `default` | How Claude handles tool permissions |
 | **Auto Queue** | on/off | Automatically start next backlog task when current finishes |
 | **Max Concurrent** | 1-5 | Maximum parallel tasks (when auto-queue is enabled) |
+| **Auto Branch** | on/off | Create feature branches from task titles |
+| **Auto PR** | on/off | Create pull requests when tasks complete |
+| **Webhooks** | Slack/Discord/Teams/Custom | Send notifications on task events |
 
 ### Task Settings
 
@@ -134,6 +200,8 @@ Each project can be configured with:
 ```
 claude-board/
   server.js                         # Entry point
+  electron/
+    main.cjs                        # Electron main process (desktop app)
 
   src/                              # Backend modules
     app.js                          # Express + Socket.IO factory
@@ -145,6 +213,9 @@ claude-board/
       stats.js                      # Statistics queries
       activity.js                   # Activity log queries
       snippets.js                   # Context snippet queries
+      templates.js                  # Prompt template queries
+      webhooks.js                   # Webhook configuration queries
+      attachments.js                # File attachment queries
       index.js                      # Barrel export
     claude/
       runner.js                     # Claude CLI process management
@@ -155,35 +226,29 @@ claude-board/
       tasks.js                      # /api/tasks
       stats.js                      # /api/stats, activity, CLAUDE.md
       snippets.js                   # /api/snippets
+      templates.js                  # /api/templates
+      webhooks.js                   # /api/webhooks
+      attachments.js                # /api/attachments
+    services/
+      webhookDispatcher.js          # Webhook payload builder & HTTP dispatcher
 
   client/src/                       # React frontend
     app/                            # Application shell
-      App.jsx                       # Root component with hooks
-      AppLayout.jsx                 # Layout renderer
     hooks/                          # Custom React hooks
-      useProjects.js                # Project state management
-      useTasks.js                   # Task state + socket events
-      useTerminalTabs.js            # Terminal tab management
-      useSocket.js                  # Connection state
-      useToast.js                   # Toast notifications
     lib/                            # Shared utilities
-      api.js                        # HTTP client
-      socket.js                     # Socket.IO client
-      constants.js                  # Shared constants
-      formatters.js                 # Number/date formatters
     features/                       # Feature modules
       board/                        # Kanban, List, Timeline, Summary views
       snippets/                     # Context snippets manager
+      templates/                    # Prompt templates manager
+      webhooks/                     # Webhook configuration UI
       terminal/                     # Live output viewer
       stats/                        # Statistics panel
       activity/                     # Activity timeline
       dashboard/                    # Home dashboard
       projects/                     # Header, ProjectModal
-      tasks/                        # TaskModal, ReviewModal
+      tasks/                        # TaskModal, ReviewModal, TaskDetailModal
       editor/                       # CLAUDE.md editor
     components/                     # Shared UI
-      ConfirmDialog.jsx
-      Toast.jsx
 ```
 
 ### Tech Stack
@@ -193,6 +258,7 @@ claude-board/
 | **Backend** | Node.js, Express, Socket.IO |
 | **Frontend** | React 18, Vite, Tailwind CSS |
 | **Database** | SQLite (via sql.js, zero config) |
+| **Desktop** | Electron, electron-builder |
 | **Icons** | Lucide React |
 | **Avatars** | Boring Avatars |
 | **Markdown** | @uiw/react-md-editor |
@@ -208,8 +274,9 @@ User creates task
   -> Stream events parsed in real-time
   -> Live terminal shows progress
   -> Token usage tracked per turn
-  -> Claude finishes -> task moves to "Testing"
-  -> User reviews -> Approve (Done) or Request Changes (back to In Progress)
+  -> Webhook notifications dispatched to configured services
+  -> Claude finishes -> task moves to "Testing" (timer pauses)
+  -> User reviews -> Approve (Done) or Request Changes (back to In Progress, timer resumes)
 ```
 
 ## API Reference
@@ -238,6 +305,17 @@ User creates task
 | `POST` | `/api/tasks/:id/request-changes` | Request revision with feedback |
 | `GET` | `/api/tasks/:id/revisions` | Get revision history |
 | `GET` | `/api/tasks/:id/logs` | Get task logs |
+| `GET` | `/api/tasks/:id/detail` | Get task with commits, revisions, attachments |
+
+### Webhooks
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/projects/:id/webhooks` | List project webhooks |
+| `POST` | `/api/projects/:id/webhooks` | Create webhook |
+| `PUT` | `/api/webhooks/:id` | Update webhook |
+| `DELETE` | `/api/webhooks/:id` | Delete webhook |
+| `POST` | `/api/webhooks/:id/test` | Send test notification |
 
 ### Context Snippets
 
@@ -247,6 +325,23 @@ User creates task
 | `POST` | `/api/projects/:id/snippets` | Create snippet |
 | `PUT` | `/api/snippets/:id` | Update snippet |
 | `DELETE` | `/api/snippets/:id` | Delete snippet |
+
+### Templates
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/projects/:id/templates` | List project templates |
+| `POST` | `/api/projects/:id/templates` | Create template |
+| `PUT` | `/api/templates/:id` | Update template |
+| `DELETE` | `/api/templates/:id` | Delete template |
+
+### Attachments
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/tasks/:id/attachments` | Upload files to task |
+| `GET` | `/api/tasks/:id/attachments` | List task attachments |
+| `DELETE` | `/api/attachments/:id` | Delete attachment |
 
 ### Stats & Activity
 

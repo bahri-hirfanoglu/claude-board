@@ -20,5 +20,7 @@ uploads/
 # OS
 .DS_Store
 Thumbs.db
-scripts/
 logs/
+dist-electron/
+build/*.png
+build/*.ico
