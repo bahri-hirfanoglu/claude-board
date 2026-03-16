@@ -30,6 +30,8 @@ import { createWebhookDispatcher } from './services/webhookDispatcher.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
+// In Electron packaged app, asarUnpack files are at app.asar.unpacked
+const staticRoot = rootDir.includes('app.asar') ? rootDir.replace('app.asar', 'app.asar.unpacked') : rootDir;
 
 // ─── Logger ───
 const LOG_COLORS = {
@@ -94,7 +96,7 @@ export function createApp() {
     if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Invalid JSON' });
     next(err);
   });
-  app.use(express.static(join(rootDir, 'client', 'dist')));
+  app.use(express.static(join(staticRoot, 'client', 'dist')));
 
   // Request logger for mutations
   app.use((req, res, next) => {
@@ -213,11 +215,11 @@ export function createApp() {
   app.use('/api', authMiddleware, webhookRoutes(deps));
 
   // Serve uploaded files
-  app.use('/uploads', express.static(join(rootDir, 'uploads')));
+  app.use('/uploads', express.static(join(staticRoot, 'uploads')));
 
   // SPA fallback
   app.get('*', (req, res) => {
-    res.sendFile(join(rootDir, 'client', 'dist', 'index.html'));
+    res.sendFile(join(staticRoot, 'client', 'dist', 'index.html'));
   });
 
   // Global error handler

@@ -6,6 +6,7 @@ client/node_modules/
 client/dist/
 
 # Database
+data/
 *.db
 
 # Environment

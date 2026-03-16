@@ -1,13 +1,33 @@
 import initSqlJs from 'sql.js';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, '..', '..', 'data.db');
-const LEGACY_PATH = join(__dirname, '..', '..', 'tasks.db');
+const projectRoot = join(__dirname, '..', '..');
 
-const SQL = await initSqlJs();
+// DB storage: CLAUDE_BOARD_DATA env > projectRoot/data/ directory
+const dataDir = process.env.CLAUDE_BOARD_DATA || join(projectRoot, 'data');
+try {
+  mkdirSync(dataDir, { recursive: true });
+} catch {}
+
+const DB_PATH = join(dataDir, 'data.db');
+const LEGACY_PATH = join(dataDir, 'tasks.db');
+
+// Migrate legacy DB from project root to data/ if needed
+const legacyRootDb = join(projectRoot, 'data.db');
+const legacyRootTasks = join(projectRoot, 'tasks.db');
+if (!existsSync(DB_PATH) && !existsSync(LEGACY_PATH)) {
+  if (existsSync(legacyRootDb)) copyFileSync(legacyRootDb, DB_PATH);
+  else if (existsSync(legacyRootTasks)) copyFileSync(legacyRootTasks, LEGACY_PATH);
+}
+
+// sql.js wasm: use unpacked path in Electron
+const sqlJsRoot = __dirname.includes('app.asar') ? __dirname.replace('app.asar', 'app.asar.unpacked') : __dirname;
+const SQL = await initSqlJs({
+  locateFile: (file) => join(sqlJsRoot, '..', '..', 'node_modules', 'sql.js', 'dist', file),
+});
 const dbPath = existsSync(DB_PATH) ? DB_PATH : existsSync(LEGACY_PATH) ? LEGACY_PATH : DB_PATH;
 const db = existsSync(dbPath) ? new SQL.Database(readFileSync(dbPath)) : new SQL.Database();
 
@@ -71,8 +91,8 @@ export function run(sql, params = []) {
 }
 
 // Cross-platform graceful shutdown
-process.on('SIGINT', saveSync); // Ctrl+C on all platforms
-process.on('SIGTERM', saveSync); // Docker/systemd stop (Unix)
-process.on('exit', saveSync); // Final flush on any exit
+process.on('SIGINT', saveSync);
+process.on('SIGTERM', saveSync);
+process.on('exit', saveSync);
 
 export default db;

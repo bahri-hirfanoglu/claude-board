@@ -20,6 +20,10 @@ async function startServer() {
   process.env.PORT = String(PORT);
   process.env.NODE_ENV = 'production';
   process.env.ELECTRON = '1';
+  // Store DB in user data directory when packaged
+  if (app.isPackaged) {
+    process.env.CLAUDE_BOARD_DATA = app.getPath('userData');
+  }
 
   // Dynamically import the ESM server module (Windows needs file:// URL)
   const { pathToFileURL } = require('url');

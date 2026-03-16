@@ -49,10 +49,18 @@
       "!node_modules/electron-builder/**",
       "!node_modules/.cache/**"
     ],
+    "asarUnpack": [
+      "client/dist/**/*",
+      "node_modules/sql.js/**/*"
+    ],
     "extraResources": [
       {
         "from": "build/icon.png",
         "to": "build/icon.png"
+      },
+      {
+        "from": "build/icon.ico",
+        "to": "build/icon.ico"
       }
     ],
     "forceCodeSigning": false,
