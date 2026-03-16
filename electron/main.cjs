@@ -45,11 +45,11 @@ function createSplash() {
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body {
+  html, body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: transparent;
     display: flex; align-items: center; justify-content: center;
-    height: 100vh; -webkit-app-region: drag;
+    height: 100vh; overflow: hidden; -webkit-app-region: drag;
   }
   .card {
     background: #1f1b17;
