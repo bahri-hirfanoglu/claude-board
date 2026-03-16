@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Plus, BarChart3, Wifi, WifiOff, Activity, Search, ChevronDown, Settings, Trash2, FolderPlus, FileText, LayoutGrid, Cpu, Coins, Clock, BookOpen, Layers } from 'lucide-react';
+import { Plus, BarChart3, Wifi, WifiOff, Activity, Search, ChevronDown, Settings, Trash2, FolderPlus, FileText, LayoutGrid, Cpu, Coins, Clock, BookOpen, Layers, Bell } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from '../../lib/constants';
 import { formatTokens as fmtTokens } from '../../lib/formatters';
@@ -36,7 +36,7 @@ function ProjectUsage({ tasks }) {
 export default function Header({
   connected, taskCount, runningCount, onNewTask, onToggleStats, statsActive,
   onToggleActivity, activityActive,
-  search, onSearchChange, projects, currentProject, onSelectProject, onBackToDashboard, onNewProject, onEditProject, onDeleteProject, onEditClaudeMd, onEditSnippets, onEditTemplates,
+  search, onSearchChange, projects, currentProject, onSelectProject, onBackToDashboard, onNewProject, onEditProject, onDeleteProject, onEditClaudeMd, onEditSnippets, onEditTemplates, onEditWebhooks,
   tasks
 }) {
   const [showProjectMenu, setShowProjectMenu] = useState(false);
@@ -149,6 +149,13 @@ export default function Header({
                     >
                       <Layers size={13} className="text-surface-500" />
                       Prompt Templates
+                    </button>
+                    <button
+                      onClick={() => { onEditWebhooks?.(); setShowProjectMenu(false); }}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs text-surface-300 hover:bg-surface-700 transition-colors"
+                    >
+                      <Bell size={13} className="text-surface-500" />
+                      Webhooks
                     </button>
                   </div>
                 </>

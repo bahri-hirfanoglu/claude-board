@@ -80,6 +80,13 @@ export const api = {
   getAttachments: (taskId) => request(`/api/tasks/${taskId}/attachments`),
   deleteAttachment: (id) => request(`/api/attachments/${id}`, { method: 'DELETE' }),
 
+  // Webhooks
+  getWebhooks: (projectId) => request(`/api/projects/${projectId}/webhooks`),
+  createWebhook: (projectId, data) => request(`/api/projects/${projectId}/webhooks`, { method: 'POST', body: JSON.stringify(data) }),
+  updateWebhook: (id, data) => request(`/api/webhooks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteWebhook: (id) => request(`/api/webhooks/${id}`, { method: 'DELETE' }),
+  testWebhook: (id) => request(`/api/webhooks/${id}/test`, { method: 'POST' }),
+
   // Auth
   getAuthStatus: () => request('/api/auth/status'),
   enableAuth: () => request('/api/auth/enable', { method: 'POST' }),
