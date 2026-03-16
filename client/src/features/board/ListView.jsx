@@ -82,7 +82,7 @@ export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask
               const taskType = task.task_type || 'feature';
               const totalTokens = (task.input_tokens || 0) + (task.output_tokens || 0);
               const modelDisplay = task.model_used || task.model || 'sonnet';
-              const duration = formatDuration(task.started_at, task.completed_at);
+              const duration = formatDuration(task.started_at, task.completed_at, task.work_duration_ms, task.last_resumed_at);
 
               return (
                 <tr

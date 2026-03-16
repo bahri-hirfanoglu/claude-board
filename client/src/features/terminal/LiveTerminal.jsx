@@ -413,25 +413,31 @@ function ActivityIndicator({ logs, isRunning }) {
 }
 
 // ─── Elapsed time counter ───
-function ElapsedTime({ startedAt, isRunning }) {
+function ElapsedTime({ startedAt, isRunning, workDurationMs = 0, lastResumedAt = null }) {
   const [elapsed, setElapsed] = useState('');
 
   useEffect(() => {
     if (!startedAt) return;
     const update = () => {
-      const start = new Date(startedAt).getTime();
-      const now = Date.now();
-      const diff = now - start;
+      let diff;
+      if (workDurationMs > 0 || lastResumedAt) {
+        diff = workDurationMs || 0;
+        if (lastResumedAt) {
+          diff += Date.now() - new Date(lastResumedAt).getTime();
+        }
+      } else {
+        diff = Date.now() - new Date(startedAt).getTime();
+      }
       const mins = Math.floor(diff / 60000);
       const secs = Math.floor((diff % 60000) / 1000);
       setElapsed(mins > 0 ? `${mins}m ${secs}s` : `${secs}s`);
     };
     update();
-    if (isRunning) {
+    if (isRunning || lastResumedAt) {
       const iv = setInterval(update, 1000);
       return () => clearInterval(iv);
     }
-  }, [startedAt, isRunning]);
+  }, [startedAt, isRunning, workDurationMs, lastResumedAt]);
 
   if (!elapsed) return null;
   return (
@@ -608,7 +614,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
 
         {/* Live stats bar */}
         <div className="flex items-center gap-2.5 text-[10px] text-surface-500 mx-2">
-          <ElapsedTime startedAt={task.started_at} isRunning={task.is_running} />
+          <ElapsedTime startedAt={task.started_at} isRunning={task.is_running} workDurationMs={task.work_duration_ms || 0} lastResumedAt={task.last_resumed_at} />
           {totalTokens > 0 && <span className="flex items-center gap-0.5"><Cpu size={9} />{fmtTokens(totalTokens)}</span>}
           {task.total_cost > 0 && <span className="flex items-center gap-0.5"><Coins size={9} />${task.total_cost.toFixed(4)}</span>}
           {stats.tools > 0 && <span className={`flex items-center gap-0.5 text-purple-400/60`}><Code size={9} />{stats.tools}</span>}

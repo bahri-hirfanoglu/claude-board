@@ -103,9 +103,21 @@ export default function taskRoutes({
       const prevStatus = task.status;
       queries.updateTaskStatus.run(status, task.id);
 
-      if (status === 'in_progress' && !task.started_at) queries.setTaskStarted.run(task.id);
+      if (status === 'in_progress') {
+        if (!task.started_at) {
+          queries.setTaskStarted.run(task.id);
+        } else {
+          // Resuming from testing/other - restart the timer segment
+          queries.setTaskResumed.run(task.id);
+        }
+      }
+      if (status === 'testing' && prevStatus === 'in_progress') {
+        // Pause timer: accumulate elapsed time since last_resumed_at
+        queries.pauseTaskTimer.run(task.id);
+      }
       if (status === 'done' && !task.completed_at) {
-        queries.setTaskCompleted.run(task.id);
+        // Finalize timer: accumulate remaining time and set completed_at
+        queries.finalizeTaskTimer.run(task.id);
         activityLog.add(task.project_id, task.id, 'task_approved', `Task approved: ${task.title}`);
       }
 

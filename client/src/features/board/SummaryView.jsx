@@ -52,11 +52,14 @@ export default function SummaryView({ tasks }) {
     const total = tasks.length;
     const completionRate = total > 0 ? ((completed / total) * 100).toFixed(0) : 0;
 
-    // Avg duration for completed tasks
+    // Avg duration for completed tasks (use work_duration_ms if available)
     const completedTasks = tasks.filter(t => t.started_at && t.completed_at);
     let avgMinutes = 0;
     if (completedTasks.length > 0) {
-      const totalMs = completedTasks.reduce((sum, t) => sum + (new Date(t.completed_at) - new Date(t.started_at)), 0);
+      const totalMs = completedTasks.reduce((sum, t) => {
+        if (t.work_duration_ms > 0) return sum + t.work_duration_ms;
+        return sum + (new Date(t.completed_at) - new Date(t.started_at));
+      }, 0);
       avgMinutes = Math.round(totalMs / completedTasks.length / 60000);
     }
 

@@ -20,7 +20,7 @@ export default function TaskDetailModal({ task, onClose }) {
   const revisions = detail?.revisions || [];
   const [attachments, setAttachments] = useState(detail?.attachments || []);
   const totalTokens = (d.input_tokens || 0) + (d.output_tokens || 0);
-  const duration = formatDuration(d.started_at, d.completed_at);
+  const duration = formatDuration(d.started_at, d.completed_at, d.work_duration_ms, d.last_resumed_at);
 
   const TYPE_COLORS = {
     feature: 'bg-blue-500/15 text-blue-400', bugfix: 'bg-red-500/15 text-red-400',

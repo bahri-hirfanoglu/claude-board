@@ -25,7 +25,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
     return () => window.removeEventListener('mousedown', close);
   }, [showMenu]);
 
-  const duration = formatDuration(task.started_at, task.completed_at);
+  const duration = formatDuration(task.started_at, task.completed_at, task.work_duration_ms, task.last_resumed_at);
   const taskType = task.task_type || 'feature';
   const totalTokens = (task.input_tokens || 0) + (task.output_tokens || 0);
   const hasUsage = totalTokens > 0;

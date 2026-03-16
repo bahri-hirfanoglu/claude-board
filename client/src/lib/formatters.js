@@ -5,11 +5,21 @@ export function formatTokens(n) {
   return String(n);
 }
 
-export function formatDuration(startedAt, completedAt) {
+export function formatDuration(startedAt, completedAt, workDurationMs = 0, lastResumedAt = null) {
   if (!startedAt) return null;
-  const start = new Date(startedAt);
-  const end = completedAt ? new Date(completedAt) : new Date();
-  const diffMs = end - start;
+  let diffMs;
+  if (workDurationMs > 0 || lastResumedAt) {
+    // Use accumulated work duration + current active segment
+    diffMs = workDurationMs || 0;
+    if (lastResumedAt) {
+      diffMs += Date.now() - new Date(lastResumedAt).getTime();
+    }
+  } else {
+    // Fallback: old behavior for tasks without timer tracking
+    const start = new Date(startedAt);
+    const end = completedAt ? new Date(completedAt) : new Date();
+    diffMs = end - start;
+  }
   const mins = Math.floor(diffMs / 60000);
   const hours = Math.floor(mins / 60);
   const days = Math.floor(hours / 24);

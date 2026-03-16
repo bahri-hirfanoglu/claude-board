@@ -93,7 +93,7 @@ export default function TimelineView({ tasks, onViewDetail }) {
           {timelineTasks.map(task => {
             const barStyle = getBarStyle(task);
             const taskType = task.task_type || 'feature';
-            const duration = formatDuration(task.started_at, task.completed_at);
+            const duration = formatDuration(task.started_at, task.completed_at, task.work_duration_ms, task.last_resumed_at);
             const modelDisplay = task.model_used || task.model || 'sonnet';
 
             return (

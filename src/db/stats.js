@@ -9,9 +9,9 @@ export const statsQueries = {
     queryAll('SELECT task_type,COUNT(*) as count FROM tasks WHERE project_id=? GROUP BY task_type', [pid]),
   getAvgDuration: (pid) =>
     queryOne(
-      `SELECT AVG((julianday(completed_at)-julianday(started_at))*24*60) as avg_minutes,
-            MIN((julianday(completed_at)-julianday(started_at))*24*60) as min_minutes,
-            MAX((julianday(completed_at)-julianday(started_at))*24*60) as max_minutes,
+      `SELECT AVG(CASE WHEN work_duration_ms>0 THEN work_duration_ms/60000.0 ELSE (julianday(completed_at)-julianday(started_at))*24*60 END) as avg_minutes,
+            MIN(CASE WHEN work_duration_ms>0 THEN work_duration_ms/60000.0 ELSE (julianday(completed_at)-julianday(started_at))*24*60 END) as min_minutes,
+            MAX(CASE WHEN work_duration_ms>0 THEN work_duration_ms/60000.0 ELSE (julianday(completed_at)-julianday(started_at))*24*60 END) as max_minutes,
             COUNT(*) as count
      FROM tasks WHERE project_id=? AND started_at IS NOT NULL AND completed_at IS NOT NULL`,
       [pid],
@@ -27,7 +27,7 @@ export const statsQueries = {
     queryAll(
       `SELECT id,title,task_type,priority,model,model_used,input_tokens,output_tokens,
             cache_read_tokens,cache_creation_tokens,total_cost,num_turns,rate_limit_hits,
-            started_at,completed_at,ROUND((julianday(completed_at)-julianday(started_at))*24*60,1) as duration_minutes
+            started_at,completed_at,work_duration_ms,ROUND(CASE WHEN work_duration_ms>0 THEN work_duration_ms/60000.0 ELSE (julianday(completed_at)-julianday(started_at))*24*60 END,1) as duration_minutes
      FROM tasks WHERE project_id=? AND started_at IS NOT NULL AND completed_at IS NOT NULL
      ORDER BY completed_at DESC LIMIT 10`,
       [pid],

@@ -27,6 +27,7 @@ db.run(`CREATE TABLE IF NOT EXISTS tasks (
   total_cost REAL DEFAULT 0, num_turns INTEGER DEFAULT 0, rate_limit_hits INTEGER DEFAULT 0,
   revision_count INTEGER DEFAULT 0, model_used TEXT,
   started_at DATETIME, completed_at DATETIME,
+  work_duration_ms INTEGER DEFAULT 0, last_resumed_at DATETIME,
   created_at DATETIME DEFAULT (datetime('now','localtime')),
   updated_at DATETIME DEFAULT (datetime('now','localtime')),
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
@@ -155,6 +156,8 @@ const migrations = [
   ['tasks', 'commits', "ALTER TABLE tasks ADD COLUMN commits TEXT DEFAULT '[]'"],
   ['tasks', 'pr_url', 'ALTER TABLE tasks ADD COLUMN pr_url TEXT'],
   ['tasks', 'diff_stat', 'ALTER TABLE tasks ADD COLUMN diff_stat TEXT'],
+  ['tasks', 'work_duration_ms', 'ALTER TABLE tasks ADD COLUMN work_duration_ms INTEGER DEFAULT 0'],
+  ['tasks', 'last_resumed_at', 'ALTER TABLE tasks ADD COLUMN last_resumed_at DATETIME'],
 ];
 
 for (const [table, col, sql] of migrations) {

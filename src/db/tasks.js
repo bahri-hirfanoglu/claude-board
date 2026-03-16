@@ -29,14 +29,36 @@ export const queries = {
   },
   setTaskStarted: {
     run: (id) =>
-      run("UPDATE tasks SET started_at=datetime('now','localtime'),updated_at=datetime('now','localtime') WHERE id=?", [
-        id,
-      ]),
+      run(
+        "UPDATE tasks SET started_at=datetime('now','localtime'),last_resumed_at=datetime('now','localtime'),updated_at=datetime('now','localtime') WHERE id=?",
+        [id],
+      ),
+  },
+  setTaskResumed: {
+    run: (id) =>
+      run(
+        "UPDATE tasks SET last_resumed_at=datetime('now','localtime'),updated_at=datetime('now','localtime') WHERE id=?",
+        [id],
+      ),
+  },
+  pauseTaskTimer: {
+    run: (id) =>
+      run(
+        `UPDATE tasks SET work_duration_ms=COALESCE(work_duration_ms,0)+CAST((julianday('now','localtime')-julianday(last_resumed_at))*86400000 AS INTEGER),last_resumed_at=NULL,updated_at=datetime('now','localtime') WHERE id=? AND last_resumed_at IS NOT NULL`,
+        [id],
+      ),
   },
   setTaskCompleted: {
     run: (id) =>
       run(
         "UPDATE tasks SET completed_at=datetime('now','localtime'),updated_at=datetime('now','localtime') WHERE id=?",
+        [id],
+      ),
+  },
+  finalizeTaskTimer: {
+    run: (id) =>
+      run(
+        `UPDATE tasks SET work_duration_ms=COALESCE(work_duration_ms,0)+CASE WHEN last_resumed_at IS NOT NULL THEN CAST((julianday('now','localtime')-julianday(last_resumed_at))*86400000 AS INTEGER) ELSE 0 END,last_resumed_at=NULL,completed_at=datetime('now','localtime'),updated_at=datetime('now','localtime') WHERE id=?`,
         [id],
       ),
   },
