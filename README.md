@@ -105,11 +105,13 @@ Configure webhooks per project from the project menu. Filter which events trigge
 ### Desktop App
 
 #### Setup Wizard
-![Setup Wizard](docs/screenshots/setup-wizard.png)
+<img src="docs/screenshots/setup-wizard.png" alt="Setup Wizard" width="400" />
+
 *First-run configuration &mdash; choose your data directory and server port*
 
 #### Splash Screen
-![Splash Screen](docs/screenshots/splash-screen.png)
+<img src="docs/screenshots/splash-screen.png" alt="Splash Screen" width="320" />
+
 *Loading progress with step-by-step status updates*
 
 ## Quick Start
