@@ -5,6 +5,19 @@ let mainWindow = null;
 let server = null;
 const PORT = 4000;
 
+// Single instance lock — if already running, focus existing window
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
 function getIconPath() {
   const iconName = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
   if (app.isPackaged) {
