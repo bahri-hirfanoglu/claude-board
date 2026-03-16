@@ -307,17 +307,17 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
     <div className="h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <div className="min-w-0">
             <div className="flex items-center gap-3 mb-1">
-              <span className="text-claude text-2xl">&#10022;</span>
+              <span className="text-claude text-2xl flex-shrink-0">&#10022;</span>
               <h1 className="text-xl font-bold tracking-tight">Claude Board</h1>
             </div>
-            <p className="text-sm text-surface-500">Manage your projects and AI-powered tasks</p>
+            <p className="text-sm text-surface-500 hidden sm:block">Manage your projects and AI-powered tasks</p>
           </div>
           <button
             onClick={onNewProject}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex-shrink-0 whitespace-nowrap"
           >
             <Plus size={15} />
             New Project

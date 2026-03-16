@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw, GitBranch } from 'lucide-react';
+import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw, GitBranch, ArrowRight } from 'lucide-react';
 import { formatDuration, formatTokens } from '../../lib/formatters';
 import { PRIORITY_COLORS as priorityColors, PRIORITY_LABELS as priorityLabels, TYPE_COLORS as typeColors, MODEL_COLORS as modelColors, COLUMNS } from '../../lib/constants';
 
-const STATUS_OPTIONS = COLUMNS.map(c => ({ id: c.id, label: c.label, dot: c.bg }));
+const STATUS_OPTIONS = COLUMNS.map(c => ({ id: c.id, label: c.label, dot: c.bg, color: c.color }));
 
 export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange, onReview, onViewDetail }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -22,7 +22,11 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
       if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
     };
     window.addEventListener('mousedown', close);
-    return () => window.removeEventListener('mousedown', close);
+    window.addEventListener('touchstart', close);
+    return () => {
+      window.removeEventListener('mousedown', close);
+      window.removeEventListener('touchstart', close);
+    };
   }, [showMenu]);
 
   const duration = formatDuration(task.started_at, task.completed_at, task.work_duration_ms, task.last_resumed_at);
@@ -31,6 +35,8 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
   const hasUsage = totalTokens > 0;
   const modelDisplay = task.model_used || task.model || 'sonnet';
   const modelColorClass = modelColors[modelDisplay] || modelColors[task.model] || 'text-surface-400';
+
+  const moveTargets = STATUS_OPTIONS.filter(s => s.id !== task.status);
 
   return (
     <>
@@ -71,7 +77,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
               <p className="text-xs text-surface-400 mt-1 line-clamp-2">{task.description}</p>
             )}
           </div>
-          <GripVertical size={14} className="text-surface-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5" />
+          <GripVertical size={14} className="text-surface-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5 hidden md:block" />
         </div>
 
         <div className="flex items-center justify-between mt-2.5">
@@ -134,6 +140,21 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
               <Trash2 size={13} />
             </button>
           </div>
+        </div>
+
+        {/* Mobile quick-move buttons */}
+        <div className="flex md:hidden items-center gap-1.5 mt-2 pt-2 border-t border-surface-700/50">
+          <span className="text-[9px] text-surface-600 mr-0.5">Move:</span>
+          {moveTargets.map(s => (
+            <button
+              key={s.id}
+              onClick={(e) => { e.stopPropagation(); onStatusChange?.(task.id, s.id); }}
+              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-surface-700/50 active:bg-surface-600 ${s.color} transition-colors`}
+            >
+              <div className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+              {s.label}
+            </button>
+          ))}
         </div>
 
         {/* Usage stats bar for completed tasks */}

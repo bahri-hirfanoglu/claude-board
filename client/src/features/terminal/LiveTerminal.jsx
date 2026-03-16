@@ -589,31 +589,36 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
   return (
     <div className={panelClass}>
       {/* ═══ Header ═══ */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-surface-800 bg-surface-900">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs font-semibold truncate max-w-[180px] text-surface-100">{task.title}</h3>
-              <span className="text-[9px] text-surface-600 font-mono">#{task.id}</span>
-              {task.is_running && (
-                <span className="flex items-center gap-1 text-[9px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-medium">
-                  <Activity size={9} className="animate-pulse" />
-                  Running
-                </span>
-              )}
-              {!task.is_running && logs.some(l => l.log_type === 'success') && (
-                <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-medium">
-                  <CheckCircle2 size={9} />
-                  Done
-                </span>
-              )}
-            </div>
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-surface-800 bg-surface-900">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="text-xs font-semibold truncate text-surface-100">{task.title}</h3>
+            <span className="text-[9px] text-surface-600 font-mono flex-shrink-0">#{task.id}</span>
+            {task.is_running && (
+              <span className="flex items-center gap-1 text-[9px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
+                <Activity size={9} className="animate-pulse" />
+                <span className="hidden sm:inline">Running</span>
+              </span>
+            )}
+            {!task.is_running && logs.some(l => l.log_type === 'success') && (
+              <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
+                <CheckCircle2 size={9} />
+                <span className="hidden sm:inline">Done</span>
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
             <ActivityIndicator logs={logs} isRunning={task.is_running} />
+            {/* Inline stats on mobile */}
+            <div className="flex items-center gap-1.5 text-[10px] text-surface-500 sm:hidden">
+              <ElapsedTime startedAt={task.started_at} isRunning={task.is_running} workDurationMs={task.work_duration_ms || 0} lastResumedAt={task.last_resumed_at} />
+              {totalTokens > 0 && <span className="flex items-center gap-0.5"><Cpu size={9} />{fmtTokens(totalTokens)}</span>}
+            </div>
           </div>
         </div>
 
-        {/* Live stats bar */}
-        <div className="flex items-center gap-2.5 text-[10px] text-surface-500 mx-2">
+        {/* Live stats bar - desktop only */}
+        <div className="hidden sm:flex items-center gap-2.5 text-[10px] text-surface-500 flex-shrink-0">
           <ElapsedTime startedAt={task.started_at} isRunning={task.is_running} workDurationMs={task.work_duration_ms || 0} lastResumedAt={task.last_resumed_at} />
           {totalTokens > 0 && <span className="flex items-center gap-0.5"><Cpu size={9} />{fmtTokens(totalTokens)}</span>}
           {task.total_cost > 0 && <span className="flex items-center gap-0.5"><Coins size={9} />${task.total_cost.toFixed(4)}</span>}

@@ -60,28 +60,31 @@ function TimelineChart({ data }) {
   if (data.length === 0) return <div className="text-[10px] text-surface-600 text-center py-4">No completions in the last 14 days</div>;
   const max = Math.max(...data.map(d => d.count), 1);
   return (
-    <div className="flex items-end gap-0.5 h-24">
-      {data.map((item, i) => {
-        const pct = (item.count / max) * 100;
-        const day = new Date(item.day);
-        const label = day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        return (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1 group" title={`${label}: ${item.count} tasks`}>
-            <span className="text-[8px] text-surface-500 opacity-0 group-hover:opacity-100 transition-opacity">
-              {item.count}
-            </span>
-            <div className="w-full flex-1 flex items-end">
-              <div
-                className="w-full rounded-t bg-claude/70 hover:bg-claude transition-colors"
-                style={{ height: `${Math.max(pct, 5)}%` }}
-              />
+    <div>
+      <div className="flex items-end gap-0.5 h-24">
+        {data.map((item, i) => {
+          const pct = (item.count / max) * 100;
+          const day = new Date(item.day);
+          const label = day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1 group" title={`${label}: ${item.count} tasks`}>
+              <span className="text-[8px] text-surface-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                {item.count}
+              </span>
+              <div className="w-full flex-1 flex items-end">
+                <div
+                  className="w-full rounded-t bg-claude hover:bg-claude-light transition-colors"
+                  style={{ height: `${Math.max(pct, 8)}%` }}
+                />
+              </div>
             </div>
-            <span className="text-[7px] text-surface-600 -rotate-45 origin-top-left whitespace-nowrap">
-              {label}
-            </span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      <div className="flex justify-between mt-1.5">
+        <span className="text-[9px] text-surface-500">{new Date(data[0].day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+        <span className="text-[9px] text-surface-500">{new Date(data[data.length - 1].day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+      </div>
     </div>
   );
 }

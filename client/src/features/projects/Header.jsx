@@ -56,20 +56,20 @@ export default function Header({
 
   return (
     <header className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-surface-900 border-b border-surface-700/50 gap-2">
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         {/* Back to dashboard */}
         <button
           onClick={onBackToDashboard}
-          className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 hover:text-claude transition-colors"
+          className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 hover:text-claude transition-colors flex-shrink-0"
           title="Back to Dashboard"
         >
           <LayoutGrid size={16} />
         </button>
 
-        <div className="relative" ref={menuRef}>
+        <div className="relative min-w-0" ref={menuRef}>
           <button
             onClick={() => setShowProjectMenu(!showProjectMenu)}
-            className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-surface-800 transition-colors"
+            className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg hover:bg-surface-800 transition-colors min-w-0 max-w-full"
           >
             <div className="rounded-lg overflow-hidden flex-shrink-0">
               <Avatar
@@ -79,10 +79,10 @@ export default function Header({
                 colors={AVATAR_COLORS}
               />
             </div>
-            <h1 className="text-base font-semibold tracking-tight">
+            <h1 className="text-sm sm:text-base font-semibold tracking-tight truncate">
               {currentProject.name}
             </h1>
-            <ChevronDown size={14} className="text-surface-400" />
+            <ChevronDown size={14} className="text-surface-400 flex-shrink-0" />
           </button>
 
           {showProjectMenu && (
@@ -192,7 +192,7 @@ export default function Header({
         {!connected && <WifiOff size={13} className="text-red-400 sm:hidden" />}
       </div>
 
-      <div className="flex items-center gap-1.5 sm:gap-3">
+      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
         <div className="relative hidden sm:block">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-500" />
           <input
@@ -214,11 +214,11 @@ export default function Header({
 
         <div className="hidden lg:block"><ProjectUsage tasks={tasks} /></div>
 
-        <span className="hidden sm:inline text-xs text-surface-500">{taskCount} tasks</span>
+        <span className="hidden sm:inline text-xs text-surface-500 whitespace-nowrap">{taskCount} tasks</span>
 
         <button
           onClick={onToggleActivity}
-          className={`flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-sm transition-colors ${
+          className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 flex-shrink-0 ${
             activityActive ? 'bg-claude/20 text-claude-light' : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
           }`}
           title="Activity"
@@ -229,7 +229,7 @@ export default function Header({
 
         <button
           onClick={onToggleStats}
-          className={`flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-sm transition-colors ${
+          className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 flex-shrink-0 ${
             statsActive ? 'bg-claude/20 text-claude-light' : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
           }`}
           title="Stats"
@@ -241,7 +241,7 @@ export default function Header({
         {onNewTask && (
           <button
             onClick={onNewTask}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors"
+            className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex items-center gap-1.5 flex-shrink-0"
             title="New Task (N)"
           >
             <Plus size={14} />
