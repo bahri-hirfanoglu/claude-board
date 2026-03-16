@@ -23,5 +23,3 @@ Thumbs.db
 scripts/
 logs/
 dist-electron/
-build/*.png
-build/*.ico

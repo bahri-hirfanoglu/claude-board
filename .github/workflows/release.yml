@@ -39,12 +39,6 @@ jobs:
       - name: Build client
         run: npm run build
 
-      - name: Generate icons
-        run: |
-          node scripts/generate-icons.js
-        env:
-          PUPPETEER_SKIP_DOWNLOAD: false
-
       - name: Build Electron (Windows)
         if: matrix.platform == 'win'
         run: npx electron-builder --win --publish never
