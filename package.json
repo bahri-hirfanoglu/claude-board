@@ -72,7 +72,6 @@
         }
       ],
       "icon": "build/icon.png",
-      "signAndEditExecutable": false,
       "artifactName": "ClaudeBoard-${version}-Setup-${arch}.${ext}"
     },
     "nsis": {
