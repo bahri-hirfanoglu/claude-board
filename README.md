@@ -102,6 +102,16 @@ Configure webhooks per project from the project menu. Filter which events trigge
 ![Activity](docs/screenshots/activity.png)
 *Chronological feed of all project events*
 
+### Desktop App
+
+#### Setup Wizard
+![Setup Wizard](docs/screenshots/setup-wizard.png)
+*First-run configuration &mdash; choose your data directory and server port*
+
+#### Splash Screen
+![Splash Screen](docs/screenshots/splash-screen.png)
+*Loading progress with step-by-step status updates*
+
 ## Quick Start
 
 ### Prerequisites
