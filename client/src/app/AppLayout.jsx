@@ -11,6 +11,7 @@ import ProjectModal from '../features/projects/ProjectModal';
 import ClaudeMdEditor from '../features/editor/ClaudeMdEditor';
 import SnippetsModal from '../features/snippets/SnippetsModal';
 import TemplatesModal from '../features/templates/TemplatesModal';
+import WebhooksModal from '../features/webhooks/WebhooksModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import TerminalBottomPanel from './TerminalBottomPanel';
@@ -19,14 +20,14 @@ export default function AppLayout(props) {
   const {
     connected, projects, currentProject, tasks, filteredTasks, terminal,
     selectedTask, activePanel, search, toasts, confirm,
-    showModal, editingTask, showProjectModal, editingProject, showClaudeMd, showSnippets, showTemplates, templates, reviewTask, detailTask,
+    showModal, editingTask, showProjectModal, editingProject, showClaudeMd, showSnippets, showTemplates, showWebhooks, templates, reviewTask, detailTask,
     onSearchChange, onSetActivePanel, onSetSelectedTask,
     onNavigateToProject, onNavigateToDashboard,
     onStatusChange, onViewLogs, onCreateTask, onUpdateTask, onDeleteTask,
     onOpenCreateModal, onOpenEditModal, onCloseTaskModal,
     onReviewTask, onApproveTask, onRequestChanges, onCloseReview,
     onCreateProject, onUpdateProject, onDeleteProject, onEditProject, onNewProject, onCloseProjectModal,
-    onEditClaudeMd, onCloseClaudeMd, onEditSnippets, onCloseSnippets, onEditTemplates, onCloseTemplates, onViewDetail, onCloseDetail,
+    onEditClaudeMd, onCloseClaudeMd, onEditSnippets, onCloseSnippets, onEditTemplates, onCloseTemplates, onEditWebhooks, onCloseWebhooks, onViewDetail, onCloseDetail,
   } = props;
 
   return (
@@ -54,6 +55,7 @@ export default function AppLayout(props) {
         onEditClaudeMd={onEditClaudeMd}
         onEditSnippets={onEditSnippets}
         onEditTemplates={onEditTemplates}
+        onEditWebhooks={onEditWebhooks}
       />
 
       {/* Main content */}
@@ -125,6 +127,9 @@ export default function AppLayout(props) {
       )}
       {showTemplates && currentProject && (
         <TemplatesModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseTemplates} />
+      )}
+      {showWebhooks && currentProject && (
+        <WebhooksModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseWebhooks} />
       )}
       {reviewTask && (
         <ReviewModal task={reviewTask} onApprove={onApproveTask} onRequestChanges={onRequestChanges} onClose={onCloseReview} />

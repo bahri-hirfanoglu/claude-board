@@ -104,6 +104,19 @@ db.run(`CREATE TABLE IF NOT EXISTS prompt_templates (
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS webhooks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  platform TEXT DEFAULT 'custom' CHECK(platform IN ('slack','discord','teams','custom')),
+  events TEXT DEFAULT '[]',
+  enabled INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT (datetime('now','localtime')),
+  updated_at DATETIME DEFAULT (datetime('now','localtime')),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+)`);
+
 // ─── Indexes ───
 [
   'idx_task_logs_task_id ON task_logs(task_id)',
@@ -118,6 +131,7 @@ db.run(`CREATE TABLE IF NOT EXISTS prompt_templates (
   'idx_context_snippets_project ON context_snippets(project_id)',
   'idx_task_attachments_task ON task_attachments(task_id)',
   'idx_prompt_templates_project ON prompt_templates(project_id)',
+  'idx_webhooks_project ON webhooks(project_id)',
 ].forEach((idx) => db.run(`CREATE INDEX IF NOT EXISTS ${idx}`));
 
 // ─── Migrations ───

@@ -9,3 +9,4 @@ export { activityLog } from './activity.js';
 export { snippetQueries } from './snippets.js';
 export { templateQueries } from './templates.js';
 export { attachmentQueries } from './attachments.js';
+export { webhookQueries } from './webhooks.js';

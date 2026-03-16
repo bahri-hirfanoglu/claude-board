@@ -28,6 +28,7 @@ export default function App() {
   const [showClaudeMd, setShowClaudeMd] = useState(false);
   const [showSnippets, setShowSnippets] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showWebhooks, setShowWebhooks] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [reviewTask, setReviewTask] = useState(null);
   const [detailTask, setDetailTask] = useState(null);
@@ -172,6 +173,7 @@ export default function App() {
       showClaudeMd={showClaudeMd}
       showSnippets={showSnippets}
       showTemplates={showTemplates}
+      showWebhooks={showWebhooks}
       templates={templates}
       reviewTask={reviewTask}
       detailTask={detailTask}
@@ -208,6 +210,8 @@ export default function App() {
       onCloseSnippets={() => setShowSnippets(false)}
       onEditTemplates={() => setShowTemplates(true)}
       onCloseTemplates={() => { setShowTemplates(false); if (currentProject) api.getTemplates(currentProject.id).then(setTemplates).catch(() => {}); }}
+      onEditWebhooks={() => setShowWebhooks(true)}
+      onCloseWebhooks={() => setShowWebhooks(false)}
       onViewDetail={(task) => setDetailTask(task)}
       onCloseDetail={() => setDetailTask(null)}
     />

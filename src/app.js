@@ -14,6 +14,7 @@ import {
   snippetQueries,
   templateQueries,
   attachmentQueries,
+  webhookQueries,
 } from './db/index.js';
 import { startClaude, stopClaude, isTaskRunning } from './claude/runner.js';
 import { authMiddleware, socketAuthMiddleware, generateApiKey, disableAuth, isAuthEnabled } from './middleware/auth.js';
@@ -24,6 +25,8 @@ import statsRoutes from './routes/stats.js';
 import snippetRoutes from './routes/snippets.js';
 import templateRoutes from './routes/templates.js';
 import attachmentRoutes from './routes/attachments.js';
+import webhookRoutes from './routes/webhooks.js';
+import { createWebhookDispatcher } from './services/webhookDispatcher.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -139,28 +142,46 @@ export function createApp() {
       startClaude(updated, io, workingDir, project, revisions, snippets, {
         queries,
         statsQueries,
-        activityLog,
+        activityLog: activityLogWithWebhooks,
         attachments: taskAttachments,
         onFinished: (t) => {
           taskStartLock.delete(t.id);
           startNextQueued(t.project_id);
         },
       });
-      activityLog.add(projectId, next.id, 'queue_auto_started', `Auto-started: ${next.title}`);
+      activityLogWithWebhooks.add(projectId, next.id, 'queue_auto_started', `Auto-started: ${next.title}`);
       io.emit('task:updated', { ...updated, is_running: true });
     } catch (e) {
       logger.queue(`Error: ${e.message}`);
     }
   }
 
+  // Webhook dispatcher
+  const webhookDispatcher = createWebhookDispatcher(webhookQueries, (msg) => logger.server(`[WEBHOOK] ${msg}`));
+
+  // Wrap activityLog to also dispatch webhooks
+  const activityLogWithWebhooks = {
+    ...activityLog,
+    add: (projectId, taskId, eventType, message, metadata = {}) => {
+      activityLog.add(projectId, taskId, eventType, message, metadata);
+      const project = projectQueries.getById(projectId);
+      webhookDispatcher.dispatch(projectId, eventType, message, {
+        ...metadata,
+        project: project?.name,
+        task_id: taskId,
+      });
+    },
+  };
+
   const deps = {
     queries,
     projectQueries,
     statsQueries,
-    activityLog,
+    activityLog: activityLogWithWebhooks,
     snippetQueries,
     templateQueries,
     attachmentQueries,
+    webhookQueries,
     io,
     startClaude,
     stopClaude,
@@ -189,6 +210,7 @@ export function createApp() {
   app.use('/api', authMiddleware, snippetRoutes(deps));
   app.use('/api', authMiddleware, templateRoutes(deps));
   app.use('/api', authMiddleware, attachmentRoutes(deps));
+  app.use('/api', authMiddleware, webhookRoutes(deps));
 
   // Serve uploaded files
   app.use('/uploads', express.static(join(rootDir, 'uploads')));
