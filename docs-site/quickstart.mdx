@@ -1,0 +1,65 @@
+---
+title: "Quick Start"
+description: "Create your first project and run a task in 5 minutes"
+icon: "rocket"
+---
+
+## Create a project
+
+<Steps>
+  <Step title="Open Claude Board">
+    Launch the desktop app or navigate to `http://localhost:4000`.
+  </Step>
+  <Step title="Click 'New Project'">
+    Enter a project name, slug, and the **working directory** — the path where Claude will read and write code.
+  </Step>
+  <Step title="Configure permissions">
+    Choose a permission mode:
+    - **Auto Accept** — Claude uses all tools without asking (recommended)
+    - **Allowed Tools** — Only specified tool categories
+    - **Default** — Uses Claude's built-in permission settings
+
+    <Warning>Claude runs with `--no-input`, so it cannot ask for permission interactively. Use "Auto Accept" for best results.</Warning>
+  </Step>
+</Steps>
+
+## Create and run a task
+
+<Steps>
+  <Step title="Click 'New Task'">
+    Give your task a clear title and description. The more specific, the better Claude performs.
+
+    ```
+    Title: Add user authentication with JWT
+    Description: Implement login/register endpoints with JWT tokens.
+    Use bcrypt for password hashing. Add middleware for protected routes.
+    ```
+  </Step>
+  <Step title="Configure the task">
+    - **Model**: `sonnet` (balanced), `opus` (complex tasks), `haiku` (simple tasks)
+    - **Type**: feature, bugfix, refactor, docs, test, chore
+    - **Priority**: Affects queue order when auto-queue is enabled
+  </Step>
+  <Step title="Start the task">
+    Drag the task to **In Progress** or right-click and select "In Progress". Claude spawns immediately.
+  </Step>
+  <Step title="Watch the live terminal">
+    Click the terminal icon on the task card to watch Claude work in real-time. You'll see file reads, edits, bash commands, and more.
+  </Step>
+  <Step title="Review the result">
+    When Claude finishes, the task moves to **Testing**. Click the review button to:
+    - **Approve** → moves to Done
+    - **Request Changes** → provide feedback, Claude iterates
+  </Step>
+</Steps>
+
+## What's next?
+
+<Columns cols={2}>
+  <Card title="Board & Views" icon="table-columns" href="/concepts/board">
+    Learn about the different view modes.
+  </Card>
+  <Card title="Task Queue" icon="bolt" href="/features/queue">
+    Set up auto-queue for hands-free execution.
+  </Card>
+</Columns>

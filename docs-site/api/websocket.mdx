@@ -1,0 +1,109 @@
+---
+title: "WebSocket Events"
+description: "Real-time events via Socket.IO"
+icon: "bolt"
+---
+
+Claude Board uses [Socket.IO](https://socket.io) for real-time communication between the server and connected clients. All board updates, terminal logs, and usage metrics are delivered through WebSocket events.
+
+## Connection
+
+Connect to the Socket.IO server at the same host and port as the HTTP server:
+
+```javascript
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:4000");
+
+socket.on("connect", () => {
+  console.log("Connected to Claude Board");
+});
+```
+
+## Task Events
+
+### task:created
+
+Emitted when a new task is added to any project.
+
+```json
+{
+  "task": { "id": 1, "title": "Add login", "status": "backlog", "projectId": 1 }
+}
+```
+
+### task:updated
+
+Emitted when a task's fields or status change.
+
+```json
+{
+  "task": { "id": 1, "title": "Add login", "status": "in_progress", "projectId": 1 }
+}
+```
+
+### task:deleted
+
+Emitted when a task is removed.
+
+```json
+{ "taskId": 1, "projectId": 1 }
+```
+
+## Agent Events
+
+### task:log
+
+Streamed in real-time as the Claude agent produces output.
+
+```json
+{
+  "taskId": 1,
+  "type": "tool",
+  "content": "Reading file: src/app.ts",
+  "timestamp": "2025-01-15T10:30:00Z"
+}
+```
+
+Log types: `claude`, `tool`, `tool_result`, `system`, `error`
+
+### task:usage
+
+Periodic token usage updates for a running task.
+
+```json
+{
+  "taskId": 1,
+  "inputTokens": 5000,
+  "outputTokens": 1200,
+  "cacheRead": 800,
+  "cacheCreation": 200,
+  "cost": 0.45
+}
+```
+
+### claude:limits
+
+Emitted when the agent encounters API rate limits.
+
+```json
+{
+  "taskId": 1,
+  "retryAfter": 30,
+  "message": "Rate limit reached, retrying in 30s"
+}
+```
+
+### claude:finished
+
+Emitted when the Claude agent process exits.
+
+```json
+{
+  "taskId": 1,
+  "exitCode": 0,
+  "duration": 45000
+}
+```
+
+<Note>All events are broadcast to every connected client. Filter by `projectId` or `taskId` on the client side to show only relevant updates.</Note>

@@ -1,0 +1,51 @@
+---
+title: "Auto-Queue"
+description: "Automatically start tasks based on priority and concurrency limits"
+icon: "bolt"
+---
+
+The auto-queue system manages task execution so you don't have to manually drag each task to In Progress. Enable it per project and Claude Board handles the rest.
+
+## How It Works
+
+<Steps>
+  <Step title="Enable auto-queue">
+    Open project settings and toggle **Auto-Queue** on. Set the **max concurrent agents** (1–5).
+  </Step>
+  <Step title="Add tasks to backlog">
+    Create tasks as usual. Each new backlog task is automatically considered for execution.
+  </Step>
+  <Step title="Tasks start automatically">
+    When an agent slot is free, the highest-priority backlog task starts. If priorities are equal, the oldest task goes first.
+  </Step>
+  <Step title="Continuous processing">
+    As tasks finish and move to Testing or Done, the next queued task starts automatically.
+  </Step>
+</Steps>
+
+## Priority Ordering
+
+Tasks are picked from the backlog in this order:
+
+1. **Priority** — Urgent (3) → High (2) → Medium (1) → Low (0)
+2. **Creation time** — older tasks first (FIFO within same priority)
+
+<Tip>Set urgent priority on critical bugfixes to jump the queue ahead of feature work.</Tip>
+
+## Max Concurrent Agents
+
+| Setting | Use Case |
+|---------|----------|
+| **1** | Sequential execution. Safe for projects where tasks might touch the same files. |
+| **2–3** | Balanced. Good for projects with independent modules. |
+| **4–5** | Maximum throughput. Best when tasks target different areas of the codebase. |
+
+<Warning>Higher concurrency increases API costs and may cause git conflicts if agents edit overlapping files. Start with 1–2 and increase as needed.</Warning>
+
+## Auto-Start on Task Creation
+
+When auto-queue is enabled and agent slots are available, newly created tasks with `backlog` status are evaluated immediately. If the queue is empty and a slot is free, the task starts right away without manual intervention.
+
+## Disabling Auto-Queue
+
+Toggle auto-queue off in project settings. Existing in-progress tasks continue running, but no new tasks will start automatically. You return to manual drag-and-drop control.

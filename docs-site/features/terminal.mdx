@@ -1,0 +1,59 @@
+---
+title: "Live Terminal"
+description: "Watch Claude work in real-time with filtered log output"
+icon: "terminal"
+---
+
+The live terminal streams every action a Claude agent takes. Open it by clicking the terminal icon on any in-progress task card.
+
+## Log Types
+
+Each log entry has a type that determines its styling and filterability:
+
+| Type | Icon | Description |
+|------|------|-------------|
+| `claude` | Brain | Claude's reasoning and text output |
+| `tool` | Wrench | Tool calls (file read, edit, bash, etc.) |
+| `tool_result` | Check | Results returned from tool execution |
+| `system` | Info | System messages (start, stop, status changes) |
+| `error` | Warning | Errors from the CLI or tool failures |
+
+## Filters
+
+Use the filter toolbar to show or hide specific log types. This helps you focus on what matters:
+
+<Tabs>
+  <Tab title="All">
+    Shows everything. Default view.
+  </Tab>
+  <Tab title="Claude Only">
+    See just Claude's reasoning output — useful for understanding its thought process.
+  </Tab>
+  <Tab title="Tools Only">
+    See file edits, bash commands, and their results — useful for tracking code changes.
+  </Tab>
+  <Tab title="Errors Only">
+    Quickly spot failures without scrolling through successful operations.
+  </Tab>
+</Tabs>
+
+## Search
+
+The search bar filters logs by text content. Type a filename, function name, or keyword to find relevant entries instantly.
+
+## Layout Options
+
+<Columns cols={2}>
+  <Card title="Side Panel" icon="table-columns">
+    Terminal opens on the right side of the board. Good for wide screens — view the board and terminal simultaneously.
+  </Card>
+  <Card title="Bottom Panel" icon="window-minimize">
+    Terminal opens at the bottom. Better for narrow screens or when you want full board width.
+  </Card>
+</Columns>
+
+## Log Persistence
+
+All terminal logs are saved to the database. You can revisit logs for completed tasks by clicking on the task card even after it moves to **Done**.
+
+<Info>Logs stream in real-time via WebSocket using the `task:log` event. The terminal auto-scrolls to the latest entry unless you scroll up manually.</Info>

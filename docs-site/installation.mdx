@@ -1,0 +1,67 @@
+---
+title: "Installation"
+description: "Download Claude Board or install from source"
+icon: "download"
+---
+
+## Prerequisites
+
+- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
+- [Node.js](https://nodejs.org) >= 18.0.0 (only for source install)
+
+## Desktop App
+
+Download the latest release for your platform:
+
+<Columns cols={3}>
+  <Card title="Windows" icon="windows" href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest">
+    `.exe` installer (x64)
+  </Card>
+  <Card title="macOS" icon="apple" href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest">
+    `.dmg` — Intel & Apple Silicon
+  </Card>
+  <Card title="Linux" icon="linux" href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest">
+    AppImage & `.deb`
+  </Card>
+</Columns>
+
+On first launch, a setup wizard will guide you through choosing a data directory and server port.
+
+<Frame caption="First-run setup wizard">
+  <img src="/images/setup-wizard.png" alt="Setup Wizard" />
+</Frame>
+
+## Install from Source
+
+<Tabs>
+  <Tab title="npm">
+    ```bash
+    git clone https://github.com/bahri-hirfanoglu/claude-board.git
+    cd claude-board
+    npm run setup
+    npm run dev
+    ```
+  </Tab>
+  <Tab title="Docker">
+    ```bash
+    docker build -t claude-board .
+    docker run -p 4000:4000 -v claude-data:/app/data claude-board
+    ```
+  </Tab>
+  <Tab title="Docker Compose">
+    ```bash
+    docker compose up -d
+    ```
+  </Tab>
+</Tabs>
+
+Open [http://localhost:4000](http://localhost:4000) in your browser.
+
+## Production
+
+```bash
+npm run build
+npm start
+```
+
+The server starts on port `4000` by default. Set the `PORT` environment variable to change it.

@@ -1,0 +1,58 @@
+---
+title: "Introduction"
+description: "Build your own AI dev squad with Claude Board"
+icon: "sparkles"
+---
+
+# Welcome to Claude Board
+
+Claude Board is an open-source desktop application that turns your local machine into an AI-powered development squad. Create tasks on a visual Kanban board, and Claude agents autonomously write code, create branches, and commit changes — all while you watch in real-time.
+
+<Frame>
+  <img src="/images/dashboard.png" alt="Claude Board Dashboard" />
+</Frame>
+
+## How it works
+
+<Steps>
+  <Step title="Create a task" icon="plus">
+    Describe what you need — a feature, bugfix, refactor, or test. Pick a model (Opus, Sonnet, or Haiku) and set the priority.
+  </Step>
+  <Step title="Claude starts coding" icon="play">
+    Drag to "In Progress" and a Claude agent spawns automatically. It reads your codebase, writes code, runs tests, and commits — visible in the live terminal.
+  </Step>
+  <Step title="Review and ship" icon="check">
+    The task moves to "Testing". Review the changes, approve or request revisions. Claude picks up your feedback and iterates.
+  </Step>
+</Steps>
+
+## Key features
+
+<Columns cols={2}>
+  <Card title="Multiple Agents" icon="users" href="/concepts/agents">
+    Run up to 5 Claude agents simultaneously on different tasks.
+  </Card>
+  <Card title="Live Terminal" icon="terminal" href="/features/terminal">
+    Watch file edits, tool calls, and commands in real-time.
+  </Card>
+  <Card title="Git Automation" icon="code-branch" href="/features/git-automation">
+    Auto-create branches and pull requests per task.
+  </Card>
+  <Card title="Webhook Notifications" icon="bell" href="/features/webhooks">
+    Send events to Slack, Discord, Teams, or custom endpoints.
+  </Card>
+</Columns>
+
+## Next steps
+
+<Columns cols={3}>
+  <Card title="Installation" icon="download" href="/installation">
+    Download the desktop app or install from source.
+  </Card>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Create your first project and run a task in minutes.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/projects">
+    Explore the REST API and WebSocket events.
+  </Card>
+</Columns>

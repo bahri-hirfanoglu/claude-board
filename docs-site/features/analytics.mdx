@@ -1,0 +1,70 @@
+---
+title: "Analytics"
+description: "Track task stats, Claude usage, and costs"
+icon: "chart-mixed"
+---
+
+The analytics panel gives you a comprehensive view of project activity, task throughput, and Claude API usage.
+
+## Stats Panel
+
+Access analytics from the project dashboard. The panel shows real-time statistics across several dimensions.
+
+### Status Breakdown
+
+A visual chart showing how many tasks are in each status:
+
+- **Backlog** — queued
+- **In Progress** — actively running
+- **Testing** — awaiting review
+- **Done** — completed
+
+### Type Distribution
+
+See the mix of task types across your project: feature, bugfix, refactor, docs, test, and chore. Helps identify what kind of work dominates.
+
+### Priority Distribution
+
+Breakdown of tasks by priority level (low, medium, high, urgent). Useful for spotting if your backlog is overloaded with urgent items.
+
+## Duration Stats
+
+Track how long tasks take from start to completion:
+
+| Metric | Description |
+|--------|-------------|
+| **Average duration** | Mean time from In Progress to Done |
+| **Median duration** | Middle value, less affected by outliers |
+| **Fastest / Slowest** | Range of task durations |
+
+<Tip>Use duration stats to calibrate your task sizing. If tasks consistently take too long, break them into smaller pieces.</Tip>
+
+## Completion Timeline
+
+A time-series chart showing tasks completed per day or week. Track your team's throughput over time and spot trends.
+
+## Claude Usage Dashboard
+
+### Model Breakdown
+
+See which models are used most across your tasks:
+
+| Model | Typical Use |
+|-------|-------------|
+| **Opus** | Complex features, multi-file changes |
+| **Sonnet** | Everyday development tasks |
+| **Haiku** | Quick fixes, docs, simple edits |
+
+### Cost Tracking
+
+Track cumulative API costs with breakdowns by:
+
+- **Per task** — see which tasks consumed the most tokens
+- **Per model** — compare cost efficiency across models
+- **Over time** — daily/weekly cost trends
+
+<Info>Cost estimates are based on published Claude API pricing and may not reflect custom enterprise agreements.</Info>
+
+### Token Usage
+
+Aggregate statistics on input and output tokens, cache utilization rates, and per-task averages. Accessible via the dashboard or the [Stats API](/api/stats).

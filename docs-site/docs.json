@@ -1,0 +1,108 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "maple",
+  "name": "Claude Board",
+  "description": "Build your own AI dev squad. Run multiple Claude agents from your local machine.",
+  "colors": {
+    "primary": "#DA7756",
+    "light": "#E8926E",
+    "dark": "#C45A3C"
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg",
+    "href": "https://github.com/bahri-hirfanoglu/claude-board"
+  },
+  "favicon": "/favicon.png",
+  "appearance": {
+    "default": "dark"
+  },
+  "navbar": {
+    "links": [
+      {
+        "type": "github",
+        "href": "https://github.com/bahri-hirfanoglu/claude-board"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Download",
+      "href": "https://github.com/bahri-hirfanoglu/claude-board/releases/latest"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "icon": "rocket",
+            "pages": ["introduction", "installation", "quickstart"]
+          },
+          {
+            "group": "Core Concepts",
+            "icon": "lightbulb",
+            "pages": ["concepts/board", "concepts/tasks", "concepts/agents", "concepts/review"]
+          },
+          {
+            "group": "Features",
+            "icon": "sparkles",
+            "pages": [
+              "features/terminal",
+              "features/queue",
+              "features/git-automation",
+              "features/webhooks",
+              "features/templates",
+              "features/snippets",
+              "features/attachments",
+              "features/analytics"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "icon": "gear",
+            "pages": [
+              "configuration/projects",
+              "configuration/permissions",
+              "configuration/claude-md",
+              "configuration/environment"
+            ]
+          },
+          {
+            "group": "Desktop App",
+            "icon": "desktop",
+            "pages": ["desktop/setup", "desktop/builds"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "icon": "code",
+            "pages": [
+              "api/projects",
+              "api/tasks",
+              "api/webhooks",
+              "api/snippets",
+              "api/templates",
+              "api/stats"
+            ]
+          },
+          {
+            "group": "Real-time",
+            "icon": "bolt",
+            "pages": ["api/websocket"]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/bahri-hirfanoglu/claude-board"
+    }
+  }
+}
