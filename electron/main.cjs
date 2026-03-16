@@ -2,6 +2,9 @@ const { app, BrowserWindow, shell, Menu, ipcMain, dialog } = require('electron')
 const path = require('path');
 const fs = require('fs');
 
+const isMac = process.platform === 'darwin';
+const isLinux = process.platform === 'linux';
+
 let mainWindow = null;
 let splashWindow = null;
 let setupWindow = null;
@@ -21,10 +24,6 @@ function loadConfig() {
 function saveConfig(config) {
   fs.mkdirSync(path.dirname(configPath), { recursive: true });
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-}
-
-function isFirstRun() {
-  return !loadConfig();
 }
 
 // ─── Single instance ───
@@ -52,31 +51,49 @@ const SPARKLE_SVG = `<svg viewBox="0 0 512 512" fill="none">
   <path d="M256 72 C256 72,272 188,276 212 C280 236,324 256,440 256 C324 256,280 276,276 300 C272 324,256 440,256 440 C256 440,240 324,236 300 C232 276,188 256,72 256 C188 256,232 236,236 212 C240 188,256 72,256 72Z" fill="white" opacity="0.95"/>
 </svg>`;
 
+// ─── Frameless window options (cross-platform) ───
+function framelessOptions(extra = {}) {
+  const opts = {
+    frame: false,
+    resizable: false,
+    icon: getIconPath(),
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
+    ...extra,
+  };
+  // transparent works on Windows & macOS, Linux needs backgroundColor fallback
+  if (isLinux) {
+    opts.backgroundColor = '#1f1b17';
+  } else {
+    opts.transparent = true;
+  }
+  return opts;
+}
+
 // ─── Setup Window ───
 function createSetup() {
   return new Promise((resolve) => {
     const defaultDir = path.join(app.getPath('userData'), 'data');
 
-    setupWindow = new BrowserWindow({
+    setupWindow = new BrowserWindow(framelessOptions({
       width: 520,
       height: 580,
-      frame: false,
-      transparent: true,
-      resizable: false,
-      icon: getIconPath(),
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
         preload: path.join(__dirname, 'preload.cjs'),
       },
-    });
+    }));
+
+    // createDirectory is macOS-only dialog property
+    const dialogProps = ['openDirectory'];
+    if (isMac) dialogProps.push('createDirectory');
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: transparent; height: 100vh; overflow: hidden;
+    background: ${isLinux ? '#1f1b17' : 'transparent'}; height: 100vh; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
   }
   .card {
@@ -95,13 +112,10 @@ function createSetup() {
   .subtitle { color: #736858; font-size: 12px; text-align: center; margin-bottom: 32px; }
   label { display: block; color: #b5ab9a; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
   .desc { color: #564d40; font-size: 11px; margin-bottom: 20px; line-height: 1.5; }
-  .path-row {
-    display: flex; gap: 8px; margin-bottom: 8px; -webkit-app-region: no-drag;
-  }
+  .path-row { display: flex; gap: 8px; margin-bottom: 8px; -webkit-app-region: no-drag; }
   .path-input {
     flex: 1; padding: 10px 14px; background: #2a2520; border: 1px solid #3d372e;
-    border-radius: 10px; color: #ebe4d8; font-size: 12px; font-family: monospace;
-    outline: none;
+    border-radius: 10px; color: #ebe4d8; font-size: 12px; font-family: monospace; outline: none;
   }
   .path-input:focus { border-color: #DA7756; }
   .browse-btn {
@@ -116,9 +130,7 @@ function createSetup() {
   }
   .info-icon { color: #DA7756; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
   .info-text { color: #918678; font-size: 11px; line-height: 1.5; }
-  .actions {
-    display: flex; gap: 10px; justify-content: flex-end; -webkit-app-region: no-drag;
-  }
+  .actions { display: flex; gap: 10px; justify-content: flex-end; -webkit-app-region: no-drag; }
   .btn {
     padding: 10px 28px; border-radius: 10px; font-size: 13px; font-weight: 600;
     cursor: pointer; border: none; transition: all 0.15s;
@@ -128,9 +140,7 @@ function createSetup() {
   .btn-primary { background: linear-gradient(135deg, #DA7756, #C45A3C); color: white; }
   .btn-primary:hover { filter: brightness(1.1); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
-  .port-row {
-    display: flex; align-items: center; gap: 12px; margin-bottom: 24px; -webkit-app-region: no-drag;
-  }
+  .port-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; -webkit-app-region: no-drag; }
   .port-input {
     width: 80px; padding: 10px 14px; background: #2a2520; border: 1px solid #3d372e;
     border-radius: 10px; color: #ebe4d8; font-size: 12px; font-family: monospace;
@@ -143,25 +153,21 @@ function createSetup() {
   <div class="icon">${SPARKLE_SVG}</div>
   <h1>Welcome to Claude Board</h1>
   <div class="subtitle">Let's set up a few things before we start</div>
-
   <label>Data Directory</label>
   <div class="desc">Where your projects, tasks, and database will be stored.</div>
   <div class="path-row">
     <input class="path-input" id="dataPath" value="${defaultDir.replace(/\\/g, '\\\\')}" />
-    <button class="browse-btn" id="browseBtn" onclick="browse()">Browse</button>
+    <button class="browse-btn" onclick="browse()">Browse</button>
   </div>
-
   <div class="info">
     <span class="info-icon">i</span>
     <span class="info-text">This folder will contain your SQLite database and uploaded files. You can change this later in the config file.</span>
   </div>
-
   <label>Server Port</label>
   <div class="port-row">
     <input class="port-input" id="portInput" type="number" value="4000" min="1024" max="65535" />
     <span class="port-label">Default: 4000</span>
   </div>
-
   <div class="actions">
     <button class="btn btn-secondary" onclick="window.electronAPI.quit()">Cancel</button>
     <button class="btn btn-primary" id="startBtn" onclick="start()">Get Started</button>
@@ -174,8 +180,7 @@ function createSetup() {
   }
   async function start() {
     const btn = document.getElementById('startBtn');
-    btn.disabled = true;
-    btn.textContent = 'Setting up...';
+    btn.disabled = true; btn.textContent = 'Setting up...';
     const dataPath = document.getElementById('dataPath').value;
     const port = parseInt(document.getElementById('portInput').value) || 4000;
     await window.electronAPI.finishSetup({ dataDir: dataPath, port });
@@ -187,17 +192,15 @@ function createSetup() {
     setupWindow.center();
     setupWindow.show();
 
-    // IPC handlers for setup
     ipcMain.handleOnce('select-folder', async () => {
       const result = await dialog.showOpenDialog(setupWindow, {
-        properties: ['openDirectory', 'createDirectory'],
+        properties: dialogProps,
         title: 'Select Data Directory',
       });
       return result.canceled ? null : result.filePaths[0];
     });
 
     ipcMain.handleOnce('finish-setup', async (_, config) => {
-      // Ensure data dir exists
       fs.mkdirSync(config.dataDir, { recursive: true });
       saveConfig(config);
       setupWindow.close();
@@ -218,23 +221,18 @@ function createSetup() {
 
 // ─── Splash Window ───
 function createSplash() {
-  splashWindow = new BrowserWindow({
+  splashWindow = new BrowserWindow(framelessOptions({
     width: 380,
     height: 420,
-    frame: false,
-    transparent: true,
-    resizable: false,
     alwaysOnTop: true,
-    icon: getIconPath(),
-    webPreferences: { nodeIntegration: false, contextIsolation: true },
-  });
+  }));
 
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: transparent; display: flex; align-items: center; justify-content: center;
+    background: ${isLinux ? '#1f1b17' : 'transparent'}; display: flex; align-items: center; justify-content: center;
     height: 100vh; overflow: hidden; -webkit-app-region: drag;
   }
   .card {
@@ -322,6 +320,7 @@ function createWindow(port) {
     width: 1400, height: 900, minWidth: 800, minHeight: 600,
     icon: getIconPath(), title: 'Claude Board', backgroundColor: '#1f1b17',
     show: false,
+    titleBarStyle: isMac ? 'hiddenInset' : 'default',
     webPreferences: { nodeIntegration: false, contextIsolation: true },
   });
 
@@ -345,22 +344,45 @@ function createWindow(port) {
 
   mainWindow.on('closed', () => { mainWindow = null; });
 
-  const menu = Menu.buildFromTemplate([
-    {
-      label: 'Claude Board',
+  // ─── Menu (cross-platform) ───
+  const template = [];
+
+  // macOS app menu
+  if (isMac) {
+    template.push({
+      label: app.name,
       submenu: [
-        { label: 'About', role: 'about' },
+        { role: 'about' },
         { type: 'separator' },
         { label: 'Open in Browser', click: () => shell.openExternal(`http://localhost:${port}`) },
         { type: 'separator' },
-        { label: 'Quit', accelerator: 'CmdOrCtrl+Q', click: () => app.quit() },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
       ],
-    },
+    });
+  }
+
+  template.push(
+    // File menu (Windows/Linux)
+    ...(!isMac ? [{
+      label: 'File',
+      submenu: [
+        { label: 'Open in Browser', click: () => shell.openExternal(`http://localhost:${port}`) },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    }] : []),
     {
       label: 'Edit',
       submenu: [
         { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
-        { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
+        { role: 'cut' }, { role: 'copy' }, { role: 'paste' },
+        ...(isMac ? [{ role: 'pasteAndMatchStyle' }, { role: 'delete' }, { role: 'selectAll' }] : [{ role: 'selectAll' }]),
       ],
     },
     {
@@ -374,22 +396,24 @@ function createWindow(port) {
     },
     {
       label: 'Window',
-      submenu: [{ role: 'minimize' }, { role: 'zoom' }, { role: 'close' }],
+      submenu: [
+        { role: 'minimize' }, { role: 'zoom' },
+        ...(isMac ? [{ type: 'separator' }, { role: 'front' }] : [{ role: 'close' }]),
+      ],
     },
-  ]);
-  Menu.setApplicationMenu(menu);
+  );
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
 // ─── App lifecycle ───
 app.whenReady().then(async () => {
   let config = loadConfig();
 
-  // First run: show setup wizard
   if (!config) {
     config = await createSetup();
   }
 
-  // Normal startup: splash -> server -> main window
   createSplash();
   updateSplash(0, 'Initializing...');
 
@@ -416,7 +440,7 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  if (!isMac) app.quit();
 });
 
 app.on('before-quit', () => {
