@@ -24,3 +24,5 @@ Thumbs.db
 scripts/
 logs/
 dist-electron/
+
+promo-frames/
