@@ -1,0 +1,87 @@
+---
+title: "Projects API"
+description: "CRUD endpoints for managing projects"
+icon: "folder"
+---
+
+## List Projects
+
+```http
+GET /api/projects
+```
+
+Returns all projects with basic info.
+
+```json
+[
+  {
+    "id": 1,
+    "name": "My App",
+    "slug": "my-app",
+    "workingDir": "/home/user/my-app",
+    "createdAt": "2025-01-15T10:00:00Z"
+  }
+]
+```
+
+## Get Project Summary
+
+```http
+GET /api/projects/summary
+```
+
+Returns all projects with task counts per status. Useful for dashboard overview.
+
+## Get Project
+
+```http
+GET /api/projects/:id
+```
+
+Returns a single project with full settings including permission mode, allowed tools, and queue configuration.
+
+## Create Project
+
+```http
+POST /api/projects
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "My App",
+  "slug": "my-app",
+  "workingDir": "/home/user/my-app",
+  "permissionMode": "auto-accept",
+  "allowedTools": [],
+  "autoQueue": false,
+  "maxConcurrent": 1
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Project display name |
+| `slug` | Yes | URL-safe identifier |
+| `workingDir` | Yes | Absolute path to codebase |
+| `permissionMode` | No | `auto-accept`, `allow-tools`, `default` |
+| `allowedTools` | No | Array of tool names (for `allow-tools` mode) |
+| `autoQueue` | No | Enable auto-queue |
+| `maxConcurrent` | No | Max concurrent agents (1–5) |
+
+## Update Project
+
+```http
+PUT /api/projects/:id
+Content-Type: application/json
+```
+
+Accepts the same fields as Create. Only included fields are updated.
+
+## Delete Project
+
+```http
+DELETE /api/projects/:id
+```
+
+<Warning>Deleting a project removes all its tasks, logs, webhooks, snippets, and templates. This cannot be undone.</Warning>

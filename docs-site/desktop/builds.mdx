@@ -1,0 +1,81 @@
+---
+title: "Building from Source"
+description: "Build the desktop app for Windows, macOS, and Linux"
+icon: "hammer"
+---
+
+Claude Board uses Electron Builder to produce native installers. You can build the desktop app for any supported platform.
+
+## Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- Platform-specific build tools (see below)
+
+## Build Commands
+
+<Tabs>
+  <Tab title="Windows">
+    ```bash
+    npm run electron:build:win
+    ```
+    Produces an `.exe` installer and portable executable in the `dist/` directory.
+  </Tab>
+  <Tab title="macOS">
+    ```bash
+    npm run electron:build:mac
+    ```
+    Produces a `.dmg` installer and `.app` bundle. Requires macOS for signing.
+  </Tab>
+  <Tab title="Linux">
+    ```bash
+    npm run electron:build:linux
+    ```
+    Produces `.AppImage`, `.deb`, and `.rpm` packages.
+  </Tab>
+</Tabs>
+
+## Icons
+
+Application icons are located in the `build/` directory:
+
+| Platform | File | Format |
+|----------|------|--------|
+| Windows | `icon.ico` | ICO (256x256) |
+| macOS | `icon.icns` | ICNS |
+| Linux | `icon.png` | PNG (512x512) |
+
+To update icons, replace these files and rebuild.
+
+## CI/CD Workflow
+
+Claude Board includes a GitHub Actions workflow for automated builds:
+
+```yaml
+# .github/workflows/build.yml
+# Triggers on version tags (v*)
+# Builds for all three platforms
+# Uploads artifacts to GitHub Releases
+```
+
+The workflow:
+
+1. Checks out the repository
+2. Installs dependencies
+3. Builds the React frontend
+4. Packages with Electron Builder
+5. Uploads installers as release assets
+
+<Tip>Tag a commit with `v*` (e.g., `v3.4.0`) to trigger an automatic release build.</Tip>
+
+## Development Mode
+
+For local development without building an installer:
+
+```bash
+npm run electron:dev
+```
+
+This starts the Express server and Electron app with hot-reload enabled for the React frontend.
+
+<Note>Cross-compilation (e.g., building macOS on Windows) is not supported by Electron Builder. Use the CI/CD workflow or a matching build machine.</Note>

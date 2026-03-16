@@ -1,0 +1,55 @@
+---
+title: "File Attachments"
+description: "Attach files to tasks for Claude to reference"
+icon: "paperclip"
+---
+
+File attachments let you upload files directly to a task. These files are included in Claude's prompt as additional context.
+
+## Use Cases
+
+<Columns cols={2}>
+  <Card title="Design Specs" icon="image">
+    Attach mockups, wireframes, or screenshots for Claude to reference when building UI.
+  </Card>
+  <Card title="Data Samples" icon="table">
+    Include CSV files, JSON samples, or API response examples.
+  </Card>
+  <Card title="Documentation" icon="file">
+    Attach spec documents, requirements, or architecture diagrams.
+  </Card>
+  <Card title="Error Logs" icon="bug">
+    Upload log files or stack traces for bugfix tasks.
+  </Card>
+</Columns>
+
+## How It Works
+
+<Steps>
+  <Step title="Open a task">
+    Click on any task card to open the detail view.
+  </Step>
+  <Step title="Upload files">
+    Use the attachment section to upload one or more files. Files are stored in Claude Board's data directory.
+  </Step>
+  <Step title="Claude receives them">
+    When the agent starts, attached files are included in the prompt. Claude can read their contents as part of the task context.
+  </Step>
+</Steps>
+
+## Supported Files
+
+Attachments work best with text-based files that Claude can read directly:
+
+- Source code files (`.js`, `.py`, `.ts`, etc.)
+- Data files (`.json`, `.csv`, `.yaml`)
+- Documents (`.txt`, `.md`)
+- Images (`.png`, `.jpg`) — included as visual context
+
+<Note>Large binary files are stored but may not be useful as prompt context. Keep attachments focused and relevant to the task.</Note>
+
+## Managing Attachments
+
+- Attach files when creating a task or from the task detail view
+- Remove attachments by clicking the delete icon next to each file
+- Attachments are deleted when the task is deleted

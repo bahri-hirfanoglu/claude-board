@@ -1,0 +1,119 @@
+---
+title: "Tasks API"
+description: "CRUD, status changes, and agent control for tasks"
+icon: "list-check"
+---
+
+## List Tasks
+
+```http
+GET /api/projects/:projectId/tasks
+```
+
+Returns all tasks for a project, ordered by priority and creation date.
+
+## Get Task
+
+```http
+GET /api/projects/:projectId/tasks/:id
+```
+
+Returns full task details including description, logs, and usage stats.
+
+## Get Task Detail
+
+```http
+GET /api/projects/:projectId/tasks/:id/detail
+```
+
+Extended detail view with revision history, attachments, and complete log entries.
+
+## Create Task
+
+```http
+POST /api/projects/:projectId/tasks
+Content-Type: application/json
+```
+
+```json
+{
+  "title": "Add user authentication",
+  "description": "Implement JWT-based login and registration",
+  "type": "feature",
+  "priority": 2,
+  "model": "sonnet",
+  "thinkingEffort": "medium"
+}
+```
+
+| Field | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `title` | Yes | — | Task title |
+| `description` | No | — | Detailed instructions |
+| `type` | No | `feature` | `feature`, `bugfix`, `refactor`, `docs`, `test`, `chore` |
+| `priority` | No | `1` | 0 (low) to 3 (urgent) |
+| `model` | No | `sonnet` | `opus`, `sonnet`, `haiku` |
+| `thinkingEffort` | No | `medium` | `low`, `medium`, `high` |
+
+## Update Task
+
+```http
+PUT /api/projects/:projectId/tasks/:id
+Content-Type: application/json
+```
+
+## Change Status
+
+```http
+PUT /api/projects/:projectId/tasks/:id/status
+Content-Type: application/json
+```
+
+```json
+{ "status": "in_progress" }
+```
+
+Moving to `in_progress` spawns a Claude agent. Moving to `done` stops any running agent.
+
+## Stop Agent
+
+```http
+POST /api/projects/:projectId/tasks/:id/stop
+```
+
+Stops the running Claude agent without changing the task status.
+
+## Restart Agent
+
+```http
+POST /api/projects/:projectId/tasks/:id/restart
+```
+
+Kills the current agent and starts a fresh session.
+
+## Request Changes
+
+```http
+POST /api/projects/:projectId/tasks/:id/request-changes
+Content-Type: application/json
+```
+
+```json
+{ "feedback": "Add input validation to the login endpoint" }
+```
+
+Moves the task back to `in_progress` with feedback appended to the prompt.
+
+## Get Logs
+
+```http
+GET /api/projects/:projectId/tasks/:id/logs
+```
+
+Returns all terminal log entries for the task.
+
+## Delete Task
+
+```http
+DELETE /api/projects/:projectId/tasks/:id
+```

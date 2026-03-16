@@ -1,0 +1,59 @@
+---
+title: "Environment Variables"
+description: "Configure Claude Board with environment variables"
+icon: "sliders"
+---
+
+Claude Board uses environment variables for core configuration. Set these before starting the server or desktop app.
+
+## Available Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `4000` | HTTP server port |
+| `CLAUDE_BOARD_DATA` | OS-specific | Directory for database and uploads |
+
+## PORT
+
+Set the port that Claude Board's Express server listens on:
+
+```bash
+PORT=8080 npm start
+```
+
+<Note>If the port is in use, the server will fail to start. Choose an available port or stop the conflicting process.</Note>
+
+## CLAUDE_BOARD_DATA
+
+Controls where Claude Board stores its SQLite database and uploaded file attachments:
+
+```bash
+CLAUDE_BOARD_DATA=/path/to/data npm start
+```
+
+Default locations by platform:
+
+| Platform | Default Path |
+|----------|-------------|
+| Windows | `%APPDATA%/claude-board/` |
+| macOS | `~/Library/Application Support/claude-board/` |
+| Linux | `~/.config/claude-board/` |
+
+The directory contains:
+
+- `claude-board.db` — SQLite database (all projects, tasks, settings)
+- `uploads/` — file attachments
+
+<Warning>Back up the `CLAUDE_BOARD_DATA` directory regularly. It contains all your project data, task history, and logs.</Warning>
+
+## Desktop App
+
+When running the Electron desktop app, these variables can be set in the system environment or configured through the [setup wizard](/desktop/setup) on first launch.
+
+## Docker (Optional)
+
+If running Claude Board in Docker, pass variables with `-e`:
+
+```bash
+docker run -e PORT=4000 -e CLAUDE_BOARD_DATA=/data claude-board
+```
