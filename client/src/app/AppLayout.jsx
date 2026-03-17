@@ -199,7 +199,7 @@ export default function AppLayout(props) {
           onClose={onCloseReview}
         />
       )}
-      {detailTask && <TaskDetailModal task={detailTask} onClose={onCloseDetail} />}
+      {detailTask && <TaskDetailModal task={detailTask} onClose={onCloseDetail} onStatusChange={onStatusChange} />}
       {confirm && <ConfirmDialog {...confirm} />}
       <Toast toasts={toasts} />
     </div>

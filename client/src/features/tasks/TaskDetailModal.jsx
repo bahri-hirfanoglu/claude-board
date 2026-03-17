@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   X,
   GitCommit,
@@ -17,13 +17,18 @@ import {
   Image,
   FileText,
   Trash2,
+  ChevronDown,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatTokens, formatDuration } from '../../lib/formatters';
+import { COLUMNS } from '../../lib/constants';
 
-export default function TaskDetailModal({ task, onClose }) {
+export default function TaskDetailModal({ task, onClose, onStatusChange }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(task.status);
+  const statusMenuRef = useRef(null);
 
   useEffect(() => {
     api
@@ -35,6 +40,25 @@ export default function TaskDetailModal({ task, onClose }) {
       })
       .catch(() => setLoading(false));
   }, [task.id]);
+
+  useEffect(() => {
+    if (!showStatusMenu) return;
+    const close = (e) => {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target)) setShowStatusMenu(false);
+    };
+    window.addEventListener('mousedown', close);
+    window.addEventListener('touchstart', close);
+    return () => {
+      window.removeEventListener('mousedown', close);
+      window.removeEventListener('touchstart', close);
+    };
+  }, [showStatusMenu]);
+
+  const handleStatusChange = (newStatus) => {
+    setShowStatusMenu(false);
+    setCurrentStatus(newStatus);
+    onStatusChange?.(task.id, newStatus);
+  };
 
   const d = detail || task;
   const commits = detail?.commits || [];
@@ -74,9 +98,30 @@ export default function TaskDetailModal({ task, onClose }) {
               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[d.task_type] || ''}`}>
                 {d.task_type}
               </span>
-              <span className={`text-[10px] font-medium ${STATUS_COLORS[d.status]}`}>
-                {d.status?.replace('_', ' ')}
-              </span>
+              <div className="relative" ref={statusMenuRef}>
+                <button
+                  onClick={() => setShowStatusMenu(!showStatusMenu)}
+                  className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded hover:bg-surface-800 transition-colors ${STATUS_COLORS[currentStatus]}`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${COLUMNS.find(c => c.id === currentStatus)?.bg || ''}`} />
+                  {currentStatus?.replace('_', ' ')}
+                  <ChevronDown size={10} />
+                </button>
+                {showStatusMenu && (
+                  <div className="absolute top-full left-0 mt-1 bg-surface-800 border border-surface-700 rounded-lg py-1 shadow-xl min-w-[140px] z-10">
+                    {COLUMNS.filter(c => c.id !== currentStatus).map(c => (
+                      <button
+                        key={c.id}
+                        onClick={() => handleStatusChange(c.id)}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-300 hover:bg-surface-700 transition-colors"
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full ${c.bg}`} />
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <span className="text-[10px] text-surface-600">#{d.id}</span>
               {d.revision_count > 0 && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">
