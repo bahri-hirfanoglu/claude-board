@@ -209,7 +209,7 @@ Each project can be configured with:
 
 ## Documentation
 
-For detailed guides, concepts, and feature documentation, visit the **[Claude Board Docs](https://bahri-hirfanoglu.github.io/claude-board-docs/)**.
+For detailed guides, concepts, and feature documentation, visit the **[Claude Board Docs](https://docs.claboard.dev/)**.
 
 The documentation covers:
 
