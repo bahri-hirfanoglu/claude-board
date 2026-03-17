@@ -2,7 +2,7 @@
   "$schema": "https://wvw.dev/apps.schema.json",
   "store": {
     "name": "Claude Board",
-    "developer": "Bahri Hirfanoglu",
+    "developer": "Bahri Hırfanoğlu",
     "tagline": "Visual task management board for Claude Code",
     "url": "https://github.com/bahri-hirfanoglu/claude-board",
     "github": "https://github.com/bahri-hirfanoglu"
