@@ -9,7 +9,11 @@ function SnippetForm({ snippet, onSave, onCancel }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
-    onSave({ title: title.trim(), content: content.trim(), enabled: snippet?.enabled !== undefined ? snippet.enabled : 1 });
+    onSave({
+      title: title.trim(),
+      content: content.trim(),
+      enabled: snippet?.enabled !== undefined ? snippet.enabled : 1,
+    });
   };
 
   return (
@@ -18,7 +22,7 @@ function SnippetForm({ snippet, onSave, onCancel }) {
         <label className="text-xs text-surface-400 mb-1 block">Title</label>
         <input
           value={title}
-          onChange={e => setTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Tech Stack Rules"
           className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude"
           autoFocus
@@ -28,14 +32,18 @@ function SnippetForm({ snippet, onSave, onCancel }) {
         <label className="text-xs text-surface-400 mb-1 block">Content</label>
         <textarea
           value={content}
-          onChange={e => setContent(e.target.value)}
+          onChange={(e) => setContent(e.target.value)}
           placeholder="e.g. Always use Tailwind for styling. Use Vitest for tests."
           rows={4}
           className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude resize-y"
         />
       </div>
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200 transition-colors">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200 transition-colors"
+        >
           Cancel
         </button>
         <button
@@ -64,7 +72,9 @@ export default function SnippetsModal({ projectId, projectName, onClose }) {
     setLoading(false);
   }, [projectId]);
 
-  useEffect(() => { loadSnippets(); }, [loadSnippets]);
+  useEffect(() => {
+    loadSnippets();
+  }, [loadSnippets]);
 
   const handleSave = async (data) => {
     if (editing === 'new') {
@@ -88,8 +98,14 @@ export default function SnippetsModal({ projectId, projectName, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 pt-[5vh] overflow-y-auto" onClick={onClose}>
-      <div className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-lg shadow-2xl animate-slide-up" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-lg shadow-2xl animate-slide-up max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-800">
           <div>
@@ -99,7 +115,9 @@ export default function SnippetsModal({ projectId, projectName, onClose }) {
             </h2>
             <p className="text-xs text-surface-500 mt-0.5">{projectName} — auto-injected into Claude prompts</p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400"><X size={16} /></button>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400">
+            <X size={16} />
+          </button>
         </div>
 
         <div className="px-5 py-4">
@@ -112,8 +130,11 @@ export default function SnippetsModal({ projectId, projectName, onClose }) {
               {/* Snippet list */}
               {snippets.length > 0 && !editing && (
                 <div className="space-y-2 mb-4">
-                  {snippets.map(s => (
-                    <div key={s.id} className={`bg-surface-800/50 rounded-lg px-4 py-3 border ${s.enabled ? 'border-surface-700/50' : 'border-surface-800 opacity-60'}`}>
+                  {snippets.map((s) => (
+                    <div
+                      key={s.id}
+                      className={`bg-surface-800/50 rounded-lg px-4 py-3 border ${s.enabled ? 'border-surface-700/50' : 'border-surface-800 opacity-60'}`}
+                    >
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="text-sm font-medium text-surface-200">{s.title}</h3>
                         <div className="flex items-center gap-1">
@@ -188,8 +209,18 @@ export default function SnippetsModal({ projectId, projectName, onClose }) {
             <div className="bg-surface-800 rounded-lg p-4 border border-surface-700 shadow-xl mx-4">
               <p className="text-sm text-surface-200 mb-3">Delete this snippet?</p>
               <div className="flex justify-end gap-2">
-                <button onClick={() => setDeleting(null)} className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200">Cancel</button>
-                <button onClick={() => handleDelete(deleting)} className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30">Delete</button>
+                <button
+                  onClick={() => setDeleting(null)}
+                  className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(deleting)}
+                  className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </div>
