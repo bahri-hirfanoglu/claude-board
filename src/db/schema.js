@@ -104,6 +104,18 @@ db.run(`CREATE TABLE IF NOT EXISTS prompt_templates (
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS roles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER,
+  name TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  prompt TEXT DEFAULT '',
+  color TEXT DEFAULT '#6B7280',
+  created_at DATETIME DEFAULT (datetime('now','localtime')),
+  updated_at DATETIME DEFAULT (datetime('now','localtime')),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+)`);
+
 db.run(`CREATE TABLE IF NOT EXISTS webhooks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   project_id INTEGER NOT NULL,
@@ -132,6 +144,7 @@ db.run(`CREATE TABLE IF NOT EXISTS webhooks (
   'idx_task_attachments_task ON task_attachments(task_id)',
   'idx_prompt_templates_project ON prompt_templates(project_id)',
   'idx_webhooks_project ON webhooks(project_id)',
+  'idx_roles_project ON roles(project_id)',
 ].forEach((idx) => db.run(`CREATE INDEX IF NOT EXISTS ${idx}`));
 
 // ─── Migrations ───
@@ -172,6 +185,7 @@ const migrations = [
   ['tasks', 'diff_stat', 'ALTER TABLE tasks ADD COLUMN diff_stat TEXT'],
   ['tasks', 'work_duration_ms', 'ALTER TABLE tasks ADD COLUMN work_duration_ms INTEGER DEFAULT 0'],
   ['tasks', 'last_resumed_at', 'ALTER TABLE tasks ADD COLUMN last_resumed_at DATETIME'],
+  ['tasks', 'role_id', 'ALTER TABLE tasks ADD COLUMN role_id INTEGER'],
 ];
 
 for (const [table, col, sql] of migrations) {

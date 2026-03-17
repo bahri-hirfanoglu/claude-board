@@ -301,7 +301,7 @@ export function startClaude(
   project = {},
   revisions = [],
   snippets = [],
-  { queries, statsQueries, activityLog, onFinished, attachments = [] } = {},
+  { queries, statsQueries, activityLog, onFinished, attachments = [], role = null } = {},
 ) {
   if (activeProcesses.has(task.id) || startingTasks.has(task.id)) {
     addLog(task.id, 'Claude is already running for this task.', 'system', queries, io);
@@ -328,7 +328,7 @@ export function startClaude(
     }
   }
 
-  const prompt = buildPrompt(task, revisions, snippets, attachments);
+  const prompt = buildPrompt(task, revisions, snippets, attachments, role);
   const model = task.model || 'sonnet';
   const effort = task.thinking_effort || 'medium';
   const permissionMode = project.permission_mode || 'auto-accept';

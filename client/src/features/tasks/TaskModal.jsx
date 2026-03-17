@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Sparkles, Cpu, Zap, Layers, ChevronDown, Paperclip, Image, FileText, Trash2 } from 'lucide-react';
+import { X, Sparkles, Cpu, Zap, Layers, ChevronDown, Paperclip, Image, FileText, Trash2, Shield } from 'lucide-react';
 
 const TASK_TYPES = [
   { value: 'feature', label: 'Feature', color: 'bg-blue-500/20 text-blue-300' },
@@ -29,7 +29,7 @@ const EFFORTS = [
   { value: 'high', label: 'High', desc: 'Complex tasks', color: 'bg-red-500/20 text-red-300' },
 ];
 
-export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
+export default function TaskModal({ task, onSubmit, onClose, templates = [], roles = [] }) {
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
   const [priority, setPriority] = useState(task?.priority || 0);
@@ -38,6 +38,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
   const [model, setModel] = useState(task?.model || 'sonnet');
   const [thinkingEffort, setThinkingEffort] = useState(task?.thinking_effort || 'medium');
   const [loading, setLoading] = useState(false);
+  const [roleId, setRoleId] = useState(task?.role_id || null);
   const [attachedFiles, setAttachedFiles] = useState([]);
   const fileInputRef = useRef(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -65,7 +66,11 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
   // Parse template variables
   const parsedVars = useMemo(() => {
     if (!selectedTemplate?.variables) return [];
-    try { return JSON.parse(selectedTemplate.variables); } catch { return []; }
+    try {
+      return JSON.parse(selectedTemplate.variables);
+    } catch {
+      return [];
+    }
   }, [selectedTemplate]);
 
   // Generate description from template when variables change
@@ -109,7 +114,11 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
     e.preventDefault();
     if (!title.trim()) return;
     setLoading(true);
-    const finalDescription = selectedTemplate ? (description.trim() ? description.trim() + '\n\n' + generatedDescription : generatedDescription) : description.trim();
+    const finalDescription = selectedTemplate
+      ? description.trim()
+        ? description.trim() + '\n\n' + generatedDescription
+        : generatedDescription
+      : description.trim();
     try {
       await onSubmit({
         title: title.trim(),
@@ -119,6 +128,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
         acceptance_criteria: acceptanceCriteria.trim(),
         model,
         thinking_effort: thinkingEffort,
+        role_id: roleId || null,
         _files: attachedFiles.length > 0 ? attachedFiles : undefined,
       });
     } catch (err) {
@@ -132,7 +142,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         className="bg-surface-900 border border-surface-700 rounded-xl w-full max-w-lg mx-4 shadow-2xl max-h-[90vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-800">
           <div className="flex items-center gap-2">
@@ -161,7 +171,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
                   </button>
                   {showTemplateMenu && (
                     <div className="absolute left-0 right-0 top-full mt-1 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-10 overflow-hidden max-h-48 overflow-y-auto">
-                      {templates.map(tpl => (
+                      {templates.map((tpl) => (
                         <button
                           key={tpl.id}
                           type="button"
@@ -197,12 +207,12 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
           {selectedTemplate && parsedVars.length > 0 && (
             <div className="bg-surface-800/30 rounded-lg p-3 border border-surface-700/50 space-y-2.5">
               <label className="text-xs font-medium text-surface-400 block">Template Variables</label>
-              {parsedVars.map(v => (
+              {parsedVars.map((v) => (
                 <div key={v.name}>
                   <label className="text-[11px] text-surface-500 mb-0.5 block">{v.label || v.name}</label>
                   <input
                     value={templateVars[v.name] || ''}
-                    onChange={e => setTemplateVars(prev => ({ ...prev, [v.name]: e.target.value }))}
+                    onChange={(e) => setTemplateVars((prev) => ({ ...prev, [v.name]: e.target.value }))}
                     placeholder={v.placeholder || ''}
                     className="w-full px-2.5 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600"
                   />
@@ -224,7 +234,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
           <div>
             <label className="block text-xs font-medium text-surface-400 mb-1.5">Type</label>
             <div className="flex flex-wrap gap-1.5">
-              {TASK_TYPES.map(t => (
+              {TASK_TYPES.map((t) => (
                 <button
                   key={t.value}
                   type="button"
@@ -247,7 +257,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
             <input
               ref={titleRef}
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Add user authentication flow"
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600"
               required
@@ -262,8 +272,10 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
             </label>
             <textarea
               value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder={"Describe what Claude should implement.\n\nBe specific about:\n- What to build or change\n- Which files or modules are involved\n- Any constraints or requirements"}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={
+                'Describe what Claude should implement.\n\nBe specific about:\n- What to build or change\n- Which files or modules are involved\n- Any constraints or requirements'
+              }
               rows={6}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none"
             />
@@ -277,8 +289,10 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
             </label>
             <textarea
               value={acceptanceCriteria}
-              onChange={e => setAcceptanceCriteria(e.target.value)}
-              placeholder={"Define what 'done' looks like:\n- Tests pass\n- API returns correct response\n- No regressions in existing features"}
+              onChange={(e) => setAcceptanceCriteria(e.target.value)}
+              placeholder={
+                "Define what 'done' looks like:\n- Tests pass\n- API returns correct response\n- No regressions in existing features"
+              }
               rows={3}
               className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none"
             />
@@ -301,7 +315,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
               className="hidden"
               onChange={(e) => {
                 const files = Array.from(e.target.files || []);
-                setAttachedFiles(prev => [...prev, ...files]);
+                setAttachedFiles((prev) => [...prev, ...files]);
                 e.target.value = '';
               }}
             />
@@ -320,7 +334,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
                       <span className="text-[10px] text-surface-600">{(file.size / 1024).toFixed(0)}KB</span>
                       <button
                         type="button"
-                        onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))}
+                        onClick={() => setAttachedFiles((prev) => prev.filter((_, j) => j !== i))}
                         className="p-0.5 rounded hover:bg-surface-700 text-surface-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                       >
                         <Trash2 size={11} />
@@ -340,6 +354,44 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
             </button>
           </div>
 
+          {/* Role */}
+          {roles.length > 0 && (
+            <div>
+              <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5">
+                <Shield size={11} />
+                Role
+                <span className="text-surface-600 font-normal">- optional</span>
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setRoleId(null)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                    !roleId
+                      ? 'bg-surface-700 text-surface-200 ring-1 ring-surface-500'
+                      : 'bg-surface-800 text-surface-500 hover:text-surface-300'
+                  }`}
+                >
+                  None
+                </button>
+                {roles.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setRoleId(r.id)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                      roleId === r.id ? 'ring-1 ring-current' : 'bg-surface-800 text-surface-500 hover:text-surface-300'
+                    }`}
+                    style={roleId === r.id ? { backgroundColor: r.color + '20', color: r.color } : {}}
+                  >
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: r.color }} />
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Model & Effort Row */}
           <div className="grid grid-cols-2 gap-4">
             {/* Model */}
@@ -349,7 +401,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
                 Model
               </label>
               <div className="flex flex-col gap-1">
-                {MODELS.map(m => (
+                {MODELS.map((m) => (
                   <button
                     key={m.value}
                     type="button"
@@ -361,7 +413,9 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
                     }`}
                   >
                     <span className="font-medium">{m.label}</span>
-                    <span className={`text-[10px] ${model === m.value ? 'opacity-80' : 'text-surface-600'}`}>{m.desc}</span>
+                    <span className={`text-[10px] ${model === m.value ? 'opacity-80' : 'text-surface-600'}`}>
+                      {m.desc}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -374,7 +428,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
                 Thinking Effort
               </label>
               <div className="flex flex-col gap-1">
-                {EFFORTS.map(e => (
+                {EFFORTS.map((e) => (
                   <button
                     key={e.value}
                     type="button"
@@ -386,7 +440,9 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
                     }`}
                   >
                     <span className="font-medium">{e.label}</span>
-                    <span className={`text-[10px] ${thinkingEffort === e.value ? 'opacity-80' : 'text-surface-600'}`}>{e.desc}</span>
+                    <span className={`text-[10px] ${thinkingEffort === e.value ? 'opacity-80' : 'text-surface-600'}`}>
+                      {e.desc}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -397,7 +453,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [] }) {
           <div>
             <label className="block text-xs font-medium text-surface-400 mb-1.5">Priority</label>
             <div className="flex gap-2">
-              {PRIORITIES.map(p => (
+              {PRIORITIES.map((p) => (
                 <button
                   key={p.value}
                   type="button"

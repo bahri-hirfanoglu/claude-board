@@ -7,6 +7,7 @@ export default function taskRoutes({
   statsQueries,
   snippetQueries,
   attachmentQueries,
+  roleQueries,
   io,
   activityLog,
   startClaude,
@@ -47,6 +48,7 @@ export default function taskRoutes({
         acceptance_criteria = '',
         model = 'sonnet',
         thinking_effort = 'medium',
+        role_id = null,
       } = req.body;
       if (!title?.trim()) return res.status(400).json({ error: 'Title is required' });
 
@@ -59,6 +61,7 @@ export default function taskRoutes({
         acceptance_criteria.trim(),
         model,
         thinking_effort,
+        role_id || null,
       );
       const task = queries.getTaskById.get(result.lastInsertRowid);
       io.emit('task:created', task);
@@ -74,7 +77,8 @@ export default function taskRoutes({
     asyncHandler(async (req, res) => {
       const task = queries.getTaskById.get(req.params.id);
       if (!task) return res.status(404).json({ error: 'Task not found' });
-      const { title, description, priority, task_type, acceptance_criteria, model, thinking_effort } = req.body;
+      const { title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id } =
+        req.body;
       queries.updateTask.run(
         title ?? task.title,
         description ?? task.description,
@@ -83,6 +87,7 @@ export default function taskRoutes({
         acceptance_criteria ?? task.acceptance_criteria,
         model ?? task.model,
         thinking_effort ?? task.thinking_effort,
+        role_id !== undefined ? role_id || null : task.role_id,
         task.id,
       );
       const updated = queries.getTaskById.get(task.id);
@@ -129,11 +134,13 @@ export default function taskRoutes({
         const revisions = queries.getRevisions.all(task.id);
         const snippets = snippetQueries?.getEnabledByProject(task.project_id) || [];
         const taskAttachments = attachmentQueries?.getByTask(task.id) || [];
+        const role = updated.role_id ? roleQueries?.getById(updated.role_id) : null;
         startClaude(updated, io, workingDir, project, revisions, snippets, {
           queries,
           statsQueries,
           activityLog,
           attachments: taskAttachments,
+          role,
           onFinished: (t) => startNextQueued(t.project_id),
         });
         activityLog.add(task.project_id, task.id, 'task_started', `Task started: ${task.title}`);
@@ -189,11 +196,13 @@ export default function taskRoutes({
       const revisions = queries.getRevisions.all(task.id);
       const snippets = snippetQueries?.getEnabledByProject(task.project_id) || [];
       const taskAttachments = attachmentQueries?.getByTask(task.id) || [];
+      const restartRole = updated.role_id ? roleQueries?.getById(updated.role_id) : null;
       startClaude(updated, io, workingDir, project, revisions, snippets, {
         queries,
         statsQueries,
         activityLog,
         attachments: taskAttachments,
+        role: restartRole,
         onFinished: (t) => startNextQueued(t.project_id),
       });
       io.emit('task:updated', { ...updated, is_running: true });
@@ -219,11 +228,13 @@ export default function taskRoutes({
       const revisions = queries.getRevisions.all(task.id);
       const snippets = snippetQueries?.getEnabledByProject(task.project_id) || [];
       const taskAttachments = attachmentQueries?.getByTask(task.id) || [];
+      const revisionRole = updated.role_id ? roleQueries?.getById(updated.role_id) : null;
       startClaude(updated, io, workingDir, project, revisions, snippets, {
         queries,
         statsQueries,
         activityLog,
         attachments: taskAttachments,
+        role: revisionRole,
         onFinished: (t) => startNextQueued(t.project_id),
       });
 
