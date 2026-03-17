@@ -10,7 +10,7 @@
 [![Docker](https://img.shields.io/badge/docker-supported-2496ED?style=flat-square)](Dockerfile)
 [![Electron](https://img.shields.io/badge/electron-desktop%20app-9FEAF9?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
 
-[Features](#features) &bull; [Download](#download) &bull; [Quick Start](#quick-start) &bull; [Screenshots](#screenshots) &bull; [Architecture](#architecture) &bull; [API](#api-reference) &bull; [Contributing](#contributing)
+[Features](#features) &bull; [Download](#download) &bull; [Quick Start](#quick-start) &bull; [Screenshots](#screenshots) &bull; [Documentation](#documentation) &bull; [Architecture](#architecture) &bull; [API](#api-reference) &bull; [Contributing](#contributing)
 
 ![Demo](docs/demo.gif)
 
@@ -206,6 +206,16 @@ Each project can be configured with:
 | **Thinking Effort** | `low`, `medium`, `high` | Claude's thinking depth |
 | **Priority** | 0-3 | Task priority (affects queue order) |
 | **Type** | `feature`, `bugfix`, `refactor`, `docs`, `test`, `chore` | Task classification |
+
+## Documentation
+
+For detailed guides, concepts, and feature documentation, visit the **[Claude Board Docs](https://bahri-hirfanoglu.github.io/claude-board-docs/)**.
+
+The documentation covers:
+
+- **Getting Started** &mdash; Installation, quick start, and first project setup
+- **Concepts** &mdash; Board & views, tasks, agents, and the review system
+- **Features** &mdash; Live terminal, auto-queue, git automation, webhooks, and prompt templates
 
 ## Architecture
 
