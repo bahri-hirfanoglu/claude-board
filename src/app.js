@@ -15,6 +15,7 @@ import {
   templateQueries,
   attachmentQueries,
   webhookQueries,
+  roleQueries,
 } from './db/index.js';
 import { startClaude, stopClaude, isTaskRunning } from './claude/runner.js';
 import { authMiddleware, socketAuthMiddleware, generateApiKey, disableAuth, isAuthEnabled } from './middleware/auth.js';
@@ -26,6 +27,7 @@ import snippetRoutes from './routes/snippets.js';
 import templateRoutes from './routes/templates.js';
 import attachmentRoutes from './routes/attachments.js';
 import webhookRoutes from './routes/webhooks.js';
+import roleRoutes from './routes/roles.js';
 import { createWebhookDispatcher } from './services/webhookDispatcher.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -141,11 +143,13 @@ export function createApp() {
       const revisions = queries.getRevisions.all(next.id);
       const snippets = snippetQueries.getEnabledByProject(project.id);
       const taskAttachments = attachmentQueries.getByTask(next.id) || [];
+      const taskRole = updated.role_id ? roleQueries.getById(updated.role_id) : null;
       startClaude(updated, io, workingDir, project, revisions, snippets, {
         queries,
         statsQueries,
         activityLog: activityLogWithWebhooks,
         attachments: taskAttachments,
+        role: taskRole,
         onFinished: (t) => {
           taskStartLock.delete(t.id);
           startNextQueued(t.project_id);
@@ -184,6 +188,7 @@ export function createApp() {
     templateQueries,
     attachmentQueries,
     webhookQueries,
+    roleQueries,
     io,
     startClaude,
     stopClaude,
@@ -213,6 +218,7 @@ export function createApp() {
   app.use('/api', authMiddleware, templateRoutes(deps));
   app.use('/api', authMiddleware, attachmentRoutes(deps));
   app.use('/api', authMiddleware, webhookRoutes(deps));
+  app.use('/api', authMiddleware, roleRoutes(deps));
 
   // Serve uploaded files
   app.use('/uploads', express.static(join(staticRoot, 'uploads')));

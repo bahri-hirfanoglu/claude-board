@@ -12,22 +12,72 @@ import ClaudeMdEditor from '../features/editor/ClaudeMdEditor';
 import SnippetsModal from '../features/snippets/SnippetsModal';
 import TemplatesModal from '../features/templates/TemplatesModal';
 import WebhooksModal from '../features/webhooks/WebhooksModal';
+import RolesModal from '../features/roles/RolesModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import TerminalBottomPanel from './TerminalBottomPanel';
 
 export default function AppLayout(props) {
   const {
-    connected, projects, currentProject, tasks, filteredTasks, terminal,
-    selectedTask, activePanel, search, toasts, confirm,
-    showModal, editingTask, showProjectModal, editingProject, showClaudeMd, showSnippets, showTemplates, showWebhooks, templates, reviewTask, detailTask,
-    onSearchChange, onSetActivePanel, onSetSelectedTask,
-    onNavigateToProject, onNavigateToDashboard,
-    onStatusChange, onViewLogs, onCreateTask, onUpdateTask, onDeleteTask,
-    onOpenCreateModal, onOpenEditModal, onCloseTaskModal,
-    onReviewTask, onApproveTask, onRequestChanges, onCloseReview,
-    onCreateProject, onUpdateProject, onDeleteProject, onEditProject, onNewProject, onCloseProjectModal,
-    onEditClaudeMd, onCloseClaudeMd, onEditSnippets, onCloseSnippets, onEditTemplates, onCloseTemplates, onEditWebhooks, onCloseWebhooks, onViewDetail, onCloseDetail,
+    connected,
+    projects,
+    currentProject,
+    tasks,
+    filteredTasks,
+    terminal,
+    selectedTask,
+    activePanel,
+    search,
+    toasts,
+    confirm,
+    showModal,
+    editingTask,
+    showProjectModal,
+    editingProject,
+    showClaudeMd,
+    showSnippets,
+    showTemplates,
+    showWebhooks,
+    showRoles,
+    templates,
+    roles,
+    reviewTask,
+    detailTask,
+    onSearchChange,
+    onSetActivePanel,
+    onSetSelectedTask,
+    onNavigateToProject,
+    onNavigateToDashboard,
+    onStatusChange,
+    onViewLogs,
+    onCreateTask,
+    onUpdateTask,
+    onDeleteTask,
+    onOpenCreateModal,
+    onOpenEditModal,
+    onCloseTaskModal,
+    onReviewTask,
+    onApproveTask,
+    onRequestChanges,
+    onCloseReview,
+    onCreateProject,
+    onUpdateProject,
+    onDeleteProject,
+    onEditProject,
+    onNewProject,
+    onCloseProjectModal,
+    onEditClaudeMd,
+    onCloseClaudeMd,
+    onEditSnippets,
+    onCloseSnippets,
+    onEditTemplates,
+    onCloseTemplates,
+    onEditWebhooks,
+    onCloseWebhooks,
+    onEditRoles,
+    onCloseRoles,
+    onViewDetail,
+    onCloseDetail,
   } = props;
 
   return (
@@ -36,12 +86,12 @@ export default function AppLayout(props) {
       <Header
         connected={connected}
         taskCount={tasks.length}
-        runningCount={tasks.filter(t => t.is_running).length}
+        runningCount={tasks.filter((t) => t.is_running).length}
         tasks={tasks}
         onNewTask={currentProject ? onOpenCreateModal : null}
-        onToggleStats={() => onSetActivePanel(prev => prev === 'stats' ? null : 'stats')}
+        onToggleStats={() => onSetActivePanel((prev) => (prev === 'stats' ? null : 'stats'))}
         statsActive={activePanel === 'stats'}
-        onToggleActivity={() => onSetActivePanel(prev => prev === 'activity' ? null : 'activity')}
+        onToggleActivity={() => onSetActivePanel((prev) => (prev === 'activity' ? null : 'activity'))}
         activityActive={activePanel === 'activity'}
         search={search}
         onSearchChange={onSearchChange}
@@ -56,6 +106,7 @@ export default function AppLayout(props) {
         onEditSnippets={onEditSnippets}
         onEditTemplates={onEditTemplates}
         onEditWebhooks={onEditWebhooks}
+        onEditRoles={onEditRoles}
       />
 
       {/* Main content */}
@@ -74,11 +125,7 @@ export default function AppLayout(props) {
                 onViewDetail={onViewDetail}
               />
             ) : (
-              <Dashboard
-                projects={projects}
-                onSelectProject={onNavigateToProject}
-                onNewProject={onNewProject}
-              />
+              <Dashboard projects={projects} onSelectProject={onNavigateToProject} onNewProject={onNewProject} />
             )}
           </div>
 
@@ -114,10 +161,20 @@ export default function AppLayout(props) {
 
       {/* Modals */}
       {showModal && currentProject && (
-        <TaskModal task={editingTask} onSubmit={editingTask ? onUpdateTask : onCreateTask} onClose={onCloseTaskModal} templates={templates || []} />
+        <TaskModal
+          task={editingTask}
+          onSubmit={editingTask ? onUpdateTask : onCreateTask}
+          onClose={onCloseTaskModal}
+          templates={templates || []}
+          roles={roles || []}
+        />
       )}
       {showProjectModal && (
-        <ProjectModal project={editingProject} onSubmit={editingProject ? onUpdateProject : onCreateProject} onClose={onCloseProjectModal} />
+        <ProjectModal
+          project={editingProject}
+          onSubmit={editingProject ? onUpdateProject : onCreateProject}
+          onClose={onCloseProjectModal}
+        />
       )}
       {showClaudeMd && currentProject && (
         <ClaudeMdEditor projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseClaudeMd} />
@@ -131,8 +188,16 @@ export default function AppLayout(props) {
       {showWebhooks && currentProject && (
         <WebhooksModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseWebhooks} />
       )}
+      {showRoles && currentProject && (
+        <RolesModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseRoles} />
+      )}
       {reviewTask && (
-        <ReviewModal task={reviewTask} onApprove={onApproveTask} onRequestChanges={onRequestChanges} onClose={onCloseReview} />
+        <ReviewModal
+          task={reviewTask}
+          onApprove={onApproveTask}
+          onRequestChanges={onRequestChanges}
+          onClose={onCloseReview}
+        />
       )}
       {detailTask && <TaskDetailModal task={detailTask} onClose={onCloseDetail} />}
       {confirm && <ConfirmDialog {...confirm} />}

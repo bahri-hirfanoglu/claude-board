@@ -7,17 +7,17 @@ export const queries = {
   },
   getTaskById: { get: (id) => queryOne('SELECT * FROM tasks WHERE id=?', [id]) },
   createTask: {
-    run: (pid, title, desc, priority, type, criteria, model, effort) =>
+    run: (pid, title, desc, priority, type, criteria, model, effort, roleId = null) =>
       run(
-        'INSERT INTO tasks (project_id,title,description,priority,task_type,acceptance_criteria,model,thinking_effort) VALUES (?,?,?,?,?,?,?,?)',
-        [pid, title, desc, priority, type || 'feature', criteria || '', model || 'sonnet', effort || 'medium'],
+        'INSERT INTO tasks (project_id,title,description,priority,task_type,acceptance_criteria,model,thinking_effort,role_id) VALUES (?,?,?,?,?,?,?,?,?)',
+        [pid, title, desc, priority, type || 'feature', criteria || '', model || 'sonnet', effort || 'medium', roleId],
       ),
   },
   updateTask: {
-    run: (title, desc, priority, type, criteria, model, effort, id) =>
+    run: (title, desc, priority, type, criteria, model, effort, roleId, id) =>
       run(
-        "UPDATE tasks SET title=?,description=?,priority=?,task_type=?,acceptance_criteria=?,model=?,thinking_effort=?,updated_at=datetime('now','localtime') WHERE id=?",
-        [title, desc, priority, type || 'feature', criteria || '', model || 'sonnet', effort || 'medium', id],
+        "UPDATE tasks SET title=?,description=?,priority=?,task_type=?,acceptance_criteria=?,model=?,thinking_effort=?,role_id=?,updated_at=datetime('now','localtime') WHERE id=?",
+        [title, desc, priority, type || 'feature', criteria || '', model || 'sonnet', effort || 'medium', roleId, id],
       ),
   },
   deleteTask: { run: (id) => run('DELETE FROM tasks WHERE id=?', [id]) },

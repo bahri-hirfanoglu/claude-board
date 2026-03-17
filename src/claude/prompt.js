@@ -1,7 +1,14 @@
-export function buildPrompt(task, revisions = [], snippets = [], attachments = []) {
+export function buildPrompt(task, revisions = [], snippets = [], attachments = [], role = null) {
   const isRevision = revisions.length > 0;
   const revisionNum = task.revision_count || revisions.length;
   const parts = [];
+
+  // Role assignment
+  if (role?.prompt) {
+    parts.push(`## Role: ${role.name}`);
+    parts.push(role.prompt);
+    parts.push('');
+  }
 
   if (isRevision) {
     parts.push(`# REVISION #${revisionNum}: ${task.title}`);
