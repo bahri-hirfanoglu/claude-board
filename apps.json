@@ -1,0 +1,62 @@
+{
+  "$schema": "https://wvw.dev/apps.schema.json",
+  "store": {
+    "name": "Claude Board",
+    "developer": "Bahri Hirfanoglu",
+    "tagline": "Visual task management board for Claude Code",
+    "url": "https://github.com/bahri-hirfanoglu/claude-board",
+    "github": "https://github.com/bahri-hirfanoglu"
+  },
+  "featured": [
+    {
+      "id": "claude-board",
+      "headline": "DEVELOPER TOOLS",
+      "title": "Claude Board",
+      "subtitle": "Manage AI-powered development tasks with a Kanban-style interface"
+    }
+  ],
+  "categories": [
+    { "id": "developer-tools", "name": "Developer Tools" },
+    { "id": "productivity", "name": "Productivity" },
+    { "id": "ai", "name": "AI & Machine Learning" }
+  ],
+  "apps": [
+    {
+      "id": "claude-board",
+      "name": "Claude Board",
+      "subtitle": "Visual task management for Claude Code",
+      "description": "Manage AI-powered development tasks with a Kanban-style interface",
+      "longDescription": "Claude Board is a visual task management board designed for Claude Code. It provides a Kanban-style interface to manage AI-powered development tasks, featuring real-time terminal output, project roles with cross-project sharing, and an interactive office simulation view. Available as both a web app and desktop application for Windows, macOS, and Linux.",
+      "icon": "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/icon.png",
+      "iconEmoji": "📋",
+      "category": ["developer-tools", "productivity", "ai"],
+      "platform": "Web / Desktop",
+      "price": "Free",
+      "github": "https://github.com/bahri-hirfanoglu/claude-board",
+      "language": "JavaScript",
+      "installCommand": "npx claude-board",
+      "requirements": "Node.js 18.0.0 or later",
+      "features": [
+        "Kanban-style task management board",
+        "Real-time terminal output with live streaming",
+        "Interactive 2.5D office simulation view",
+        "Project roles with cross-project sharing",
+        "Electron desktop app for Windows, macOS, and Linux",
+        "Socket.IO real-time updates",
+        "SQLite-based persistent storage"
+      ],
+      "screenshots": [
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/demo.gif",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/dashboard.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/board.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/task-modal.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/stats.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/activity.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/setup-wizard.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/splash-screen.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/mobile-dashboard.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/mobile-board.png"
+      ]
+    }
+  ]
+}
