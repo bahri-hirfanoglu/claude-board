@@ -1,5 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Bell, Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Pencil,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  Bell,
+  Send,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 
 const PLATFORMS = [
@@ -22,11 +34,11 @@ function WebhookForm({ webhook, onSave, onCancel }) {
   const [url, setUrl] = useState(webhook?.url || '');
   const [platform, setPlatform] = useState(webhook?.platform || 'slack');
   const [events, setEvents] = useState(webhook?.events || []);
-  const [allEvents, setAllEvents] = useState(!webhook || (webhook?.events?.length === 0));
+  const [allEvents, setAllEvents] = useState(!webhook || webhook?.events?.length === 0);
 
   const toggleEvent = (eventId) => {
     setAllEvents(false);
-    setEvents(prev => prev.includes(eventId) ? prev.filter(e => e !== eventId) : [...prev, eventId]);
+    setEvents((prev) => (prev.includes(eventId) ? prev.filter((e) => e !== eventId) : [...prev, eventId]));
   };
 
   const handleSubmit = (e) => {
@@ -53,7 +65,7 @@ function WebhookForm({ webhook, onSave, onCancel }) {
       <div>
         <label className="text-xs text-surface-400 mb-1.5 block">Platform</label>
         <div className="flex gap-1.5">
-          {PLATFORMS.map(p => (
+          {PLATFORMS.map((p) => (
             <button
               key={p.id}
               type="button"
@@ -75,7 +87,7 @@ function WebhookForm({ webhook, onSave, onCancel }) {
         <label className="text-xs text-surface-400 mb-1.5 block">Name</label>
         <input
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Dev Notifications"
           className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude"
           autoFocus
@@ -86,7 +98,7 @@ function WebhookForm({ webhook, onSave, onCancel }) {
         <label className="text-xs text-surface-400 mb-1.5 block">Webhook URL</label>
         <input
           value={url}
-          onChange={e => setUrl(e.target.value)}
+          onChange={(e) => setUrl(e.target.value)}
           placeholder={placeholders[platform]}
           className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm font-mono focus:outline-none focus:ring-1 focus:ring-claude"
         />
@@ -96,7 +108,10 @@ function WebhookForm({ webhook, onSave, onCancel }) {
         <label className="text-xs text-surface-400 mb-2 block">Events</label>
         <button
           type="button"
-          onClick={() => { setAllEvents(!allEvents); if (!allEvents) setEvents([]); }}
+          onClick={() => {
+            setAllEvents(!allEvents);
+            if (!allEvents) setEvents([]);
+          }}
           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all mb-2 ${
             allEvents
               ? 'bg-claude/10 text-claude ring-1 ring-claude/30'
@@ -109,7 +124,7 @@ function WebhookForm({ webhook, onSave, onCancel }) {
         </button>
         {!allEvents && (
           <div className="grid grid-cols-1 gap-1">
-            {ALL_EVENTS.map(ev => (
+            {ALL_EVENTS.map((ev) => (
               <button
                 key={ev.id}
                 type="button"
@@ -120,7 +135,9 @@ function WebhookForm({ webhook, onSave, onCancel }) {
                     : 'bg-surface-800/50 text-surface-500 hover:text-surface-300'
                 }`}
               >
-                <div className={`w-1.5 h-1.5 rounded-full ${events.includes(ev.id) ? 'bg-claude' : 'bg-surface-600'}`} />
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${events.includes(ev.id) ? 'bg-claude' : 'bg-surface-600'}`}
+                />
                 <span className="font-medium">{ev.label}</span>
                 <span className="text-[10px] text-surface-600 ml-auto">{ev.desc}</span>
               </button>
@@ -130,7 +147,11 @@ function WebhookForm({ webhook, onSave, onCancel }) {
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200 transition-colors">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200 transition-colors"
+        >
           Cancel
         </button>
         <button
@@ -161,7 +182,9 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
     setLoading(false);
   }, [projectId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const handleSave = async (data) => {
     if (editing === 'new') {
@@ -196,11 +219,17 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
     setTesting(null);
   };
 
-  const getPlatform = (id) => PLATFORMS.find(p => p.id === id) || PLATFORMS[3];
+  const getPlatform = (id) => PLATFORMS.find((p) => p.id === id) || PLATFORMS[3];
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 pt-[5vh] overflow-y-auto" onClick={onClose}>
-      <div className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-lg shadow-2xl animate-slide-up" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-lg shadow-2xl animate-slide-up max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-800">
           <div>
@@ -210,7 +239,9 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
             </h2>
             <p className="text-xs text-surface-500 mt-0.5">{projectName} — send notifications to external services</p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400"><X size={16} /></button>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400">
+            <X size={16} />
+          </button>
         </div>
 
         <div className="px-5 py-4">
@@ -223,12 +254,15 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
               {/* Webhook list */}
               {webhooks.length > 0 && !editing && (
                 <div className="space-y-2 mb-4">
-                  {webhooks.map(w => {
+                  {webhooks.map((w) => {
                     const p = getPlatform(w.platform);
                     const isTestOk = testResult?.id === w.id && testResult.ok;
                     const isTestFail = testResult?.id === w.id && !testResult.ok;
                     return (
-                      <div key={w.id} className={`bg-surface-800/50 rounded-lg px-4 py-3 border ${w.enabled ? 'border-surface-700/50' : 'border-surface-800 opacity-60'}`}>
+                      <div
+                        key={w.id}
+                        className={`bg-surface-800/50 rounded-lg px-4 py-3 border ${w.enabled ? 'border-surface-700/50' : 'border-surface-800 opacity-60'}`}
+                      >
                         <div className="flex items-center justify-between mb-1.5">
                           <div className="flex items-center gap-2 min-w-0">
                             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${p.color}`}>{p.label}</span>
@@ -239,14 +273,23 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
                               onClick={() => handleTest(w)}
                               disabled={testing === w.id}
                               className={`p-1 rounded transition-colors ${
-                                isTestOk ? 'text-emerald-400' : isTestFail ? 'text-red-400' : 'text-surface-400 hover:text-blue-400'
+                                isTestOk
+                                  ? 'text-emerald-400'
+                                  : isTestFail
+                                    ? 'text-red-400'
+                                    : 'text-surface-400 hover:text-blue-400'
                               }`}
                               title="Test webhook"
                             >
-                              {testing === w.id ? <Loader2 size={13} className="animate-spin" /> :
-                               isTestOk ? <CheckCircle2 size={13} /> :
-                               isTestFail ? <AlertCircle size={13} /> :
-                               <Send size={13} />}
+                              {testing === w.id ? (
+                                <Loader2 size={13} className="animate-spin" />
+                              ) : isTestOk ? (
+                                <CheckCircle2 size={13} />
+                              ) : isTestFail ? (
+                                <AlertCircle size={13} />
+                              ) : (
+                                <Send size={13} />
+                              )}
                             </button>
                             <button
                               onClick={() => handleToggle(w)}
@@ -255,10 +298,18 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
                             >
                               {w.enabled ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                             </button>
-                            <button onClick={() => setEditing(w)} className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors" title="Edit">
+                            <button
+                              onClick={() => setEditing(w)}
+                              className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors"
+                              title="Edit"
+                            >
                               <Pencil size={13} />
                             </button>
-                            <button onClick={() => setDeleting(w.id)} className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-red-400 transition-colors" title="Delete">
+                            <button
+                              onClick={() => setDeleting(w.id)}
+                              className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-red-400 transition-colors"
+                              title="Delete"
+                            >
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -266,10 +317,17 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
                         <p className="text-[10px] text-surface-500 font-mono truncate">{w.url}</p>
                         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                           {w.events.length === 0 ? (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-claude/10 text-claude">All Events</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-claude/10 text-claude">
+                              All Events
+                            </span>
                           ) : (
-                            w.events.map(ev => (
-                              <span key={ev} className="text-[9px] px-1.5 py-0.5 rounded bg-surface-700/50 text-surface-400">{ev.replace(/_/g, ' ')}</span>
+                            w.events.map((ev) => (
+                              <span
+                                key={ev}
+                                className="text-[9px] px-1.5 py-0.5 rounded bg-surface-700/50 text-surface-400"
+                              >
+                                {ev.replace(/_/g, ' ')}
+                              </span>
                             ))
                           )}
                         </div>
@@ -324,8 +382,18 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
             <div className="bg-surface-800 rounded-lg p-4 border border-surface-700 shadow-xl mx-4">
               <p className="text-sm text-surface-200 mb-3">Delete this webhook?</p>
               <div className="flex justify-end gap-2">
-                <button onClick={() => setDeleting(null)} className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200">Cancel</button>
-                <button onClick={() => handleDelete(deleting)} className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30">Delete</button>
+                <button
+                  onClick={() => setDeleting(null)}
+                  className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(deleting)}
+                  className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </div>

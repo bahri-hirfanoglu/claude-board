@@ -154,11 +154,11 @@ export default function RolesModal({ projectId, projectName, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 pt-[5vh] overflow-y-auto"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-lg shadow-2xl animate-slide-up"
+        className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-lg shadow-2xl animate-slide-up max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

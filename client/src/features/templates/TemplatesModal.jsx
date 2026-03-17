@@ -29,7 +29,7 @@ function VariableEditor({ variables, onChange }) {
   };
 
   const updateVariable = (index, field, value) => {
-    const updated = variables.map((v, i) => i === index ? { ...v, [field]: value } : v);
+    const updated = variables.map((v, i) => (i === index ? { ...v, [field]: value } : v));
     onChange(updated);
   };
 
@@ -45,7 +45,9 @@ function VariableEditor({ variables, onChange }) {
           {variables.map((v, i) => (
             <div key={i} className="bg-surface-800 rounded-lg p-2.5 border border-surface-700/50">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] text-surface-500 font-medium uppercase tracking-wider">Variable {i + 1}</span>
+                <span className="text-[10px] text-surface-500 font-medium uppercase tracking-wider">
+                  Variable {i + 1}
+                </span>
                 <button
                   type="button"
                   onClick={() => removeVariable(i)}
@@ -57,25 +59,25 @@ function VariableEditor({ variables, onChange }) {
               <div className="grid grid-cols-2 gap-2">
                 <input
                   value={v.name}
-                  onChange={e => updateVariable(i, 'name', e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                  onChange={(e) => updateVariable(i, 'name', e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
                   placeholder="name (e.g. file)"
                   className="px-2 py-1.5 bg-surface-900 border border-surface-700 rounded text-xs focus:outline-none focus:ring-1 focus:ring-claude"
                 />
                 <input
                   value={v.label}
-                  onChange={e => updateVariable(i, 'label', e.target.value)}
+                  onChange={(e) => updateVariable(i, 'label', e.target.value)}
                   placeholder="Label (e.g. File Path)"
                   className="px-2 py-1.5 bg-surface-900 border border-surface-700 rounded text-xs focus:outline-none focus:ring-1 focus:ring-claude"
                 />
                 <input
                   value={v.placeholder}
-                  onChange={e => updateVariable(i, 'placeholder', e.target.value)}
+                  onChange={(e) => updateVariable(i, 'placeholder', e.target.value)}
                   placeholder="Placeholder"
                   className="px-2 py-1.5 bg-surface-900 border border-surface-700 rounded text-xs focus:outline-none focus:ring-1 focus:ring-claude"
                 />
                 <input
                   value={v.default || ''}
-                  onChange={e => updateVariable(i, 'default', e.target.value)}
+                  onChange={(e) => updateVariable(i, 'default', e.target.value)}
                   placeholder="Default value"
                   className="px-2 py-1.5 bg-surface-900 border border-surface-700 rounded text-xs focus:outline-none focus:ring-1 focus:ring-claude"
                 />
@@ -129,9 +131,7 @@ function HighlightedTextarea({ value, onChange, placeholder, rows }) {
         rows={rows}
         className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude resize-y font-mono"
       />
-      <p className="text-[10px] text-surface-600 mt-1">
-        Use {'{{variable_name}}'} syntax for placeholders
-      </p>
+      <p className="text-[10px] text-surface-600 mt-1">Use {'{{variable_name}}'} syntax for placeholders</p>
     </div>
   );
 }
@@ -141,7 +141,11 @@ function TemplateForm({ template, onSave, onCancel }) {
   const [description, setDescription] = useState(template?.description || '');
   const [templateText, setTemplateText] = useState(template?.template || '');
   const [variables, setVariables] = useState(() => {
-    try { return template?.variables ? JSON.parse(template.variables) : []; } catch { return []; }
+    try {
+      return template?.variables ? JSON.parse(template.variables) : [];
+    } catch {
+      return [];
+    }
   });
   const [taskType, setTaskType] = useState(template?.task_type || 'feature');
   const [model, setModel] = useState(template?.model || 'sonnet');
@@ -155,7 +159,7 @@ function TemplateForm({ template, onSave, onCancel }) {
       name: name.trim(),
       description: description.trim(),
       template: templateText.trim(),
-      variables: JSON.stringify(variables.filter(v => v.name.trim())),
+      variables: JSON.stringify(variables.filter((v) => v.name.trim())),
       task_type: taskType,
       model,
       thinking_effort: thinkingEffort,
@@ -168,7 +172,7 @@ function TemplateForm({ template, onSave, onCancel }) {
         <label className="text-xs text-surface-400 mb-1 block">Name</label>
         <input
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
           placeholder="e.g. API Endpoint"
           className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude"
           autoFocus
@@ -179,7 +183,7 @@ function TemplateForm({ template, onSave, onCancel }) {
         <label className="text-xs text-surface-400 mb-1 block">Description</label>
         <input
           value={description}
-          onChange={e => setDescription(e.target.value)}
+          onChange={(e) => setDescription(e.target.value)}
           placeholder="e.g. Create a new REST API endpoint"
           className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude"
         />
@@ -189,8 +193,10 @@ function TemplateForm({ template, onSave, onCancel }) {
         <label className="text-xs text-surface-400 mb-1 block">Template</label>
         <HighlightedTextarea
           value={templateText}
-          onChange={e => setTemplateText(e.target.value)}
-          placeholder={"Create a new {{method}} endpoint at {{path}} that:\n- {{description}}\n- Returns proper error responses\n- Includes input validation"}
+          onChange={(e) => setTemplateText(e.target.value)}
+          placeholder={
+            'Create a new {{method}} endpoint at {{path}} that:\n- {{description}}\n- Returns proper error responses\n- Includes input validation'
+          }
           rows={5}
         />
       </div>
@@ -203,30 +209,42 @@ function TemplateForm({ template, onSave, onCancel }) {
           <label className="text-xs text-surface-400 mb-1 block">Task Type</label>
           <select
             value={taskType}
-            onChange={e => setTaskType(e.target.value)}
+            onChange={(e) => setTaskType(e.target.value)}
             className="w-full px-2 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude"
           >
-            {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {TASK_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
           </select>
         </div>
         <div>
           <label className="text-xs text-surface-400 mb-1 block">Model</label>
           <select
             value={model}
-            onChange={e => setModel(e.target.value)}
+            onChange={(e) => setModel(e.target.value)}
             className="w-full px-2 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude"
           >
-            {MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+            {MODELS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
           </select>
         </div>
         <div>
           <label className="text-xs text-surface-400 mb-1 block">Thinking</label>
           <select
             value={thinkingEffort}
-            onChange={e => setThinkingEffort(e.target.value)}
+            onChange={(e) => setThinkingEffort(e.target.value)}
             className="w-full px-2 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude"
           >
-            {EFFORTS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+            {EFFORTS.map((e) => (
+              <option key={e.value} value={e.value}>
+                {e.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -241,11 +259,19 @@ function TemplateForm({ template, onSave, onCancel }) {
           <Eye size={12} />
           {showPreview ? 'Hide Preview' : 'Show Preview'}
         </button>
-        {showPreview && <div className="mt-2"><TemplatePreview template={templateText} variables={variables} /></div>}
+        {showPreview && (
+          <div className="mt-2">
+            <TemplatePreview template={templateText} variables={variables} />
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-2 pt-1">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200 transition-colors">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200 transition-colors"
+        >
           Cancel
         </button>
         <button
@@ -274,7 +300,9 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
     setLoading(false);
   }, [projectId]);
 
-  useEffect(() => { loadTemplates(); }, [loadTemplates]);
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
 
   const handleSave = async (data) => {
     if (editing === 'new') {
@@ -293,8 +321,14 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-4 pt-[5vh] overflow-y-auto" onClick={onClose}>
-      <div className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-2xl shadow-2xl animate-slide-up relative" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-2xl shadow-2xl animate-slide-up max-h-[85vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-800">
           <div>
@@ -304,7 +338,9 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
             </h2>
             <p className="text-xs text-surface-500 mt-0.5">{projectName} — reusable prompts with variables</p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400"><X size={16} /></button>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400">
+            <X size={16} />
+          </button>
         </div>
 
         <div className="px-5 py-4">
@@ -317,9 +353,11 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
               {/* Template list */}
               {templates.length > 0 && !editing && (
                 <div className="space-y-2 mb-4">
-                  {templates.map(t => {
+                  {templates.map((t) => {
                     let vars = [];
-                    try { vars = JSON.parse(t.variables || '[]'); } catch {}
+                    try {
+                      vars = JSON.parse(t.variables || '[]');
+                    } catch {}
                     return (
                       <div key={t.id} className="bg-surface-800/50 rounded-lg px-4 py-3 border border-surface-700/50">
                         <div className="flex items-center justify-between mb-1">
@@ -333,7 +371,9 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
                             )}
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-surface-600 mr-1">{t.task_type} / {t.model}</span>
+                            <span className="text-[10px] text-surface-600 mr-1">
+                              {t.task_type} / {t.model}
+                            </span>
                             <button
                               onClick={() => setEditing(t)}
                               className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors"
@@ -351,7 +391,9 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
                           </div>
                         </div>
                         {t.description && <p className="text-xs text-surface-500 mb-1">{t.description}</p>}
-                        <p className="text-xs text-surface-400 whitespace-pre-wrap line-clamp-2 font-mono">{t.template}</p>
+                        <p className="text-xs text-surface-400 whitespace-pre-wrap line-clamp-2 font-mono">
+                          {t.template}
+                        </p>
                       </div>
                     );
                   })}
@@ -371,7 +413,9 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
                 <div className="bg-surface-800/30 rounded-lg p-4 border border-surface-700/50">
                   <h3 className="text-xs font-medium text-surface-400 mb-3 flex items-center gap-1.5">
                     {editing !== 'new' && (
-                      <button onClick={() => setEditing(null)} className="hover:text-surface-200 transition-colors"><ChevronLeft size={14} /></button>
+                      <button onClick={() => setEditing(null)} className="hover:text-surface-200 transition-colors">
+                        <ChevronLeft size={14} />
+                      </button>
                     )}
                     {editing === 'new' ? 'New Template' : `Edit: ${editing.name}`}
                   </h3>
@@ -403,8 +447,18 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
             <div className="bg-surface-800 rounded-lg p-4 border border-surface-700 shadow-xl mx-4">
               <p className="text-sm text-surface-200 mb-3">Delete this template?</p>
               <div className="flex justify-end gap-2">
-                <button onClick={() => setDeleting(null)} className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200">Cancel</button>
-                <button onClick={() => handleDelete(deleting)} className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30">Delete</button>
+                <button
+                  onClick={() => setDeleting(null)}
+                  className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(deleting)}
+                  className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </div>

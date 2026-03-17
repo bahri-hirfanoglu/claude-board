@@ -53,6 +53,15 @@ function ProjectUsage({ tasks }) {
   );
 }
 
+const SETTINGS_ITEMS = [
+  { key: 'settings', icon: Settings, label: 'Settings', handler: 'onEditProject' },
+  { key: 'claude-md', icon: FileText, label: 'CLAUDE.md', handler: 'onEditClaudeMd' },
+  { key: 'snippets', icon: BookOpen, label: 'Snippets', handler: 'onEditSnippets' },
+  { key: 'templates', icon: Layers, label: 'Templates', handler: 'onEditTemplates' },
+  { key: 'roles', icon: Shield, label: 'Roles', handler: 'onEditRoles' },
+  { key: 'webhooks', icon: Bell, label: 'Webhooks', handler: 'onEditWebhooks' },
+];
+
 export default function Header({
   connected,
   taskCount,
@@ -81,6 +90,8 @@ export default function Header({
   const [showProjectMenu, setShowProjectMenu] = useState(false);
   const menuRef = useRef(null);
 
+  const handlers = { onEditProject, onEditClaudeMd, onEditSnippets, onEditTemplates, onEditRoles, onEditWebhooks };
+
   useEffect(() => {
     if (!showProjectMenu) return;
     const close = (e) => {
@@ -90,13 +101,13 @@ export default function Header({
     return () => window.removeEventListener('mousedown', close);
   }, [showProjectMenu]);
 
-  // Don't show header on dashboard view
   if (!currentProject) return null;
+
+  const otherProjects = projects.filter((p) => p.id !== currentProject.id);
 
   return (
     <header className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-surface-900 border-b border-surface-700/50 gap-2">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-        {/* Back to dashboard */}
         <button
           onClick={onBackToDashboard}
           className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 hover:text-claude transition-colors flex-shrink-0"
@@ -119,131 +130,84 @@ export default function Header({
               />
             </div>
             <h1 className="text-sm sm:text-base font-semibold tracking-tight truncate">{currentProject.name}</h1>
-            <ChevronDown size={14} className="text-surface-400 flex-shrink-0" />
+            <ChevronDown
+              size={14}
+              className={`text-surface-400 flex-shrink-0 transition-transform ${showProjectMenu ? 'rotate-180' : ''}`}
+            />
           </button>
 
           {showProjectMenu && (
-            <div className="absolute left-0 top-full mt-1 w-72 bg-surface-800 border border-surface-700 rounded-xl shadow-xl z-50 overflow-hidden">
-              {/* Switch Project */}
-              <div className="px-3 pt-2.5 pb-1.5">
-                <span className="text-[10px] text-surface-500 font-semibold uppercase tracking-wider">
-                  Switch Project
-                </span>
-              </div>
-              <div className="px-1.5 pb-1.5">
-                {projects.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      onSelectProject(p);
-                      setShowProjectMenu(false);
-                    }}
-                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
-                      currentProject?.id === p.id ? 'bg-claude/10 text-claude' : 'text-surface-300 hover:bg-surface-700'
-                    }`}
-                  >
-                    <div className="rounded-md overflow-hidden flex-shrink-0">
-                      <Avatar
-                        size={20}
-                        name={p.icon_seed || p.name}
-                        variant={p.icon || 'marble'}
-                        colors={AVATAR_COLORS}
-                      />
-                    </div>
-                    <span className="truncate">{p.name}</span>
-                    {currentProject?.id === p.id && <span className="ml-auto text-[10px] text-claude/70">active</span>}
-                  </button>
-                ))}
-                {projects.length === 0 && (
-                  <div className="px-2.5 py-3 text-xs text-surface-500 text-center">No projects yet</div>
-                )}
-              </div>
-
-              {/* Current Project Settings */}
+            <div className="absolute left-0 sm:left-0 top-full mt-1 w-[calc(100vw-1.5rem)] sm:w-64 bg-surface-800 border border-surface-700 rounded-xl shadow-xl z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
+              {/* Settings grid */}
               {currentProject && (
+                <div className="p-2">
+                  <div className="grid grid-cols-3 gap-1">
+                    {SETTINGS_ITEMS.map((item) => {
+                      const Icon = item.icon;
+                      const fn = handlers[item.handler];
+                      return (
+                        <button
+                          key={item.key}
+                          onClick={() => {
+                            fn?.();
+                            setShowProjectMenu(false);
+                          }}
+                          className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg text-surface-400 hover:bg-surface-700 hover:text-surface-200 transition-colors"
+                        >
+                          <Icon size={14} />
+                          <span className="text-[10px] font-medium">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Switch project */}
+              {otherProjects.length > 0 && (
                 <>
                   <div className="border-t border-surface-700" />
-                  <div className="px-3 pt-2.5 pb-1.5">
+                  <div className="px-3 pt-2 pb-1">
                     <span className="text-[10px] text-surface-500 font-semibold uppercase tracking-wider">
-                      Current Project
+                      Switch Project
                     </span>
                   </div>
-                  <div className="px-1.5 pb-1.5">
-                    <button
-                      onClick={() => {
-                        onEditProject();
-                        setShowProjectMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs text-surface-300 hover:bg-surface-700 transition-colors"
-                    >
-                      <Settings size={13} className="text-surface-500" />
-                      Project Settings
-                    </button>
-                    <button
-                      onClick={() => {
-                        onEditClaudeMd();
-                        setShowProjectMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs text-surface-300 hover:bg-surface-700 transition-colors"
-                    >
-                      <FileText size={13} className="text-surface-500" />
-                      CLAUDE.md
-                    </button>
-                    <button
-                      onClick={() => {
-                        onEditSnippets?.();
-                        setShowProjectMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs text-surface-300 hover:bg-surface-700 transition-colors"
-                    >
-                      <BookOpen size={13} className="text-surface-500" />
-                      Context Snippets
-                    </button>
-                    <button
-                      onClick={() => {
-                        onEditTemplates?.();
-                        setShowProjectMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs text-surface-300 hover:bg-surface-700 transition-colors"
-                    >
-                      <Layers size={13} className="text-surface-500" />
-                      Prompt Templates
-                    </button>
-                    <button
-                      onClick={() => {
-                        onEditRoles?.();
-                        setShowProjectMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs text-surface-300 hover:bg-surface-700 transition-colors"
-                    >
-                      <Shield size={13} className="text-surface-500" />
-                      Roles
-                    </button>
-                    <button
-                      onClick={() => {
-                        onEditWebhooks?.();
-                        setShowProjectMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs text-surface-300 hover:bg-surface-700 transition-colors"
-                    >
-                      <Bell size={13} className="text-surface-500" />
-                      Webhooks
-                    </button>
+                  <div className="px-1.5 pb-1.5 max-h-36 overflow-y-auto">
+                    {otherProjects.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          onSelectProject(p);
+                          setShowProjectMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-surface-300 hover:bg-surface-700 transition-colors"
+                      >
+                        <div className="rounded-md overflow-hidden flex-shrink-0">
+                          <Avatar
+                            size={18}
+                            name={p.icon_seed || p.name}
+                            variant={p.icon || 'marble'}
+                            colors={AVATAR_COLORS}
+                          />
+                        </div>
+                        <span className="truncate">{p.name}</span>
+                      </button>
+                    ))}
                   </div>
                 </>
               )}
 
-              {/* Navigation & Actions */}
+              {/* Actions */}
               <div className="border-t border-surface-700" />
-              <div className="px-1.5 py-1.5">
+              <div className="p-1.5 flex gap-1">
                 <button
                   onClick={() => {
                     onBackToDashboard();
                     setShowProjectMenu(false);
                   }}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs text-surface-300 hover:bg-surface-700 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-surface-400 hover:bg-surface-700 hover:text-surface-200 transition-colors"
                 >
-                  <LayoutGrid size={13} className="text-surface-500" />
+                  <LayoutGrid size={12} />
                   Dashboard
                 </button>
                 <button
@@ -251,23 +215,21 @@ export default function Header({
                     onNewProject();
                     setShowProjectMenu(false);
                   }}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs text-surface-300 hover:bg-surface-700 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-surface-400 hover:bg-surface-700 hover:text-surface-200 transition-colors"
                 >
-                  <FolderPlus size={13} className="text-surface-500" />
+                  <FolderPlus size={12} />
                   New Project
                 </button>
-                {currentProject && (
-                  <button
-                    onClick={() => {
-                      onDeleteProject();
-                      setShowProjectMenu(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 size={13} />
-                    Delete Project
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    onDeleteProject();
+                    setShowProjectMenu(false);
+                  }}
+                  className="flex items-center justify-center px-2 py-1.5 rounded-lg text-[11px] text-red-400/60 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                  title="Delete Project"
+                >
+                  <Trash2 size={12} />
+                </button>
               </div>
             </div>
           )}
