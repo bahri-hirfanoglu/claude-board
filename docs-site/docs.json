@@ -56,7 +56,12 @@
               "features/templates",
               "features/snippets",
               "features/attachments",
-              "features/analytics"
+              "features/analytics",
+              "features/task-keys",
+              "features/voice-assistant",
+              "features/status-animations",
+              "features/model-filter",
+              "features/timeline"
             ]
           },
           {
