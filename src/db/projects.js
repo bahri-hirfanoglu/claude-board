@@ -1,14 +1,46 @@
 import { queryAll, queryOne, run } from './connection.js';
 
+function generateProjectKey(slug) {
+  if (!slug) return 'PRJ';
+  const parts = slug
+    .replace(/[^a-zA-Z0-9-]/g, '')
+    .split('-')
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    return parts
+      .map((p) => p[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 4);
+  }
+  return (
+    slug
+      .replace(/[^a-zA-Z]/g, '')
+      .slice(0, 3)
+      .toUpperCase() || 'PRJ'
+  );
+}
+
 export const projectQueries = {
   getAll: () => queryAll('SELECT * FROM projects ORDER BY name'),
   getById: (id) => queryOne('SELECT * FROM projects WHERE id = ?', [id]),
   getBySlug: (slug) => queryOne('SELECT * FROM projects WHERE slug = ?', [slug]),
-  create: (name, slug, workingDir, icon, iconSeed, permissionMode, allowedTools) =>
-    run(
-      'INSERT INTO projects (name,slug,working_dir,icon,icon_seed,permission_mode,allowed_tools) VALUES (?,?,?,?,?,?,?)',
-      [name, slug, workingDir, icon || 'marble', iconSeed || '', permissionMode || 'auto-accept', allowedTools || ''],
-    ),
+  create: (name, slug, workingDir, icon, iconSeed, permissionMode, allowedTools) => {
+    const projectKey = generateProjectKey(slug);
+    return run(
+      'INSERT INTO projects (name,slug,working_dir,icon,icon_seed,permission_mode,allowed_tools,project_key) VALUES (?,?,?,?,?,?,?,?)',
+      [
+        name,
+        slug,
+        workingDir,
+        icon || 'marble',
+        iconSeed || '',
+        permissionMode || 'auto-accept',
+        allowedTools || '',
+        projectKey,
+      ],
+    );
+  },
   update: (id, name, slug, workingDir, icon, iconSeed, permissionMode, allowedTools) =>
     run(
       "UPDATE projects SET name=?,slug=?,working_dir=?,icon=?,icon_seed=?,permission_mode=?,allowed_tools=?,updated_at=datetime('now','localtime') WHERE id=?",

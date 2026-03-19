@@ -122,7 +122,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                   </div>
                 )}
               </div>
-              <span className="text-[10px] text-surface-600">#{d.id}</span>
+              <span className="text-[10px] text-surface-600 font-mono">{d.task_key || `#${d.id}`}</span>
               {d.revision_count > 0 && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">
                   Rev {d.revision_count}

@@ -186,6 +186,9 @@ const migrations = [
   ['tasks', 'work_duration_ms', 'ALTER TABLE tasks ADD COLUMN work_duration_ms INTEGER DEFAULT 0'],
   ['tasks', 'last_resumed_at', 'ALTER TABLE tasks ADD COLUMN last_resumed_at DATETIME'],
   ['tasks', 'role_id', 'ALTER TABLE tasks ADD COLUMN role_id INTEGER'],
+  ['tasks', 'task_key', "ALTER TABLE tasks ADD COLUMN task_key TEXT DEFAULT ''"],
+  ['projects', 'project_key', "ALTER TABLE projects ADD COLUMN project_key TEXT DEFAULT ''"],
+  ['projects', 'task_counter', 'ALTER TABLE projects ADD COLUMN task_counter INTEGER DEFAULT 1000'],
 ];
 
 for (const [table, col, sql] of migrations) {
@@ -214,6 +217,72 @@ try {
   try {
     db.run('ROLLBACK');
   } catch {}
+}
+
+// ─── Generate project_key from slug for projects that don't have one ───
+const TYPE_PREFIXES = { feature: 'FTR', bugfix: 'BUG', refactor: 'RFT', docs: 'DOC', test: 'TST', chore: 'CHR' };
+
+function generateProjectKey(slug) {
+  if (!slug) return 'PRJ';
+  const parts = slug
+    .replace(/[^a-zA-Z0-9-]/g, '')
+    .split('-')
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    return parts
+      .map((p) => p[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 4);
+  }
+  return (
+    slug
+      .replace(/[^a-zA-Z]/g, '')
+      .slice(0, 3)
+      .toUpperCase() || 'PRJ'
+  );
+}
+
+try {
+  // Auto-generate project_key for projects that don't have one
+  const projects = db.exec('SELECT id, slug, project_key FROM projects');
+  if (projects.length > 0) {
+    for (const row of projects[0].values) {
+      const [pid, slug, existingKey] = row;
+      if (!existingKey) {
+        const key = generateProjectKey(slug);
+        db.run('UPDATE projects SET project_key=? WHERE id=?', [key, pid]);
+      }
+    }
+  }
+
+  // Backfill task_key for existing tasks that don't have one
+  const tasksWithoutKey = db.exec(
+    "SELECT t.id, t.task_type, t.project_id, p.project_key FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.task_key IS NULL OR t.task_key='' ORDER BY t.project_id, t.id",
+  );
+  if (tasksWithoutKey.length > 0) {
+    const counters = {};
+    // First, get current counter for each project
+    const pCounters = db.exec('SELECT id, task_counter FROM projects');
+    if (pCounters.length > 0) {
+      for (const row of pCounters[0].values) {
+        counters[row[0]] = row[1] || 1000;
+      }
+    }
+    for (const row of tasksWithoutKey[0].values) {
+      const [tid, taskType, projectId, projectKey] = row;
+      counters[projectId] = (counters[projectId] || 1000) + 1;
+      const prefix = TYPE_PREFIXES[taskType] || 'TSK';
+      const key = `${prefix}-${projectKey}-${counters[projectId]}`;
+      db.run('UPDATE tasks SET task_key=? WHERE id=?', [key, tid]);
+    }
+    // Update counters on projects
+    for (const [pid, counter] of Object.entries(counters)) {
+      db.run('UPDATE projects SET task_counter=? WHERE id=?', [counter, pid]);
+    }
+  }
+} catch (e) {
+  console.error('Task key migration error:', e.message);
 }
 
 save();

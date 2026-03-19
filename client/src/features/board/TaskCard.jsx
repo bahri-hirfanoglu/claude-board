@@ -2,13 +2,116 @@ import { useState, useRef, useEffect } from 'react';
 import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw, GitBranch, ArrowRight } from 'lucide-react';
 import { formatDuration, formatTokens } from '../../lib/formatters';
 import { PRIORITY_COLORS as priorityColors, PRIORITY_LABELS as priorityLabels, TYPE_COLORS as typeColors, MODEL_COLORS as modelColors, COLUMNS } from '../../lib/constants';
+import { useStatusTransition } from './StatusTransitionContext';
+import StatusTransitionEffect from './StatusTransitionEffect';
 
 const STATUS_OPTIONS = COLUMNS.map(c => ({ id: c.id, label: c.label, dot: c.bg, color: c.color }));
+
+// Status flow order for "next" transition
+const STATUS_FLOW = ['backlog', 'in_progress', 'testing', 'done'];
+const FLOW_LABELS = {
+  backlog: { next: 'Start Working', icon: '▶' },
+  in_progress: { next: 'Send to Testing', icon: '→' },
+  testing: { next: 'Mark Done', icon: '✓' },
+  done: { next: null, icon: null },
+};
+const NEXT_BG = {
+  in_progress: 'bg-amber-500 active:bg-amber-600 text-white',
+  testing: 'bg-claude active:bg-claude-dark text-white',
+  done: 'bg-emerald-500 active:bg-emerald-600 text-white',
+};
+
+function MobileStatusTransition({ task, onStatusChange }) {
+  const [showAll, setShowAll] = useState(false);
+  const currentIdx = STATUS_FLOW.indexOf(task.status);
+  const nextStatus = currentIdx >= 0 && currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null;
+  const prevStatus = currentIdx > 0 ? STATUS_FLOW[currentIdx - 1] : null;
+  const flowInfo = FLOW_LABELS[task.status] || {};
+  const otherStatuses = STATUS_OPTIONS.filter(s => s.id !== task.status && s.id !== nextStatus);
+
+  return (
+    <div className="flex md:hidden flex-col gap-2 mt-2.5 pt-2.5 border-t border-surface-700/50">
+      {/* Flow indicator: current position in workflow */}
+      <div className="flex items-center gap-1 px-0.5">
+        {STATUS_FLOW.map((s, i) => {
+          const col = COLUMNS.find(c => c.id === s);
+          const isCurrent = s === task.status;
+          const isPast = i < currentIdx;
+          return (
+            <div key={s} className="flex items-center flex-1">
+              <div className={`flex items-center justify-center h-1.5 flex-1 rounded-full transition-colors ${
+                isCurrent ? col.bg : isPast ? `${col.bg} opacity-40` : 'bg-surface-700/50'
+              }`} />
+              {i < STATUS_FLOW.length - 1 && (
+                <ChevronRight size={10} className={`flex-shrink-0 mx-0.5 ${isPast || isCurrent ? 'text-surface-400' : 'text-surface-700'}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Primary action: next step in workflow */}
+      <div className="flex items-center gap-2">
+        {/* Back button */}
+        {prevStatus && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onStatusChange?.(task.id, prevStatus); }}
+            className="flex items-center gap-1 text-[11px] px-2.5 py-2 rounded-lg bg-surface-700/60 active:bg-surface-600 text-surface-300 transition-colors"
+          >
+            <ArrowRight size={12} className="rotate-180" />
+            <span className="hidden min-[400px]:inline">{COLUMNS.find(c => c.id === prevStatus)?.label}</span>
+          </button>
+        )}
+
+        {/* Main forward button */}
+        {nextStatus && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onStatusChange?.(task.id, nextStatus); }}
+            className={`flex-1 flex items-center justify-center gap-1.5 text-[12px] font-semibold px-3 py-2.5 rounded-lg transition-colors ${NEXT_BG[nextStatus]}`}
+          >
+            {flowInfo.next}
+            <ArrowRight size={14} />
+          </button>
+        )}
+
+        {/* More options toggle */}
+        {otherStatuses.length > 0 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowAll(!showAll); }}
+            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
+              showAll ? 'bg-surface-600 text-surface-200' : 'bg-surface-700/60 text-surface-400 active:bg-surface-600'
+            }`}
+          >
+            <span className="text-[14px]">•••</span>
+          </button>
+        )}
+      </div>
+
+      {/* Expanded: all other statuses */}
+      {showAll && (
+        <div className="flex items-center gap-1.5">
+          {otherStatuses.map(s => (
+            <button
+              key={s.id}
+              onClick={(e) => { e.stopPropagation(); setShowAll(false); onStatusChange?.(task.id, s.id); }}
+              className={`flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg bg-surface-700/50 active:bg-surface-600 ${s.color} transition-colors`}
+            >
+              <div className={`w-2 h-2 rounded-full ${s.dot}`} />
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange, onReview, onViewDetail }) {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuRef = useRef(null);
+  const transitionCtx = useStatusTransition();
+  const transition = transitionCtx?.getTransition(task.id);
 
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -52,8 +155,9 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
         onContextMenu={handleContextMenu}
         className={`group relative bg-surface-800 rounded-lg p-3 border border-surface-700/50 hover:border-surface-600 cursor-pointer active:cursor-grabbing transition-all duration-150 hover:shadow-lg hover:shadow-black/20 ${
           task.priority > 0 ? `border-l-2 ${priorityColors[task.priority]}` : ''
-        }`}
+        } ${transition ? 'animate-card-pop' : ''}`}
       >
+        {transition && <StatusTransitionEffect from={transition.from} to={transition.to} />}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-1">
@@ -142,20 +246,8 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           </div>
         </div>
 
-        {/* Mobile quick-move buttons */}
-        <div className="flex md:hidden items-center gap-1.5 mt-2 pt-2 border-t border-surface-700/50">
-          <span className="text-[9px] text-surface-600 mr-0.5">Move:</span>
-          {moveTargets.map(s => (
-            <button
-              key={s.id}
-              onClick={(e) => { e.stopPropagation(); onStatusChange?.(task.id, s.id); }}
-              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-surface-700/50 active:bg-surface-600 ${s.color} transition-colors`}
-            >
-              <div className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-              {s.label}
-            </button>
-          ))}
-        </div>
+        {/* Mobile status transition — Jira-style workflow */}
+        <MobileStatusTransition task={task} onStatusChange={onStatusChange} />
 
         {/* Usage stats bar for completed tasks */}
         {task.status === 'done' && hasUsage && (
@@ -172,7 +264,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
         )}
 
         <div className="flex items-center gap-2 text-[10px] text-surface-600 mt-1.5">
-          <span>#{task.id}</span>
+          <span>{task.task_key || `#${task.id}`}</span>
           {task.branch_name && (
             <span className="flex items-center gap-0.5 text-violet-400/60 truncate max-w-[160px]" title={task.branch_name}>
               <GitBranch size={9} />
