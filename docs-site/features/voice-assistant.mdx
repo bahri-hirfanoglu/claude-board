@@ -1,0 +1,104 @@
+---
+title: "Voice Assistant"
+description: "Hands-free task management with speech recognition"
+icon: "microphone"
+---
+
+Claude Board includes a built-in voice assistant that lets you create tasks, check status, and manage your board using voice commands.
+
+## Getting Started
+
+Click the **microphone button** (floating action button) in the bottom-right corner to open the assistant panel. You can also press **Alt+V** to toggle the microphone when the panel is open.
+
+## Available Commands
+
+| Command | What it does |
+|---------|-------------|
+| **"Create task"** | Starts a multi-step flow to create a new task |
+| **"List tasks"** | Reports task counts by status |
+| **"Change status"** | Guides you through moving a task to a new status |
+| **"Help"** | Lists all available commands |
+| **"Cancel"** | Stops any active operation |
+
+## Task Creation Flow
+
+When you say "create task", the assistant walks you through:
+
+1. **Title** — "What should the task title be?"
+2. **Description** — "Would you like to add a description?" (say "skip" to skip)
+3. **Type** — "What type? Feature, bugfix, refactor, docs, test, or chore."
+4. **Priority** — "Priority? None, low, medium, or high."
+5. **Confirm** — "Shall I create it?" (say "yes" or "no")
+
+## Features
+
+### Text-to-Speech
+The assistant reads its responses aloud. Toggle the speaker icon in the panel header to mute/unmute.
+
+### Audio Visualizer
+A real-time waveform visualizer appears in the panel when the microphone is active, showing audio input levels.
+
+### Sound Effects
+- **Rising beep** when listening starts
+- **Falling beep** when listening stops
+
+### Command Hints
+When the assistant is idle, clickable suggestion chips appear for quick access to common commands.
+
+### Text Input
+You can also type commands in the text input field at the bottom of the panel. Voice and text input work identically.
+
+### Keyboard Shortcut
+Press **Alt+V** to toggle the microphone on/off without clicking.
+
+## Architecture
+
+The voice assistant uses a modular plugin architecture:
+
+```
+features/voice/
+├── VoiceAssistant.jsx           # Slim UI shell (FAB + panel)
+├── VoiceAssistantProvider.jsx   # React context + state machine
+├── engine/
+│   ├── ttsEngine.js             # Text-to-speech (Web Speech API)
+│   ├── sttEngine.js             # Audio analyser for waveform
+│   └── soundEffects.js          # Web Audio API beep effects
+├── intent/
+│   ├── intentParser.js          # Pattern-based intent detection
+│   └── entityExtractors.js      # Extract type, priority, model
+├── commands/
+│   ├── commandRegistry.js       # Plugin registry
+│   ├── createTaskCommand.js     # "Create task" flow
+│   ├── listTasksCommand.js      # "List tasks"
+│   ├── changeStatusCommand.js   # "Change status" flow
+│   ├── helpCommand.js           # "Help"
+│   └── cancelCommand.js         # "Cancel"
+└── components/
+    ├── ChatPanel.jsx            # Message list + controls
+    ├── AudioVisualizer.jsx      # Canvas waveform
+    └── CommandHints.jsx         # Suggestion chips
+```
+
+### Adding Custom Commands
+
+To add a new voice command:
+
+1. Create a new file in `commands/` (e.g., `myCommand.js`)
+2. Use `registerCommand()` with patterns, flow states, and an execute function
+3. Import the file in `commands/index.js`
+
+No other files need to change — the registry auto-discovers new commands.
+
+## Browser Support
+
+The voice assistant requires browser support for the [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API):
+
+- **Chrome / Edge** — Full support (recognition + synthesis)
+- **Safari** — Synthesis only (no recognition)
+- **Firefox** — Limited support
+
+If speech recognition is not available, the microphone button is disabled but text input still works.
+
+## Voice Dictation in Task Modal
+
+Separately from the assistant, the task creation modal also has mic buttons on the **title** and **description** fields for direct voice dictation. These work independently and are useful for quickly filling in form fields.
