@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import { useProjects } from '../hooks/useProjects';
 import { useTasks } from '../hooks/useTasks';
@@ -7,6 +7,7 @@ import { useToast } from '../hooks/useToast';
 import { api, onApiError } from '../lib/api';
 import { socket } from '../lib/socket';
 import AppLayout from './AppLayout';
+import { StatusTransitionProvider, emitStatusTransition } from '../features/board/StatusTransitionContext';
 
 export default function App() {
   const connected = useSocket();
@@ -111,12 +112,14 @@ export default function App() {
     async (taskId, newStatus) => {
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
+      const fromStatus = task.status;
       if (newStatus === 'in_progress' && task.status !== 'in_progress') {
         setConfirm({
           title: 'Start Claude?',
           message: `Moving "${task.title}" to In Progress will automatically start Claude. Continue?`,
           onConfirm: async () => {
             setConfirm(null);
+            emitStatusTransition(taskId, fromStatus, newStatus);
             await api.updateStatus(taskId, newStatus);
             addToast(`Claude started for "${task.title}"`, 'success');
           },
@@ -124,6 +127,7 @@ export default function App() {
         });
         return;
       }
+      emitStatusTransition(taskId, fromStatus, newStatus);
       await api.updateStatus(taskId, newStatus);
     },
     [tasks, addToast],
@@ -264,6 +268,7 @@ export default function App() {
   }
 
   return (
+    <StatusTransitionProvider>
     <AppLayout
       // Data
       connected={connected}
@@ -360,5 +365,6 @@ export default function App() {
       onViewDetail={(task) => setDetailTask(task)}
       onCloseDetail={() => setDetailTask(null)}
     />
+    </StatusTransitionProvider>
   );
 }

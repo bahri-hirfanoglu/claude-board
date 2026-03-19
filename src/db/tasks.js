@@ -1,5 +1,17 @@
 import { queryAll, queryOne, run } from './connection.js';
 
+const TYPE_PREFIXES = { feature: 'FTR', bugfix: 'BUG', refactor: 'RFT', docs: 'DOC', test: 'TST', chore: 'CHR' };
+
+export function generateTaskKey(projectId, taskType) {
+  // Increment counter
+  run('UPDATE projects SET task_counter=COALESCE(task_counter,1000)+1 WHERE id=?', [projectId]);
+  const project = queryOne('SELECT project_key, task_counter FROM projects WHERE id=?', [projectId]);
+  const prefix = TYPE_PREFIXES[taskType] || 'TSK';
+  const pKey = project?.project_key || 'PRJ';
+  const counter = project?.task_counter || 1001;
+  return `${prefix}-${pKey}-${counter}`;
+}
+
 export const queries = {
   // CRUD
   getTasksByProject: {
@@ -7,18 +19,45 @@ export const queries = {
   },
   getTaskById: { get: (id) => queryOne('SELECT * FROM tasks WHERE id=?', [id]) },
   createTask: {
-    run: (pid, title, desc, priority, type, criteria, model, effort, roleId = null) =>
-      run(
-        'INSERT INTO tasks (project_id,title,description,priority,task_type,acceptance_criteria,model,thinking_effort,role_id) VALUES (?,?,?,?,?,?,?,?,?)',
-        [pid, title, desc, priority, type || 'feature', criteria || '', model || 'sonnet', effort || 'medium', roleId],
-      ),
+    run: (pid, title, desc, priority, type, criteria, model, effort, roleId = null) => {
+      const taskKey = generateTaskKey(pid, type || 'feature');
+      return run(
+        'INSERT INTO tasks (project_id,title,description,priority,task_type,acceptance_criteria,model,thinking_effort,role_id,task_key) VALUES (?,?,?,?,?,?,?,?,?,?)',
+        [
+          pid,
+          title,
+          desc,
+          priority,
+          type || 'feature',
+          criteria || '',
+          model || 'sonnet',
+          effort || 'medium',
+          roleId,
+          taskKey,
+        ],
+      );
+    },
   },
   updateTask: {
-    run: (title, desc, priority, type, criteria, model, effort, roleId, id) =>
-      run(
-        "UPDATE tasks SET title=?,description=?,priority=?,task_type=?,acceptance_criteria=?,model=?,thinking_effort=?,role_id=?,updated_at=datetime('now','localtime') WHERE id=?",
-        [title, desc, priority, type || 'feature', criteria || '', model || 'sonnet', effort || 'medium', roleId, id],
-      ),
+    run: (title, desc, priority, type, criteria, model, effort, roleId, id) => {
+      // If task_type changed, update the prefix in task_key
+      const existing = queryOne('SELECT task_type, task_key FROM tasks WHERE id=?', [id]);
+      const newType = type || 'feature';
+      let keyUpdate = '';
+      const params = [title, desc, priority, newType, criteria || '', model || 'sonnet', effort || 'medium', roleId];
+      if (existing && existing.task_type !== newType && existing.task_key) {
+        const oldPrefix = TYPE_PREFIXES[existing.task_type] || 'TSK';
+        const newPrefix = TYPE_PREFIXES[newType] || 'TSK';
+        const newKey = existing.task_key.replace(oldPrefix, newPrefix);
+        keyUpdate = ',task_key=?';
+        params.push(newKey);
+      }
+      params.push(id);
+      return run(
+        `UPDATE tasks SET title=?,description=?,priority=?,task_type=?,acceptance_criteria=?,model=?,thinking_effort=?,role_id=?${keyUpdate},updated_at=datetime('now','localtime') WHERE id=?`,
+        params,
+      );
+    },
   },
   deleteTask: { run: (id) => run('DELETE FROM tasks WHERE id=?', [id]) },
 

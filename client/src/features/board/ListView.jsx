@@ -90,7 +90,7 @@ export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask
                   className="border-b border-surface-800/50 hover:bg-surface-800/40 cursor-pointer transition-colors group"
                   onClick={() => onViewDetail?.(task)}
                 >
-                  <td className="px-3 py-2 text-surface-600">#{task.id}</td>
+                  <td className="px-3 py-2 text-surface-600 font-mono text-[11px]">{task.task_key || `#${task.id}`}</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
                       {task.is_running && <Activity size={10} className="text-amber-400 animate-pulse flex-shrink-0" />}

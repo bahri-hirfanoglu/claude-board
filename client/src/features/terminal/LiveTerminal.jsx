@@ -593,7 +593,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-xs font-semibold truncate text-surface-100">{task.title}</h3>
-            <span className="text-[9px] text-surface-600 font-mono flex-shrink-0">#{task.id}</span>
+            <span className="text-[9px] text-surface-600 font-mono flex-shrink-0">{task.task_key || `#${task.id}`}</span>
             {task.is_running && (
               <span className="flex items-center gap-1 text-[9px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
                 <Activity size={9} className="animate-pulse" />
