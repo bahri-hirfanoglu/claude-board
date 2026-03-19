@@ -1,5 +1,26 @@
 # Changelog
 
+## [4.0.0] - 2026-03-19
+
+### Added
+- **Task Keys**: Jira-style identifiers (e.g. `FTR-CB-1001`) auto-generated from task type prefix, project key, and per-project counter. Existing tasks backfilled on migration.
+- **Voice Assistant**: Modular voice assistant with plugin-based command registry, speech recognition (Web Speech API), text-to-speech, audio waveform visualizer, sound effects, and Alt+V keyboard shortcut.
+- **Voice Dictation**: Mic buttons on task creation modal for dictating title and description fields.
+- **Status Transition Animations**: Particle effects on status change — amber sparks (In Progress), shimmer wave (Testing), confetti burst (Done), rewind sweep (backward).
+- **Model Filter**: Filter tasks by AI model (Haiku/Sonnet/Opus) from the board toolbar, applied across all views.
+- **Timeline View Redesign**: Sticky header, zoom controls (Day/Week/Month), collapsible status swimlanes, weekend shading, hover tooltips with rich details, inline gradient bars with glow effects.
+- **Test Suite**: Vitest setup with 59 tests covering voice assistant commands, intent parser, entity extractors, and English-only validation.
+
+### Changed
+- Database schema: added `task_key` column to tasks, `project_key` and `task_counter` columns to projects.
+- Task type changes automatically update the key prefix.
+- Timeline view bars use inline styles for correct colors (fixes Tailwind purge issue).
+
+### Documentation
+- Added 5 new Mintlify docs pages: Task Keys, Voice Assistant, Status Animations, Model Filter, Timeline.
+- Updated README with 7 new features and voice architecture section.
+- Added 6 new feature cards to landing page (docs/index.html).
+
 ## [3.0.0] - 2025-03-15
 
 ### Architecture

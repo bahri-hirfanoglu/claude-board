@@ -4,7 +4,7 @@
 
 **AI-powered task management platform that orchestrates Claude to autonomously execute development tasks.**
 
-[![Version](https://img.shields.io/badge/version-3.5.0-DA7756?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
+[![Version](https://img.shields.io/badge/version-4.0.0-DA7756?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green?style=flat-square)](https://nodejs.org)
 [![Docker](https://img.shields.io/badge/docker-supported-2496ED?style=flat-square)](Dockerfile)
