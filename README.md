@@ -66,6 +66,13 @@ Download the latest version for your platform:
 - **Model Selection** &mdash; Choose Opus, Sonnet, or Haiku per task with thinking effort levels
 - **Desktop App** &mdash; Native Windows (.exe), macOS (.dmg), and Linux (AppImage/deb) builds via Electron
 - **Mobile Responsive** &mdash; Full mobile support with touch-friendly task move buttons
+- **Task Keys** &mdash; Jira-style task identifiers (e.g. `FTR-CB-1001`) auto-generated from task type, project key, and counter
+- **Status Transition Animations** &mdash; Particle effects on status change &mdash; sparks (In Progress), shimmer (Testing), confetti (Done), rewind (backward)
+- **Model Filter** &mdash; Filter tasks by AI model (Haiku/Sonnet/Opus) across all views from the board toolbar
+- **Voice Assistant** &mdash; Built-in voice assistant with speech recognition and text-to-speech for hands-free task management
+- **Voice Dictation** &mdash; Mic buttons on task creation form for dictating title and description
+- **Advanced Timeline** &mdash; Zoom controls (Day/Week/Month), collapsible status swimlanes, weekend shading, hover tooltips with rich details, audio waveform visualizer
+- **Keyboard Shortcuts** &mdash; Alt+V to toggle voice assistant microphone
 
 ### Webhook Notifications
 
@@ -257,6 +264,8 @@ claude-board/
   client/src/                       # React frontend
     app/                            # Application shell
     hooks/                          # Custom React hooks
+      useVoiceInput.js              # Web Speech API hook
+      useKeyboardShortcut.js        # Keyboard shortcut hook
     lib/                            # Shared utilities
     features/                       # Feature modules
       board/                        # Kanban, List, Timeline, Summary views
@@ -270,6 +279,11 @@ claude-board/
       projects/                     # Header, ProjectModal
       tasks/                        # TaskModal, ReviewModal, TaskDetailModal
       editor/                       # CLAUDE.md editor
+      voice/                        # Voice assistant
+        engine/                     # TTS, STT analyser, sound effects
+        intent/                     # Intent parser, entity extractors
+        commands/                   # Plugin-based command modules
+        components/                 # ChatPanel, AudioVisualizer, CommandHints
     components/                     # Shared UI
 ```
 
