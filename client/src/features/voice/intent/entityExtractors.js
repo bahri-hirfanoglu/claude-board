@@ -1,27 +1,26 @@
 /**
- * Entity extraction from Turkish/English voice input.
- * Maps spoken words to structured values.
+ * Entity extraction from voice input.
  */
 
 const TYPE_MAP = {
-  feature: ['feature', 'özellik', 'yeni özellik', 'fıçır'],
-  bugfix: ['bugfix', 'bug', 'hata', 'düzeltme', 'fix', 'bağ'],
-  refactor: ['refactor', 'refaktör', 'düzenleme', 'iyileştirme'],
-  docs: ['docs', 'doküman', 'dokümantasyon', 'belge'],
+  feature: ['feature', 'new feature'],
+  bugfix: ['bugfix', 'bug', 'bug fix', 'fix'],
+  refactor: ['refactor', 'refactoring', 'cleanup'],
+  docs: ['docs', 'documentation', 'document'],
   test: ['test', 'testing'],
-  chore: ['chore', 'bakım', 'temizlik'],
+  chore: ['chore', 'maintenance'],
 };
 
 const PRIORITY_MAP = {
-  0: ['yok', 'none', 'önceliksiz'],
-  1: ['düşük', 'low', 'az'],
-  2: ['orta', 'medium', 'normal'],
-  3: ['yüksek', 'high', 'acil', 'kritik', 'urgent'],
+  0: ['none', 'no priority', 'skip'],
+  1: ['low'],
+  2: ['medium', 'normal', 'moderate'],
+  3: ['high', 'urgent', 'critical', 'important'],
 };
 
 const MODEL_MAP = {
-  haiku: ['haiku', 'haikü'],
-  sonnet: ['sonnet', 'sonet'],
+  haiku: ['haiku'],
+  sonnet: ['sonnet'],
   opus: ['opus'],
 };
 
@@ -54,5 +53,5 @@ export function extractModel(text) {
 
 /** @param {number} priority @returns {string} */
 export function priorityLabel(priority) {
-  return ['Yok', 'Düşük', 'Orta', 'Yüksek'][priority] || 'Yok';
+  return ['None', 'Low', 'Medium', 'High'][priority] || 'None';
 }

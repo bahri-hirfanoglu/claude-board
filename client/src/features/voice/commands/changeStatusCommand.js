@@ -2,9 +2,9 @@ import { registerCommand } from './commandRegistry';
 
 const STATUS_LABELS = {
   backlog: 'Backlog',
-  in_progress: 'Devam Ediyor',
-  testing: 'Test',
-  done: 'Tamamlandı',
+  in_progress: 'In Progress',
+  testing: 'Testing',
+  done: 'Done',
 };
 
 const STATUS_NEXT = {
@@ -21,34 +21,32 @@ const FLOWS = {
 registerCommand({
   id: 'change_status',
   patterns: [
-    /durumu? (değiştir|güncelle)/i,
-    /status (değiştir|change)/i,
-    /(başlat|start)/i,
-    /done'?a (taşı|geçir|al)/i,
-    /test'?e (taşı|geçir|al|gönder)/i,
-    /tamamla|bitir/i,
+    /change ?(the )?(task )?status/i,
+    /move ?(a )?task/i,
+    /update ?(the )?(task )?status/i,
+    /(start|begin) ?(a )?task/i,
+    /mark ?(as )?(done|complete)/i,
+    /send to (testing|test)/i,
   ],
   flowStates: Object.values(FLOWS),
-  description: 'Bir görevin durumunu değiştirir',
-  hint: 'Durum değiştir',
+  description: 'Changes a task\'s status',
+  hint: 'Change status',
   icon: 'arrow-right',
 
   execute(input, ctx) {
     const { flow, intent, tasks, refs } = ctx;
 
-    // ─── Entry ───
     if (flow === 'idle') {
       if (!tasks || tasks.length === 0) {
-        return { flow: 'idle', message: 'Henüz görev yok.' };
+        return { flow: 'idle', message: 'No tasks yet.' };
       }
-      return { flow: FLOWS.WHICH, message: 'Hangi görevin durumunu değiştirmek istiyorsun?' };
+      return { flow: FLOWS.WHICH, message: 'Which task do you want to update?' };
     }
 
     if (intent?.id === 'cancel') {
-      return { flow: 'idle', message: 'İptal edildi.' };
+      return { flow: 'idle', message: 'Cancelled.' };
     }
 
-    // ─── Select task ───
     if (flow === FLOWS.WHICH) {
       const lower = input.toLowerCase();
       const match = tasks.find(t =>
@@ -58,56 +56,53 @@ registerCommand({
       );
 
       if (!match) {
-        return { flow: FLOWS.WHICH, message: 'Bu isimde görev bulamadım. Tekrar dener misin?' };
+        return { flow: FLOWS.WHICH, message: 'Couldn\'t find that task. Try again with the task title or key.' };
       }
 
       refs.statusTarget = match;
       const next = STATUS_NEXT[match.status];
       if (!next) {
-        return { flow: 'idle', message: `"${match.title}" zaten tamamlanmış.` };
+        return { flow: 'idle', message: `"${match.title}" is already done.` };
       }
 
       return {
         flow: FLOWS.TO,
-        message: `"${match.title}" şu an ${STATUS_LABELS[match.status]}. ${STATUS_LABELS[next]}'a taşıyayım mı?`,
+        message: `"${match.title}" is currently ${STATUS_LABELS[match.status]}. Move to ${STATUS_LABELS[next]}?`,
       };
     }
 
-    // ─── Select target status ───
     if (flow === FLOWS.TO) {
       const task = refs.statusTarget;
-      if (!task) return { flow: 'idle', message: 'Bir hata oluştu.' };
+      if (!task) return { flow: 'idle', message: 'Something went wrong.' };
 
-      // Confirm → next in flow
       if (intent?.id === 'confirm') {
         const next = STATUS_NEXT[task.status];
         if (next) {
           return {
             flow: 'idle',
-            message: `"${task.title}" ${STATUS_LABELS[next]} durumuna taşındı.`,
+            message: `"${task.title}" moved to ${STATUS_LABELS[next]}.`,
             action: (h) => h.onStatusChange?.(task.id, next),
           };
         }
-        return { flow: 'idle', message: 'Taşınamıyor.' };
+        return { flow: 'idle', message: 'Cannot move further.' };
       }
 
-      // Parse specific status name
       const lower = input.toLowerCase();
       let target = null;
       if (/backlog/i.test(lower)) target = 'backlog';
-      else if (/devam|progress|başla/i.test(lower)) target = 'in_progress';
+      else if (/progress|start/i.test(lower)) target = 'in_progress';
       else if (/test/i.test(lower)) target = 'testing';
-      else if (/done|tamam|bitir|tamamla/i.test(lower)) target = 'done';
+      else if (/done|complete|finish/i.test(lower)) target = 'done';
 
       if (target && target !== task.status) {
         return {
           flow: 'idle',
-          message: `"${task.title}" ${STATUS_LABELS[target]} durumuna taşındı.`,
+          message: `"${task.title}" moved to ${STATUS_LABELS[target]}.`,
           action: (h) => h.onStatusChange?.(task.id, target),
         };
       }
 
-      return { flow: FLOWS.TO, message: 'Backlog, devam ediyor, test veya tamamlandı diyebilirsin.' };
+      return { flow: FLOWS.TO, message: 'Say backlog, in progress, testing, or done.' };
     }
 
     return null;

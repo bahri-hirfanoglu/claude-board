@@ -25,10 +25,10 @@ function unstick() {
 /**
  * Speak text aloud. Resolves when utterance finishes.
  * @param {string} text
- * @param {string} [lang='tr-TR']
+ * @param {string} [lang='en-US']
  * @returns {Promise<void>}
  */
-export function speak(text, lang = 'tr-TR') {
+export function speak(text, lang = 'en-US') {
   const synth = window.speechSynthesis;
   if (!synth) return Promise.resolve();
 
@@ -42,7 +42,7 @@ export function speak(text, lang = 'tr-TR') {
     utterance.volume = 1;
 
     loadVoices();
-    const voice = _cachedVoices.find(v => v.lang.startsWith('tr'))
+    const voice = _cachedVoices.find(v => v.lang.startsWith('en'))
       || _cachedVoices.find(v => v.lang.startsWith('en'));
     if (voice) utterance.voice = voice;
 

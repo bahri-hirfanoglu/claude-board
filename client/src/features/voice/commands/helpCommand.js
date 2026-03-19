@@ -3,20 +3,20 @@ import { registerCommand, getAllCommands } from './commandRegistry';
 registerCommand({
   id: 'help',
   patterns: [
-    /yardım|help/i,
-    /ne yapabilirsin/i,
-    /komutlar|commands/i,
-    /nasıl kullan/i,
+    /^help$/i,
+    /what can you do/i,
+    /commands/i,
+    /how (do|to) (I )?use/i,
   ],
   flowStates: [],
-  description: 'Kullanılabilir komutları listeler',
-  hint: 'Yardım',
+  description: 'Lists available commands',
+  hint: 'Help',
   icon: 'help-circle',
 
   execute() {
     const commands = getAllCommands().filter(c => c.id !== 'help' && c.id !== 'cancel');
     const lines = commands.map(c => `• "${c.hint}" — ${c.description}`);
-    const message = `Şunları yapabilirim:\n${lines.join('\n')}\n\n"İptal" diyerek herhangi bir işlemi durdurabilirsin.`;
+    const message = `Here's what I can do:\n${lines.join('\n')}\n\nSay "cancel" to stop any active operation.`;
     return { flow: 'idle', message };
   },
 });

@@ -2,30 +2,29 @@ import { registerCommand } from './commandRegistry';
 
 const STATUS_LABELS = {
   backlog: 'Backlog',
-  in_progress: 'Devam Ediyor',
-  testing: 'Test',
-  done: 'Tamamlandı',
+  in_progress: 'In Progress',
+  testing: 'Testing',
+  done: 'Done',
 };
 
 registerCommand({
   id: 'list_tasks',
   patterns: [
-    /görevleri? (listele|göster|say|getir)/i,
-    /(kaç|ne kadar) görev var/i,
-    /task(lar|ler)ı? (listele|göster)/i,
-    /(list|show) tasks/i,
-    /backlog'?da ne var/i,
-    /neler var/i,
+    /(list|show|display) ?(all )?(the )?tasks/i,
+    /how many tasks/i,
+    /what('s| is) in (the )?backlog/i,
+    /task (summary|overview|count)/i,
+    /what do we have/i,
   ],
   flowStates: [],
-  description: 'Görevlerin duruma göre dağılımını gösterir',
-  hint: 'Görevleri listele',
+  description: 'Shows task count by status',
+  hint: 'List tasks',
   icon: 'list',
 
   execute(_input, ctx) {
     const { tasks } = ctx;
     if (!tasks || tasks.length === 0) {
-      return { flow: 'idle', message: 'Henüz görev yok.' };
+      return { flow: 'idle', message: 'No tasks yet.' };
     }
 
     const byStatus = {};
@@ -39,7 +38,7 @@ registerCommand({
 
     return {
       flow: 'idle',
-      message: `Toplam ${tasks.length} görev var. ${parts}.`,
+      message: `${tasks.length} total tasks. ${parts}.`,
     };
   },
 });

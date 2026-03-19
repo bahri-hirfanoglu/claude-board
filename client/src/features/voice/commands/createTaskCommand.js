@@ -12,80 +12,72 @@ const FLOWS = {
 registerCommand({
   id: 'create_task',
   patterns: [
-    /görev (oluştur|aç|ekle|yarat)/i,
-    /yeni (görev|task)/i,
-    /task (oluştur|aç|ekle|create)/i,
     /create ?(a )?(new )?task/i,
     /new task/i,
+    /add ?(a )?(new )?task/i,
+    /open ?(a )?task/i,
   ],
   flowStates: Object.values(FLOWS),
-  description: 'Yeni görev oluşturur — başlık, açıklama, tür ve öncelik sorar',
-  hint: 'Görev oluştur',
+  description: 'Creates a new task — asks for title, description, type, and priority',
+  hint: 'Create task',
   icon: 'plus-circle',
 
   execute(input, ctx) {
     const { flow, draft, intent } = ctx;
 
-    // ─── Entry point ───
     if (flow === 'idle') {
       if (!ctx.currentProject) {
-        return { flow: 'idle', message: 'Önce bir proje seçmelisin.' };
+        return { flow: 'idle', message: 'Please select a project first.' };
       }
-      return { flow: FLOWS.TITLE, draft: {}, message: 'Görevin başlığı ne olsun?' };
+      return { flow: FLOWS.TITLE, draft: {}, message: 'What should the task title be?' };
     }
 
-    // Cancel at any step
     if (intent?.id === 'cancel') {
-      return { flow: 'idle', draft: {}, message: 'Görev oluşturma iptal edildi.' };
+      return { flow: 'idle', draft: {}, message: 'Task creation cancelled.' };
     }
 
-    // ─── Title ───
     if (flow === FLOWS.TITLE) {
       return {
         flow: FLOWS.DESC,
         draft: { ...draft, title: input },
-        message: 'Açıklama eklemek ister misin? İstemiyorsan "geç" de.',
+        message: 'Would you like to add a description? Say "skip" if not.',
       };
     }
 
-    // ─── Description ───
     if (flow === FLOWS.DESC) {
-      const skip = /^(geç|skip|yok|boş|pas)$/i.test(input);
+      const skip = /^(skip|no|none|empty|pass)$/i.test(input);
       return {
         flow: FLOWS.TYPE,
         draft: { ...draft, description: skip ? '' : input },
-        message: 'Görev türü? Feature, bugfix, refactor, docs, test veya chore.',
+        message: 'What type? Feature, bugfix, refactor, docs, test, or chore.',
       };
     }
 
-    // ─── Type ───
     if (flow === FLOWS.TYPE) {
       const type = extractTaskType(input) || 'feature';
       return {
         flow: FLOWS.PRIORITY,
         draft: { ...draft, task_type: type },
-        message: `Tür: ${type}. Öncelik? Yok, düşük, orta veya yüksek.`,
+        message: `Type: ${type}. Priority? None, low, medium, or high.`,
       };
     }
 
-    // ─── Priority ───
     if (flow === FLOWS.PRIORITY) {
       const priority = extractPriority(input) ?? 0;
       const d = { ...draft, priority };
       return {
         flow: FLOWS.CONFIRM,
         draft: d,
-        message: `"${d.title}" — ${d.task_type}, ${priorityLabel(priority)}. Oluşturayım mı?`,
+        message: `"${d.title}" — ${d.task_type}, ${priorityLabel(priority)}. Shall I create it?`,
       };
     }
 
-    // ─── Confirm ───
     if (flow === FLOWS.CONFIRM) {
       if (intent?.id === 'confirm') {
         return {
           flow: 'idle',
           draft: {},
-          message: `Görev oluşturuldu: "${draft.title}"`,
+          message: `Task created: "${draft.title}"`,
           action: (handlers) => {
             handlers.onCreateTask?.({
               title: draft.title,
@@ -98,9 +90,9 @@ registerCommand({
         };
       }
       if (intent?.id === 'deny') {
-        return { flow: 'idle', draft: {}, message: 'İptal edildi.' };
+        return { flow: 'idle', draft: {}, message: 'Cancelled.' };
       }
-      return { flow: FLOWS.CONFIRM, message: 'Evet veya hayır de.' };
+      return { flow: FLOWS.CONFIRM, message: 'Say yes or no.' };
     }
 
     return null;

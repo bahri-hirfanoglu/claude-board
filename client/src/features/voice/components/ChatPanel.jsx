@@ -41,7 +41,7 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
             </span>
           )}
         </div>
-        <span className="text-sm font-semibold text-surface-200 flex-1">Sesli Asistan</span>
+        <span className="text-sm font-semibold text-surface-200 flex-1">Voice Assistant</span>
 
         {flowLabel && (
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-claude/15 text-claude font-medium animate-pulse">
@@ -52,14 +52,14 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
         <button
           onClick={() => dispatch({ type: 'TOGGLE_TTS' })}
           className="p-1 rounded-md text-surface-500 hover:text-surface-300 hover:bg-surface-800 transition-colors"
-          title={state.ttsEnabled ? 'Sesi kapat' : 'Sesi aç'}
+          title={state.ttsEnabled ? 'Mute voice' : 'Unmute voice'}
         >
           {state.ttsEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
         </button>
         <button
           onClick={() => dispatch({ type: 'CLEAR' })}
           className="p-1 rounded-md text-surface-500 hover:text-surface-300 hover:bg-surface-800 transition-colors"
-          title="Temizle"
+          title="Clear chat"
         >
           <Trash2 size={14} />
         </button>
@@ -100,7 +100,7 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
           <div className="flex justify-start">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl rounded-bl-md bg-surface-800 text-surface-500 text-[11px]">
               <Volume2 size={11} className="animate-pulse" />
-              Konuşuyor...
+              Speaking...
             </div>
           </div>
         )}
@@ -125,7 +125,7 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
                 ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30 animate-pulse'
                 : 'bg-surface-800 text-surface-400 hover:text-claude hover:bg-surface-700'
             } ${(!voice.isSupported || state.isSpeaking) ? 'opacity-30 cursor-not-allowed' : ''}`}
-            title={voice.isListening ? 'Dinlemeyi durdur (Alt+V)' : 'Sesle komut ver (Alt+V)'}
+            title={voice.isListening ? 'Stop listening (Alt+V)' : 'Voice command (Alt+V)'}
           >
             {voice.isListening ? <MicOff size={16} /> : <Mic size={16} />}
           </button>
@@ -134,7 +134,7 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
             ref={inputRef}
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
-            placeholder={voice.isListening ? 'Dinleniyor...' : 'Yazarak komut ver...'}
+            placeholder={voice.isListening ? 'Listening...' : 'Type a command...'}
             className="flex-1 min-w-0 px-3 py-2 bg-surface-800 border border-surface-700 rounded-xl text-[13px] text-surface-200 focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600"
             disabled={state.isSpeaking}
           />
@@ -151,7 +151,7 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
         {/* Keyboard hint */}
         <div className="flex items-center justify-center gap-1 mt-1.5 text-[10px] text-surface-600">
           <Keyboard size={10} />
-          <span>Alt+V ile mikrofonu aç/kapat</span>
+          <span>Press Alt+V to toggle microphone</span>
         </div>
       </div>
     </div>

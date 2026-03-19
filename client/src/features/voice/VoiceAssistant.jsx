@@ -18,7 +18,7 @@ export default function VoiceAssistant() {
         type: 'ADD_MESSAGE',
         msg: {
           role: 'assistant',
-          text: 'Merhaba! Ben sesli asistanın. Mikrofona bas veya Alt+V ile konuşmaya başla. "Yardım" diyerek komutları görebilirsin.',
+          text: 'Hi! I\'m your voice assistant. Press the mic button or Alt+V to start speaking. Say "help" to see available commands.',
           ts: Date.now(),
         },
       });
@@ -46,7 +46,7 @@ export default function VoiceAssistant() {
               ? 'bg-surface-700 hover:bg-surface-600 shadow-black/30'
               : 'bg-claude hover:bg-claude-light shadow-claude/30'
         }`}
-        title={state.open ? 'Asistanı kapat' : 'Sesli Asistan'}
+        title={state.open ? 'Close assistant' : 'Voice Assistant'}
       >
         {voice.isListening ? (
           <div className="relative">

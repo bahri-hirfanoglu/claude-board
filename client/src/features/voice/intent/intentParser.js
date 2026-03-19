@@ -3,24 +3,21 @@
  * Matches user text against registered command patterns.
  */
 
-// Cross-cutting conversational intents (not tied to a specific command)
 const CONVERSATIONAL = [
-  { id: 'confirm', patterns: [/^(evet|yes|tamam|ok|okey|olur|onay|kabul|doğru|uygun)/i] },
-  { id: 'deny', patterns: [/^(hayır|no|yok|istemiyorum|olmaz)/i] },
+  { id: 'confirm', patterns: [/^(yes|yeah|yep|sure|ok|okay|confirm|correct|right|do it|go ahead)/i] },
+  { id: 'deny', patterns: [/^(no|nope|nah|don't|negative)/i] },
 ];
 
 /**
  * Detect intent from user text.
- * First checks conversational signals, then registered command patterns.
- * @param {string} text - Raw user input
- * @param {import('../commands/commandRegistry').VoiceCommand[]} commands - Registered commands
+ * @param {string} text
+ * @param {import('../commands/commandRegistry').VoiceCommand[]} commands
  * @returns {{ id: string, text: string } | null}
  */
 export function detectIntent(text, commands = []) {
   if (!text) return null;
   const cleaned = text.trim().toLowerCase();
 
-  // Check conversational intents first
   for (const intent of CONVERSATIONAL) {
     for (const pattern of intent.patterns) {
       if (pattern.test(cleaned)) {
@@ -29,7 +26,6 @@ export function detectIntent(text, commands = []) {
     }
   }
 
-  // Check command patterns
   for (const cmd of commands) {
     for (const pattern of cmd.patterns) {
       if (pattern.test(cleaned)) {

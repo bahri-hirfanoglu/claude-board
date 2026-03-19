@@ -4,7 +4,7 @@ const SpeechRecognition = typeof window !== 'undefined'
   ? window.SpeechRecognition || window.webkitSpeechRecognition
   : null;
 
-export function useVoiceInput({ lang = 'tr-TR', continuous = false, onResult, onEnd } = {}) {
+export function useVoiceInput({ lang = 'en-US', continuous = false, onResult, onEnd } = {}) {
   const [isListening, setIsListening] = useState(false);
   const [isSupported] = useState(!!SpeechRecognition);
   const [interim, setInterim] = useState('');

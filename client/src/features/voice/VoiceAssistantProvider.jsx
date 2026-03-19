@@ -92,8 +92,8 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
       result = {
         flow: cur.flow === 'idle' ? 'idle' : cur.flow,
         message: cur.flow === 'idle'
-          ? 'Anlamadım. "Yardım" diyerek yapabileceklerimi görebilirsin.'
-          : 'Anlamadım. "İptal" diyerek çıkabilirsin.',
+          ? 'I didn\'t understand. Say "help" to see available commands.'
+          : 'I didn\'t understand. Say "cancel" to exit.',
       };
     }
 
@@ -121,7 +121,7 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
 
   // ─── Voice input ───
   const voice = useVoiceInput({
-    lang: 'tr-TR',
+    lang: 'en-US',
     continuous: false,
     onResult: processInput,
   });
@@ -142,13 +142,13 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
 
   // ─── Flow label ───
   const flowLabel = {
-    'create:title': 'Başlık bekleniyor...',
-    'create:desc': 'Açıklama bekleniyor...',
-    'create:type': 'Tür bekleniyor...',
-    'create:priority': 'Öncelik bekleniyor...',
-    'create:confirm': 'Onay bekleniyor...',
-    'status:which': 'Görev seçimi...',
-    'status:to': 'Hedef durum...',
+    'create:title': 'Awaiting title...',
+    'create:desc': 'Awaiting description...',
+    'create:type': 'Awaiting type...',
+    'create:priority': 'Awaiting priority...',
+    'create:confirm': 'Awaiting confirmation...',
+    'status:which': 'Select task...',
+    'status:to': 'Target status...',
   }[state.flow] || null;
 
   const value = {

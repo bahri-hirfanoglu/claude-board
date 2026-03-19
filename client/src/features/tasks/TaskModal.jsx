@@ -72,12 +72,12 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
 
   // ─── Voice input ───
   const titleVoice = useVoiceInput({
-    lang: 'tr-TR',
+    lang: 'en-US',
     onResult: useCallback((text) => setTitle(prev => prev ? prev + ' ' + text : text), []),
   });
 
   const descVoice = useVoiceInput({
-    lang: 'tr-TR',
+    lang: 'en-US',
     continuous: true,
     onResult: useCallback((text) => setDescription(prev => prev ? prev + ' ' + text : text), []),
   });
@@ -314,7 +314,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                   ref={titleRef}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder={titleVoice.isListening ? 'Dinleniyor...' : 'Task title...'}
+                  placeholder={titleVoice.isListening ? 'Listening...' : 'Task title...'}
                   className={`w-full px-3 py-2 pr-9 bg-surface-800 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 transition-colors ${
                     titleVoice.isListening ? 'border-red-500/50 bg-red-500/5' : 'border-surface-700'
                   }`}
@@ -329,7 +329,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                         ? 'bg-red-500/20 text-red-400 animate-pulse'
                         : 'text-surface-500 hover:text-claude hover:bg-surface-700'
                     }`}
-                    title={titleVoice.isListening ? 'Kaydı durdur' : 'Sesle yaz'}
+                    title={titleVoice.isListening ? 'Stop recording' : 'Dictate'}
                   >
                     {titleVoice.isListening ? <MicOff size={14} /> : <Mic size={14} />}
                   </button>
@@ -358,7 +358,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                         ? 'bg-red-500/20 text-red-400'
                         : 'text-surface-500 hover:text-claude hover:bg-surface-800'
                     }`}
-                    title={descVoice.isListening ? 'Kaydı durdur' : 'Sesle yaz'}
+                    title={descVoice.isListening ? 'Stop recording' : 'Dictate'}
                   >
                     {descVoice.isListening ? (
                       <>
@@ -366,13 +366,13 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                         </span>
-                        Dinleniyor...
+                        Listening...
                         <MicOff size={11} />
                       </>
                     ) : (
                       <>
                         <Mic size={11} />
-                        Sesle yaz
+                        Dictate
                       </>
                     )}
                   </button>
@@ -382,7 +382,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder={descVoice.isListening ? 'Konuşmaya başlayın...' : 'Describe what Claude should implement...'}
+                  placeholder={descVoice.isListening ? 'Start speaking...' : 'Describe what Claude should implement...'}
                   rows={4}
                   className={`w-full px-3 py-2 bg-surface-800 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none transition-colors ${
                     descVoice.isListening ? 'border-red-500/50 bg-red-500/5' : 'border-surface-700'
