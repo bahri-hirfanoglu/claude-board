@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   X,
   Sparkles,
@@ -13,7 +13,10 @@ import {
   Shield,
   Settings2,
   ChevronRight,
+  Mic,
+  MicOff,
 } from 'lucide-react';
+import { useVoiceInput } from '../../hooks/useVoiceInput';
 
 const TASK_TYPES = [
   { value: 'feature', label: 'Feature', color: 'bg-blue-500/20 text-blue-300' },
@@ -66,6 +69,18 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
   const templateMenuRef = useRef(null);
 
   const isCreating = !task;
+
+  // ─── Voice input ───
+  const titleVoice = useVoiceInput({
+    lang: 'tr-TR',
+    onResult: useCallback((text) => setTitle(prev => prev ? prev + ' ' + text : text), []),
+  });
+
+  const descVoice = useVoiceInput({
+    lang: 'tr-TR',
+    continuous: true,
+    onResult: useCallback((text) => setDescription(prev => prev ? prev + ' ' + text : text), []),
+  });
 
   // Summary of current options for the collapsed state
   const optionsSummary = useMemo(() => {
@@ -294,29 +309,91 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                   ))}
                 </div>
               </div>
-              <input
-                ref={titleRef}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Task title..."
-                className="flex-1 min-w-0 px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600"
-                required
-              />
+              <div className="flex-1 min-w-0 relative">
+                <input
+                  ref={titleRef}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={titleVoice.isListening ? 'Dinleniyor...' : 'Task title...'}
+                  className={`w-full px-3 py-2 pr-9 bg-surface-800 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 transition-colors ${
+                    titleVoice.isListening ? 'border-red-500/50 bg-red-500/5' : 'border-surface-700'
+                  }`}
+                  required
+                />
+                {titleVoice.isSupported && (
+                  <button
+                    type="button"
+                    onClick={titleVoice.toggle}
+                    className={`absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-md transition-all ${
+                      titleVoice.isListening
+                        ? 'bg-red-500/20 text-red-400 animate-pulse'
+                        : 'text-surface-500 hover:text-claude hover:bg-surface-700'
+                    }`}
+                    title={titleVoice.isListening ? 'Kaydı durdur' : 'Sesle yaz'}
+                  >
+                    {titleVoice.isListening ? <MicOff size={14} /> : <Mic size={14} />}
+                  </button>
+                )}
+                {titleVoice.interim && (
+                  <div className="absolute left-0 right-0 top-full mt-1 px-2.5 py-1 bg-surface-800 border border-red-500/30 rounded-lg text-xs text-surface-400 italic z-10">
+                    {titleVoice.interim}...
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-xs font-medium text-surface-400 mb-1">
-                Prompt
-                <span className="text-surface-600 font-normal ml-1">- sent to Claude</span>
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe what Claude should implement..."
-                rows={4}
-                className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-surface-400">
+                  Prompt
+                  <span className="text-surface-600 font-normal ml-1">- sent to Claude</span>
+                </label>
+                {descVoice.isSupported && (
+                  <button
+                    type="button"
+                    onClick={descVoice.toggle}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
+                      descVoice.isListening
+                        ? 'bg-red-500/20 text-red-400'
+                        : 'text-surface-500 hover:text-claude hover:bg-surface-800'
+                    }`}
+                    title={descVoice.isListening ? 'Kaydı durdur' : 'Sesle yaz'}
+                  >
+                    {descVoice.isListening ? (
+                      <>
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                        </span>
+                        Dinleniyor...
+                        <MicOff size={11} />
+                      </>
+                    ) : (
+                      <>
+                        <Mic size={11} />
+                        Sesle yaz
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder={descVoice.isListening ? 'Konuşmaya başlayın...' : 'Describe what Claude should implement...'}
+                  rows={4}
+                  className={`w-full px-3 py-2 bg-surface-800 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none transition-colors ${
+                    descVoice.isListening ? 'border-red-500/50 bg-red-500/5' : 'border-surface-700'
+                  }`}
+                />
+                {descVoice.interim && (
+                  <div className="absolute left-2 right-2 bottom-2 px-2 py-1 bg-surface-900/90 border border-red-500/30 rounded text-xs text-surface-400 italic">
+                    {descVoice.interim}...
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Priority */}

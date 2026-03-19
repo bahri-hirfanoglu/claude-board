@@ -16,6 +16,8 @@ import RolesModal from '../features/roles/RolesModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import TerminalBottomPanel from './TerminalBottomPanel';
+import { VoiceAssistantProvider } from '../features/voice/VoiceAssistantProvider';
+import VoiceAssistant from '../features/voice/VoiceAssistant';
 
 export default function AppLayout(props) {
   const {
@@ -202,6 +204,14 @@ export default function AppLayout(props) {
       {detailTask && <TaskDetailModal task={detailTask} onClose={onCloseDetail} onStatusChange={onStatusChange} />}
       {confirm && <ConfirmDialog {...confirm} />}
       <Toast toasts={toasts} />
+      <VoiceAssistantProvider
+        tasks={tasks}
+        currentProject={currentProject}
+        onCreateTask={onCreateTask}
+        onStatusChange={onStatusChange}
+      >
+        <VoiceAssistant />
+      </VoiceAssistantProvider>
     </div>
   );
 }
