@@ -7,8 +7,6 @@ const IS_WIN = platform() === 'win32';
 
 export default function planningRoutes({ queries, projectQueries, io, activityLog }) {
   const router = Router();
-
-  // Active planning sessions
   const activePlans = new Map();
 
   router.post(
@@ -25,14 +23,13 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
       }
 
       const MODEL_MAP = { opus: 'opus', sonnet: 'sonnet', haiku: 'haiku' };
-      const EFFORT_BUDGET = { low: 'low', medium: 'medium', high: 'high' };
       const planId = `plan-${project.id}-${Date.now()}`;
+      const startTime = Date.now();
 
       const prompt = buildPlanningPrompt(topic, context, project);
-
       const args = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions'];
       if (MODEL_MAP[model]) args.push('--model', MODEL_MAP[model]);
-      if (EFFORT_BUDGET[effort]) args.push('--thinking-budget', EFFORT_BUDGET[effort]);
+      if (effort && effort !== 'medium') args.push('--thinking-budget', effort);
 
       const proc = spawn('claude', args, {
         cwd: project.working_dir,
@@ -42,10 +39,12 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
         ...(IS_WIN && { windowsHide: true }),
       });
 
-      activePlans.set(project.id, { proc, planId });
+      const session = { proc, planId, startTime, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 };
+      activePlans.set(project.id, session);
 
-      io.emit('plan:started', { projectId: project.id, planId, topic });
-      activityLog.add(project.id, null, 'plan_started', `Planning started: ${topic.trim()}`);
+      const pid = project.id;
+      io.emit('plan:started', { projectId: pid, planId, topic, model, effort });
+      activityLog.add(pid, null, 'plan_started', `Planning started: ${topic.trim()}`);
 
       let buffer = '';
       let fullText = '';
@@ -59,32 +58,29 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
           if (!line.trim()) continue;
           try {
             const event = JSON.parse(line);
-            if (event.type === 'assistant' && event.message?.content) {
-              for (const block of event.message.content) {
-                if (block.type === 'text') {
-                  fullText += block.text;
-                  io.emit('plan:progress', { projectId: project.id, planId, text: block.text });
-                }
-              }
-            }
+            handlePlanEvent(event, pid, planId, session, io, fullText, (t) => {
+              fullText += t;
+            });
           } catch {}
         }
       });
 
-      proc.stderr.on('data', () => {}); // suppress stderr
+      proc.stderr.on('data', (chunk) => {
+        const msg = chunk.toString().trim();
+        if (msg) io.emit('plan:log', { projectId: pid, planId, type: 'error', message: msg });
+      });
 
-      proc.on('close', async () => {
-        activePlans.delete(project.id);
+      proc.on('close', (code) => {
+        activePlans.delete(pid);
+        const elapsed = Date.now() - startTime;
 
-        // Parse tasks from Claude's output
         const tasks = parseTasksFromOutput(fullText);
 
         if (tasks.length > 0) {
-          // Create tasks in backlog
           const created = [];
           for (const t of tasks) {
             const result = queries.createTask.run(
-              project.id,
+              pid,
               t.title,
               t.description || '',
               t.priority || 0,
@@ -100,14 +96,37 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
           }
 
           activityLog.add(
-            project.id,
+            pid,
             null,
             'plan_completed',
-            `Planning completed: ${tasks.length} tasks created from "${topic.trim()}"`,
+            `Planning completed: ${tasks.length} tasks from "${topic.trim()}"`,
           );
-          io.emit('plan:completed', { projectId: project.id, planId, tasks: created });
+          io.emit('plan:completed', {
+            projectId: pid,
+            planId,
+            tasks: created,
+            stats: {
+              elapsed,
+              tokens: session.tokens,
+              toolCalls: session.toolCalls,
+              turns: session.turns,
+              exitCode: code,
+            },
+          });
         } else {
-          io.emit('plan:completed', { projectId: project.id, planId, tasks: [], raw: fullText });
+          io.emit('plan:completed', {
+            projectId: pid,
+            planId,
+            tasks: [],
+            stats: {
+              elapsed,
+              tokens: session.tokens,
+              toolCalls: session.toolCalls,
+              turns: session.turns,
+              exitCode: code,
+            },
+            raw: fullText,
+          });
         }
       });
 
@@ -115,7 +134,6 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
     }),
   );
 
-  // Cancel active planning
   router.post(
     '/projects/:projectId/plan/cancel',
     asyncHandler(async (req, res) => {
@@ -124,10 +142,7 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
 
       try {
         if (IS_WIN) {
-          spawn('taskkill', ['/pid', String(plan.proc.pid), '/T', '/F'], {
-            stdio: 'ignore',
-            windowsHide: true,
-          });
+          spawn('taskkill', ['/pid', String(plan.proc.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
         } else {
           plan.proc.kill('SIGTERM');
         }
@@ -139,18 +154,88 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
     }),
   );
 
-  // Get planning status
   router.get(
     '/projects/:projectId/plan/status',
     asyncHandler(async (req, res) => {
       const plan = activePlans.get(Number(req.params.projectId));
-      res.json({ active: !!plan, planId: plan?.planId || null });
+      if (!plan) return res.json({ active: false, planId: null });
+      res.json({
+        active: true,
+        planId: plan.planId,
+        elapsed: Date.now() - plan.startTime,
+        tokens: plan.tokens,
+        toolCalls: plan.toolCalls,
+      });
     }),
   );
 
   return router;
 }
 
+// ─── Event handler ───
+function handlePlanEvent(event, projectId, planId, session, io, _fullText, appendText) {
+  const type = event.type;
+
+  if (type === 'assistant') {
+    const content = event.message?.content;
+    if (!Array.isArray(content)) return;
+
+    session.turns++;
+
+    for (const block of content) {
+      if (block.type === 'text' && block.text) {
+        appendText(block.text);
+        io.emit('plan:progress', { projectId, planId, type: 'text', content: block.text });
+      } else if (block.type === 'tool_use') {
+        session.toolCalls++;
+        const tool = block.name || 'unknown';
+        const input = block.input || {};
+        let detail = tool;
+        if (input.file_path || input.path) detail += ` → ${input.file_path || input.path}`;
+        else if (input.command) detail += ` → ${String(input.command).slice(0, 120)}`;
+        else if (input.pattern) detail += ` → ${input.pattern}`;
+        else if (input.description) detail += ` → ${String(input.description).slice(0, 100)}`;
+
+        io.emit('plan:log', { projectId, planId, type: 'tool', message: detail, tool });
+      }
+    }
+
+    // Track tokens
+    const usage = event.message?.usage;
+    if (usage) {
+      session.tokens.input += usage.input_tokens || 0;
+      session.tokens.output += usage.output_tokens || 0;
+    }
+
+    // Emit stats update
+    io.emit('plan:stats', {
+      projectId,
+      planId,
+      elapsed: Date.now() - session.startTime,
+      tokens: session.tokens,
+      toolCalls: session.toolCalls,
+      turns: session.turns,
+    });
+  }
+
+  if (type === 'user') {
+    // Tool results
+    const content = event.message?.content;
+    if (Array.isArray(content)) {
+      for (const block of content) {
+        if (block.type === 'tool_result' && block.content) {
+          const preview =
+            typeof block.content === 'string'
+              ? block.content.slice(0, 200)
+              : JSON.stringify(block.content).slice(0, 200);
+          io.emit('plan:log', { projectId, planId, type: 'result', message: preview });
+        }
+      }
+    }
+  }
+}
+
+// ─── Prompt ───
 function buildPlanningPrompt(topic, context, project) {
   return `You are a technical project planner. Analyze the following topic and create a structured task breakdown for a development project.
 
@@ -164,10 +249,12 @@ ${topic.trim()}
 ${context ? `## Additional Context\n${context.trim()}\n` : ''}
 
 ## Instructions
-1. Research and analyze the topic thoroughly
-2. Break it down into concrete, actionable development tasks
-3. Each task should be small enough for a single Claude session (1-3 files)
-4. Order tasks by dependency (prerequisite tasks first)
+1. First, explore the project's codebase to understand the existing structure, tech stack, and patterns
+2. Research the topic — understand best practices and common approaches
+3. Break it down into concrete, actionable development tasks
+4. Each task should be small enough for a single Claude session (1-3 files)
+5. Order tasks by dependency (prerequisite tasks first)
+6. Consider edge cases, error handling, and testing
 
 ## CRITICAL: Output Format
 You MUST end your response with a JSON code block containing the task array.
@@ -191,13 +278,14 @@ Rules:
 - Create 3-15 tasks depending on complexity
 - Each task must be independently executable
 - Include setup/infrastructure tasks first, then features, then tests
-- Descriptions should be detailed enough for Claude to implement without additional context`;
+- Descriptions should be detailed enough for Claude to implement without additional context
+- Reference actual files and patterns from the codebase when possible`;
 }
 
+// ─── Parser ───
 function parseTasksFromOutput(text) {
   if (!text) return [];
 
-  // Find the last JSON code block
   const jsonBlocks = [...text.matchAll(/```(?:json)?\s*\n?([\s\S]*?)```/g)];
   if (jsonBlocks.length === 0) return [];
 
