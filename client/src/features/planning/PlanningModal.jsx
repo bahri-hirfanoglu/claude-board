@@ -20,6 +20,12 @@ const EFFORTS = [
   { value: 'high', label: 'High', color: 'bg-red-500/20 text-red-300' },
 ];
 
+const GRANULARITIES = [
+  { value: 'high-level', label: 'High-level', desc: '3-5 big tasks with checklists', color: 'bg-blue-500/20 text-blue-300' },
+  { value: 'balanced', label: 'Balanced', desc: '5-10 medium tasks', color: 'bg-amber-500/20 text-amber-300' },
+  { value: 'detailed', label: 'Detailed', desc: '10-20 atomic tasks', color: 'bg-purple-500/20 text-purple-300' },
+];
+
 const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High'];
 const PRIORITY_COLORS = ['text-surface-500', 'text-yellow-400', 'text-orange-400', 'text-red-400'];
 
@@ -35,6 +41,7 @@ export default function PlanningModal({ projectId, onClose }) {
   const [context, setContext] = useState('');
   const [model, setModel] = useState('sonnet');
   const [effort, setEffort] = useState('medium');
+  const [granularity, setGranularity] = useState('balanced');
   const [phase, setPhase] = useState('idle'); // idle | thinking | done | error
   const [logs, setLogs] = useState([]);       // { type, message, ts }
   const [textChunks, setTextChunks] = useState('');
@@ -129,7 +136,7 @@ export default function PlanningModal({ projectId, onClose }) {
     setError(null);
     setStats({ elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 });
     try {
-      await api.startPlanning(projectId, { topic: topic.trim(), model, effort, context: context.trim() });
+      await api.startPlanning(projectId, { topic: topic.trim(), model, effort, granularity, context: context.trim() });
     } catch (e) {
       setPhase('error');
       setError(e.message);
@@ -225,6 +232,28 @@ export default function PlanningModal({ projectId, onClose }) {
                 />
               </div>
 
+              {/* Granularity */}
+              <div>
+                <label className="block text-xs font-medium text-surface-400 mb-1.5">Task breakdown</label>
+                <div className="flex gap-1.5">
+                  {GRANULARITIES.map((g) => (
+                    <button
+                      key={g.value}
+                      onClick={() => setGranularity(g.value)}
+                      className={`flex-1 px-2 py-2 rounded-lg text-center transition-all border ${
+                        granularity === g.value
+                          ? `${g.color} ring-1 ring-current border-current/20`
+                          : 'bg-surface-800 text-surface-500 hover:text-surface-300 border-transparent'
+                      }`}
+                    >
+                      <div className="text-xs font-semibold">{g.label}</div>
+                      <div className="text-[9px] opacity-70 mt-0.5">{g.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Model + Effort */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1">

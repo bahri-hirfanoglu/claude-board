@@ -15,7 +15,7 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
       const project = projectQueries.getById(req.params.projectId);
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
-      const { topic, model = 'sonnet', effort = 'medium', context = '' } = req.body;
+      const { topic, model = 'sonnet', effort = 'medium', granularity = 'balanced', context = '' } = req.body;
       if (!topic?.trim()) return res.status(400).json({ error: 'Topic is required' });
 
       if (activePlans.has(project.id)) {
@@ -26,7 +26,7 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
       const planId = `plan-${project.id}-${Date.now()}`;
       const startTime = Date.now();
 
-      const prompt = buildPlanningPrompt(topic, context, project);
+      const prompt = buildPlanningPrompt(topic, context, project, granularity);
       const args = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions'];
       if (MODEL_MAP[model]) args.push('--model', MODEL_MAP[model]);
       if (effort && effort !== 'medium') args.push('--thinking-budget', effort);
@@ -236,7 +236,31 @@ function handlePlanEvent(event, projectId, planId, session, io, _fullText, appen
 }
 
 // ─── Prompt ───
-function buildPlanningPrompt(topic, context, project) {
+const GRANULARITY = {
+  'high-level': {
+    count: '3-5',
+    style: `Create FEW large tasks (3-5 maximum). Each task should be a major milestone that covers a broad area of work.
+In the description of each task, include a bullet-point checklist of sub-steps that need to be done within that task.
+Use "- [ ] step description" format for sub-steps inside the description.
+Do NOT create separate tasks for small things like "add validation" or "write tests" — bundle them into the parent task's checklist.`,
+  },
+  balanced: {
+    count: '5-10',
+    style: `Create a moderate number of tasks (5-10). Each task should represent a meaningful unit of work.
+Group related small changes into a single task. For example, "Add user model + migration + validation" is ONE task, not three.
+Include sub-steps as bullet points in the description when a task has multiple parts.`,
+  },
+  detailed: {
+    count: '10-20',
+    style: `Create detailed, atomic tasks (10-20). Each task should be small and focused on a single concern.
+Each task should be completable in a single Claude session (1-3 files).
+Include setup, implementation, and testing as separate tasks.`,
+  },
+};
+
+function buildPlanningPrompt(topic, context, project, granularity = 'balanced') {
+  const g = GRANULARITY[granularity] || GRANULARITY.balanced;
+
   return `You are a technical project planner. Analyze the following topic and create a structured task breakdown for a development project.
 
 ## Project
@@ -252,9 +276,10 @@ ${context ? `## Additional Context\n${context.trim()}\n` : ''}
 1. First, explore the project's codebase to understand the existing structure, tech stack, and patterns
 2. Research the topic — understand best practices and common approaches
 3. Break it down into concrete, actionable development tasks
-4. Each task should be small enough for a single Claude session (1-3 files)
-5. Order tasks by dependency (prerequisite tasks first)
-6. Consider edge cases, error handling, and testing
+4. Order tasks by dependency (prerequisite tasks first)
+
+## Task Granularity: ${granularity.toUpperCase()}
+${g.style}
 
 ## CRITICAL: Output Format
 You MUST end your response with a JSON code block containing the task array.
@@ -264,7 +289,7 @@ Use EXACTLY this format — no variations:
 [
   {
     "title": "Short, clear task title",
-    "description": "Detailed description of what to implement. Include specific files, functions, and requirements.",
+    "description": "Detailed description. Use bullet points (- [ ] step) for sub-steps within this task.",
     "task_type": "feature|bugfix|refactor|docs|test|chore",
     "priority": 0-3,
     "acceptance_criteria": "What must be true when this task is done"
@@ -275,9 +300,7 @@ Use EXACTLY this format — no variations:
 Rules:
 - task_type must be one of: feature, bugfix, refactor, docs, test, chore
 - priority: 0=none, 1=low, 2=medium, 3=high
-- Create 3-15 tasks depending on complexity
-- Each task must be independently executable
-- Include setup/infrastructure tasks first, then features, then tests
+- Create ${g.count} tasks
 - Descriptions should be detailed enough for Claude to implement without additional context
 - Reference actual files and patterns from the codebase when possible`;
 }
