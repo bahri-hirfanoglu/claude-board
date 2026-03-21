@@ -31,6 +31,7 @@ export default function App() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showWebhooks, setShowWebhooks] = useState(false);
   const [showRoles, setShowRoles] = useState(false);
+  const [showPlanning, setShowPlanning] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [roles, setRoles] = useState([]);
   const [reviewTask, setReviewTask] = useState(null);
@@ -292,6 +293,7 @@ export default function App() {
       showTemplates={showTemplates}
       showWebhooks={showWebhooks}
       showRoles={showRoles}
+      showPlanning={showPlanning}
       templates={templates}
       roles={roles}
       reviewTask={reviewTask}
@@ -364,6 +366,8 @@ export default function App() {
       }}
       onViewDetail={(task) => setDetailTask(task)}
       onCloseDetail={() => setDetailTask(null)}
+      onOpenPlanning={() => setShowPlanning(true)}
+      onClosePlanning={() => setShowPlanning(false)}
     />
     </StatusTransitionProvider>
   );

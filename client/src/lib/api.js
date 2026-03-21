@@ -56,6 +56,14 @@ export const api = {
   getRevisions: (id) => request(`/api/tasks/${id}/revisions`),
   getTaskDetail: (id) => request(`/api/tasks/${id}/detail`),
 
+  // Planning
+  startPlanning: (projectId, data) =>
+    request(`/api/projects/${projectId}/plan`, { method: 'POST', body: JSON.stringify(data) }),
+  cancelPlanning: (projectId) =>
+    request(`/api/projects/${projectId}/plan/cancel`, { method: 'POST' }),
+  getPlanningStatus: (projectId) =>
+    request(`/api/projects/${projectId}/plan/status`),
+
   // Stats & Activity
   getStats: (projectId) => request(`/api/projects/${projectId}/stats`),
   getActivity: (projectId, limit = 50, offset = 0) =>
