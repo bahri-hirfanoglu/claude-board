@@ -9,6 +9,12 @@ const MODELS = [
   { value: 'opus', label: 'Opus', color: 'bg-purple-500/20 text-purple-300' },
 ];
 
+const EFFORTS = [
+  { value: 'low', label: 'Low', color: 'bg-green-500/20 text-green-300' },
+  { value: 'medium', label: 'Medium', color: 'bg-amber-500/20 text-amber-300' },
+  { value: 'high', label: 'High', color: 'bg-red-500/20 text-red-300' },
+];
+
 const PHASES = {
   idle: { label: null, color: '' },
   thinking: { label: 'Claude is analyzing...', color: 'text-amber-400' },
@@ -21,6 +27,7 @@ export default function PlanningModal({ projectId, onClose }) {
   const [topic, setTopic] = useState('');
   const [context, setContext] = useState('');
   const [model, setModel] = useState('sonnet');
+  const [effort, setEffort] = useState('medium');
   const [phase, setPhase] = useState('idle');
   const [progress, setProgress] = useState('');
   const [createdTasks, setCreatedTasks] = useState([]);
@@ -74,7 +81,7 @@ export default function PlanningModal({ projectId, onClose }) {
     setCreatedTasks([]);
     setError(null);
     try {
-      await api.startPlanning(projectId, { topic: topic.trim(), model, context: context.trim() });
+      await api.startPlanning(projectId, { topic: topic.trim(), model, effort, context: context.trim() });
     } catch (e) {
       setPhase('error');
       setError(e.message);
@@ -146,27 +153,50 @@ export default function PlanningModal({ projectId, onClose }) {
             />
           </div>
 
-          {/* Model selector */}
-          <div>
-            <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1">
-              <Cpu size={11} />
-              Model
-            </label>
-            <div className="flex gap-1.5">
-              {MODELS.map((m) => (
-                <button
-                  key={m.value}
-                  onClick={() => setModel(m.value)}
-                  disabled={isActive}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 ${
-                    model === m.value
-                      ? `${m.color} ring-1 ring-current`
-                      : 'bg-surface-800 text-surface-500 hover:text-surface-300'
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
+          {/* Model + Effort */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1">
+                <Cpu size={11} />
+                Model
+              </label>
+              <div className="flex gap-1">
+                {MODELS.map((m) => (
+                  <button
+                    key={m.value}
+                    onClick={() => setModel(m.value)}
+                    disabled={isActive}
+                    className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 text-center ${
+                      model === m.value
+                        ? `${m.color} ring-1 ring-current`
+                        : 'bg-surface-800 text-surface-500 hover:text-surface-300'
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1">
+                Effort
+              </label>
+              <div className="flex gap-1">
+                {EFFORTS.map((e) => (
+                  <button
+                    key={e.value}
+                    onClick={() => setEffort(e.value)}
+                    disabled={isActive}
+                    className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 text-center ${
+                      effort === e.value
+                        ? `${e.color} ring-1 ring-current`
+                        : 'bg-surface-800 text-surface-500 hover:text-surface-300'
+                    }`}
+                  >
+                    {e.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

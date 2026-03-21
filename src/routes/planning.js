@@ -17,7 +17,7 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
       const project = projectQueries.getById(req.params.projectId);
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
-      const { topic, model = 'sonnet', context = '' } = req.body;
+      const { topic, model = 'sonnet', effort = 'medium', context = '' } = req.body;
       if (!topic?.trim()) return res.status(400).json({ error: 'Topic is required' });
 
       if (activePlans.has(project.id)) {
@@ -25,12 +25,14 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
       }
 
       const MODEL_MAP = { opus: 'opus', sonnet: 'sonnet', haiku: 'haiku' };
+      const EFFORT_BUDGET = { low: 'low', medium: 'medium', high: 'high' };
       const planId = `plan-${project.id}-${Date.now()}`;
 
       const prompt = buildPlanningPrompt(topic, context, project);
 
       const args = ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions'];
       if (MODEL_MAP[model]) args.push('--model', MODEL_MAP[model]);
+      if (EFFORT_BUDGET[effort]) args.push('--thinking-budget', EFFORT_BUDGET[effort]);
 
       const proc = spawn('claude', args, {
         cwd: project.working_dir,
