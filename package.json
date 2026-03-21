@@ -64,6 +64,12 @@
       }
     ],
     "forceCodeSigning": false,
+    "publish": {
+      "provider": "github",
+      "owner": "bahri-hirfanoglu",
+      "repo": "claude-board",
+      "releaseType": "release"
+    },
     "win": {
       "target": [
         {
@@ -136,6 +142,7 @@
     "concurrently": "^9.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "electron-updater": "^6.8.3",
     "express": "^4.21.0",
     "multer": "^2.1.1",
     "socket.io": "^4.8.0",
