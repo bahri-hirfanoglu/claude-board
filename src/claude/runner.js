@@ -9,6 +9,7 @@ import { handleClaudeEvent } from './events.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const UPLOADS_DIR = join(__dirname, '..', '..', 'uploads');
+const MCP_SERVER_PATH = join(__dirname, '..', 'mcp', 'server.js');
 
 const activeProcesses = new Map();
 const activeToolCalls = new Map();
@@ -369,6 +370,19 @@ export function startClaude(
 
   const args = ['-p', prompt, '--output-format', 'stream-json', '--verbose'];
   if (MODEL_MAP[model]) args.push('--model', MODEL_MAP[model]);
+
+  // Attach Claude Board MCP server so Claude can manage tasks
+  const port = process.env.PORT || 4000;
+  const mcpConfig = JSON.stringify({
+    mcpServers: {
+      'claude-board': {
+        command: 'node',
+        args: [MCP_SERVER_PATH],
+        env: { CLAUDE_BOARD_URL: `http://localhost:${port}` },
+      },
+    },
+  });
+  args.push('--mcp-config', mcpConfig);
 
   if (permissionMode === 'auto-accept') {
     args.push('--dangerously-skip-permissions');
