@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "claude-board": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "src/mcp/server.js"
+      ],
+      "env": {
+        "CLAUDE_BOARD_URL": "http://localhost:4000"
+      }
+    }
+  }
+}

@@ -64,6 +64,17 @@ export function buildPrompt(task, revisions = [], snippets = [], attachments = [
     );
   }
 
+  parts.push(`\n## Claude Board Integration`);
+  parts.push(`You have access to Claude Board MCP tools. Use them to manage tasks on the project board:`);
+  parts.push(`- **list_tasks** — See all tasks in this project (project_id: ${task.project_id})`);
+  parts.push(`- **create_task** — Create new sub-tasks if this task requires breaking down into smaller pieces`);
+  parts.push(`- **change_task_status** — Move tasks between statuses`);
+  parts.push(`- **get_task_detail** — Get full details of any task`);
+  parts.push(`- **list_task_summary** — Get a grouped summary of all tasks`);
+  parts.push(
+    `Use these tools when the task description asks you to plan, break down work, or manage tasks. The current project_id is ${task.project_id}.`,
+  );
+
   parts.push(`\n## Instructions`);
   parts.push(`- Task type: ${task.task_type || 'feature'}`);
   parts.push(`- Complete this task thoroughly and commit your changes.`);
