@@ -1,28 +1,9 @@
 /**
- * Entity extraction from voice input.
+ * Entity extraction from voice input (multi-language).
  */
 
-const TYPE_MAP = {
-  feature: ['feature', 'new feature'],
-  bugfix: ['bugfix', 'bug', 'bug fix', 'fix'],
-  refactor: ['refactor', 'refactoring', 'cleanup'],
-  docs: ['docs', 'documentation', 'document'],
-  test: ['test', 'testing'],
-  chore: ['chore', 'maintenance'],
-};
-
-const PRIORITY_MAP = {
-  0: ['none', 'no priority', 'skip'],
-  1: ['low'],
-  2: ['medium', 'normal', 'moderate'],
-  3: ['high', 'urgent', 'critical', 'important'],
-};
-
-const MODEL_MAP = {
-  haiku: ['haiku'],
-  sonnet: ['sonnet'],
-  opus: ['opus'],
-};
+import { TYPE_MAP, PRIORITY_MAP } from '../i18n/patterns';
+import { t } from '../i18n/t';
 
 /** @param {string} text @returns {string|null} */
 export function extractTaskType(text) {
@@ -45,13 +26,18 @@ export function extractPriority(text) {
 /** @param {string} text @returns {string|null} */
 export function extractModel(text) {
   const lower = text.toLowerCase();
+  const MODEL_MAP = {
+    haiku: ['haiku'],
+    sonnet: ['sonnet'],
+    opus: ['opus'],
+  };
   for (const [model, keywords] of Object.entries(MODEL_MAP)) {
     if (keywords.some(k => lower.includes(k))) return model;
   }
   return null;
 }
 
-/** @param {number} priority @returns {string} */
-export function priorityLabel(priority) {
-  return ['None', 'Low', 'Medium', 'High'][priority] || 'None';
+/** @param {number} priority @param {string} lang @returns {string} */
+export function priorityLabel(priority, lang = 'en-US') {
+  return t(`priority.${priority}`, lang) || t('priority.0', lang);
 }

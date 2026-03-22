@@ -1,12 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Send, Trash2, Volume2, VolumeX, Keyboard } from 'lucide-react';
+import { Mic, MicOff, Send, Trash2, Volume2, VolumeX, Keyboard, Globe } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
 import CommandHints from './CommandHints';
+import { VOICE_LANGUAGES } from '../VoiceAssistantProvider';
+import { t } from '../i18n/t';
 
-export default function ChatPanel({ state, dispatch, voice, processInput, flowLabel, getAnalyser, commands }) {
+export default function ChatPanel({ state, dispatch, voice, processInput, flowLabel, getAnalyser, commands, voiceLang, changeLang }) {
   const [textInput, setTextInput] = useState('');
+  const [langOpen, setLangOpen] = useState(false);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+  const langRef = useRef(null);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -17,6 +21,14 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Close language dropdown on outside click
+  useEffect(() => {
+    if (!langOpen) return;
+    const handler = (e) => { if (!langRef.current?.contains(e.target)) setLangOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [langOpen]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -48,6 +60,34 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
             {flowLabel}
           </span>
         )}
+
+        <div className="relative" ref={langRef}>
+          <button
+            onClick={() => setLangOpen(!langOpen)}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-surface-500 hover:text-surface-300 hover:bg-surface-800 transition-colors text-[10px] font-medium"
+            title="Change language"
+          >
+            <Globe size={12} />
+            <span>{VOICE_LANGUAGES.find(l => l.code === voiceLang)?.label.slice(0, 3) ?? 'EN'}</span>
+          </button>
+          {langOpen && (
+            <div className="absolute right-0 top-full mt-1 w-40 max-h-52 overflow-y-auto bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-[60] py-1">
+              {VOICE_LANGUAGES.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => { changeLang(l.code); setLangOpen(false); }}
+                  className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+                    l.code === voiceLang
+                      ? 'text-claude bg-claude/10'
+                      : 'text-surface-300 hover:bg-surface-700'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <button
           onClick={() => dispatch({ type: 'TOGGLE_TTS' })}
@@ -107,7 +147,7 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
 
         {/* Command hints when idle and no active flow */}
         {state.flow === 'idle' && state.messages.length > 0 && !voice.isListening && !state.isSpeaking && (
-          <CommandHints commands={commands} onSelect={processInput} />
+          <CommandHints commands={commands} onSelect={processInput} voiceLang={voiceLang} />
         )}
 
         <div ref={chatEndRef} />
@@ -134,7 +174,7 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
             ref={inputRef}
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
-            placeholder={voice.isListening ? 'Listening...' : 'Type a command...'}
+            placeholder={voice.isListening ? t('ui.listening', voiceLang) : t('ui.typeCommand', voiceLang)}
             className="flex-1 min-w-0 px-3 py-2 bg-surface-800 border border-surface-700 rounded-xl text-[13px] text-surface-200 focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600"
             disabled={state.isSpeaking}
           />
@@ -151,7 +191,7 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
         {/* Keyboard hint */}
         <div className="flex items-center justify-center gap-1 mt-1.5 text-[10px] text-surface-600">
           <Keyboard size={10} />
-          <span>Press Alt+V to toggle microphone</span>
+          <span>{t('ui.altV', voiceLang)}</span>
         </div>
       </div>
     </div>

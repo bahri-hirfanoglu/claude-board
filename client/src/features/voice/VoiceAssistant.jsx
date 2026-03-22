@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Mic, MicOff, X } from 'lucide-react';
 import { useVoiceAssistant } from './VoiceAssistantProvider';
 import { useKeyboardShortcut } from '../../hooks/useKeyboardShortcut';
+import { t } from './i18n/t';
 import ChatPanel from './components/ChatPanel';
 
 /**
@@ -9,7 +10,7 @@ import ChatPanel from './components/ChatPanel';
  * All logic lives in VoiceAssistantProvider.
  */
 export default function VoiceAssistant() {
-  const { state, dispatch, processInput, voice, flowLabel, getAnalyser, commands } = useVoiceAssistant();
+  const { state, dispatch, processInput, voice, flowLabel, getAnalyser, commands, voiceLang, changeLang } = useVoiceAssistant();
 
   // Welcome message on first open
   useEffect(() => {
@@ -18,12 +19,12 @@ export default function VoiceAssistant() {
         type: 'ADD_MESSAGE',
         msg: {
           role: 'assistant',
-          text: 'Hi! I\'m your voice assistant. Press the mic button or Alt+V to start speaking. Say "help" to see available commands.',
+          text: t('welcome', voiceLang),
           ts: Date.now(),
         },
       });
     }
-  }, [state.open, state.messages.length, dispatch]);
+  }, [state.open, state.messages.length, dispatch, voiceLang]);
 
   // Alt+V keyboard shortcut
   useKeyboardShortcut({
@@ -81,6 +82,8 @@ export default function VoiceAssistant() {
           flowLabel={flowLabel}
           getAnalyser={getAnalyser}
           commands={commands}
+          voiceLang={voiceLang}
+          changeLang={changeLang}
         />
       )}
     </>

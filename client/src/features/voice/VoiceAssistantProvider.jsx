@@ -1,10 +1,11 @@
-import { createContext, useContext, useReducer, useRef, useCallback, useEffect } from 'react';
+import { createContext, useContext, useReducer, useRef, useCallback, useEffect, useState } from 'react';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { speak, cancelSpeech } from './engine/ttsEngine';
 import { playStartBeep, playStopBeep } from './engine/soundEffects';
 import { startAudioCapture, stopAudioCapture, getAnalyser } from './engine/sttEngine';
 import { detectIntent } from './intent/intentParser';
 import { resolveCommand, getAllCommands } from './commands/commandRegistry';
+import { t } from './i18n/t';
 import './commands/index'; // register all commands
 
 // ─── State ───
@@ -41,8 +42,34 @@ function reducer(state, action) {
 // ─── Context ───
 const VoiceCtx = createContext(null);
 
+const VOICE_LANGUAGES = [
+  { code: 'en-US', label: 'English' },
+  { code: 'tr-TR', label: 'Türkçe' },
+  { code: 'de-DE', label: 'Deutsch' },
+  { code: 'fr-FR', label: 'Français' },
+  { code: 'es-ES', label: 'Español' },
+  { code: 'pt-BR', label: 'Português' },
+  { code: 'it-IT', label: 'Italiano' },
+  { code: 'nl-NL', label: 'Nederlands' },
+  { code: 'pl-PL', label: 'Polski' },
+  { code: 'ru-RU', label: 'Русский' },
+  { code: 'ja-JP', label: '日本語' },
+  { code: 'ko-KR', label: '한국어' },
+  { code: 'zh-CN', label: '中文' },
+  { code: 'ar-SA', label: 'العربية' },
+  { code: 'hi-IN', label: 'हिन्दी' },
+];
+
+export { VOICE_LANGUAGES };
+
 export function VoiceAssistantProvider({ children, tasks, currentProject, onCreateTask, onStatusChange }) {
   const [state, dispatch] = useReducer(reducer, initial);
+  const [voiceLang, setVoiceLang] = useState(() => localStorage.getItem('voice-lang') || 'en-US');
+
+  const changeLang = useCallback((code) => {
+    setVoiceLang(code);
+    localStorage.setItem('voice-lang', code);
+  }, []);
 
   // Refs for latest values (avoid stale closures)
   const stateRef = useRef(state);
@@ -77,6 +104,7 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
       tasks: tasksRef.current,
       currentProject: projectRef.current,
       refs: commandRefsRef.current,
+      lang: voiceLang,
     };
 
     // Resolve command
@@ -92,8 +120,8 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
       result = {
         flow: cur.flow === 'idle' ? 'idle' : cur.flow,
         message: cur.flow === 'idle'
-          ? 'I didn\'t understand. Say "help" to see available commands.'
-          : 'I didn\'t understand. Say "cancel" to exit.',
+          ? t('fallback.idle', voiceLang)
+          : t('fallback.active', voiceLang),
       };
     }
 
@@ -108,7 +136,7 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
       if (stateRef.current.ttsEnabled) {
         dispatch({ type: 'SET_SPEAKING', value: true });
         voice.stop();
-        await speak(result.message);
+        await speak(result.message, voiceLang);
         dispatch({ type: 'SET_SPEAKING', value: false });
       }
     }
@@ -121,7 +149,7 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
 
   // ─── Voice input ───
   const voice = useVoiceInput({
-    lang: 'en-US',
+    lang: voiceLang,
     continuous: false,
     onResult: processInput,
   });
@@ -141,15 +169,9 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
   }, [voice.isListening]);
 
   // ─── Flow label ───
-  const flowLabel = {
-    'create:title': 'Awaiting title...',
-    'create:desc': 'Awaiting description...',
-    'create:type': 'Awaiting type...',
-    'create:priority': 'Awaiting priority...',
-    'create:confirm': 'Awaiting confirmation...',
-    'status:which': 'Select task...',
-    'status:to': 'Target status...',
-  }[state.flow] || null;
+  const flowLabel = state.flow !== 'idle'
+    ? t('flow.' + state.flow, voiceLang)
+    : null;
 
   const value = {
     state,
@@ -159,12 +181,14 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
     flowLabel,
     getAnalyser,
     commands: getAllCommands(),
+    voiceLang,
+    changeLang,
   };
 
   return <VoiceCtx.Provider value={value}>{children}</VoiceCtx.Provider>;
 }
 
-/** @returns {{ state, dispatch, processInput, voice, flowLabel, getAnalyser, commands }} */
+/** @returns {{ state, dispatch, processInput, voice, flowLabel, getAnalyser, commands, voiceLang, changeLang }} */
 export function useVoiceAssistant() {
   const ctx = useContext(VoiceCtx);
   if (!ctx) throw new Error('useVoiceAssistant must be inside VoiceAssistantProvider');
