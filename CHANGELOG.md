@@ -19,7 +19,7 @@
 ### Documentation
 - Added 5 new Mintlify docs pages: Task Keys, Voice Assistant, Status Animations, Model Filter, Timeline.
 - Updated README with 7 new features and voice architecture section.
-- Added 6 new feature cards to landing page (docs/index.html).
+- Added 6 new feature cards to landing page (web/index.html).
 
 ## [3.0.0] - 2025-03-15
 
