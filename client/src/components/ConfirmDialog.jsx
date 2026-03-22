@@ -1,4 +1,7 @@
+import { useTranslation } from '../i18n/I18nProvider';
+
 export default function ConfirmDialog({ title, message, danger, onConfirm, onCancel }) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onCancel}>
       <div
@@ -12,7 +15,7 @@ export default function ConfirmDialog({ title, message, danger, onConfirm, onCan
             onClick={onCancel}
             className="flex-1 px-4 py-2 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={onConfirm}
@@ -22,7 +25,7 @@ export default function ConfirmDialog({ title, message, danger, onConfirm, onCan
                 : 'bg-claude hover:bg-claude-light text-white'
             }`}
           >
-            Confirm
+            {t('common.confirm')}
           </button>
         </div>
       </div>

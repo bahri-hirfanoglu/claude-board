@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, RotateCcw, CheckCircle, Clock, MessageSquare } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 export default function ReviewModal({ task, onApprove, onRequestChanges, onClose }) {
+  const { t } = useTranslation();
   const [feedback, setFeedback] = useState('');
   const [revisions, setRevisions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -49,7 +51,7 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-800">
           <div>
-            <h2 className="text-sm font-semibold text-surface-100">Review Task</h2>
+            <h2 className="text-sm font-semibold text-surface-100">{t('review.title')}</h2>
             <p className="text-xs text-surface-500 mt-0.5 truncate max-w-[360px]">{task.title}</p>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
@@ -63,7 +65,7 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
             <div className="flex items-center gap-1.5 mb-2">
               <Clock size={12} className="text-surface-500" />
               <span className="text-[10px] font-medium text-surface-500 uppercase tracking-wider">
-                Revision History ({revisions.length})
+                {t('review.revisionHistory')} ({revisions.length})
               </span>
             </div>
             <div className="space-y-2">
@@ -90,8 +92,8 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
             <div className="space-y-3">
               <p className="text-xs text-surface-400">
                 {revisionCount > 0
-                  ? `This task has been revised ${revisionCount} time(s). How does it look now?`
-                  : 'Review the completed work and decide:'}
+                  ? t('review.revisedTimes', { count: revisionCount })
+                  : t('review.reviewPrompt')}
               </p>
               <div className="flex gap-2">
                 <button
@@ -100,14 +102,14 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
                 >
                   <CheckCircle size={15} />
-                  Approve & Done
+                  {t('review.approve')}
                 </button>
                 <button
                   onClick={() => setMode('reject')}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium transition-colors"
                 >
                   <RotateCcw size={15} />
-                  Request Changes
+                  {t('review.requestChanges')}
                 </button>
               </div>
             </div>
@@ -116,14 +118,14 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
               <div className="flex items-center gap-1.5">
                 <MessageSquare size={12} className="text-amber-400" />
                 <span className="text-xs font-medium text-surface-300">
-                  What needs to change? (Revision #{revisionCount + 1})
+                  {t('review.feedbackLabel', { num: revisionCount + 1 })}
                 </span>
               </div>
               <textarea
                 ref={textareaRef}
                 value={feedback}
                 onChange={e => setFeedback(e.target.value)}
-                placeholder="Describe what needs to be fixed or improved. Be specific — Claude will use this feedback to revise the work..."
+                placeholder={t('review.feedbackPlaceholder')}
                 className="w-full h-32 px-3 py-2.5 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-200 placeholder-surface-600 resize-none focus:outline-none focus:border-claude/50 focus:ring-1 focus:ring-claude/20"
               />
               <div className="flex gap-2">
@@ -131,7 +133,7 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
                   onClick={() => { setMode(null); setFeedback(''); }}
                   className="px-4 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-surface-400 text-sm transition-colors"
                 >
-                  Back
+                  {t('common.back')}
                 </button>
                 <button
                   onClick={handleSubmitChanges}
@@ -139,7 +141,7 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
                 >
                   <RotateCcw size={14} />
-                  {loading ? 'Sending...' : 'Send Back to Claude'}
+                  {loading ? t('review.sending') : t('review.sendBack')}
                 </button>
               </div>
             </div>

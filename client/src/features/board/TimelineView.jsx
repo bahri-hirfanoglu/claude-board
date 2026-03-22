@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { Clock, Activity, Cpu, GitBranch, CheckCircle2, AlertCircle, ZoomIn, ZoomOut, ChevronDown, ChevronRight, Coins, Calendar, ArrowRight } from 'lucide-react';
 import { formatTokens, formatDuration, formatTimeAgo } from '../../lib/formatters';
 import { TYPE_COLORS, MODEL_COLORS, PRIORITY_LABELS } from '../../lib/constants';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 function parseDate(str) {
   if (!str) return null;
@@ -9,19 +10,20 @@ function parseDate(str) {
 }
 
 const STATUS_STYLES = {
-  backlog: { bg: '#94a3b8', gradFrom: '#94a3b8', gradTo: '#64748b', glow: 'rgba(148,163,184,0.15)', label: 'Backlog', icon: Clock, dotColor: '#94a3b8' },
-  in_progress: { bg: '#f59e0b', gradFrom: '#fbbf24', gradTo: '#d97706', glow: 'rgba(245,158,11,0.25)', label: 'In Progress', icon: Activity, dotColor: '#f59e0b' },
-  testing: { bg: '#DA7756', gradFrom: '#DA7756', gradTo: '#c4624a', glow: 'rgba(218,119,86,0.25)', label: 'Testing', icon: Cpu, dotColor: '#DA7756' },
-  done: { bg: '#34d399', gradFrom: '#6ee7b7', gradTo: '#059669', glow: 'rgba(52,211,153,0.25)', label: 'Done', icon: CheckCircle2, dotColor: '#34d399' },
+  backlog: { bg: '#94a3b8', gradFrom: '#94a3b8', gradTo: '#64748b', glow: 'rgba(148,163,184,0.15)', labelKey: 'status.backlog', icon: Clock, dotColor: '#94a3b8' },
+  in_progress: { bg: '#f59e0b', gradFrom: '#fbbf24', gradTo: '#d97706', glow: 'rgba(245,158,11,0.25)', labelKey: 'status.in_progress', icon: Activity, dotColor: '#f59e0b' },
+  testing: { bg: '#DA7756', gradFrom: '#DA7756', gradTo: '#c4624a', glow: 'rgba(218,119,86,0.25)', labelKey: 'status.testing', icon: Cpu, dotColor: '#DA7756' },
+  done: { bg: '#34d399', gradFrom: '#6ee7b7', gradTo: '#059669', glow: 'rgba(52,211,153,0.25)', labelKey: 'status.done', icon: CheckCircle2, dotColor: '#34d399' },
 };
 
 const ZOOM_LEVELS = [
-  { id: 'day', label: 'Day', minWidth: 80 },
-  { id: 'week', label: 'Week', minWidth: 40 },
-  { id: 'month', label: 'Month', minWidth: 16 },
+  { id: 'day', labelKey: 'timeline.day', minWidth: 80 },
+  { id: 'week', labelKey: 'timeline.week', minWidth: 40 },
+  { id: 'month', labelKey: 'timeline.month', minWidth: 16 },
 ];
 
 export default function TimelineView({ tasks, onViewDetail }) {
+  const { t } = useTranslation();
   const scrollRef = useRef(null);
   const [zoomIdx, setZoomIdx] = useState(1);
   const [collapsedGroups, setCollapsedGroups] = useState({});
@@ -136,7 +138,7 @@ export default function TimelineView({ tasks, onViewDetail }) {
           {Object.entries(STATUS_STYLES).map(([status, s]) => (
             <div key={status} className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.dotColor }} />
-              <span className="text-[10px] text-surface-500 font-medium">{s.label}</span>
+              <span className="text-[10px] text-surface-500 font-medium">{t(s.labelKey)}</span>
             </div>
           ))}
         </div>
@@ -150,7 +152,7 @@ export default function TimelineView({ tasks, onViewDetail }) {
           >
             <ZoomIn size={13} />
           </button>
-          <span className="text-[10px] text-surface-400 font-medium px-1.5 min-w-[36px] text-center">{zoom.label}</span>
+          <span className="text-[10px] text-surface-400 font-medium px-1.5 min-w-[36px] text-center">{t(zoom.labelKey)}</span>
           <button
             onClick={() => setZoomIdx(Math.min(ZOOM_LEVELS.length - 1, zoomIdx + 1))}
             disabled={zoomIdx === ZOOM_LEVELS.length - 1}
@@ -234,7 +236,7 @@ export default function TimelineView({ tasks, onViewDetail }) {
                   >
                     {isCollapsed ? <ChevronRight size={12} className="text-surface-500" /> : <ChevronDown size={12} className="text-surface-500" />}
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: style.dotColor }} />
-                    <span className="text-[11px] font-semibold text-surface-300">{style.label}</span>
+                    <span className="text-[11px] font-semibold text-surface-300">{t(style.labelKey)}</span>
                     <span className="text-[10px] text-surface-600 bg-surface-800 px-1.5 py-0.5 rounded-full">{groupTasks.length}</span>
                   </div>
 

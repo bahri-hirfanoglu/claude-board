@@ -44,7 +44,7 @@ export const statsQueries = {
     ),
   getModelBreakdown: (pid) =>
     queryAll(
-      `SELECT COALESCE(model_used,model,'unknown') as model_name, COUNT(*) as count,
+      `SELECT COALESCE(NULLIF(model_used,''),NULLIF(model,''),'unknown') as model_name, COUNT(*) as count,
             SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)) as total_tokens,
             SUM(COALESCE(total_cost,0)) as total_cost
      FROM tasks WHERE project_id=? AND (input_tokens>0 OR status IN ('in_progress','testing','done'))
@@ -65,7 +65,7 @@ export const statsQueries = {
     ),
   getGlobalModelBreakdown: () =>
     queryAll(
-      `SELECT COALESCE(model_used,model,'unknown') as model, COUNT(*) as tasks,
+      `SELECT COALESCE(NULLIF(model_used,''),NULLIF(model,''),'unknown') as model, COUNT(*) as tasks,
             SUM(COALESCE(input_tokens,0)) as input_tokens,
             SUM(COALESCE(output_tokens,0)) as output_tokens,
             SUM(COALESCE(total_cost,0)) as cost

@@ -285,4 +285,9 @@ try {
   console.error('Task key migration error:', e.message);
 }
 
+// Backfill empty model fields to 'sonnet' (default)
+try {
+  db.run("UPDATE tasks SET model='sonnet' WHERE model IS NULL OR model=''");
+} catch {}
+
 save();

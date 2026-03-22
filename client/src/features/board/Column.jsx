@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import TaskCard from './TaskCard';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 export default function Column({ column, tasks, draggedTask, onDragStart, onDragEnd, onDrop, onViewLogs, onEditTask, onDeleteTask, onStatusChange, onReviewTask, onViewDetail, isMobile }) {
+  const { t } = useTranslation();
   const [dragOver, setDragOver] = useState(false);
 
   return (
@@ -17,7 +19,7 @@ export default function Column({ column, tasks, draggedTask, onDragStart, onDrag
         <div className="flex items-center justify-between px-4 py-3 border-b border-surface-800">
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${column.bg}`} />
-            <h2 className={`text-sm font-medium ${column.color}`}>{column.label}</h2>
+            <h2 className={`text-sm font-medium ${column.color}`}>{t('status.' + column.id)}</h2>
           </div>
           <span className="text-xs text-surface-500 bg-surface-800 px-2 py-0.5 rounded-full">{tasks.length}</span>
         </div>
@@ -39,7 +41,7 @@ export default function Column({ column, tasks, draggedTask, onDragStart, onDrag
           />
         ))}
         {tasks.length === 0 && (
-          <div className="text-center py-8 text-surface-600 text-sm">No tasks</div>
+          <div className="text-center py-8 text-surface-600 text-sm">{t('board.noTasks')}</div>
         )}
       </div>
     </div>

@@ -4,6 +4,8 @@ import Avatar from 'boring-avatars';
 import { api } from '../../lib/api';
 import { formatTokens, formatTimeAgo as timeAgo } from '../../lib/formatters';
 import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
+import { useTranslation } from '../../i18n/I18nProvider';
+import LanguageSelector from '../../i18n/LanguageSelector';
 
 function MiniStatusBar({ backlog, active, testing, done, total }) {
   if (total === 0) return null;
@@ -27,7 +29,7 @@ function MiniStatusBar({ backlog, active, testing, done, total }) {
   );
 }
 
-function ProjectCard({ project, onSelect }) {
+function ProjectCard({ project, onSelect, t }) {
   const total = project.total_tasks || 0;
   const tokens = formatTokens(project.total_tokens || 0);
   const variant = project.icon || 'marble';
@@ -67,18 +69,18 @@ function ProjectCard({ project, onSelect }) {
       <div className="flex items-center gap-3 mt-3 flex-wrap">
         <div className="flex items-center gap-1 text-[10px] text-surface-500">
           <Layers size={10} />
-          <span>{total} tasks</span>
+          <span>{total} {t('common.tasks')}</span>
         </div>
         {(project.done_tasks || 0) > 0 && (
           <div className="flex items-center gap-1 text-[10px] text-emerald-500">
             <CheckCircle2 size={10} />
-            <span>{project.done_tasks} done</span>
+            <span>{project.done_tasks} {t('dashboard.done')}</span>
           </div>
         )}
         {(project.active_tasks || 0) > 0 && (
           <div className="flex items-center gap-1 text-[10px] text-amber-400">
             <Activity size={10} className="animate-pulse" />
-            <span>{project.active_tasks} active</span>
+            <span>{project.active_tasks} {t('dashboard.active').toLowerCase()}</span>
           </div>
         )}
       </div>
@@ -87,7 +89,7 @@ function ProjectCard({ project, onSelect }) {
         {tokens && (
           <div className="flex items-center gap-1 text-[10px] text-surface-500">
             <Cpu size={10} />
-            <span>{tokens} tokens</span>
+            <span>{tokens} {t('common.tokens')}</span>
           </div>
         )}
         {(project.total_cost || 0) > 0 && (
@@ -109,7 +111,16 @@ function ProjectCard({ project, onSelect }) {
 
 const MODEL_COLORS = { opus: 'bg-purple-500', sonnet: 'bg-blue-500', haiku: 'bg-green-500', unknown: 'bg-surface-500' };
 
-function ClaudeUsageCard() {
+function normalizeModelName(raw) {
+  if (!raw || !raw.trim()) return 'unknown';
+  const lower = raw.toLowerCase();
+  if (lower.includes('opus')) return 'opus';
+  if (lower.includes('sonnet')) return 'sonnet';
+  if (lower.includes('haiku')) return 'haiku';
+  return raw;
+}
+
+function ClaudeUsageCard({ t }) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -125,10 +136,10 @@ function ClaudeUsageCard() {
       <div className="mb-8 rounded-xl bg-gradient-to-br from-surface-800/80 to-surface-900 border border-surface-700/50 overflow-hidden">
         <div className="flex items-center gap-2 px-5 py-3 border-b border-surface-700/30">
           <Zap size={14} className="text-claude" />
-          <h2 className="text-sm font-semibold">Claude Usage</h2>
+          <h2 className="text-sm font-semibold">{t('usage.title')}</h2>
         </div>
         <div className="p-5 text-center text-surface-600 text-sm py-8">
-          No Claude usage data yet. Start a task to see token statistics here.
+          {t('usage.noData')}
         </div>
       </div>
     );
@@ -153,7 +164,7 @@ function ClaudeUsageCard() {
     <div className="mb-8 rounded-xl bg-gradient-to-br from-surface-800/80 to-surface-900 border border-surface-700/50 overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-3 border-b border-surface-700/30">
         <Zap size={14} className="text-claude" />
-        <h2 className="text-sm font-semibold">Claude Usage</h2>
+        <h2 className="text-sm font-semibold">{t('usage.title')}</h2>
         <div className="flex items-center gap-3 ml-auto">
           {limits?.last_model && (
             <span className="text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded font-medium">
@@ -161,17 +172,17 @@ function ClaudeUsageCard() {
             </span>
           )}
           {limits?.context_window > 0 && (
-            <span className="text-[10px] text-surface-500">{formatTokens(limits.context_window)} ctx</span>
+            <span className="text-[10px] text-surface-500">{formatTokens(limits.context_window)} {t('usage.context')}</span>
           )}
           {limits?.rate_limit_type && (
             <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
               limits.status === 'allowed' ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
             }`}>
-              {limits.status === 'allowed' ? 'Active' : 'Rate Limited'}
+              {limits.status === 'allowed' ? t('status.active') : t('usage.rateLimited')}
             </span>
           )}
           {resetLabel && (
-            <span className="text-[10px] text-surface-500">resets in {resetLabel}</span>
+            <span className="text-[10px] text-surface-500">{t('usage.resetsIn')} {resetLabel}</span>
           )}
         </div>
       </div>
@@ -180,36 +191,36 @@ function ClaudeUsageCard() {
         {/* Top stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
           <div>
-            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">Total Tokens</div>
+            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">{t('usage.totalTokens')}</div>
             <div className="text-xl font-bold text-surface-100">{formatTokens(totalTokens)}</div>
             <div className="flex items-center gap-2 mt-1">
               <div className="flex-1 h-1.5 rounded-full bg-surface-700 overflow-hidden">
                 <div className="h-full bg-blue-500 rounded-full" style={{ width: `${inputPct}%` }} />
               </div>
-              <span className="text-[9px] text-surface-600">{inputPct.toFixed(0)}% in</span>
+              <span className="text-[9px] text-surface-600">{inputPct.toFixed(0)}% {t('usage.input')}</span>
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">Total Cost</div>
+            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">{t('usage.totalCost')}</div>
             <div className="text-xl font-bold text-surface-100">${(u.total_cost || 0).toFixed(2)}</div>
             <div className="text-[10px] text-surface-600 mt-1">
-              ~${totalTokens > 0 ? ((u.total_cost || 0) / (totalTokens / 1e6)).toFixed(2) : '0'}/M tokens
+              ~${totalTokens > 0 ? ((u.total_cost || 0) / (totalTokens / 1e6)).toFixed(2) : '0'}{t('usage.perMTokens')}
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">Turns</div>
+            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">{t('usage.turns')}</div>
             <div className="text-xl font-bold text-surface-100">{(u.total_turns || 0).toLocaleString()}</div>
             <div className="text-[10px] text-surface-600 mt-1">
-              ~{u.tasks_with_usage > 0 ? Math.round((u.total_turns || 0) / u.tasks_with_usage) : 0} avg/task
+              ~{u.tasks_with_usage > 0 ? Math.round((u.total_turns || 0) / u.tasks_with_usage) : 0} {t('usage.avgPerTask')}
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">Rate Limits</div>
+            <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-1">{t('usage.rateLimits')}</div>
             <div className={`text-xl font-bold ${(u.rate_limit_hits || 0) > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
               {u.rate_limit_hits || 0}
             </div>
             <div className="text-[10px] text-surface-600 mt-1">
-              {(u.rate_limit_hits || 0) > 0 ? 'hits encountered' : 'no limits hit'}
+              {(u.rate_limit_hits || 0) > 0 ? t('usage.hitsEncountered') : t('usage.noLimitsHit')}
             </div>
           </div>
         </div>
@@ -218,16 +229,17 @@ function ClaudeUsageCard() {
           {/* Model breakdown */}
           {models.length > 0 && (
             <div>
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-2">Model Breakdown</div>
+              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-2">{t('usage.modelBreakdown')}</div>
               <div className="space-y-2">
                 {models.map(m => {
                   const modelTotal = (m.input_tokens || 0) + (m.output_tokens || 0);
                   const pct = totalTokens > 0 ? (modelTotal / totalTokens * 100) : 0;
-                  const colorClass = MODEL_COLORS[m.model] || MODEL_COLORS.unknown;
+                  const displayName = normalizeModelName(m.model);
+                  const colorClass = MODEL_COLORS[displayName] || MODEL_COLORS.unknown;
                   return (
-                    <div key={m.model} className="flex items-center gap-2.5">
+                    <div key={m.model || 'unknown'} className="flex items-center gap-2.5">
                       <div className={`w-2 h-2 rounded-full ${colorClass} flex-shrink-0`} />
-                      <span className="text-xs text-surface-300 w-16">{m.model}</span>
+                      <span className="text-xs text-surface-300 w-16 capitalize">{displayName}</span>
                       <div className="flex-1 h-1.5 rounded-full bg-surface-700 overflow-hidden">
                         <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
                       </div>
@@ -243,7 +255,7 @@ function ClaudeUsageCard() {
           {/* Usage sparkline (last 30 days) */}
           {timeline.length > 1 && (
             <div>
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-2">30-Day Usage</div>
+              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-2">{t('usage.30day')}</div>
               <div className="flex items-end gap-px h-16">
                 {timeline.slice(-30).map((d, i) => (
                   <div
@@ -265,10 +277,10 @@ function ClaudeUsageCard() {
         {/* Cache stats */}
         {(u.cache_read || 0) > 0 && (
           <div className="mt-4 pt-3 border-t border-surface-700/30 flex items-center gap-4 text-[10px] text-surface-500">
-            <span>Cache read: {formatTokens(u.cache_read)}</span>
-            <span>Cache created: {formatTokens(u.cache_creation)}</span>
+            <span>{t('usage.cacheRead')}: {formatTokens(u.cache_read)}</span>
+            <span>{t('usage.cacheCreated')}: {formatTokens(u.cache_creation)}</span>
             <span className="text-emerald-500/70">
-              {totalTokens > 0 ? `${((u.cache_read / (totalTokens + u.cache_read)) * 100).toFixed(0)}% cache hit` : ''}
+              {totalTokens > 0 ? `${((u.cache_read / (totalTokens + u.cache_read)) * 100).toFixed(0)}% ${t('usage.cacheHit')}` : ''}
             </span>
           </div>
         )}
@@ -278,12 +290,13 @@ function ClaudeUsageCard() {
 }
 
 export default function Dashboard({ projects, onSelectProject, onNewProject }) {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadSummary();
-  }, [projects]);
+  }, [projects]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSummary = async () => {
     try {
@@ -311,71 +324,74 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
           <div className="min-w-0">
             <div className="flex items-center gap-3 mb-1">
               <span className="text-claude text-2xl flex-shrink-0">&#10022;</span>
-              <h1 className="text-xl font-bold tracking-tight">Claude Board</h1>
+              <h1 className="text-xl font-bold tracking-tight">{t('dashboard.title')}</h1>
             </div>
-            <p className="text-sm text-surface-500 hidden sm:block">Manage your projects and AI-powered tasks</p>
+            <p className="text-sm text-surface-500 hidden sm:block">{t('dashboard.tagline')}</p>
           </div>
-          <button
-            onClick={onNewProject}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex-shrink-0 whitespace-nowrap"
-          >
-            <Plus size={15} />
-            New Project
-          </button>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <LanguageSelector />
+            <button
+              onClick={onNewProject}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex-shrink-0 whitespace-nowrap"
+            >
+              <Plus size={15} />
+              {t('dashboard.newProject')}
+            </button>
+          </div>
         </div>
 
         {/* Global Stats */}
         {totalProjects > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-8">
             <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">Projects</div>
+              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">{t('dashboard.projects')}</div>
               <div className="text-lg font-semibold text-surface-200">{totalProjects}</div>
             </div>
             <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">Total Tasks</div>
+              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">{t('dashboard.totalTasks')}</div>
               <div className="text-lg font-semibold text-surface-200">{totalTasks}</div>
             </div>
             <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">Completed</div>
+              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">{t('dashboard.completed')}</div>
               <div className="text-lg font-semibold text-emerald-400">{totalDone}</div>
             </div>
             <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">Active</div>
+              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">{t('dashboard.active')}</div>
               <div className="text-lg font-semibold text-amber-400">{totalActive}</div>
             </div>
             <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">Tokens</div>
+              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">{t('dashboard.tokens')}</div>
               <div className="text-lg font-semibold text-blue-400">{formatTokens(allTokens) || '0'}</div>
             </div>
             <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">Cost</div>
+              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">{t('dashboard.cost')}</div>
               <div className="text-lg font-semibold text-surface-200">${allCost.toFixed(2)}</div>
             </div>
           </div>
         )}
 
         {/* Claude Usage */}
-        {totalProjects > 0 && <ClaudeUsageCard />}
+        {totalProjects > 0 && <ClaudeUsageCard t={t} />}
 
         {/* Project Grid */}
         {loading ? (
-          <div className="text-center text-surface-600 py-20 text-sm">Loading projects...</div>
+          <div className="text-center text-surface-600 py-20 text-sm">{t('common.loading')}</div>
         ) : summary.length === 0 ? (
           <div className="text-center py-20">
             <FolderOpen size={48} className="mx-auto mb-4 text-surface-700" />
-            <h2 className="text-lg font-medium text-surface-400 mb-2">No projects yet</h2>
-            <p className="text-sm text-surface-600 mb-6">Create your first project to start managing tasks with Claude</p>
+            <h2 className="text-lg font-medium text-surface-400 mb-2">{t('dashboard.noProjects')}</h2>
+            <p className="text-sm text-surface-600 mb-6">{t('dashboard.noProjectsDesc')}</p>
             <button
               onClick={onNewProject}
               className="px-5 py-2.5 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors"
             >
-              Create Your First Project
+              {t('dashboard.createFirst')}
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {summary.map(p => (
-              <ProjectCard key={p.id} project={p} onSelect={onSelectProject} />
+              <ProjectCard key={p.id} project={p} onSelect={onSelectProject} t={t} />
             ))}
 
             {/* Add project card */}
@@ -384,7 +400,7 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
               className="p-5 rounded-xl border-2 border-dashed border-surface-700/50 hover:border-claude/40 flex flex-col items-center justify-center gap-2 text-surface-500 hover:text-claude transition-all duration-200 min-h-[180px]"
             >
               <Plus size={24} />
-              <span className="text-sm font-medium">New Project</span>
+              <span className="text-sm font-medium">{t('dashboard.newProject')}</span>
             </button>
           </div>
         )}

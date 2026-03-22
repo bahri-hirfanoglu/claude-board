@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Activity, CheckCircle, Clock, Cpu, Coins, AlertCircle, BarChart3 } from 'lucide-react';
 import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, COLUMNS } from '../../lib/constants';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 function StatCard({ icon: Icon, label, value, sublabel, color = 'text-surface-200' }) {
   return (
@@ -33,6 +34,7 @@ function MiniBar({ label, count, total, color }) {
 }
 
 export default function SummaryView({ tasks }) {
+  const { t } = useTranslation();
   const stats = useMemo(() => {
     const byStatus = {};
     const byType = {};
@@ -83,22 +85,22 @@ export default function SummaryView({ tasks }) {
     <div className="h-full overflow-auto p-4 space-y-6">
       {/* Top stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={BarChart3} label="Total Tasks" value={stats.total} />
-        <StatCard icon={CheckCircle} label="Completed" value={`${stats.completionRate}%`} sublabel={`${stats.completed} of ${stats.total}`} color="text-emerald-400" />
-        <StatCard icon={Activity} label="Running" value={stats.running} color={stats.running > 0 ? 'text-amber-400' : 'text-surface-200'} />
-        <StatCard icon={Clock} label="Avg Duration" value={formatMinutes(stats.avgMinutes)} />
+        <StatCard icon={BarChart3} label={t('summary.totalTasks')} value={stats.total} />
+        <StatCard icon={CheckCircle} label={t('summary.completed')} value={`${stats.completionRate}%`} sublabel={`${stats.completed} of ${stats.total}`} color="text-emerald-400" />
+        <StatCard icon={Activity} label={t('summary.running')} value={stats.running} color={stats.running > 0 ? 'text-amber-400' : 'text-surface-200'} />
+        <StatCard icon={Clock} label={t('summary.avgDuration')} value={formatMinutes(stats.avgMinutes)} />
       </div>
 
       {/* Usage stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <StatCard icon={Cpu} label="Total Tokens" value={formatTokens(stats.totalTokens)} />
-        <StatCard icon={Coins} label="Total Cost" value={stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '-'} />
-        <StatCard icon={Activity} label="Total Turns" value={stats.totalTurns || '-'} />
+        <StatCard icon={Cpu} label={t('summary.totalTokens')} value={formatTokens(stats.totalTokens)} />
+        <StatCard icon={Coins} label={t('summary.totalCost')} value={stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '-'} />
+        <StatCard icon={Activity} label={t('summary.totalTurns')} value={stats.totalTurns || '-'} />
       </div>
 
       {/* Status Distribution */}
       <div>
-        <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">Status Distribution</h3>
+        <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">{t('summary.statusDist')}</h3>
         {/* Progress bar */}
         <div className="h-3 rounded-full bg-surface-800 overflow-hidden flex mb-3">
           {COLUMNS.map(col => {
@@ -110,7 +112,7 @@ export default function SummaryView({ tasks }) {
                 key={col.id}
                 className={`${statusColors[col.id]} transition-all duration-500`}
                 style={{ width: `${pct}%` }}
-                title={`${col.label}: ${count}`}
+                title={`${t('status.' + col.id)}: ${count}`}
               />
             );
           })}
@@ -119,7 +121,7 @@ export default function SummaryView({ tasks }) {
           {COLUMNS.map(col => (
             <MiniBar
               key={col.id}
-              label={col.label}
+              label={t('status.' + col.id)}
               count={stats.byStatus[col.id] || 0}
               total={stats.total}
               color={statusColors[col.id]}
@@ -130,7 +132,7 @@ export default function SummaryView({ tasks }) {
 
       {/* Type Distribution */}
       <div>
-        <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">Type Distribution</h3>
+        <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">{t('summary.typeDist')}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {Object.entries(stats.byType).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
             <div key={type} className="flex items-center gap-2 bg-surface-800/30 rounded-lg px-3 py-2">
@@ -144,7 +146,7 @@ export default function SummaryView({ tasks }) {
       {tasks.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-surface-500">
           <AlertCircle size={24} className="mb-2" />
-          <p className="text-sm">No tasks in this project</p>
+          <p className="text-sm">{t('summary.noTasks')}</p>
         </div>
       )}
     </div>

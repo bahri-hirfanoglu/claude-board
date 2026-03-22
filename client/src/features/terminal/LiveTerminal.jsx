@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { socket } from '../../lib/socket';
 import { api } from '../../lib/api';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 // ─── Tool icon registry ───
 const TOOL_ICONS = {
@@ -110,13 +111,13 @@ function groupToolEntries(logs) {
 }
 
 // ─── Turn separator ───
-function TurnSeparator({ turn, time }) {
+function TurnSeparator({ turn, time, t }) {
   return (
     <div className="flex items-center gap-2 my-2 select-none">
       <div className="flex-1 border-t border-surface-700/50" />
       <span className="text-[9px] text-surface-600 flex items-center gap-1">
         <Hash size={8} />
-        Turn {turn}
+        {t('terminal.turn')} {turn}
         {time && <span className="text-surface-700">{fmtTime(time)}</span>}
       </span>
       <div className="flex-1 border-t border-surface-700/50" />
@@ -452,6 +453,7 @@ function ElapsedTime({ startedAt, isRunning, workDurationMs = 0, lastResumedAt =
 // ─── Main component ───
 // ═══════════════════════════════════════════════════════════
 export default function LiveTerminal({ task, onClose, layout = 'side', onToggleLayout }) {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState([]);
   const [autoScroll, setAutoScroll] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -702,7 +704,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
         ) : (
           groupedEntries.map((entry, i) => {
             if (entry.type === 'turn_separator') {
-              return <TurnSeparator key={`turn-${i}`} turn={entry.turn} time={entry.time} />;
+              return <TurnSeparator key={`turn-${i}`} turn={entry.turn} time={entry.time} t={t} />;
             }
 
             if (entry.type === 'tool_group') {

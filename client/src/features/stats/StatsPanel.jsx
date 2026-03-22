@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, RefreshCw, BarChart3, Clock, CheckCircle2, TrendingUp, Layers, Cpu, Coins, AlertTriangle, Zap } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 const STATUS_LABELS = { backlog: 'Backlog', in_progress: 'In Progress', testing: 'Testing', done: 'Done' };
 const STATUS_COLORS = { backlog: '#918678', in_progress: '#f59e0b', testing: '#DA7756', done: '#34d399' };
@@ -8,6 +9,15 @@ const TYPE_COLORS = { feature: '#3b82f6', bugfix: '#ef4444', refactor: '#a855f7'
 const PRIORITY_LABELS = { 0: 'None', 1: 'Low', 2: 'Medium', 3: 'High' };
 const PRIORITY_COLORS = { 0: '#6b7280', 1: '#eab308', 2: '#f97316', 3: '#ef4444' };
 const MODEL_COLORS = { haiku: '#22c55e', sonnet: '#3b82f6', opus: '#a855f7', unknown: '#6b7280' };
+
+function normalizeModelName(raw) {
+  if (!raw || !raw.trim()) return 'unknown';
+  const lower = raw.toLowerCase();
+  if (lower.includes('opus')) return 'opus';
+  if (lower.includes('sonnet')) return 'sonnet';
+  if (lower.includes('haiku')) return 'haiku';
+  return raw;
+}
 
 function formatDuration(minutes) {
   if (minutes == null || isNaN(minutes)) return '-';
@@ -90,6 +100,7 @@ function TimelineChart({ data }) {
 }
 
 export default function StatsPanel({ projectId, onClose }) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -105,7 +116,7 @@ export default function StatsPanel({ projectId, onClose }) {
     }
   };
 
-  useEffect(() => { load(); }, [projectId]);
+  useEffect(() => { load(); }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalTasks = stats?.byStatus?.reduce((sum, s) => sum + s.count, 0) || 0;
   const doneCount = stats?.byStatus?.find(s => s.status === 'done')?.count || 0;
@@ -123,7 +134,7 @@ export default function StatsPanel({ projectId, onClose }) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-800">
         <div className="flex items-center gap-2">
           <BarChart3 size={15} className="text-claude" />
-          <h3 className="text-sm font-medium">Project Statistics</h3>
+          <h3 className="text-sm font-medium">{t('stats.title')}</h3>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={load} className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors" title="Refresh">
@@ -145,28 +156,28 @@ export default function StatsPanel({ projectId, onClose }) {
               <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50">
                 <div className="flex items-center gap-1.5 mb-1">
                   <Layers size={12} className="text-surface-400" />
-                  <span className="text-[10px] text-surface-500 uppercase tracking-wider">Total</span>
+                  <span className="text-[10px] text-surface-500 uppercase tracking-wider">{t('stats.total')}</span>
                 </div>
                 <div className="text-xl font-semibold text-surface-100">{totalTasks}</div>
               </div>
               <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50">
                 <div className="flex items-center gap-1.5 mb-1">
                   <CheckCircle2 size={12} className="text-emerald-400" />
-                  <span className="text-[10px] text-surface-500 uppercase tracking-wider">Done</span>
+                  <span className="text-[10px] text-surface-500 uppercase tracking-wider">{t('stats.done')}</span>
                 </div>
                 <div className="text-xl font-semibold text-emerald-400">{doneCount}</div>
               </div>
               <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50">
                 <div className="flex items-center gap-1.5 mb-1">
                   <TrendingUp size={12} className="text-amber-400" />
-                  <span className="text-[10px] text-surface-500 uppercase tracking-wider">Active</span>
+                  <span className="text-[10px] text-surface-500 uppercase tracking-wider">{t('stats.active')}</span>
                 </div>
                 <div className="text-xl font-semibold text-amber-400">{inProgressCount}</div>
               </div>
               <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50">
                 <div className="flex items-center gap-1.5 mb-1">
                   <Clock size={12} className="text-claude" />
-                  <span className="text-[10px] text-surface-500 uppercase tracking-wider">Avg Time</span>
+                  <span className="text-[10px] text-surface-500 uppercase tracking-wider">{t('stats.avgTime')}</span>
                 </div>
                 <div className="text-xl font-semibold text-claude">
                   {formatDuration(stats?.duration?.avg_minutes)}
@@ -177,13 +188,13 @@ export default function StatsPanel({ projectId, onClose }) {
             {/* Claude Usage Overview */}
             {totalAllTokens > 0 && (
               <div>
-                <h4 className="text-xs font-medium text-surface-400 mb-2">Claude Usage</h4>
+                <h4 className="text-xs font-medium text-surface-400 mb-2">{t('stats.claudeUsage')}</h4>
                 <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <div className="flex items-center gap-1 mb-0.5">
                         <Cpu size={10} className="text-blue-400" />
-                        <span className="text-[10px] text-surface-500">Total Tokens</span>
+                        <span className="text-[10px] text-surface-500">{t('stats.totalTokens')}</span>
                       </div>
                       <div className="text-sm font-semibold text-surface-200">{formatTokens(totalAllTokens)}</div>
                       <div className="text-[9px] text-surface-600 mt-0.5">
@@ -193,7 +204,7 @@ export default function StatsPanel({ projectId, onClose }) {
                     <div>
                       <div className="flex items-center gap-1 mb-0.5">
                         <Coins size={10} className="text-emerald-400" />
-                        <span className="text-[10px] text-surface-500">Total Cost</span>
+                        <span className="text-[10px] text-surface-500">{t('stats.totalCost')}</span>
                       </div>
                       <div className="text-sm font-semibold text-emerald-400">
                         ${(usage.total_cost || 0).toFixed(4)}
@@ -208,14 +219,14 @@ export default function StatsPanel({ projectId, onClose }) {
                     <div>
                       <div className="flex items-center gap-1 mb-0.5">
                         <Zap size={10} className="text-amber-400" />
-                        <span className="text-[10px] text-surface-500">Turns</span>
+                        <span className="text-[10px] text-surface-500">{t('stats.turns')}</span>
                       </div>
                       <div className="text-xs font-medium text-surface-300">{usage.total_turns || 0}</div>
                     </div>
                     <div>
                       <div className="flex items-center gap-1 mb-0.5">
                         <AlertTriangle size={10} className="text-red-400" />
-                        <span className="text-[10px] text-surface-500">Rate Limits</span>
+                        <span className="text-[10px] text-surface-500">{t('stats.rateLimits')}</span>
                       </div>
                       <div className={`text-xs font-medium ${(usage.total_rate_limits || 0) > 0 ? 'text-red-400' : 'text-surface-300'}`}>
                         {usage.total_rate_limits || 0}
@@ -224,7 +235,7 @@ export default function StatsPanel({ projectId, onClose }) {
                     <div>
                       <div className="flex items-center gap-1 mb-0.5">
                         <Cpu size={10} className="text-surface-400" />
-                        <span className="text-[10px] text-surface-500">Cache</span>
+                        <span className="text-[10px] text-surface-500">{t('stats.cache')}</span>
                       </div>
                       <div className="text-xs font-medium text-surface-300">{formatTokens(usage.total_cache_read || 0)}</div>
                     </div>
@@ -236,16 +247,15 @@ export default function StatsPanel({ projectId, onClose }) {
             {/* Model Breakdown */}
             {stats?.modelBreakdown?.length > 0 && (
               <div>
-                <h4 className="text-xs font-medium text-surface-400 mb-2">By Model</h4>
+                <h4 className="text-xs font-medium text-surface-400 mb-2">{t('stats.byModel')}</h4>
                 <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50 space-y-2">
                   {stats.modelBreakdown.map((m, i) => {
-                    const name = m.model_name || 'unknown';
-                    const displayName = name.includes('claude') ? name.split('-').slice(-1)[0] : name;
+                    const displayName = normalizeModelName(m.model_name);
                     return (
                       <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: MODEL_COLORS[displayName] || MODEL_COLORS[name] || '#6b7280' }} />
-                          <span className="text-xs text-surface-300 font-medium">{name}</span>
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: MODEL_COLORS[displayName] || '#6b7280' }} />
+                          <span className="text-xs text-surface-300 font-medium capitalize">{displayName}</span>
                           <span className="text-[10px] text-surface-600">{m.count} tasks</span>
                         </div>
                         <div className="flex items-center gap-3 text-[10px] text-surface-500">
@@ -261,7 +271,7 @@ export default function StatsPanel({ projectId, onClose }) {
 
             {/* Completion Timeline */}
             <div>
-              <h4 className="text-xs font-medium text-surface-400 mb-2">Completion Timeline (14 days)</h4>
+              <h4 className="text-xs font-medium text-surface-400 mb-2">{t('stats.completionTimeline')}</h4>
               <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50">
                 <TimelineChart data={stats?.timeline || []} />
               </div>
@@ -269,7 +279,7 @@ export default function StatsPanel({ projectId, onClose }) {
 
             {/* Tasks by Status */}
             <div>
-              <h4 className="text-xs font-medium text-surface-400 mb-2">By Status</h4>
+              <h4 className="text-xs font-medium text-surface-400 mb-2">{t('stats.byStatus')}</h4>
               <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50">
                 <BarChart data={statusData} colorMap={STATUS_COLORS} labelMap={STATUS_LABELS} />
               </div>
@@ -277,7 +287,7 @@ export default function StatsPanel({ projectId, onClose }) {
 
             {/* Tasks by Type */}
             <div>
-              <h4 className="text-xs font-medium text-surface-400 mb-2">By Type</h4>
+              <h4 className="text-xs font-medium text-surface-400 mb-2">{t('stats.byType')}</h4>
               <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50">
                 <BarChart data={typeData} colorMap={TYPE_COLORS} />
               </div>
@@ -285,7 +295,7 @@ export default function StatsPanel({ projectId, onClose }) {
 
             {/* Tasks by Priority */}
             <div>
-              <h4 className="text-xs font-medium text-surface-400 mb-2">By Priority</h4>
+              <h4 className="text-xs font-medium text-surface-400 mb-2">{t('stats.byPriority')}</h4>
               <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50">
                 <BarChart data={priorityData} colorMap={PRIORITY_COLORS} labelMap={PRIORITY_LABELS} />
               </div>
@@ -294,7 +304,7 @@ export default function StatsPanel({ projectId, onClose }) {
             {/* Recent Completed with usage */}
             {stats?.recentCompleted?.length > 0 && (
               <div>
-                <h4 className="text-xs font-medium text-surface-400 mb-2">Recently Completed</h4>
+                <h4 className="text-xs font-medium text-surface-400 mb-2">{t('stats.recentCompleted')}</h4>
                 <div className="space-y-1.5">
                   {stats.recentCompleted.map((task, i) => {
                     const taskTokens = (task.input_tokens || 0) + (task.output_tokens || 0);
@@ -331,19 +341,19 @@ export default function StatsPanel({ projectId, onClose }) {
             {/* Duration Stats */}
             {stats?.duration?.count > 0 && (
               <div>
-                <h4 className="text-xs font-medium text-surface-400 mb-2">Duration Statistics</h4>
+                <h4 className="text-xs font-medium text-surface-400 mb-2">{t('stats.durationStats')}</h4>
                 <div className="p-3 rounded-lg bg-surface-800 border border-surface-700/50">
                   <div className="grid grid-cols-3 gap-3 text-center">
                     <div>
-                      <div className="text-[10px] text-surface-500 mb-0.5">Fastest</div>
+                      <div className="text-[10px] text-surface-500 mb-0.5">{t('stats.fastest')}</div>
                       <div className="text-xs font-medium text-emerald-400">{formatDuration(stats.duration.min_minutes)}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-surface-500 mb-0.5">Average</div>
+                      <div className="text-[10px] text-surface-500 mb-0.5">{t('stats.average')}</div>
                       <div className="text-xs font-medium text-claude">{formatDuration(stats.duration.avg_minutes)}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-surface-500 mb-0.5">Slowest</div>
+                      <div className="text-[10px] text-surface-500 mb-0.5">{t('stats.slowest')}</div>
                       <div className="text-xs font-medium text-red-400">{formatDuration(stats.duration.max_minutes)}</div>
                     </div>
                   </div>

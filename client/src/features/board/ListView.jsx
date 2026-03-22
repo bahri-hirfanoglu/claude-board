@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { ChevronUp, ChevronDown, Activity, Clock, Cpu, Coins, Terminal, Pencil, Trash2, CheckCircle } from 'lucide-react';
 import { formatDuration, formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, MODEL_COLORS, COLUMNS } from '../../lib/constants';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 const STATUS_DOT = {
   backlog: 'bg-surface-400',
@@ -9,9 +10,8 @@ const STATUS_DOT = {
   testing: 'bg-claude',
   done: 'bg-emerald-400',
 };
-const STATUS_LABEL = { backlog: 'Backlog', in_progress: 'In Progress', testing: 'Testing', done: 'Done' };
-
 export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask, onDeleteTask, onReviewTask, onViewDetail }) {
+  const { t } = useTranslation();
   const [sortField, setSortField] = useState('id');
   const [sortDir, setSortDir] = useState('desc');
 
@@ -46,14 +46,14 @@ export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask
 
   const columns = [
     { key: 'id', label: '#', w: 'w-12' },
-    { key: 'title', label: 'Title', w: 'flex-1 min-w-[150px]' },
-    { key: 'task_type', label: 'Type', w: 'w-20' },
-    { key: 'status', label: 'Status', w: 'w-24' },
-    { key: 'priority', label: 'Priority', w: 'w-20' },
-    { key: 'model', label: 'Model', w: 'w-16' },
-    { key: 'tokens', label: 'Tokens', w: 'w-20' },
-    { key: 'total_cost', label: 'Cost', w: 'w-20' },
-    { key: 'started_at', label: 'Duration', w: 'w-20' },
+    { key: 'title', label: t('list.title'), w: 'flex-1 min-w-[150px]' },
+    { key: 'task_type', label: t('list.type'), w: 'w-20' },
+    { key: 'status', label: t('list.status'), w: 'w-24' },
+    { key: 'priority', label: t('list.priority'), w: 'w-20' },
+    { key: 'model', label: t('list.model'), w: 'w-16' },
+    { key: 'tokens', label: t('list.tokens'), w: 'w-20' },
+    { key: 'total_cost', label: t('list.cost'), w: 'w-20' },
+    { key: 'started_at', label: t('list.duration'), w: 'w-20' },
   ];
 
   return (
@@ -74,7 +74,7 @@ export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask
                   </span>
                 </th>
               ))}
-              <th className="w-24 px-3 py-2.5 text-right font-medium text-surface-500">Actions</th>
+              <th className="w-24 px-3 py-2.5 text-right font-medium text-surface-500">{t('list.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -97,7 +97,7 @@ export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask
                       <span className="text-surface-200 truncate">{task.title}</span>
                       {task.revision_count > 0 && (
                         <span className="text-[9px] font-medium px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 flex-shrink-0">
-                          Rev {task.revision_count}
+                          {t('card.rev')} {task.revision_count}
                         </span>
                       )}
                     </div>
@@ -108,7 +108,7 @@ export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask
                   <td className="px-3 py-2">
                     <span className="flex items-center gap-1.5">
                       <div className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[task.status]}`} />
-                      <span className="text-surface-300">{STATUS_LABEL[task.status]}</span>
+                      <span className="text-surface-300">{t('status.' + task.status)}</span>
                     </span>
                   </td>
                   <td className="px-3 py-2 text-surface-400">
@@ -150,7 +150,7 @@ export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask
           </tbody>
         </table>
         {sorted.length === 0 && (
-          <div className="flex items-center justify-center py-16 text-surface-500 text-sm">No tasks</div>
+          <div className="flex items-center justify-center py-16 text-surface-500 text-sm">{t('board.noTasks')}</div>
         )}
       </div>
     </div>

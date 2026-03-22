@@ -8,8 +8,10 @@ import { api, onApiError } from '../lib/api';
 import { socket } from '../lib/socket';
 import AppLayout from './AppLayout';
 import { StatusTransitionProvider, emitStatusTransition } from '../features/board/StatusTransitionContext';
+import { I18nProvider, useTranslation } from '../i18n/I18nProvider';
 
-export default function App() {
+function AppInner() {
+  const { t } = useTranslation();
   const connected = useSocket();
   const { toasts, addToast } = useToast();
   const { projects, currentProject, initialLoad, navigateToProject, navigateToDashboard } = useProjects();
@@ -118,13 +120,13 @@ export default function App() {
       const fromStatus = task.status;
       if (newStatus === 'in_progress' && task.status !== 'in_progress') {
         setConfirm({
-          title: 'Start Claude?',
+          title: t('toast.startClaude'),
           message: `Moving "${task.title}" to In Progress will automatically start Claude. Continue?`,
           onConfirm: async () => {
             setConfirm(null);
             emitStatusTransition(taskId, fromStatus, newStatus);
             await api.updateStatus(taskId, newStatus);
-            addToast(`Claude started for "${task.title}"`, 'success');
+            addToast(t('toast.claudeStarted', { title: task.title }), 'success');
           },
           onCancel: () => setConfirm(null),
         });
@@ -133,7 +135,7 @@ export default function App() {
       emitStatusTransition(taskId, fromStatus, newStatus);
       await api.updateStatus(taskId, newStatus);
     },
-    [tasks, addToast],
+    [tasks, addToast, t],
   );
 
   const handleCreateTask = useCallback(
@@ -149,9 +151,9 @@ export default function App() {
         }
       }
       setShowModal(false);
-      addToast('Task created', 'success');
+      addToast(t('toast.taskCreated'), 'success');
     },
-    [currentProject, addToast],
+    [currentProject, addToast, t],
   );
   const handleUpdateTask = useCallback(
     async (data) => {
@@ -167,9 +169,9 @@ export default function App() {
       }
       setEditingTask(null);
       setShowModal(false);
-      addToast('Task updated', 'success');
+      addToast(t('toast.taskUpdated'), 'success');
     },
-    [editingTask, addToast],
+    [editingTask, addToast, t],
   );
   const handleDeleteTask = useCallback(
     (task) => {
@@ -180,12 +182,12 @@ export default function App() {
         onConfirm: async () => {
           setConfirm(null);
           await api.deleteTask(task.id);
-          addToast('Task deleted', 'info');
+          addToast(t('toast.taskDeleted'), 'info');
         },
         onCancel: () => setConfirm(null),
       });
     },
-    [addToast],
+    [addToast, t],
   );
   const handleViewLogs = useCallback(
     (task) => {
@@ -200,17 +202,17 @@ export default function App() {
     async (taskId) => {
       await api.updateStatus(taskId, 'done');
       setReviewTask(null);
-      addToast('Task approved', 'success');
+      addToast(t('toast.taskApproved'), 'success');
     },
-    [addToast],
+    [addToast, t],
   );
   const handleRequestChanges = useCallback(
     async (taskId, feedback) => {
       await api.requestChanges(taskId, feedback);
       setReviewTask(null);
-      addToast('Revision requested', 'info');
+      addToast(t('toast.revisionRequested'), 'info');
     },
-    [addToast],
+    [addToast, t],
   );
 
   // ─── Project handlers ───
@@ -219,20 +221,20 @@ export default function App() {
       const p = await api.createProject(data);
       setShowProjectModal(false);
       navigateToProject(p);
-      addToast('Project created', 'success');
+      addToast(t('toast.projectCreated'), 'success');
     },
-    [navigateToProject, addToast],
+    [navigateToProject, addToast, t],
   );
   const handleUpdateProject = useCallback(
     async (data) => {
       await api.updateProject(editingProject.id, data);
       setEditingProject(null);
       setShowProjectModal(false);
-      addToast('Project updated', 'success');
+      addToast(t('toast.projectUpdated'), 'success');
       if (data.slug && currentProject && data.slug !== currentProject.slug)
         window.history.replaceState({ slug: data.slug }, '', `/${data.slug}`);
     },
-    [editingProject, currentProject, addToast],
+    [editingProject, currentProject, addToast, t],
   );
   const handleDeleteProject = useCallback(() => {
     if (!currentProject) return;
@@ -244,11 +246,11 @@ export default function App() {
         setConfirm(null);
         await api.deleteProject(currentProject.id);
         navigateToDashboard();
-        addToast('Project deleted', 'info');
+        addToast(t('toast.projectDeleted'), 'info');
       },
       onCancel: () => setConfirm(null),
     });
-  }, [currentProject, navigateToDashboard, addToast]);
+  }, [currentProject, navigateToDashboard, addToast, t]);
   const handleEditProject = useCallback(() => {
     if (currentProject) {
       setEditingProject(currentProject);
@@ -372,5 +374,13 @@ export default function App() {
       onClosePlanning={() => { sessionStorage.removeItem('planning:active'); setShowPlanning(false); }}
     />
     </StatusTransitionProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <I18nProvider>
+      <AppInner />
+    </I18nProvider>
   );
 }
