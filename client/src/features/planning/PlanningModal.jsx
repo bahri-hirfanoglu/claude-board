@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   X, Sparkles, Cpu, CheckCircle2, AlertCircle, StopCircle,
   Clock, Zap, Terminal, ChevronDown, ChevronRight, FileCode, Hash,
+  Loader2, Search, Brain, ListChecks,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { socket } from '../../lib/socket';
@@ -26,6 +27,13 @@ const GRANULARITIES = [
   { value: 'detailed', label: 'Detailed', desc: '10-20 atomic tasks', color: 'bg-purple-500/20 text-purple-300' },
 ];
 
+const PHASES = [
+  { key: 'starting', label: 'Starting', icon: Loader2, color: 'text-amber-400' },
+  { key: 'exploring', label: 'Exploring', icon: Search, color: 'text-blue-400' },
+  { key: 'writing', label: 'Planning', icon: Brain, color: 'text-purple-400' },
+  { key: 'done', label: 'Done', icon: ListChecks, color: 'text-emerald-400' },
+];
+
 const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High'];
 const PRIORITY_COLORS = ['text-surface-500', 'text-yellow-400', 'text-orange-400', 'text-red-400'];
 
@@ -43,7 +51,8 @@ export default function PlanningModal({ projectId, onClose }) {
   const [effort, setEffort] = useState('medium');
   const [granularity, setGranularity] = useState('balanced');
   const [phase, setPhase] = useState('idle'); // idle | thinking | done | error
-  const [logs, setLogs] = useState([]);       // { type, message, ts }
+  const [planPhase, setPlanPhase] = useState('starting'); // starting | exploring | writing
+  const [logs, setLogs] = useState([]);
   const [textChunks, setTextChunks] = useState('');
   const [createdTasks, setCreatedTasks] = useState([]);
   const [stats, setStats] = useState({ elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 });
@@ -54,10 +63,34 @@ export default function PlanningModal({ projectId, onClose }) {
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
 
+  // Resume active session on mount (e.g. after F5)
+  useEffect(() => {
+    let cancelled = false;
+    api.getPlanningStatus(projectId).then((data) => {
+      if (cancelled) return;
+      if (data.active) {
+        startTimeRef.current = Date.now() - (data.elapsed || 0);
+        setPhase('thinking');
+        setPlanPhase(data.phase || 'starting');
+        if (data.topic) setTopic(data.topic);
+        setStats((s) => ({
+          ...s,
+          elapsed: data.elapsed || 0,
+          tokens: data.tokens || s.tokens,
+          toolCalls: data.toolCalls || s.toolCalls,
+          turns: data.turns || s.turns,
+        }));
+      } else {
+        sessionStorage.removeItem('planning:active');
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [projectId]);
+
   // Elapsed timer
   useEffect(() => {
     if (phase === 'thinking') {
-      startTimeRef.current = Date.now();
+      if (!startTimeRef.current) startTimeRef.current = Date.now();
       timerRef.current = setInterval(() => {
         setStats((s) => ({ ...s, elapsed: Date.now() - startTimeRef.current }));
       }, 1000);
@@ -79,7 +112,14 @@ export default function PlanningModal({ projectId, onClose }) {
 
     const onLog = (data) => {
       if (data.projectId !== pid) return;
+      // Phase logs are informational, don't add to tool log list
+      if (data.type === 'phase') return;
       setLogs((prev) => [...prev, { type: data.type, message: data.message, tool: data.tool, ts: Date.now() }]);
+    };
+
+    const onPhase = (data) => {
+      if (data.projectId !== pid) return;
+      setPlanPhase(data.phase);
     };
 
     const onStats = (data) => {
@@ -90,9 +130,11 @@ export default function PlanningModal({ projectId, onClose }) {
     const onCompleted = (data) => {
       if (data.projectId !== pid) return;
       clearInterval(timerRef.current);
+      sessionStorage.removeItem('planning:active');
       if (data.stats) setStats((prev) => ({ ...prev, ...data.stats }));
       if (data.tasks?.length > 0) {
         setPhase('done');
+        setPlanPhase('done');
         setCreatedTasks(data.tasks);
       } else {
         setPhase('error');
@@ -103,19 +145,23 @@ export default function PlanningModal({ projectId, onClose }) {
     const onCancelled = (data) => {
       if (data.projectId !== pid) return;
       clearInterval(timerRef.current);
+      sessionStorage.removeItem('planning:active');
       setPhase('idle');
+      setPlanPhase('starting');
       setLogs([]);
       setTextChunks('');
     };
 
     socket.on('plan:progress', onProgress);
     socket.on('plan:log', onLog);
+    socket.on('plan:phase', onPhase);
     socket.on('plan:stats', onStats);
     socket.on('plan:completed', onCompleted);
     socket.on('plan:cancelled', onCancelled);
     return () => {
       socket.off('plan:progress', onProgress);
       socket.off('plan:log', onLog);
+      socket.off('plan:phase', onPhase);
       socket.off('plan:stats', onStats);
       socket.off('plan:completed', onCompleted);
       socket.off('plan:cancelled', onCancelled);
@@ -130,12 +176,14 @@ export default function PlanningModal({ projectId, onClose }) {
   const handleStart = async () => {
     if (!topic.trim()) return;
     setPhase('thinking');
+    setPlanPhase('starting');
     setLogs([]);
     setTextChunks('');
     setCreatedTasks([]);
     setError(null);
     setStats({ elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 });
     try {
+      sessionStorage.setItem('planning:active', 'true');
       await api.startPlanning(projectId, { topic: topic.trim(), model, effort, granularity, context: context.trim() });
     } catch (e) {
       setPhase('error');
@@ -151,6 +199,9 @@ export default function PlanningModal({ projectId, onClose }) {
 
   const isActive = phase === 'thinking';
   const totalTokens = stats.tokens.input + stats.tokens.output;
+
+  // Find current phase index for stepper
+  const currentPhaseIdx = PHASES.findIndex((p) => p.key === (phase === 'done' ? 'done' : planPhase));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
@@ -168,7 +219,7 @@ export default function PlanningModal({ projectId, onClose }) {
 
           {/* Live stats bar */}
           {phase !== 'idle' && (
-            <div className="flex items-center gap-3 text-[10px] text-surface-500">
+            <div className="flex items-center gap-3 text-[10px] text-surface-500 ml-auto">
               <span className="flex items-center gap-1">
                 <Clock size={10} className={isActive ? 'text-amber-400' : ''} />
                 {formatElapsed(stats.elapsed)}
@@ -283,8 +334,50 @@ export default function PlanningModal({ projectId, onClose }) {
             </>
           )}
 
+          {/* ─── Phase stepper — visible during thinking ─── */}
+          {(isActive || phase === 'done') && (
+            <div className="flex items-center gap-1 px-1">
+              {PHASES.map((p, i) => {
+                const isComplete = i < currentPhaseIdx;
+                const isCurrent = i === currentPhaseIdx;
+                const Icon = p.icon;
+                return (
+                  <div key={p.key} className="flex items-center gap-1 flex-1">
+                    <div className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                      isCurrent
+                        ? `${p.color} bg-current/10`
+                        : isComplete
+                          ? 'text-surface-500'
+                          : 'text-surface-700'
+                    }`}>
+                      {isComplete ? (
+                        <CheckCircle2 size={12} className="text-emerald-500" />
+                      ) : isCurrent ? (
+                        <Icon size={12} className={`${p.color} ${p.key !== 'done' ? 'animate-spin' : ''}`} />
+                      ) : (
+                        <Icon size={12} />
+                      )}
+                      <span>{p.label}</span>
+                    </div>
+                    {i < PHASES.length - 1 && (
+                      <div className={`flex-1 h-px ${isComplete ? 'bg-emerald-500/30' : 'bg-surface-800'}`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ─── Topic reminder during thinking ─── */}
+          {isActive && topic && (
+            <div className="bg-surface-800/40 border border-surface-800 rounded-lg px-3 py-2">
+              <p className="text-[11px] text-surface-500 font-medium">Planning</p>
+              <p className="text-xs text-surface-300 mt-0.5 line-clamp-2">{topic}</p>
+            </div>
+          )}
+
           {/* ─── Live output ─── */}
-          {(isActive || phase === 'done') && (logs.length > 0 || textChunks) && (
+          {(isActive || phase === 'done') && (
             <div>
               <button
                 onClick={() => setShowOutput(!showOutput)}
@@ -325,13 +418,6 @@ export default function PlanningModal({ projectId, onClose }) {
                       ))}
                     </div>
                   )}
-
-                  {/* Text output */}
-                  <div className="p-3 text-xs text-surface-400 whitespace-pre-wrap max-h-52 overflow-y-auto leading-relaxed">
-                    {textChunks}
-                    {isActive && <span className="inline-block w-1.5 h-3.5 bg-claude animate-pulse ml-0.5 align-text-bottom rounded-sm" />}
-                    <div ref={logsEndRef} />
-                  </div>
                 </div>
               )}
             </div>
@@ -418,7 +504,7 @@ export default function PlanningModal({ projectId, onClose }) {
             </button>
           ) : phase === 'done' ? (
             <>
-              <button onClick={() => { setPhase('idle'); setCreatedTasks([]); setLogs([]); setTextChunks(''); }} className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
+              <button onClick={() => { setPhase('idle'); setPlanPhase('starting'); setCreatedTasks([]); setLogs([]); setTextChunks(''); }} className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
                 Plan Again
               </button>
               <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors">

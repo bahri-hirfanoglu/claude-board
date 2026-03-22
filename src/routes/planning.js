@@ -39,12 +39,25 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
         ...(IS_WIN && { windowsHide: true }),
       });
 
-      const session = { proc, planId, startTime, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 };
+      const session = {
+        proc,
+        planId,
+        startTime,
+        topic,
+        tokens: { input: 0, output: 0 },
+        toolCalls: 0,
+        turns: 0,
+        phase: 'starting', // starting | exploring | thinking | writing
+      };
       activePlans.set(project.id, session);
 
       const pid = project.id;
       io.emit('plan:started', { projectId: pid, planId, topic, model, effort });
       activityLog.add(pid, null, 'plan_started', `Planning started: ${topic.trim()}`);
+
+      // Immediate feedback — tell the client Claude is initializing
+      io.emit('plan:log', { projectId: pid, planId, type: 'phase', message: 'Initializing Claude...' });
+      io.emit('plan:phase', { projectId: pid, planId, phase: 'starting' });
 
       let buffer = '';
       let fullText = '';
@@ -58,6 +71,31 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
           if (!line.trim()) continue;
           try {
             const event = JSON.parse(line);
+
+            // Detect phase transitions
+            if (event.type === 'assistant' && session.phase === 'starting') {
+              session.phase = 'exploring';
+              io.emit('plan:phase', { projectId: pid, planId, phase: 'exploring' });
+              io.emit('plan:log', { projectId: pid, planId, type: 'phase', message: 'Exploring codebase...' });
+            }
+            if (event.type === 'assistant') {
+              const content = event.message?.content;
+              if (Array.isArray(content)) {
+                const hasToolUse = content.some((b) => b.type === 'tool_use');
+                const hasText = content.some((b) => b.type === 'text' && b.text?.length > 100);
+                if (hasText && !hasToolUse && session.phase !== 'writing') {
+                  session.phase = 'writing';
+                  io.emit('plan:phase', { projectId: pid, planId, phase: 'writing' });
+                  io.emit('plan:log', {
+                    projectId: pid,
+                    planId,
+                    type: 'phase',
+                    message: 'Generating task breakdown...',
+                  });
+                }
+              }
+            }
+
             handlePlanEvent(event, pid, planId, session, io, fullText, (t) => {
               fullText += t;
             });
@@ -165,6 +203,9 @@ export default function planningRoutes({ queries, projectQueries, io, activityLo
         elapsed: Date.now() - plan.startTime,
         tokens: plan.tokens,
         toolCalls: plan.toolCalls,
+        turns: plan.turns,
+        phase: plan.phase,
+        topic: plan.topic,
       });
     }),
   );
