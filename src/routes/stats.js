@@ -3,6 +3,30 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
+function normalizeModelName(raw) {
+  if (!raw || !raw.trim()) return 'unknown';
+  const lower = raw.toLowerCase();
+  if (lower.includes('opus')) return 'opus';
+  if (lower.includes('sonnet')) return 'sonnet';
+  if (lower.includes('haiku')) return 'haiku';
+  return raw;
+}
+
+function mergeModelRows(rows, modelKey, fieldsToSum) {
+  const map = {};
+  for (const row of rows) {
+    const name = normalizeModelName(row[modelKey]);
+    if (!map[name]) {
+      map[name] = { ...row, [modelKey]: name };
+    } else {
+      for (const f of fieldsToSum) {
+        map[name][f] = (map[name][f] || 0) + (row[f] || 0);
+      }
+    }
+  }
+  return Object.values(map);
+}
+
 export default function statsRoutes({ projectQueries, statsQueries, activityLog }) {
   const router = Router();
 
@@ -20,7 +44,11 @@ export default function statsRoutes({ projectQueries, statsQueries, activityLog 
         timeline: statsQueries.getCompletionTimeline(pid),
         recentCompleted: statsQueries.getRecentCompleted(pid),
         claudeUsage: statsQueries.getClaudeUsage(pid),
-        modelBreakdown: statsQueries.getModelBreakdown(pid),
+        modelBreakdown: mergeModelRows(statsQueries.getModelBreakdown(pid), 'model_name', [
+          'count',
+          'total_tokens',
+          'total_cost',
+        ]),
       });
     }),
   );
@@ -30,7 +58,12 @@ export default function statsRoutes({ projectQueries, statsQueries, activityLog 
     asyncHandler(async (req, res) => {
       res.json({
         usage: statsQueries.getGlobalUsage(),
-        models: statsQueries.getGlobalModelBreakdown(),
+        models: mergeModelRows(statsQueries.getGlobalModelBreakdown(), 'model', [
+          'tasks',
+          'input_tokens',
+          'output_tokens',
+          'cost',
+        ]),
         timeline: statsQueries.getUsageTimeline(),
         limits: statsQueries.getClaudeLimits(),
       });

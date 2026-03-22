@@ -4,16 +4,17 @@ import { formatDuration, formatTokens } from '../../lib/formatters';
 import { PRIORITY_COLORS as priorityColors, PRIORITY_LABELS as priorityLabels, TYPE_COLORS as typeColors, MODEL_COLORS as modelColors, COLUMNS } from '../../lib/constants';
 import { useStatusTransition } from './StatusTransitionContext';
 import StatusTransitionEffect from './StatusTransitionEffect';
+import { useTranslation } from '../../i18n/I18nProvider';
 
-const STATUS_OPTIONS = COLUMNS.map(c => ({ id: c.id, label: c.label, dot: c.bg, color: c.color }));
+const STATUS_OPTIONS_RAW = COLUMNS.map(c => ({ id: c.id, dot: c.bg, color: c.color }));
 
 // Status flow order for "next" transition
 const STATUS_FLOW = ['backlog', 'in_progress', 'testing', 'done'];
-const FLOW_LABELS = {
-  backlog: { next: 'Start Working', icon: '▶' },
-  in_progress: { next: 'Send to Testing', icon: '→' },
-  testing: { next: 'Mark Done', icon: '✓' },
-  done: { next: null, icon: null },
+const FLOW_LABEL_KEYS = {
+  backlog: 'card.startWorking',
+  in_progress: 'card.sendToTesting',
+  testing: 'card.markDone',
+  done: null,
 };
 const NEXT_BG = {
   in_progress: 'bg-amber-500 active:bg-amber-600 text-white',
@@ -22,12 +23,13 @@ const NEXT_BG = {
 };
 
 function MobileStatusTransition({ task, onStatusChange }) {
+  const { t } = useTranslation();
   const [showAll, setShowAll] = useState(false);
   const currentIdx = STATUS_FLOW.indexOf(task.status);
   const nextStatus = currentIdx >= 0 && currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null;
   const prevStatus = currentIdx > 0 ? STATUS_FLOW[currentIdx - 1] : null;
-  const flowInfo = FLOW_LABELS[task.status] || {};
-  const otherStatuses = STATUS_OPTIONS.filter(s => s.id !== task.status && s.id !== nextStatus);
+  const flowLabelKey = FLOW_LABEL_KEYS[task.status];
+  const otherStatuses = STATUS_OPTIONS_RAW.filter(s => s.id !== task.status && s.id !== nextStatus);
 
   return (
     <div className="flex md:hidden flex-col gap-2 mt-2.5 pt-2.5 border-t border-surface-700/50">
@@ -59,7 +61,7 @@ function MobileStatusTransition({ task, onStatusChange }) {
             className="flex items-center gap-1 text-[11px] px-2.5 py-2 rounded-lg bg-surface-700/60 active:bg-surface-600 text-surface-300 transition-colors"
           >
             <ArrowRight size={12} className="rotate-180" />
-            <span className="hidden min-[400px]:inline">{COLUMNS.find(c => c.id === prevStatus)?.label}</span>
+            <span className="hidden min-[400px]:inline">{t('status.' + prevStatus)}</span>
           </button>
         )}
 
@@ -69,7 +71,7 @@ function MobileStatusTransition({ task, onStatusChange }) {
             onClick={(e) => { e.stopPropagation(); onStatusChange?.(task.id, nextStatus); }}
             className={`flex-1 flex items-center justify-center gap-1.5 text-[12px] font-semibold px-3 py-2.5 rounded-lg transition-colors ${NEXT_BG[nextStatus]}`}
           >
-            {flowInfo.next}
+            {flowLabelKey ? t(flowLabelKey) : ''}
             <ArrowRight size={14} />
           </button>
         )}
@@ -97,7 +99,7 @@ function MobileStatusTransition({ task, onStatusChange }) {
               className={`flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg bg-surface-700/50 active:bg-surface-600 ${s.color} transition-colors`}
             >
               <div className={`w-2 h-2 rounded-full ${s.dot}`} />
-              {s.label}
+              {t('status.' + s.id)}
             </button>
           ))}
         </div>
@@ -107,6 +109,7 @@ function MobileStatusTransition({ task, onStatusChange }) {
 }
 
 export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange, onReview, onViewDetail }) {
+  const { t } = useTranslation();
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuRef = useRef(null);
@@ -139,7 +142,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
   const modelDisplay = task.model_used || task.model || 'sonnet';
   const modelColorClass = modelColors[modelDisplay] || modelColors[task.model] || 'text-surface-400';
 
-  const moveTargets = STATUS_OPTIONS.filter(s => s.id !== task.status);
+  const moveTargets = STATUS_OPTIONS_RAW.filter(s => s.id !== task.status);
 
   return (
     <>
@@ -162,17 +165,17 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-1">
               <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${typeColors[taskType]}`}>
-                {taskType}
+                {t('type.' + taskType)}
               </span>
               {task.priority > 0 && (
-                <span className="text-[9px] text-surface-500">{priorityLabels[task.priority]}</span>
+                <span className="text-[9px] text-surface-500">{t('priority.' + ['none','low','medium','high'][task.priority])}</span>
               )}
               <span className={`text-[9px] ${modelColorClass}`}>
                 {modelDisplay}
               </span>
               {task.revision_count > 0 && (
                 <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400" title={`${task.revision_count} revision(s)`}>
-                  Rev {task.revision_count}
+                  {t('card.rev')} {task.revision_count}
                 </span>
               )}
             </div>
@@ -189,7 +192,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
             {task.is_running && (
               <span className="flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
                 <Activity size={10} className="animate-pulse" />
-                Running
+                {t('status.running')}
               </span>
             )}
             {duration && (
@@ -217,7 +220,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
               <button
                 onClick={(e) => { e.stopPropagation(); onReview(); }}
                 className="p-1 rounded hover:bg-emerald-500/20 text-surface-400 hover:text-emerald-400 transition-colors"
-                title="Review Task"
+                title={t('card.reviewTask')}
               >
                 <CheckCircle size={13} />
               </button>
@@ -225,21 +228,21 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
             <button
               onClick={(e) => { e.stopPropagation(); onViewLogs(); }}
               className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-claude transition-colors"
-              title="View Logs"
+              title={t('card.viewLogs')}
             >
               <Terminal size={13} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(); }}
               className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors"
-              title="Edit"
+              title={t('common.edit')}
             >
               <Pencil size={13} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
               className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-red-400 transition-colors"
-              title="Delete"
+              title={t('common.delete')}
             >
               <Trash2 size={13} />
             </button>
@@ -280,15 +283,15 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           style={{ left: menuPos.x, top: menuPos.y }}
           className="fixed z-50 bg-surface-800 border border-surface-700 rounded-lg py-1 shadow-xl min-w-[160px]"
         >
-          <div className="px-3 py-1.5 text-[10px] text-surface-500 font-medium uppercase tracking-wider">Move to</div>
-          {STATUS_OPTIONS.filter(s => s.id !== task.status).map(s => (
+          <div className="px-3 py-1.5 text-[10px] text-surface-500 font-medium uppercase tracking-wider">{t('card.moveTo')}</div>
+          {STATUS_OPTIONS_RAW.filter(s => s.id !== task.status).map(s => (
             <button
               key={s.id}
               onClick={() => { setShowMenu(false); onStatusChange?.(task.id, s.id); }}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-300 hover:bg-surface-700 transition-colors"
             >
               <div className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-              {s.label}
+              {t('status.' + s.id)}
               <ChevronRight size={10} className="ml-auto text-surface-600" />
             </button>
           ))}
@@ -299,7 +302,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-emerald-400 hover:bg-surface-700 transition-colors"
             >
               <CheckCircle size={11} />
-              Review
+              {t('card.reviewTask')}
             </button>
           )}
           <button
@@ -307,21 +310,21 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-300 hover:bg-surface-700 transition-colors"
           >
             <Terminal size={11} />
-            View Logs
+            {t('card.viewLogs')}
           </button>
           <button
             onClick={() => { setShowMenu(false); onEdit(); }}
             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-300 hover:bg-surface-700 transition-colors"
           >
             <Pencil size={11} />
-            Edit
+            {t('common.edit')}
           </button>
           <button
             onClick={() => { setShowMenu(false); onDelete(); }}
             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-surface-700 transition-colors"
           >
             <Trash2 size={11} />
-            Delete
+            {t('common.delete')}
           </button>
         </div>
       )}

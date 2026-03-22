@@ -4,6 +4,7 @@ import {
   Plus, Zap, Settings, ArrowDown, Activity
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 const EVENT_CONFIG = {
   task_created:       { icon: Plus,           color: 'text-blue-400',    bg: 'bg-blue-500/10' },
@@ -41,6 +42,7 @@ function formatDate(dateStr) {
 }
 
 export default function ActivityTimeline({ projectId, onClose }) {
+  const { t } = useTranslation();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -76,7 +78,7 @@ export default function ActivityTimeline({ projectId, onClose }) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-surface-800">
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-claude" />
-          <h3 className="text-sm font-semibold">Activity</h3>
+          <h3 className="text-sm font-semibold">{t('activity.title')}</h3>
         </div>
         <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
           <X size={14} />
@@ -89,7 +91,7 @@ export default function ActivityTimeline({ projectId, onClose }) {
             <div className="w-5 h-5 rounded-full border-2 border-claude/20 border-t-claude animate-spin" />
           </div>
         ) : events.length === 0 ? (
-          <div className="text-center py-12 text-surface-600 text-sm">No activity yet</div>
+          <div className="text-center py-12 text-surface-600 text-sm">{t('activity.noActivity')}</div>
         ) : (
           Object.entries(grouped).map(([date, dayEvents]) => (
             <div key={date}>
@@ -131,7 +133,7 @@ export default function ActivityTimeline({ projectId, onClose }) {
             className="w-full py-3 text-[11px] text-surface-500 hover:text-surface-300 transition-colors flex items-center justify-center gap-1"
           >
             <ArrowDown size={10} />
-            Load more
+            {t('activity.loadMore')}
           </button>
         )}
       </div>

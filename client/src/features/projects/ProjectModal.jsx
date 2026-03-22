@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 const PERMISSION_MODES = [
   {
@@ -50,6 +51,7 @@ const TABS = [
 ];
 
 export default function ProjectModal({ project, onSubmit, onClose }) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState('general');
   const [name, setName] = useState(project?.name || '');
   const [slug, setSlug] = useState(project?.slug || '');
@@ -125,7 +127,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-surface-800 flex-shrink-0">
           <div className="flex items-center gap-2">
             <FolderOpen size={16} className="text-claude" />
-            <h2 className="text-sm sm:text-base font-medium">{project ? 'Edit Project' : 'New Project'}</h2>
+            <h2 className="text-sm sm:text-base font-medium">{project ? t('projectModal.editProject') : t('projectModal.newProject')}</h2>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
             <X size={18} />
@@ -167,7 +169,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <label className="block text-xs font-medium text-surface-400 mb-1">Project Name</label>
+                    <label className="block text-xs font-medium text-surface-400 mb-1">{t('projectModal.projectName')}</label>
                     <input
                       ref={nameRef}
                       value={name}
@@ -211,7 +213,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                 {/* Slug + Working Dir */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-surface-400 mb-1">Slug</label>
+                    <label className="block text-xs font-medium text-surface-400 mb-1">{t('projectModal.slug')}</label>
                     <input
                       value={slug}
                       onChange={(e) => {
@@ -224,7 +226,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-surface-400 mb-1">Base Branch</label>
+                    <label className="block text-xs font-medium text-surface-400 mb-1">{t('projectModal.baseBranch')}</label>
                     <input
                       value={prBaseBranch}
                       onChange={(e) => setPrBaseBranch(e.target.value)}
@@ -235,7 +237,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-surface-400 mb-1">Working Directory</label>
+                  <label className="block text-xs font-medium text-surface-400 mb-1">{t('projectModal.workingDir')}</label>
                   <input
                     value={workingDir}
                     onChange={(e) => setWorkingDir(e.target.value)}
@@ -243,7 +245,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                     className="w-full px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 font-mono"
                     required
                   />
-                  <p className="text-[10px] text-surface-600 mt-0.5">Claude will run commands in this directory</p>
+                  <p className="text-[10px] text-surface-600 mt-0.5">{t('projectModal.workingDirHint')}</p>
                 </div>
               </div>
             )}
@@ -307,18 +309,18 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                 <div>
                   <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5">
                     <Zap size={12} />
-                    Task Queue
+                    {t('projectModal.taskQueue')}
                   </label>
                   <ToggleRow
                     enabled={autoQueue}
                     onToggle={() => setAutoQueue(!autoQueue)}
-                    label={autoQueue ? 'Auto Queue Enabled' : 'Auto Queue Disabled'}
-                    desc="Auto-start backlog tasks when a running task finishes"
+                    label={autoQueue ? t('projectModal.autoQueueEnabled') : t('projectModal.autoQueueDisabled')}
+                    desc={t('projectModal.autoQueueDesc')}
                     activeColor="emerald"
                   />
                   {autoQueue && (
                     <div className="mt-2 pl-1">
-                      <label className="block text-[10px] text-surface-500 mb-1">Max Concurrent</label>
+                      <label className="block text-[10px] text-surface-500 mb-1">{t('projectModal.maxConcurrent')}</label>
                       <div className="flex items-center gap-1.5">
                         {[1, 2, 3, 4, 5].map((n) => (
                           <button
@@ -343,21 +345,21 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                 <div>
                   <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5">
                     <GitBranch size={12} />
-                    Git Workflow
+                    {t('projectModal.gitWorkflow')}
                   </label>
                   <div className="space-y-1.5">
                     <ToggleRow
                       enabled={autoBranch}
                       onToggle={() => setAutoBranch(!autoBranch)}
-                      label="Auto Branch"
-                      desc="Create feature branch per task"
+                      label={t('projectModal.autoBranch')}
+                      desc={t('projectModal.autoBranchDesc')}
                       activeColor="violet"
                     />
                     <ToggleRow
                       enabled={autoPr}
                       onToggle={() => setAutoPr(!autoPr)}
-                      label="Auto PR"
-                      desc="Create pull request on completion"
+                      label={t('projectModal.autoPR')}
+                      desc={t('projectModal.autoPRDesc')}
                       activeColor="violet"
                     />
                   </div>
@@ -373,14 +375,14 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
               onClick={onClose}
               className="flex-1 px-4 py-2 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || !name.trim() || !slug.trim() || !workingDir.trim()}
               className="flex-1 px-4 py-2 text-sm font-medium bg-claude hover:bg-claude-light disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
             >
-              {loading ? 'Saving...' : project ? 'Update' : 'Create'}
+              {loading ? t('common.saving') : project ? t('common.update') : t('common.create')}
             </button>
           </div>
         </form>

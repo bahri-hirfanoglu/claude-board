@@ -22,8 +22,10 @@ import {
 import { api } from '../../lib/api';
 import { formatTokens, formatDuration } from '../../lib/formatters';
 import { COLUMNS } from '../../lib/constants';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 export default function TaskDetailModal({ task, onClose, onStatusChange }) {
+  const { t } = useTranslation();
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showStatusMenu, setShowStatusMenu] = useState(false);

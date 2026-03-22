@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Plus, Pencil, Trash2, Layers, Variable, Eye, ChevronLeft } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 const TASK_TYPES = [
   { value: 'feature', label: 'Feature' },
@@ -287,6 +288,7 @@ function TemplateForm({ template, onSave, onCancel }) {
 }
 
 export default function TemplatesModal({ projectId, projectName, onClose }) {
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // null | 'new' | template object
@@ -403,7 +405,7 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
               {templates.length === 0 && !editing && (
                 <div className="text-center py-8 text-surface-500">
                   <Layers size={24} className="mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No templates yet</p>
+                  <p className="text-sm">{t('templates.noTemplates')}</p>
                   <p className="text-xs mt-1">Create reusable prompts with {'{{variable}}'} placeholders</p>
                 </div>
               )}
@@ -434,7 +436,7 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
                   className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-dashed border-surface-700 text-xs text-surface-400 hover:text-claude hover:border-claude/50 transition-colors"
                 >
                   <Plus size={14} />
-                  Add Template
+                  {t('templates.addTemplate')}
                 </button>
               )}
             </>

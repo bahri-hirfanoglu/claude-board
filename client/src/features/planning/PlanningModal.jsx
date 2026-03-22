@@ -8,6 +8,7 @@ import { api } from '../../lib/api';
 import { socket } from '../../lib/socket';
 import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS } from '../../lib/constants';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 const MODELS = [
   { value: 'haiku', label: 'Haiku', color: 'bg-green-500/20 text-green-300' },
@@ -45,6 +46,7 @@ function formatElapsed(ms) {
 }
 
 export default function PlanningModal({ projectId, onClose }) {
+  const { t } = useTranslation();
   const [topic, setTopic] = useState('');
   const [context, setContext] = useState('');
   const [model, setModel] = useState('sonnet');
@@ -214,7 +216,7 @@ export default function PlanningModal({ projectId, onClose }) {
         <div className="flex items-center justify-between px-5 py-3 border-b border-surface-800 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-claude" />
-            <h2 className="text-sm font-semibold">Planning Mode</h2>
+            <h2 className="text-sm font-semibold">{t('planning.title')}</h2>
           </div>
 
           {/* Live stats bar */}
@@ -259,11 +261,11 @@ export default function PlanningModal({ projectId, onClose }) {
           {(phase === 'idle' || phase === 'error') && (
             <>
               <div>
-                <label className="block text-xs font-medium text-surface-400 mb-1">What do you want to build?</label>
+                <label className="block text-xs font-medium text-surface-400 mb-1">{t('planning.whatToBuild')}</label>
                 <textarea
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g. Build an authentication system with OAuth2, JWT tokens, role-based access control, and password reset flow"
+                  placeholder={t('planning.topicPlaceholder')}
                   rows={3}
                   className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none"
                   autoFocus
@@ -272,12 +274,12 @@ export default function PlanningModal({ projectId, onClose }) {
 
               <div>
                 <label className="block text-xs font-medium text-surface-400 mb-1">
-                  Additional context <span className="text-surface-600 font-normal">— optional</span>
+                  {t('planning.context')} <span className="text-surface-600 font-normal">— {t('common.optional')}</span>
                 </label>
                 <textarea
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
-                  placeholder="e.g. Express.js backend, React frontend, PostgreSQL with Prisma ORM"
+                  placeholder={t('planning.contextPlaceholder')}
                   rows={2}
                   className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none"
                 />
@@ -285,46 +287,46 @@ export default function PlanningModal({ projectId, onClose }) {
 
               {/* Granularity */}
               <div>
-                <label className="block text-xs font-medium text-surface-400 mb-1.5">Task breakdown</label>
-                <div className="flex gap-1.5">
+                <label className="block text-xs font-medium text-surface-400 mb-1.5">{t('planning.taskBreakdown')}</label>
+                <div className="grid grid-cols-3 gap-1.5">
                   {GRANULARITIES.map((g) => (
                     <button
                       key={g.value}
                       onClick={() => setGranularity(g.value)}
-                      className={`flex-1 px-2 py-2 rounded-lg text-center transition-all border ${
+                      className={`px-2 py-2.5 rounded-lg text-center transition-all border ${
                         granularity === g.value
                           ? `${g.color} ring-1 ring-current border-current/20`
                           : 'bg-surface-800 text-surface-500 hover:text-surface-300 border-transparent'
                       }`}
                     >
                       <div className="text-xs font-semibold">{g.label}</div>
-                      <div className="text-[9px] opacity-70 mt-0.5">{g.desc}</div>
+                      <div className="text-[9px] opacity-70 mt-0.5 hidden sm:block">{g.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Model + Effort */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1">
-                    <Cpu size={11} /> Model
+                  <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5">
+                    <Cpu size={11} /> {t('planning.model')}
                   </label>
-                  <div className="flex gap-1">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {MODELS.map((m) => (
-                      <button key={m.value} onClick={() => setModel(m.value)} className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center ${model === m.value ? `${m.color} ring-1 ring-current` : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
+                      <button key={m.value} onClick={() => setModel(m.value)} className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${model === m.value ? `${m.color} ring-1 ring-current` : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
                         {m.label}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1">
-                    <Zap size={11} /> Effort
+                  <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5">
+                    <Zap size={11} /> {t('planning.effort')}
                   </label>
-                  <div className="flex gap-1">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {EFFORTS.map((e) => (
-                      <button key={e.value} onClick={() => setEffort(e.value)} className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center ${effort === e.value ? `${e.color} ring-1 ring-current` : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
+                      <button key={e.value} onClick={() => setEffort(e.value)} className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${effort === e.value ? `${e.color} ring-1 ring-current` : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
                         {e.label}
                       </button>
                     ))}
@@ -371,7 +373,7 @@ export default function PlanningModal({ projectId, onClose }) {
           {/* ─── Topic reminder during thinking ─── */}
           {isActive && topic && (
             <div className="bg-surface-800/40 border border-surface-800 rounded-lg px-3 py-2">
-              <p className="text-[11px] text-surface-500 font-medium">Planning</p>
+              <p className="text-[11px] text-surface-500 font-medium">{t('planning.planning')}</p>
               <p className="text-xs text-surface-300 mt-0.5 line-clamp-2">{topic}</p>
             </div>
           )}
@@ -385,7 +387,7 @@ export default function PlanningModal({ projectId, onClose }) {
               >
                 {showOutput ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 <Terminal size={12} />
-                Claude Output
+                {t('planning.claudeOutput')}
                 {logs.length > 0 && <span className="text-surface-600">({logs.length} events)</span>}
               </button>
 
@@ -429,9 +431,9 @@ export default function PlanningModal({ projectId, onClose }) {
               <div className="flex items-center justify-between mb-2">
                 <label className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
                   <CheckCircle2 size={13} />
-                  {createdTasks.length} tasks created in Backlog
+                  {t('planning.tasksCreated', { count: createdTasks.length })}
                 </label>
-                <span className="text-[10px] text-surface-600">Click to expand</span>
+                <span className="text-[10px] text-surface-600">{t('planning.clickToExpand')}</span>
               </div>
               <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
                 {createdTasks.map((t, i) => {
@@ -488,7 +490,7 @@ export default function PlanningModal({ projectId, onClose }) {
             <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5">
               <AlertCircle size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs text-red-400 font-medium">Planning failed</p>
+                <p className="text-xs text-red-400 font-medium">{t('planning.planningFailed')}</p>
                 <p className="text-[11px] text-red-400/70 mt-0.5">{error}</p>
               </div>
             </div>
@@ -500,21 +502,21 @@ export default function PlanningModal({ projectId, onClose }) {
           {isActive ? (
             <button onClick={handleCancel} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors">
               <StopCircle size={14} />
-              Cancel
+              {t('planning.cancelBtn')}
             </button>
           ) : phase === 'done' ? (
             <>
               <button onClick={() => { setPhase('idle'); setPlanPhase('starting'); setCreatedTasks([]); setLogs([]); setTextChunks(''); }} className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
-                Plan Again
+                {t('planning.planAgain')}
               </button>
               <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors">
-                Done — View Board
+                {t('planning.doneViewBoard')}
               </button>
             </>
           ) : (
             <>
               <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
-                Cancel
+                {t('planning.cancelBtn')}
               </button>
               <button
                 onClick={handleStart}
@@ -522,7 +524,7 @@ export default function PlanningModal({ projectId, onClose }) {
                 className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-claude hover:bg-claude-light disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
                 <Sparkles size={14} />
-                Start Planning
+                {t('planning.startPlanning')}
               </button>
             </>
           )}

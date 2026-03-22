@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Plus, Pencil, Trash2, ToggleLeft, ToggleRight, BookOpen } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useTranslation } from '../../i18n/I18nProvider';
 
-function SnippetForm({ snippet, onSave, onCancel }) {
+function SnippetForm({ snippet, onSave, onCancel, t }) {
   const [title, setTitle] = useState(snippet?.title || '');
   const [content, setContent] = useState(snippet?.content || '');
 
@@ -19,21 +20,21 @@ function SnippetForm({ snippet, onSave, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
-        <label className="text-xs text-surface-400 mb-1 block">Title</label>
+        <label className="text-xs text-surface-400 mb-1 block">{t('snippets.formTitle')}</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Tech Stack Rules"
+          placeholder={t('snippets.titlePlaceholder')}
           className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude"
           autoFocus
         />
       </div>
       <div>
-        <label className="text-xs text-surface-400 mb-1 block">Content</label>
+        <label className="text-xs text-surface-400 mb-1 block">{t('snippets.content')}</label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="e.g. Always use Tailwind for styling. Use Vitest for tests."
+          placeholder={t('snippets.contentPlaceholder')}
           rows={4}
           className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude resize-y"
         />
@@ -59,6 +60,7 @@ function SnippetForm({ snippet, onSave, onCancel }) {
 }
 
 export default function SnippetsModal({ projectId, projectName, onClose }) {
+  const { t } = useTranslation();
   const [snippets, setSnippets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // null | 'new' | snippet object
@@ -111,7 +113,7 @@ export default function SnippetsModal({ projectId, projectName, onClose }) {
           <div>
             <h2 className="text-base font-semibold text-surface-100 flex items-center gap-2">
               <BookOpen size={16} className="text-claude" />
-              Context Snippets
+              {t('snippets.title')}
             </h2>
             <p className="text-xs text-surface-500 mt-0.5">{projectName} — auto-injected into Claude prompts</p>
           </div>
@@ -170,7 +172,7 @@ export default function SnippetsModal({ projectId, projectName, onClose }) {
               {snippets.length === 0 && !editing && (
                 <div className="text-center py-8 text-surface-500">
                   <BookOpen size={24} className="mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No snippets yet</p>
+                  <p className="text-sm">{t('snippets.noSnippets')}</p>
                   <p className="text-xs mt-1">Add project rules and context that Claude will follow</p>
                 </div>
               )}
@@ -185,6 +187,7 @@ export default function SnippetsModal({ projectId, projectName, onClose }) {
                     snippet={editing === 'new' ? null : editing}
                     onSave={handleSave}
                     onCancel={() => setEditing(null)}
+                    t={t}
                   />
                 </div>
               )}
@@ -196,7 +199,7 @@ export default function SnippetsModal({ projectId, projectName, onClose }) {
                   className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-dashed border-surface-700 text-xs text-surface-400 hover:text-claude hover:border-claude/50 transition-colors"
                 >
                   <Plus size={14} />
-                  Add Snippet
+                  {t('snippets.addSnippet')}
                 </button>
               )}
             </>

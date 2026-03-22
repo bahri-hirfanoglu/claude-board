@@ -24,6 +24,7 @@ import {
 import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from '../../lib/constants';
 import { formatTokens as fmtTokens } from '../../lib/formatters';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 function ProjectUsage({ tasks }) {
   const totals = useMemo(() => {
@@ -55,12 +56,12 @@ function ProjectUsage({ tasks }) {
 }
 
 const SETTINGS_ITEMS = [
-  { key: 'settings', icon: Settings, label: 'Settings', handler: 'onEditProject' },
-  { key: 'claude-md', icon: FileText, label: 'CLAUDE.md', handler: 'onEditClaudeMd' },
-  { key: 'snippets', icon: BookOpen, label: 'Snippets', handler: 'onEditSnippets' },
-  { key: 'templates', icon: Layers, label: 'Templates', handler: 'onEditTemplates' },
-  { key: 'roles', icon: Shield, label: 'Roles', handler: 'onEditRoles' },
-  { key: 'webhooks', icon: Bell, label: 'Webhooks', handler: 'onEditWebhooks' },
+  { key: 'settings', icon: Settings, labelKey: 'header.settings', handler: 'onEditProject' },
+  { key: 'claude-md', icon: FileText, labelKey: 'header.claudeMd', handler: 'onEditClaudeMd' },
+  { key: 'snippets', icon: BookOpen, labelKey: 'header.snippets', handler: 'onEditSnippets' },
+  { key: 'templates', icon: Layers, labelKey: 'header.templates', handler: 'onEditTemplates' },
+  { key: 'roles', icon: Shield, labelKey: 'header.roles', handler: 'onEditRoles' },
+  { key: 'webhooks', icon: Bell, labelKey: 'header.webhooks', handler: 'onEditWebhooks' },
 ];
 
 export default function Header({
@@ -89,6 +90,7 @@ export default function Header({
   onOpenPlanning,
   tasks,
 }) {
+  const { t, lang, setLang } = useTranslation();
   const [showProjectMenu, setShowProjectMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -113,7 +115,7 @@ export default function Header({
         <button
           onClick={onBackToDashboard}
           className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 hover:text-claude transition-colors flex-shrink-0"
-          title="Back to Dashboard"
+          title={t('header.backToDashboard')}
         >
           <LayoutGrid size={16} />
         </button>
@@ -157,7 +159,7 @@ export default function Header({
                           className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg text-surface-400 hover:bg-surface-700 hover:text-surface-200 transition-colors"
                         >
                           <Icon size={14} />
-                          <span className="text-[10px] font-medium">{item.label}</span>
+                          <span className="text-[10px] font-medium">{t(item.labelKey)}</span>
                         </button>
                       );
                     })}
@@ -171,7 +173,7 @@ export default function Header({
                   <div className="border-t border-surface-700" />
                   <div className="px-3 pt-2 pb-1">
                     <span className="text-[10px] text-surface-500 font-semibold uppercase tracking-wider">
-                      Switch Project
+                      {t('header.switchProject')}
                     </span>
                   </div>
                   <div className="px-1.5 pb-1.5 max-h-36 overflow-y-auto">
@@ -210,7 +212,7 @@ export default function Header({
                   className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-surface-400 hover:bg-surface-700 hover:text-surface-200 transition-colors"
                 >
                   <LayoutGrid size={12} />
-                  Dashboard
+                  {t('header.dashboard')}
                 </button>
                 <button
                   onClick={() => {
@@ -220,7 +222,7 @@ export default function Header({
                   className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-surface-400 hover:bg-surface-700 hover:text-surface-200 transition-colors"
                 >
                   <FolderPlus size={12} />
-                  New Project
+                  {t('header.newProject')}
                 </button>
                 <button
                   onClick={() => {
@@ -239,7 +241,7 @@ export default function Header({
 
         <div className="hidden sm:flex items-center gap-1.5 text-xs text-surface-400">
           {connected ? <Wifi size={13} className="text-emerald-400" /> : <WifiOff size={13} className="text-red-400" />}
-          <span className="hidden lg:inline">{connected ? 'Connected' : 'Offline'}</span>
+          <span className="hidden lg:inline">{connected ? t('status.connected') : t('status.offline')}</span>
         </div>
         {!connected && <WifiOff size={13} className="text-red-400 sm:hidden" />}
       </div>
@@ -251,7 +253,7 @@ export default function Header({
             id="search-input"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search... (/)"
+            placeholder={t('header.searchPlaceholder')}
             className="w-32 lg:w-48 pl-8 pr-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600"
           />
         </div>
@@ -260,7 +262,7 @@ export default function Header({
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] sm:text-xs font-medium">
             <Activity size={11} className="animate-pulse" />
             <span>{runningCount}</span>
-            <span className="hidden sm:inline">running</span>
+            <span className="hidden sm:inline">{t('header.running')}</span>
           </div>
         )}
 
@@ -268,17 +270,17 @@ export default function Header({
           <ProjectUsage tasks={tasks} />
         </div>
 
-        <span className="hidden sm:inline text-xs text-surface-500 whitespace-nowrap">{taskCount} tasks</span>
+        <span className="hidden sm:inline text-xs text-surface-500 whitespace-nowrap">{taskCount} {t('common.tasks')}</span>
 
         <button
           onClick={onToggleActivity}
           className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 flex-shrink-0 ${
             activityActive ? 'bg-claude/20 text-claude-light' : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
           }`}
-          title="Activity"
+          title={t('header.activity')}
         >
           <Clock size={14} />
-          <span className="hidden sm:inline">Activity</span>
+          <span className="hidden sm:inline">{t('header.activity')}</span>
         </button>
 
         <button
@@ -286,10 +288,10 @@ export default function Header({
           className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 flex-shrink-0 ${
             statsActive ? 'bg-claude/20 text-claude-light' : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
           }`}
-          title="Stats"
+          title={t('header.stats')}
         >
           <BarChart3 size={14} />
-          <span className="hidden sm:inline">Stats</span>
+          <span className="hidden sm:inline">{t('header.stats')}</span>
         </button>
 
         {onOpenPlanning && (
@@ -299,7 +301,7 @@ export default function Header({
             title="Planning Mode"
           >
             <Sparkles size={14} />
-            <span className="hidden sm:inline">Plan</span>
+            <span className="hidden sm:inline">{t('header.plan')}</span>
           </button>
         )}
         {onNewTask && (
@@ -309,7 +311,7 @@ export default function Header({
             title="New Task (N)"
           >
             <Plus size={14} />
-            <span className="hidden sm:inline">New Task</span>
+            <span className="hidden sm:inline">{t('header.newTask')}</span>
           </button>
         )}
       </div>

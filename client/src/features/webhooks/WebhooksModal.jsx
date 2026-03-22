@@ -13,6 +13,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 const PLATFORMS = [
   { id: 'slack', label: 'Slack', color: 'bg-[#4A154B]/20 text-[#E01E5A]', icon: '#' },
@@ -167,6 +168,7 @@ function WebhookForm({ webhook, onSave, onCancel }) {
 }
 
 export default function WebhooksModal({ projectId, projectName, onClose }) {
+  const { t } = useTranslation();
   const [webhooks, setWebhooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -235,7 +237,7 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
           <div>
             <h2 className="text-base font-semibold text-surface-100 flex items-center gap-2">
               <Bell size={16} className="text-claude" />
-              Webhooks
+              {t('webhooks.title')}
             </h2>
             <p className="text-xs text-surface-500 mt-0.5">{projectName} — send notifications to external services</p>
           </div>
@@ -343,7 +345,7 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
               {webhooks.length === 0 && !editing && (
                 <div className="text-center py-8 text-surface-500">
                   <Bell size={24} className="mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No webhooks configured</p>
+                  <p className="text-sm">{t('webhooks.noWebhooks')}</p>
                   <p className="text-xs mt-1">Send task notifications to Slack, Discord, Teams or any HTTP endpoint</p>
                 </div>
               )}
@@ -369,7 +371,7 @@ export default function WebhooksModal({ projectId, projectName, onClose }) {
                   className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-dashed border-surface-700 text-xs text-surface-400 hover:text-claude hover:border-claude/50 transition-colors"
                 >
                   <Plus size={14} />
-                  Add Webhook
+                  {t('webhooks.addWebhook')}
                 </button>
               )}
             </>

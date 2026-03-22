@@ -5,25 +5,27 @@ import ListView from './ListView';
 import SummaryView from './SummaryView';
 import TimelineView from './TimelineView';
 import { MODELS, MODEL_COLORS } from '../../lib/constants';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 const COLUMNS = [
-  { id: 'backlog', label: 'Backlog', color: 'text-surface-400', bg: 'bg-surface-400' },
-  { id: 'in_progress', label: 'In Progress', color: 'text-amber-400', bg: 'bg-amber-400' },
-  { id: 'testing', label: 'Testing', color: 'text-claude', bg: 'bg-claude' },
-  { id: 'done', label: 'Done', color: 'text-emerald-400', bg: 'bg-emerald-400' },
+  { id: 'backlog', color: 'text-surface-400', bg: 'bg-surface-400' },
+  { id: 'in_progress', color: 'text-amber-400', bg: 'bg-amber-400' },
+  { id: 'testing', color: 'text-claude', bg: 'bg-claude' },
+  { id: 'done', color: 'text-emerald-400', bg: 'bg-emerald-400' },
 ];
 
 const VIEWS = [
-  { id: 'board', label: 'Board', icon: LayoutGrid },
-  { id: 'list', label: 'List', icon: List },
-  { id: 'timeline', label: 'Timeline', icon: Clock },
-  { id: 'summary', label: 'Summary', icon: BarChart3 },
+  { id: 'board', labelKey: 'board.board', icon: LayoutGrid },
+  { id: 'list', labelKey: 'board.list', icon: List },
+  { id: 'timeline', labelKey: 'board.timeline', icon: Clock },
+  { id: 'summary', labelKey: 'board.summary', icon: BarChart3 },
 ];
 
 const MODEL_DOT = { haiku: '#4ade80', sonnet: '#60a5fa', opus: '#c084fc' };
 const MODEL_BG_ACTIVE = { haiku: 'bg-green-500/15 ring-green-500/30', sonnet: 'bg-blue-500/15 ring-blue-500/30', opus: 'bg-purple-500/15 ring-purple-500/30' };
 
 export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, onDeleteTask, onReviewTask, onViewDetail }) {
+  const { t } = useTranslation();
   const [draggedTask, setDraggedTask] = useState(null);
   const [mobileTab, setMobileTab] = useState('backlog');
   const [viewMode, setViewMode] = useState('board');
@@ -63,7 +65,7 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
               }`}
             >
               <Icon size={13} />
-              <span className="hidden sm:inline">{v.label}</span>
+              <span className="hidden sm:inline">{t(v.labelKey)}</span>
             </button>
           );
         })}
@@ -97,7 +99,7 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
           <button
             onClick={() => setModelFilter(null)}
             className="flex items-center gap-1 px-1.5 py-1.5 rounded-lg text-[10px] text-surface-500 hover:text-surface-300 hover:bg-surface-800/50 transition-colors"
-            title="Clear filter"
+            title={t('board.clearFilter')}
           >
             <X size={12} />
           </button>
@@ -122,7 +124,7 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
                   }`}
                 >
                   <div className={`w-1.5 h-1.5 rounded-full ${col.bg}`} />
-                  {col.label}
+                  {t('status.' + col.id)}
                   {count > 0 && <span className="text-[10px] bg-surface-800 px-1.5 py-0.5 rounded-full">{count}</span>}
                 </button>
               );

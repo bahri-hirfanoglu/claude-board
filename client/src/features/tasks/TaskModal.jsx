@@ -17,6 +17,7 @@ import {
   MicOff,
 } from 'lucide-react';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 const TASK_TYPES = [
   { value: 'feature', label: 'Feature', color: 'bg-blue-500/20 text-blue-300' },
@@ -47,6 +48,7 @@ const EFFORTS = [
 ];
 
 export default function TaskModal({ task, onSubmit, onClose, templates = [], roles = [] }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
   const [priority, setPriority] = useState(task?.priority || 0);
@@ -190,7 +192,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
         <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-surface-800 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-claude" />
-            <h2 className="text-sm sm:text-base font-medium">{task ? 'Edit Task' : 'New Task'}</h2>
+            <h2 className="text-sm sm:text-base font-medium">{task ? t('taskModal.editTask') : t('taskModal.newTask')}</h2>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
             <X size={18} />
@@ -211,7 +213,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-surface-700 text-xs text-surface-400 hover:text-claude hover:border-claude/50 transition-colors w-full justify-center"
                     >
                       <Layers size={12} />
-                      Use Template
+                      {t('taskModal.useTemplate')}
                       <ChevronDown size={11} />
                     </button>
                     {showTemplateMenu && (
@@ -251,7 +253,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
             {/* Template Variables */}
             {selectedTemplate && parsedVars.length > 0 && (
               <div className="bg-surface-800/30 rounded-lg p-3 border border-surface-700/50 space-y-2">
-                <label className="text-xs font-medium text-surface-400 block">Template Variables</label>
+                <label className="text-xs font-medium text-surface-400 block">{t('taskModal.templateVars')}</label>
                 {parsedVars.map((v) => (
                   <div key={v.name}>
                     <label className="text-[11px] text-surface-500 mb-0.5 block">{v.label || v.name}</label>
@@ -398,7 +400,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
 
             {/* Priority */}
             <div>
-              <label className="block text-xs font-medium text-surface-400 mb-1">Priority</label>
+              <label className="block text-xs font-medium text-surface-400 mb-1">{t('taskModal.priority')}</label>
               <div className="flex gap-1.5">
                 {PRIORITIES.map((p) => (
                   <button
@@ -445,13 +447,13 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                 {/* Acceptance Criteria */}
                 <div>
                   <label className="block text-xs font-medium text-surface-400 mb-1">
-                    Acceptance Criteria
-                    <span className="text-surface-600 font-normal ml-1">- optional</span>
+                    {t('taskModal.acceptance')}
+                    <span className="text-surface-600 font-normal ml-1">- {t('common.optional')}</span>
                   </label>
                   <textarea
                     value={acceptanceCriteria}
                     onChange={(e) => setAcceptanceCriteria(e.target.value)}
-                    placeholder="Define what 'done' looks like..."
+                    placeholder={t('taskModal.acceptancePlaceholder')}
                     rows={2}
                     className="w-full px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none"
                   />
@@ -606,14 +608,14 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
               onClick={onClose}
               className="flex-1 px-4 py-2 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || !title.trim()}
               className="flex-1 px-4 py-2 text-sm font-medium bg-claude hover:bg-claude-light disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
             >
-              {loading ? 'Saving...' : task ? 'Update Task' : 'Create Task'}
+              {loading ? t('common.saving') : task ? t('common.update') : t('common.create')}
             </button>
           </div>
         </form>

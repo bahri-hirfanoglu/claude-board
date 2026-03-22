@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, Save, FileText, AlertCircle, Check } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { api } from '../../lib/api';
+import { useTranslation } from '../../i18n/I18nProvider';
 
 const DEFAULT_TEMPLATE = `# CLAUDE.md
 
@@ -19,6 +20,7 @@ const DEFAULT_TEMPLATE = `# CLAUDE.md
 `;
 
 export default function ClaudeMdEditor({ projectId, projectName, onClose }) {
+  const { t } = useTranslation();
   const [content, setContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
   const [fileExists, setFileExists] = useState(false);
@@ -29,7 +31,7 @@ export default function ClaudeMdEditor({ projectId, projectName, onClose }) {
 
   useEffect(() => {
     loadFile();
-  }, [projectId]);
+  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadFile = async () => {
     setLoading(true);
@@ -92,7 +94,7 @@ export default function ClaudeMdEditor({ projectId, projectName, onClose }) {
         <div className="flex items-center justify-between px-5 py-3 border-b border-surface-800 flex-shrink-0">
           <div className="flex items-center gap-2">
             <FileText size={16} className="text-claude" />
-            <h2 className="text-sm font-medium">CLAUDE.md</h2>
+            <h2 className="text-sm font-medium">{t('claudeMd.title')}</h2>
             <span className="text-[10px] text-surface-500">
               {projectName}
             </span>
@@ -117,7 +119,7 @@ export default function ClaudeMdEditor({ projectId, projectName, onClose }) {
             {saved && (
               <div className="flex items-center gap-1 text-xs text-emerald-400">
                 <Check size={12} />
-                Saved
+                {t('claudeMd.saved')}
               </div>
             )}
             <button
@@ -126,7 +128,7 @@ export default function ClaudeMdEditor({ projectId, projectName, onClose }) {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-claude hover:bg-claude-light disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium transition-colors"
             >
               <Save size={12} />
-              {saving ? 'Saving...' : fileExists ? 'Save' : 'Create File'}
+              {saving ? t('common.saving') : fileExists ? t('common.save') : t('common.create')}
             </button>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
               <X size={16} />
