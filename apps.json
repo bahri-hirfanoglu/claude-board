@@ -27,7 +27,7 @@
       "subtitle": "Visual task management for Claude Code",
       "description": "Manage AI-powered development tasks with a Kanban-style interface",
       "longDescription": "Claude Board is a visual task management board designed for Claude Code. It provides a Kanban-style interface to manage AI-powered development tasks, featuring real-time terminal output and project roles with cross-project sharing. Available as both a web app and desktop application for Windows, macOS, and Linux.",
-      "icon": "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/icon.png",
+      "icon": "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/icon.png",
       "iconEmoji": "📋",
       "category": ["developer-tools", "productivity", "ai"],
       "platform": "Web / Desktop",
@@ -44,16 +44,16 @@
         "SQLite-based persistent storage"
       ],
       "screenshots": [
-        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/demo.gif",
-        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/dashboard.png",
-        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/board.png",
-        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/task-modal.png",
-        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/stats.png",
-        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/activity.png",
-        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/setup-wizard.png",
-        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/splash-screen.png",
-        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/mobile-dashboard.png",
-        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/docs/screenshots/mobile-board.png"
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/demo.gif",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/dashboard.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/board.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/task-modal.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/stats.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/activity.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/setup-wizard.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/splash-screen.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/mobile-dashboard.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/mobile-board.png"
       ]
     }
   ]

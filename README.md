@@ -12,7 +12,7 @@
 
 [Features](#features) &bull; [Download](#download) &bull; [Quick Start](#quick-start) &bull; [Screenshots](#screenshots) &bull; [Documentation](#documentation) &bull; [Architecture](#architecture) &bull; [API](#api-reference) &bull; [Contributing](#contributing)
 
-![Demo](docs/demo.gif)
+![Demo](web/demo.gif)
 
 </div>
 
@@ -91,34 +91,34 @@ Configure webhooks per project from the project menu. Filter which events trigge
 ## Screenshots
 
 ### Dashboard
-![Dashboard](docs/screenshots/dashboard.png)
+![Dashboard](web/screenshots/dashboard.png)
 *Project overview with Claude usage statistics, model breakdown, and 30-day usage sparkline*
 
 ### Kanban Board
-![Board](docs/screenshots/board.png)
+![Board](web/screenshots/board.png)
 *Drag-and-drop task management with live status indicators*
 
 ### Task Creation
-![Task Modal](docs/screenshots/task-modal.png)
+![Task Modal](web/screenshots/task-modal.png)
 *Create tasks with type, model, thinking effort, and priority selection*
 
 ### Project Statistics
-![Stats](docs/screenshots/stats.png)
+![Stats](web/screenshots/stats.png)
 *Project statistics with status breakdown, model usage, and completion timeline*
 
 ### Activity Timeline
-![Activity](docs/screenshots/activity.png)
+![Activity](web/screenshots/activity.png)
 *Chronological feed of all project events*
 
 ### Desktop App
 
 #### Setup Wizard
-<img src="docs/screenshots/setup-wizard.png" alt="Setup Wizard" width="400" />
+<img src="web/screenshots/setup-wizard.png" alt="Setup Wizard" width="400" />
 
 *First-run configuration &mdash; choose your data directory and server port*
 
 #### Splash Screen
-<img src="docs/screenshots/splash-screen.png" alt="Splash Screen" width="320" />
+<img src="web/screenshots/splash-screen.png" alt="Splash Screen" width="320" />
 
 *Loading progress with step-by-step status updates*
 
