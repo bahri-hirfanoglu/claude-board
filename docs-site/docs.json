@@ -49,6 +49,7 @@
             "group": "Features",
             "icon": "sparkles",
             "pages": [
+              "features/planning-mode",
               "features/terminal",
               "features/queue",
               "features/git-automation",
@@ -90,6 +91,7 @@
             "pages": [
               "api/projects",
               "api/tasks",
+              "api/planning",
               "api/webhooks",
               "api/snippets",
               "api/templates",

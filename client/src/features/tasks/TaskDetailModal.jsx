@@ -130,7 +130,13 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
               )}
             </div>
             <h2 className="text-base font-semibold text-surface-100">{d.title}</h2>
-            {d.description && <p className="text-xs text-surface-400 mt-1">{d.description}</p>}
+            {d.description && <p className="text-xs text-surface-400 mt-2 whitespace-pre-wrap leading-relaxed">{d.description}</p>}
+            {d.acceptance_criteria && (
+              <div className="mt-2">
+                <span className="text-[10px] font-medium text-surface-500">Acceptance Criteria</span>
+                <p className="text-xs text-surface-400 mt-0.5 whitespace-pre-wrap leading-relaxed">{d.acceptance_criteria}</p>
+              </div>
+            )}
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 ml-3 flex-shrink-0">
             <X size={16} />

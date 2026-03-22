@@ -19,6 +19,7 @@ import {
   Layers,
   Bell,
   Shield,
+  Sparkles,
 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from '../../lib/constants';
@@ -85,6 +86,7 @@ export default function Header({
   onEditTemplates,
   onEditWebhooks,
   onEditRoles,
+  onOpenPlanning,
   tasks,
 }) {
   const [showProjectMenu, setShowProjectMenu] = useState(false);
@@ -290,6 +292,16 @@ export default function Header({
           <span className="hidden sm:inline">Stats</span>
         </button>
 
+        {onOpenPlanning && (
+          <button
+            onClick={onOpenPlanning}
+            className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 border border-surface-700 hover:border-claude/30 text-sm font-medium transition-colors flex items-center gap-1.5 flex-shrink-0 text-surface-300 hover:text-claude"
+            title="Planning Mode"
+          >
+            <Sparkles size={14} />
+            <span className="hidden sm:inline">Plan</span>
+          </button>
+        )}
         {onNewTask && (
           <button
             onClick={onNewTask}

@@ -28,6 +28,7 @@ import templateRoutes from './routes/templates.js';
 import attachmentRoutes from './routes/attachments.js';
 import webhookRoutes from './routes/webhooks.js';
 import roleRoutes from './routes/roles.js';
+import planningRoutes from './routes/planning.js';
 import { createWebhookDispatcher } from './services/webhookDispatcher.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -219,6 +220,7 @@ export function createApp() {
   app.use('/api', authMiddleware, attachmentRoutes(deps));
   app.use('/api', authMiddleware, webhookRoutes(deps));
   app.use('/api', authMiddleware, roleRoutes(deps));
+  app.use('/api', authMiddleware, planningRoutes(deps));
 
   // Serve uploaded files
   app.use('/uploads', express.static(join(staticRoot, 'uploads')));

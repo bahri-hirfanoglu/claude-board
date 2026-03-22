@@ -43,6 +43,7 @@ Download the latest version for your platform:
 
 ## Features
 
+- **Planning Mode** &mdash; AI-powered task breakdown &mdash; describe what to build and Claude explores your codebase, then generates structured tasks with live progress tracking
 - **Kanban Board** &mdash; Drag-and-drop tasks across Backlog, In Progress, Testing, Done
 - **Multiple Views** &mdash; Switch between Board, List, Timeline, and Summary views
 - **Timeline View** &mdash; Gantt-style visualization with gradient bars, today marker, and status legend

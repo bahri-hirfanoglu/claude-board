@@ -18,6 +18,7 @@ import Toast from '../components/Toast';
 import TerminalBottomPanel from './TerminalBottomPanel';
 import { VoiceAssistantProvider } from '../features/voice/VoiceAssistantProvider';
 import VoiceAssistant from '../features/voice/VoiceAssistant';
+import PlanningModal from '../features/planning/PlanningModal';
 
 export default function AppLayout(props) {
   const {
@@ -41,6 +42,7 @@ export default function AppLayout(props) {
     showTemplates,
     showWebhooks,
     showRoles,
+    showPlanning,
     templates,
     roles,
     reviewTask,
@@ -80,6 +82,8 @@ export default function AppLayout(props) {
     onCloseRoles,
     onViewDetail,
     onCloseDetail,
+    onOpenPlanning,
+    onClosePlanning,
   } = props;
 
   return (
@@ -107,6 +111,7 @@ export default function AppLayout(props) {
         onEditClaudeMd={onEditClaudeMd}
         onEditSnippets={onEditSnippets}
         onEditTemplates={onEditTemplates}
+        onOpenPlanning={currentProject ? onOpenPlanning : null}
         onEditWebhooks={onEditWebhooks}
         onEditRoles={onEditRoles}
       />
@@ -202,6 +207,9 @@ export default function AppLayout(props) {
         />
       )}
       {detailTask && <TaskDetailModal task={detailTask} onClose={onCloseDetail} onStatusChange={onStatusChange} />}
+      {showPlanning && currentProject && (
+        <PlanningModal projectId={currentProject.id} onClose={onClosePlanning} />
+      )}
       {confirm && <ConfirmDialog {...confirm} />}
       <Toast toasts={toasts} />
       <VoiceAssistantProvider

@@ -1,0 +1,78 @@
+---
+title: "Planning Mode"
+description: "AI-powered task breakdown with live progress tracking"
+icon: "sparkles"
+---
+
+Planning Mode uses Claude to analyze a topic and automatically break it down into structured, actionable tasks on your board. Instead of manually creating tasks, describe what you want to build and let Claude explore your codebase, research the approach, and generate a complete task breakdown.
+
+## How It Works
+
+1. Open Planning Mode from the project header
+2. Describe what you want to build
+3. Configure model, effort, and granularity
+4. Claude explores your codebase, then generates tasks
+5. Tasks are created in your Backlog automatically
+
+## Configuration Options
+
+### Task Granularity
+
+Control how Claude breaks down the work:
+
+| Level | Tasks | Style |
+|-------|-------|-------|
+| **High-level** | 3-5 | Major milestones with sub-step checklists |
+| **Balanced** | 5-10 | Meaningful units grouping related changes |
+| **Detailed** | 10-20 | Atomic tasks, each completable in a single session |
+
+### Model Selection
+
+Choose which Claude model powers the planning:
+
+| Model | Best For |
+|-------|----------|
+| **Haiku** | Quick breakdowns of simple features |
+| **Sonnet** | Balanced speed and quality (default) |
+| **Opus** | Complex architecture and deep analysis |
+
+### Thinking Effort
+
+Controls Claude's thinking budget:
+
+| Level | Behavior |
+|-------|----------|
+| **Low** | Fast, surface-level analysis |
+| **Medium** | Balanced depth (default) |
+| **High** | Deep research and thorough exploration |
+
+## Live Progress
+
+While Claude works, the modal shows real-time feedback:
+
+- **Phase stepper** — Starting, Exploring, Planning, Done
+- **Live stats** — Elapsed time, token usage, tool calls, turns
+- **Tool call log** — File reads, searches, and commands Claude executes
+- **Text output** — Claude's reasoning as it analyzes the codebase
+
+## Session Persistence
+
+Planning sessions survive page refreshes. If you reload the page while planning is active, the modal automatically reopens and reconnects to the running session. The backend continues processing regardless of the frontend state.
+
+## Generated Tasks
+
+Each generated task includes:
+
+- **Title** — Short, actionable description
+- **Description** — Detailed implementation notes with sub-step checklists
+- **Type** — `feature`, `bugfix`, `refactor`, `docs`, `test`, or `chore`
+- **Priority** — None, Low, Medium, or High
+- **Acceptance Criteria** — Definition of done for the task
+
+Tasks are ordered by dependency — prerequisite tasks appear first. Descriptions reference actual files and patterns from your codebase when possible.
+
+<Tip>Add context in the optional field to guide Claude's planning. For example: "Express.js backend, React frontend, PostgreSQL with Prisma ORM" helps Claude generate more relevant tasks.</Tip>
+
+## API
+
+Planning Mode is also available through the [Planning API](/api/planning).
