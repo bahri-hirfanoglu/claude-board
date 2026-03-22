@@ -1,9 +1,15 @@
 const { app, BrowserWindow, shell, Menu, ipcMain, dialog } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
 const isMac = process.platform === 'darwin';
 const isLinux = process.platform === 'linux';
+
+// ─── Auto-updater config ───
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.logger = null; // suppress default logging
 
 let mainWindow = null;
 let splashWindow = null;
@@ -263,7 +269,7 @@ function createSplash() {
 <body><div class="card">
   <div class="icon">${SPARKLE_SVG}</div>
   <h1>Claude Board</h1>
-  <div class="version">v3.5.0</div>
+  <div class="version">v${app.getVersion()}</div>
   <div class="steps">
     <div class="step"><span class="dot"></span>Initializing application</div>
     <div class="step"><span class="dot"></span>Loading modules</div>
@@ -344,6 +350,9 @@ function createWindow(port) {
 
   mainWindow.on('closed', () => { mainWindow = null; });
 
+  // ─── Auto-update ───
+  setupAutoUpdater(mainWindow);
+
   // ─── Menu (cross-platform) ───
   const template = [];
 
@@ -404,6 +413,50 @@ function createWindow(port) {
   );
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+// ─── Auto-update ───
+function setupAutoUpdater(win) {
+  if (!app.isPackaged) return; // skip in dev
+
+  autoUpdater.on('update-available', (info) => {
+    win.webContents.executeJavaScript(`
+      console.log('[AutoUpdate] Update available: v${info.version}');
+    `).catch(() => {});
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    win.setProgressBar(progress.percent / 100);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    win.setProgressBar(-1);
+    dialog.showMessageBox(win, {
+      type: 'info',
+      title: 'Update Ready',
+      message: `Claude Board v${info.version} has been downloaded.`,
+      detail: 'The update will be installed when you restart the app. Restart now?',
+      buttons: ['Restart Now', 'Later'],
+      defaultId: 0,
+      cancelId: 1,
+    }).then(({ response }) => {
+      if (response === 0) autoUpdater.quitAndInstall(false, true);
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('[AutoUpdate] Error:', err?.message || err);
+  });
+
+  // Check for updates after a short delay
+  setTimeout(() => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  }, 5000);
+
+  // Re-check every 4 hours
+  setInterval(() => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  }, 4 * 60 * 60 * 1000);
 }
 
 // ─── App lifecycle ───
