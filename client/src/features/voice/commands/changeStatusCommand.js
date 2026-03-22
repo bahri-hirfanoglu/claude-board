@@ -1,11 +1,6 @@
 import { registerCommand } from './commandRegistry';
-
-const STATUS_LABELS = {
-  backlog: 'Backlog',
-  in_progress: 'In Progress',
-  testing: 'Testing',
-  done: 'Done',
-};
+import { t } from '../i18n/t';
+import { CHANGE_STATUS_PATTERNS, STATUS_PATTERNS } from '../i18n/patterns';
 
 const STATUS_NEXT = {
   backlog: 'in_progress',
@@ -20,89 +15,88 @@ const FLOWS = {
 
 registerCommand({
   id: 'change_status',
-  patterns: [
-    /change ?(the )?(task )?status/i,
-    /move ?(a )?task/i,
-    /update ?(the )?(task )?status/i,
-    /(start|begin) ?(a )?task/i,
-    /mark ?(as )?(done|complete)/i,
-    /send to (testing|test)/i,
-  ],
+  patterns: CHANGE_STATUS_PATTERNS,
   flowStates: Object.values(FLOWS),
   description: 'Changes a task\'s status',
   hint: 'Change status',
   icon: 'arrow-right',
 
   execute(input, ctx) {
-    const { flow, intent, tasks, refs } = ctx;
+    const { flow, intent, tasks, refs, lang } = ctx;
 
     if (flow === 'idle') {
       if (!tasks || tasks.length === 0) {
-        return { flow: 'idle', message: 'No tasks yet.' };
+        return { flow: 'idle', message: t('status.empty', lang) };
       }
-      return { flow: FLOWS.WHICH, message: 'Which task do you want to update?' };
+      return { flow: FLOWS.WHICH, message: t('status.which', lang) };
     }
 
     if (intent?.id === 'cancel') {
-      return { flow: 'idle', message: 'Cancelled.' };
+      return { flow: 'idle', message: t('cancel.done', lang) };
     }
 
     if (flow === FLOWS.WHICH) {
       const lower = input.toLowerCase();
-      const match = tasks.find(t =>
-        t.title.toLowerCase().includes(lower) ||
-        t.task_key?.toLowerCase() === lower ||
-        `#${t.id}` === input
+      const match = tasks.find(task =>
+        task.title.toLowerCase().includes(lower) ||
+        task.task_key?.toLowerCase() === lower ||
+        `#${task.id}` === input
       );
 
       if (!match) {
-        return { flow: FLOWS.WHICH, message: 'Couldn\'t find that task. Try again with the task title or key.' };
+        return { flow: FLOWS.WHICH, message: t('status.notFound', lang) };
       }
 
       refs.statusTarget = match;
       const next = STATUS_NEXT[match.status];
       if (!next) {
-        return { flow: 'idle', message: `"${match.title}" is already done.` };
+        return { flow: 'idle', message: t('status.alreadyDone', lang, { title: match.title }) };
       }
 
       return {
         flow: FLOWS.TO,
-        message: `"${match.title}" is currently ${STATUS_LABELS[match.status]}. Move to ${STATUS_LABELS[next]}?`,
+        message: t('status.confirm', lang, {
+          title: match.title,
+          current: t('status.' + match.status, lang),
+          next: t('status.' + next, lang),
+        }),
       };
     }
 
     if (flow === FLOWS.TO) {
       const task = refs.statusTarget;
-      if (!task) return { flow: 'idle', message: 'Something went wrong.' };
+      if (!task) return { flow: 'idle', message: t('status.error', lang) };
 
       if (intent?.id === 'confirm') {
         const next = STATUS_NEXT[task.status];
         if (next) {
           return {
             flow: 'idle',
-            message: `"${task.title}" moved to ${STATUS_LABELS[next]}.`,
+            message: t('status.moved', lang, { title: task.title, target: t('status.' + next, lang) }),
             action: (h) => h.onStatusChange?.(task.id, next),
           };
         }
-        return { flow: 'idle', message: 'Cannot move further.' };
+        return { flow: 'idle', message: t('status.cannotMove', lang) };
       }
 
-      const lower = input.toLowerCase();
+      // Try to detect a specific status from input
       let target = null;
-      if (/backlog/i.test(lower)) target = 'backlog';
-      else if (/progress|start/i.test(lower)) target = 'in_progress';
-      else if (/test/i.test(lower)) target = 'testing';
-      else if (/done|complete|finish/i.test(lower)) target = 'done';
+      for (const [status, pattern] of Object.entries(STATUS_PATTERNS)) {
+        if (pattern.test(input)) {
+          target = status;
+          break;
+        }
+      }
 
       if (target && target !== task.status) {
         return {
           flow: 'idle',
-          message: `"${task.title}" moved to ${STATUS_LABELS[target]}.`,
+          message: t('status.moved', lang, { title: task.title, target: t('status.' + target, lang) }),
           action: (h) => h.onStatusChange?.(task.id, target),
         };
       }
 
-      return { flow: FLOWS.TO, message: 'Say backlog, in progress, testing, or done.' };
+      return { flow: FLOWS.TO, message: t('status.pickStatus', lang) };
     }
 
     return null;

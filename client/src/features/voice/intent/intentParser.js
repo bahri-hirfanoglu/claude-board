@@ -1,11 +1,14 @@
 /**
  * Intent detection engine.
  * Matches user text against registered command patterns.
+ * Supports multi-language conversational intents.
  */
 
+import { CONFIRM_PATTERNS, DENY_PATTERNS } from '../i18n/patterns';
+
 const CONVERSATIONAL = [
-  { id: 'confirm', patterns: [/^(yes|yeah|yep|sure|ok|okay|confirm|correct|right|do it|go ahead)/i] },
-  { id: 'deny', patterns: [/^(no|nope|nah|don't|negative)/i] },
+  { id: 'confirm', patterns: CONFIRM_PATTERNS },
+  { id: 'deny', patterns: DENY_PATTERNS },
 ];
 
 /**

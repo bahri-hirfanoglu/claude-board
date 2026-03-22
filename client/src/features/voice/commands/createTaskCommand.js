@@ -1,5 +1,7 @@
 import { registerCommand } from './commandRegistry';
 import { extractTaskType, extractPriority, priorityLabel } from '../intent/entityExtractors';
+import { t } from '../i18n/t';
+import { CREATE_TASK_PATTERNS, SKIP_PATTERN } from '../i18n/patterns';
 
 const FLOWS = {
   TITLE: 'create:title',
@@ -11,45 +13,40 @@ const FLOWS = {
 
 registerCommand({
   id: 'create_task',
-  patterns: [
-    /create ?(a )?(new )?task/i,
-    /new task/i,
-    /add ?(a )?(new )?task/i,
-    /open ?(a )?task/i,
-  ],
+  patterns: CREATE_TASK_PATTERNS,
   flowStates: Object.values(FLOWS),
   description: 'Creates a new task — asks for title, description, type, and priority',
   hint: 'Create task',
   icon: 'plus-circle',
 
   execute(input, ctx) {
-    const { flow, draft, intent } = ctx;
+    const { flow, draft, intent, lang } = ctx;
 
     if (flow === 'idle') {
       if (!ctx.currentProject) {
-        return { flow: 'idle', message: 'Please select a project first.' };
+        return { flow: 'idle', message: t('create.noProject', lang) };
       }
-      return { flow: FLOWS.TITLE, draft: {}, message: 'What should the task title be?' };
+      return { flow: FLOWS.TITLE, draft: {}, message: t('create.askTitle', lang) };
     }
 
     if (intent?.id === 'cancel') {
-      return { flow: 'idle', draft: {}, message: 'Task creation cancelled.' };
+      return { flow: 'idle', draft: {}, message: t('create.cancelled', lang) };
     }
 
     if (flow === FLOWS.TITLE) {
       return {
         flow: FLOWS.DESC,
         draft: { ...draft, title: input },
-        message: 'Would you like to add a description? Say "skip" if not.',
+        message: t('create.askDesc', lang),
       };
     }
 
     if (flow === FLOWS.DESC) {
-      const skip = /^(skip|no|none|empty|pass)$/i.test(input);
+      const skip = SKIP_PATTERN.test(input);
       return {
         flow: FLOWS.TYPE,
         draft: { ...draft, description: skip ? '' : input },
-        message: 'What type? Feature, bugfix, refactor, docs, test, or chore.',
+        message: t('create.askType', lang),
       };
     }
 
@@ -58,7 +55,7 @@ registerCommand({
       return {
         flow: FLOWS.PRIORITY,
         draft: { ...draft, task_type: type },
-        message: `Type: ${type}. Priority? None, low, medium, or high.`,
+        message: t('create.typeSet', lang, { type }),
       };
     }
 
@@ -68,7 +65,11 @@ registerCommand({
       return {
         flow: FLOWS.CONFIRM,
         draft: d,
-        message: `"${d.title}" — ${d.task_type}, ${priorityLabel(priority)}. Shall I create it?`,
+        message: t('create.confirm', lang, {
+          title: d.title,
+          type: d.task_type,
+          priority: priorityLabel(priority, lang),
+        }),
       };
     }
 
@@ -77,7 +78,7 @@ registerCommand({
         return {
           flow: 'idle',
           draft: {},
-          message: `Task created: "${draft.title}"`,
+          message: t('create.done', lang, { title: draft.title }),
           action: (handlers) => {
             handlers.onCreateTask?.({
               title: draft.title,
@@ -90,9 +91,9 @@ registerCommand({
         };
       }
       if (intent?.id === 'deny') {
-        return { flow: 'idle', draft: {}, message: 'Cancelled.' };
+        return { flow: 'idle', draft: {}, message: t('create.denied', lang) };
       }
-      return { flow: FLOWS.CONFIRM, message: 'Say yes or no.' };
+      return { flow: FLOWS.CONFIRM, message: t('create.yesOrNo', lang) };
     }
 
     return null;

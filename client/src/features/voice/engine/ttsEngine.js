@@ -42,8 +42,9 @@ export function speak(text, lang = 'en-US') {
     utterance.volume = 1;
 
     loadVoices();
-    const voice = _cachedVoices.find(v => v.lang.startsWith('en'))
-      || _cachedVoices.find(v => v.lang.startsWith('en'));
+    const langPrefix = lang.split('-')[0];
+    const voice = _cachedVoices.find(v => v.lang === lang)
+      || _cachedVoices.find(v => v.lang.startsWith(langPrefix));
     if (voice) utterance.voice = voice;
 
     // Chrome pauses long utterances after ~15s — keep-alive workaround
