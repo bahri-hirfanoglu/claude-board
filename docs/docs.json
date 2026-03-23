@@ -50,6 +50,7 @@
             "icon": "sparkles",
             "pages": [
               "features/planning-mode",
+              "features/claude-manager",
               "features/terminal",
               "features/queue",
               "features/git-automation",

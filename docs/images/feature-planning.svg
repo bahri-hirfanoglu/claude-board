@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="900" y2="320"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#DA7756"/><stop offset="100%" stop-color="#C45A3C"/></linearGradient>
+  </defs>
+  <rect width="900" height="320" rx="16" fill="url(#bg)"/>
+  <!-- Step 1: Describe -->
+  <rect x="20" y="20" width="200" height="280" rx="12" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <circle cx="40" cy="44" r="12" fill="url(#accent)"/><text x="40" y="48" text-anchor="middle" fill="white" font-size="11" font-weight="bold">1</text>
+  <text x="60" y="48" fill="#ebe4d8" font-size="12" font-weight="600" font-family="system-ui">Describe</text>
+  <rect x="32" y="64" width="176" height="50" rx="6" fill="#1f1b17" stroke="#3d372e" stroke-width="1"/>
+  <text x="42" y="82" fill="#736858" font-size="9" font-family="system-ui">Topic</text>
+  <text x="42" y="100" fill="#b5ab9a" font-size="10" font-family="system-ui">Add user auth with JWT...</text>
+  <rect x="32" y="124" width="54" height="24" rx="6" fill="#DA7756" fill-opacity="0.15"/><text x="59" y="140" text-anchor="middle" fill="#DA7756" font-size="9" font-weight="600" font-family="system-ui">Balanced</text>
+  <rect x="92" y="124" width="50" height="24" rx="6" fill="#3b82f6" fill-opacity="0.15"/><text x="117" y="140" text-anchor="middle" fill="#60a5fa" font-size="9" font-weight="600" font-family="system-ui">Sonnet</text>
+  <rect x="32" y="164" width="176" height="36" rx="8" fill="url(#accent)"/>
+  <text x="120" y="186" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="system-ui">✦ Start Planning</text>
+  <!-- Arrow -->
+  <path d="M230 160 L250 160" stroke="#DA7756" stroke-width="2" stroke-dasharray="4,3"/>
+  <polygon points="250,155 260,160 250,165" fill="#DA7756"/>
+  <!-- Step 2: Analyze -->
+  <rect x="270" y="20" width="200" height="280" rx="12" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <circle cx="290" cy="44" r="12" fill="#3b82f6" fill-opacity="0.3"/><text x="290" y="48" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="bold">2</text>
+  <text x="310" y="48" fill="#ebe4d8" font-size="12" font-weight="600" font-family="system-ui">Claude Analyzes</text>
+  <!-- Phase stepper -->
+  <rect x="282" y="64" width="176" height="20" rx="4" fill="#1f1b17"/>
+  <circle cx="300" cy="74" r="4" fill="#10b981"/><text x="310" y="77" fill="#6b7280" font-size="8" font-family="system-ui">Start</text>
+  <line x1="334" y1="74" x2="354" y2="74" stroke="#10b981" stroke-width="1" stroke-opacity="0.3"/>
+  <circle cx="362" cy="74" r="4" fill="#3b82f6"/><text x="372" y="77" fill="#60a5fa" font-size="8" font-family="system-ui">Exploring</text>
+  <line x1="410" y1="74" x2="430" y2="74" stroke="#3d372e" stroke-width="1"/>
+  <circle cx="438" cy="74" r="4" fill="#3d372e"/><text x="448" y="77" fill="#4b4538" font-size="8" font-family="system-ui">Done</text>
+  <!-- Log items -->
+  <rect x="282" y="92" width="176" height="100" rx="6" fill="#0f0d0b" stroke="#3d372e" stroke-width="1"/>
+  <text x="292" y="108" fill="#8b5cf6" font-size="9" font-family="monospace">▸ Read → src/auth/</text>
+  <text x="292" y="122" fill="#10b981" font-size="9" font-family="monospace">✓ 12 files scanned</text>
+  <text x="292" y="136" fill="#8b5cf6" font-size="9" font-family="monospace">▸ Grep → "jwt"</text>
+  <text x="292" y="150" fill="#10b981" font-size="9" font-family="monospace">✓ 3 matches</text>
+  <text x="292" y="164" fill="#8b5cf6" font-size="9" font-family="monospace">▸ Read → package.json</text>
+  <circle cx="294" cy="180" r="3" fill="#f59e0b"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+  <text x="302" y="183" fill="#f59e0b" font-size="9" font-family="system-ui">Analyzing codebase...</text>
+  <!-- Arrow -->
+  <path d="M480 160 L500 160" stroke="#DA7756" stroke-width="2" stroke-dasharray="4,3"/>
+  <polygon points="500,155 510,160 500,165" fill="#DA7756"/>
+  <!-- Step 3: Review -->
+  <rect x="520" y="20" width="200" height="280" rx="12" fill="#2a2520" stroke="#DA7756" stroke-width="1" stroke-opacity="0.3"/>
+  <circle cx="540" cy="44" r="12" fill="#f59e0b" fill-opacity="0.3"/><text x="540" y="48" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">3</text>
+  <text x="560" y="48" fill="#ebe4d8" font-size="12" font-weight="600" font-family="system-ui">Review Proposals</text>
+  <!-- Task cards -->
+  <rect x="532" y="64" width="176" height="38" rx="6" fill="#1f1b17" stroke="#3d372e" stroke-width="1"/>
+  <rect x="540" y="72" width="36" height="14" rx="3" fill="#3b82f6" fill-opacity="0.15"/><text x="558" y="82" text-anchor="middle" fill="#60a5fa" font-size="7" font-weight="600" font-family="system-ui">feature</text>
+  <text x="582" y="82" fill="#ebe4d8" font-size="9" font-family="system-ui">JWT auth middleware</text>
+  <text x="700" y="82" fill="#ef4444" font-size="10" font-family="system-ui">×</text>
+  <rect x="532" y="108" width="176" height="38" rx="6" fill="#1f1b17" stroke="#3d372e" stroke-width="1"/>
+  <rect x="540" y="116" width="36" height="14" rx="3" fill="#3b82f6" fill-opacity="0.15"/><text x="558" y="126" text-anchor="middle" fill="#60a5fa" font-size="7" font-weight="600" font-family="system-ui">feature</text>
+  <text x="582" y="126" fill="#ebe4d8" font-size="9" font-family="system-ui">Login/register endpoints</text>
+  <rect x="532" y="152" width="176" height="38" rx="6" fill="#1f1b17" stroke="#3d372e" stroke-width="1"/>
+  <rect x="540" y="160" width="26" height="14" rx="3" fill="#f59e0b" fill-opacity="0.15"/><text x="553" y="170" text-anchor="middle" fill="#f59e0b" font-size="7" font-weight="600" font-family="system-ui">test</text>
+  <text x="572" y="170" fill="#ebe4d8" font-size="9" font-family="system-ui">Auth test suite</text>
+  <!-- Buttons -->
+  <rect x="532" y="210" width="80" height="30" rx="6" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <text x="572" y="229" text-anchor="middle" fill="#b5ab9a" font-size="10" font-family="system-ui">↻ Revise</text>
+  <rect x="620" y="210" width="88" height="30" rx="6" fill="#10b981"/>
+  <text x="664" y="229" text-anchor="middle" fill="white" font-size="10" font-weight="600" font-family="system-ui">✓ Approve</text>
+  <!-- Arrow -->
+  <path d="M730 160 L750 160" stroke="#DA7756" stroke-width="2" stroke-dasharray="4,3"/>
+  <polygon points="750,155 760,160 750,165" fill="#DA7756"/>
+  <!-- Step 4: Board -->
+  <rect x="770" y="20" width="110" height="280" rx="12" fill="#2a2520" stroke="#10b981" stroke-width="1" stroke-opacity="0.3"/>
+  <circle cx="790" cy="44" r="12" fill="#10b981" fill-opacity="0.3"/><text x="790" y="48" text-anchor="middle" fill="#10b981" font-size="11" font-weight="bold">4</text>
+  <text x="810" y="48" fill="#ebe4d8" font-size="12" font-weight="600" font-family="system-ui">Board</text>
+  <!-- Mini kanban -->
+  <rect x="782" y="64" width="86" height="16" rx="3" fill="#f59e0b" fill-opacity="0.1"/><text x="825" y="75" text-anchor="middle" fill="#f59e0b" font-size="7" font-family="system-ui">BACKLOG</text>
+  <rect x="782" y="84" width="86" height="20" rx="4" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/><text x="790" y="97" fill="#b5ab9a" font-size="7" font-family="system-ui">JWT middleware</text>
+  <rect x="782" y="108" width="86" height="20" rx="4" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/><text x="790" y="121" fill="#b5ab9a" font-size="7" font-family="system-ui">Login endpoints</text>
+  <rect x="782" y="132" width="86" height="20" rx="4" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/><text x="790" y="145" fill="#b5ab9a" font-size="7" font-family="system-ui">Auth tests</text>
+</svg>

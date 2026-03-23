@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 220" fill="none">
+  <defs>
+    <linearGradient id="bg5" x1="0" y1="0" x2="900" y2="220"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+  </defs>
+  <rect width="900" height="220" rx="16" fill="url(#bg5)"/>
+  <!-- Title -->
+  <text x="20" y="30" fill="#ebe4d8" font-size="13" font-weight="600" font-family="system-ui">Auto-Queue Pipeline</text>
+  <text x="220" y="30" fill="#736858" font-size="10" font-family="system-ui">Tasks execute automatically in sequence</text>
+  <!-- Task 1: Done -->
+  <rect x="20" y="50" width="200" height="70" rx="10" fill="#2a2520" stroke="#10b981" stroke-width="1" stroke-opacity="0.4"/>
+  <circle cx="40" cy="70" r="8" fill="#10b981" fill-opacity="0.2"/><text x="40" y="73" text-anchor="middle" fill="#10b981" font-size="9" font-weight="bold" font-family="system-ui">✓</text>
+  <text x="56" y="73" fill="#10b981" font-size="10" font-weight="600" font-family="system-ui">Setup database schema</text>
+  <text x="56" y="90" fill="#736858" font-size="8" font-family="system-ui">Completed in 2m 14s</text>
+  <text x="56" y="106" fill="#4b4538" font-size="8" font-family="monospace">sonnet | 8.2k tokens | $0.04</text>
+  <!-- Arrow -->
+  <path d="M228 85 L258 85" stroke="#10b981" stroke-width="1.5"/><polygon points="256,80 266,85 256,90" fill="#10b981"/>
+  <!-- Task 2: Running -->
+  <rect x="274" y="50" width="200" height="70" rx="10" fill="#2a2520" stroke="#f59e0b" stroke-width="1.5"/>
+  <circle cx="294" cy="70" r="8" fill="#f59e0b" fill-opacity="0.2"><animate attributeName="fill-opacity" values="0.2;0.5;0.2" dur="2s" repeatCount="indefinite"/></circle>
+  <circle cx="294" cy="70" r="3" fill="#f59e0b"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+  <text x="310" y="73" fill="#f59e0b" font-size="10" font-weight="600" font-family="system-ui">Add user auth API</text>
+  <text x="310" y="90" fill="#f59e0b" font-size="8" font-family="system-ui">Running... 1m 32s</text>
+  <text x="310" y="106" fill="#4b4538" font-size="8" font-family="monospace">opus | 24.1k tokens</text>
+  <!-- Arrow -->
+  <path d="M482 85 L512 85" stroke="#3d372e" stroke-width="1.5" stroke-dasharray="4,3"/><polygon points="510,80 520,85 510,90" fill="#3d372e"/>
+  <!-- Task 3: Queued -->
+  <rect x="528" y="50" width="200" height="70" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <circle cx="548" cy="70" r="8" fill="#3d372e"/><text x="548" y="73" text-anchor="middle" fill="#736858" font-size="8" font-family="system-ui">3</text>
+  <text x="564" y="73" fill="#b5ab9a" font-size="10" font-weight="500" font-family="system-ui">Write API tests</text>
+  <text x="564" y="90" fill="#4b4538" font-size="8" font-family="system-ui">Queued — starts when #2 finishes</text>
+  <text x="564" y="106" fill="#4b4538" font-size="8" font-family="monospace">sonnet | auto-start</text>
+  <!-- Arrow -->
+  <path d="M736 85 L766 85" stroke="#3d372e" stroke-width="1.5" stroke-dasharray="4,3"/><polygon points="764,80 774,85 764,90" fill="#3d372e"/>
+  <!-- Task 4: Queued -->
+  <rect x="782" y="50" width="98" height="70" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <circle cx="802" cy="70" r="8" fill="#3d372e"/><text x="802" y="73" text-anchor="middle" fill="#736858" font-size="8" font-family="system-ui">4</text>
+  <text x="818" y="73" fill="#b5ab9a" font-size="9" font-weight="500" font-family="system-ui">Deploy</text>
+  <text x="818" y="90" fill="#4b4538" font-size="8" font-family="system-ui">Queued</text>
+  <!-- Config bar -->
+  <rect x="20" y="140" width="860" height="60" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <text x="40" y="165" fill="#736858" font-size="9" font-family="system-ui">Queue Settings</text>
+  <rect x="160" y="152" width="100" height="24" rx="6" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <text x="175" y="167" fill="#b5ab9a" font-size="9" font-family="system-ui">Auto-Queue</text>
+  <rect x="244" y="156" width="12" height="12" rx="3" fill="#10b981"/>
+  <rect x="290" y="152" width="120" height="24" rx="6" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <text x="305" y="167" fill="#b5ab9a" font-size="9" font-family="system-ui">Max Concurrent</text>
+  <text x="396" y="167" fill="#DA7756" font-size="9" font-weight="700" font-family="system-ui">1</text>
+</svg>

@@ -5,9 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Claude Board</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%9C%A6</text></svg>" />
+    <style>
+      body { margin: 0; background: #1a1613; }
+      #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; background: #1a1613; transition: opacity 0.3s; }
+      #splash.hide { opacity: 0; pointer-events: none; }
+      #splash .logo { width: 48px; height: 48px; background: linear-gradient(135deg, #E8926E, #C45A3C); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+      #splash .logo svg { width: 28px; height: 28px; }
+      #splash .title { color: #ebe4d8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; font-weight: 600; }
+      #splash .spinner { width: 20px; height: 20px; border: 2px solid #3d372e; border-top-color: #DA7756; border-radius: 50%; animation: spin 0.8s linear infinite; margin-top: 20px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body class="bg-surface-950 text-white">
+    <div id="splash">
+      <div class="logo">
+        <svg viewBox="0 0 512 512" fill="none"><path d="M256 72 C256 72,272 188,276 212 C280 236,324 256,440 256 C324 256,280 276,276 300 C272 324,256 440,256 440 C256 440,240 324,236 300 C232 276,188 256,72 256 C188 256,232 236,236 212 C240 188,256 72,256 72Z" fill="white" opacity="0.95"/></svg>
+      </div>
+      <div class="title">Claude Board</div>
+      <div class="spinner"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Hide splash when React mounts
+      const observer = new MutationObserver(() => {
+        const root = document.getElementById('root');
+        if (root && root.children.length > 0) {
+          const splash = document.getElementById('splash');
+          if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 300); }
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.getElementById('root'), { childList: true });
+    </script>
   </body>
 </html>
