@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.10.1",
     "@uiw/react-md-editor": "^4.0.11",
     "boring-avatars": "^2.0.4",
     "lucide-react": "^0.460.0",

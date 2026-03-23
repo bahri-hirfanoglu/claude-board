@@ -1,0 +1,16 @@
+{
+  "$schema": "https://schemas.tauri.app/v2/capability",
+  "identifier": "default",
+  "description": "Default capabilities for Claude Board",
+  "windows": ["*"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:event:allow-emit",
+    "core:event:allow-listen",
+    "shell:allow-open",
+    "dialog:default",
+    "fs:default",
+    "updater:default"
+  ]
+}

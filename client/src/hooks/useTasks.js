@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { socket } from '../lib/socket';
+import { tauriListen, IS_TAURI } from '../lib/tauriEvents';
 
 export function useTasks(currentProject, addToast) {
   const [tasks, setTasks] = useState([]);
@@ -14,11 +15,14 @@ export function useTasks(currentProject, addToast) {
     });
   }, [currentProject, addToast]);
 
-  // Socket events
+  // Real-time events
   useEffect(() => {
     const onCreate = (task) => {
       if (currentProject && task.project_id === currentProject.id) {
-        setTasks(prev => [...prev, task]);
+        setTasks(prev => {
+          if (prev.some(t => t.id === task.id)) return prev;
+          return [...prev, task];
+        });
       }
     };
     const onUpdate = (task) => {
@@ -37,16 +41,26 @@ export function useTasks(currentProject, addToast) {
       setTasks(prev => prev.filter(t => t.id !== id));
     };
 
-    socket.on('task:created', onCreate);
-    socket.on('task:updated', onUpdate);
-    socket.on('task:usage', onUsage);
-    socket.on('task:deleted', onDelete);
-    return () => {
-      socket.off('task:created', onCreate);
-      socket.off('task:updated', onUpdate);
-      socket.off('task:usage', onUsage);
-      socket.off('task:deleted', onDelete);
-    };
+    if (IS_TAURI) {
+      const unsubs = [
+        tauriListen('task:created', onCreate),
+        tauriListen('task:updated', onUpdate),
+        tauriListen('task:usage', onUsage),
+        tauriListen('task:deleted', onDelete),
+      ];
+      return () => unsubs.forEach(fn => fn());
+    } else {
+      socket.on('task:created', onCreate);
+      socket.on('task:updated', onUpdate);
+      socket.on('task:usage', onUsage);
+      socket.on('task:deleted', onDelete);
+      return () => {
+        socket.off('task:created', onCreate);
+        socket.off('task:updated', onUpdate);
+        socket.off('task:usage', onUsage);
+        socket.off('task:deleted', onDelete);
+      };
+    }
   }, [currentProject]);
 
   return { tasks, setTasks };

@@ -4,13 +4,13 @@
 
 **AI-powered task management platform that orchestrates Claude to autonomously execute development tasks.**
 
-[![Version](https://img.shields.io/badge/version-4.0.0-DA7756?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
+[![Version](https://img.shields.io/badge/version-5.0.0-DA7756?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+[![Tauri](https://img.shields.io/badge/tauri-v2-FFC131?style=flat-square)](https://v2.tauri.app)
+[![Rust](https://img.shields.io/badge/rust-backend-DEA584?style=flat-square)](https://www.rust-lang.org)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green?style=flat-square)](https://nodejs.org)
-[![Docker](https://img.shields.io/badge/docker-supported-2496ED?style=flat-square)](Dockerfile)
-[![Electron](https://img.shields.io/badge/electron-desktop%20app-9FEAF9?style=flat-square)](https://github.com/bahri-hirfanoglu/claude-board/releases)
 
-[Features](#features) &bull; [Download](#download) &bull; [Quick Start](#quick-start) &bull; [Screenshots](#screenshots) &bull; [Documentation](#documentation) &bull; [Architecture](#architecture) &bull; [API](#api-reference) &bull; [Contributing](#contributing)
+[Features](#features) &bull; [Download](#download) &bull; [Quick Start](#quick-start) &bull; [Screenshots](#screenshots) &bull; [Documentation](#documentation) &bull; [Architecture](#architecture) &bull; [Contributing](#contributing)
 
 ![Demo](web/demo.gif)
 
@@ -32,8 +32,7 @@ Download the latest version for your platform:
 
 | Platform | Download | Notes |
 |----------|----------|-------|
-| **Windows** | [ClaudeBoard-Setup.exe](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | NSIS installer with desktop shortcut |
-| **Windows Portable** | [ClaudeBoard-Portable.exe](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | No installation required |
+| **Windows** | [ClaudeBoard-Setup.exe](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | NSIS installer |
 | **macOS (Intel)** | [ClaudeBoard-x64.dmg](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Intel Macs |
 | **macOS (Apple Silicon)** | [ClaudeBoard-arm64.dmg](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | M1/M2/M3/M4 Macs |
 | **Linux** | [ClaudeBoard.AppImage](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Universal Linux |
@@ -65,7 +64,7 @@ Download the latest version for your platform:
 - **CLAUDE.md Editor** &mdash; Edit project-level Claude configuration directly from the UI
 - **Permission Modes** &mdash; Auto-accept, allow specific tools, or default Claude permissions per project
 - **Model Selection** &mdash; Choose Opus, Sonnet, or Haiku per task with thinking effort levels
-- **Desktop App** &mdash; Native Windows (.exe), macOS (.dmg), and Linux (AppImage/deb) builds via Electron
+- **Desktop App** &mdash; Native Windows (.exe), macOS (.dmg), and Linux (AppImage/deb) builds via Tauri
 - **Mobile Responsive** &mdash; Full mobile support with touch-friendly task move buttons
 - **Task Keys** &mdash; Jira-style task identifiers (e.g. `FTR-CB-1001`) auto-generated from task type, project key, and counter
 - **Status Transition Animations** &mdash; Particle effects on status change &mdash; sparks (In Progress), shimmer (Testing), confetti (Done), rewind (backward)
@@ -115,7 +114,7 @@ Configure webhooks per project from the project menu. Filter which events trigge
 #### Setup Wizard
 <img src="web/screenshots/setup-wizard.png" alt="Setup Wizard" width="400" />
 
-*First-run configuration &mdash; choose your data directory and server port*
+*First-run configuration &mdash; choose your data directory*
 
 #### Splash Screen
 <img src="web/screenshots/splash-screen.png" alt="Splash Screen" width="320" />
@@ -126,72 +125,29 @@ Configure webhooks per project from the project menu. Filter which events trigge
 
 ### Prerequisites
 
+- [Rust](https://www.rust-lang.org/tools/install) (latest stable toolchain)
 - [Node.js](https://nodejs.org) >= 18.0.0
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
 
-### Install & Run
+### Install from Source
 
 ```bash
 git clone https://github.com/bahri-hirfanoglu/claude-board.git
 cd claude-board
-npm run setup
-npm run dev
-```
-
-Open [http://localhost:4000](http://localhost:4000) in your browser.
-
-### Production
-
-```bash
-npm run build
-npm start
-```
-
-### Docker
-
-```bash
-docker build -t claude-board .
-docker run -p 4000:4000 -v claude-data:/app/data claude-board
-```
-
-Or with Docker Compose:
-
-```bash
-docker compose up -d
-```
-
-### Desktop App (Development)
-
-```bash
-npm run build
-npm run electron:dev
+npm install
+cd client && npm install && cd ..
+npx tauri dev
 ```
 
 ### Build Desktop Installers
 
 ```bash
-# Windows
-npm run electron:build:win
-
-# macOS
-npm run electron:build:mac
-
-# Linux
-npm run electron:build:linux
-
-# All platforms
-npm run electron:build
+npx tauri build
 ```
 
-Built artifacts are saved to `dist-electron/`.
+Built artifacts are saved to `src-tauri/target/release/bundle/`.
 
 ## Configuration
-
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `4000` | Server port |
 
 ### Project Settings
 
@@ -229,73 +185,64 @@ The documentation covers:
 
 ```
 claude-board/
-  server.js                         # Entry point
-  electron/
-    main.cjs                        # Electron main process (desktop app)
+  src-tauri/                          # Rust backend (Tauri v2)
+    src/
+      main.rs                         # Entry point, Tauri setup
+      db/
+        mod.rs                        # SQLite init (rusqlite), query helpers
+        schema.rs                     # Tables + migrations
+        projects.rs                   # Project queries
+        tasks.rs                      # Task queries
+        stats.rs                      # Statistics queries
+        activity.rs                   # Activity log queries
+        snippets.rs                   # Context snippet queries
+        templates.rs                  # Prompt template queries
+        webhooks.rs                   # Webhook configuration queries
+        attachments.rs                # File attachment queries
+      claude/
+        runner.rs                     # Claude CLI process management
+        events.rs                     # Stream event parser
+        prompt.rs                     # Task prompt builder
+      commands/                       # Tauri command handlers (IPC)
+      services/
+        webhook_dispatcher.rs         # Webhook payload builder & HTTP dispatcher
+    Cargo.toml                        # Rust dependencies
+    tauri.conf.json                   # Tauri configuration
 
-  src/                              # Backend modules
-    app.js                          # Express + Socket.IO factory
-    db/
-      connection.js                 # SQLite init, query helpers
-      schema.js                     # Tables + migrations
-      projects.js                   # Project queries
-      tasks.js                      # Task queries
-      stats.js                      # Statistics queries
-      activity.js                   # Activity log queries
-      snippets.js                   # Context snippet queries
-      templates.js                  # Prompt template queries
-      webhooks.js                   # Webhook configuration queries
-      attachments.js                # File attachment queries
-      index.js                      # Barrel export
-    claude/
-      runner.js                     # Claude CLI process management
-      events.js                     # Stream event parser
-      prompt.js                     # Task prompt builder
-    routes/
-      projects.js                   # /api/projects
-      tasks.js                      # /api/tasks
-      stats.js                      # /api/stats, activity, CLAUDE.md
-      snippets.js                   # /api/snippets
-      templates.js                  # /api/templates
-      webhooks.js                   # /api/webhooks
-      attachments.js                # /api/attachments
-    services/
-      webhookDispatcher.js          # Webhook payload builder & HTTP dispatcher
-
-  client/src/                       # React frontend
-    app/                            # Application shell
-    hooks/                          # Custom React hooks
-      useVoiceInput.js              # Web Speech API hook
-      useKeyboardShortcut.js        # Keyboard shortcut hook
-    lib/                            # Shared utilities
-    features/                       # Feature modules
-      board/                        # Kanban, List, Timeline, Summary views
-      snippets/                     # Context snippets manager
-      templates/                    # Prompt templates manager
-      webhooks/                     # Webhook configuration UI
-      terminal/                     # Live output viewer
-      stats/                        # Statistics panel
-      activity/                     # Activity timeline
-      dashboard/                    # Home dashboard
-      projects/                     # Header, ProjectModal
-      tasks/                        # TaskModal, ReviewModal, TaskDetailModal
-      editor/                       # CLAUDE.md editor
-      voice/                        # Voice assistant
-        engine/                     # TTS, STT analyser, sound effects
-        intent/                     # Intent parser, entity extractors
-        commands/                   # Plugin-based command modules
-        components/                 # ChatPanel, AudioVisualizer, CommandHints
-    components/                     # Shared UI
+  client/src/                         # React frontend
+    app/                              # Application shell
+    hooks/                            # Custom React hooks
+      useVoiceInput.js                # Web Speech API hook
+      useKeyboardShortcut.js          # Keyboard shortcut hook
+    lib/                              # Shared utilities
+    features/                         # Feature modules
+      board/                          # Kanban, List, Timeline, Summary views
+      snippets/                       # Context snippets manager
+      templates/                      # Prompt templates manager
+      webhooks/                       # Webhook configuration UI
+      terminal/                       # Live output viewer
+      stats/                          # Statistics panel
+      activity/                       # Activity timeline
+      dashboard/                      # Home dashboard
+      projects/                       # Header, ProjectModal
+      tasks/                          # TaskModal, ReviewModal, TaskDetailModal
+      editor/                         # CLAUDE.md editor
+      voice/                          # Voice assistant
+        engine/                       # TTS, STT analyser, sound effects
+        intent/                       # Intent parser, entity extractors
+        commands/                     # Plugin-based command modules
+        components/                   # ChatPanel, AudioVisualizer, CommandHints
+    components/                       # Shared UI
 ```
 
 ### Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| **Backend** | Node.js, Express, Socket.IO |
+| **Backend** | Rust, Tauri v2, Tauri Events (IPC) |
 | **Frontend** | React 18, Vite, Tailwind CSS |
-| **Database** | SQLite (via sql.js, zero config) |
-| **Desktop** | Electron, electron-builder |
+| **Database** | SQLite (via rusqlite, zero config) |
+| **Desktop** | Tauri v2 |
 | **Icons** | Lucide React |
 | **Avatars** | Boring Avatars |
 | **Markdown** | @uiw/react-md-editor |
@@ -306,99 +253,16 @@ claude-board/
 ```
 User creates task
   -> Drags to "In Progress"
-  -> Server spawns Claude CLI process
+  -> Rust backend spawns Claude CLI process
   -> Claude reads/writes code, runs commands
   -> Stream events parsed in real-time
+  -> Tauri events push updates to frontend
   -> Live terminal shows progress
   -> Token usage tracked per turn
   -> Webhook notifications dispatched to configured services
   -> Claude finishes -> task moves to "Testing" (timer pauses)
   -> User reviews -> Approve (Done) or Request Changes (back to In Progress, timer resumes)
 ```
-
-## API Reference
-
-### Projects
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/projects` | List all projects |
-| `GET` | `/api/projects/summary` | Projects with aggregated stats |
-| `POST` | `/api/projects` | Create project |
-| `PUT` | `/api/projects/:id` | Update project |
-| `DELETE` | `/api/projects/:id` | Delete project |
-
-### Tasks
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/projects/:id/tasks` | List tasks for project |
-| `POST` | `/api/projects/:id/tasks` | Create task |
-| `PUT` | `/api/tasks/:id` | Update task |
-| `PATCH` | `/api/tasks/:id/status` | Change task status |
-| `DELETE` | `/api/tasks/:id` | Delete task |
-| `POST` | `/api/tasks/:id/stop` | Stop running Claude |
-| `POST` | `/api/tasks/:id/restart` | Restart Claude |
-| `POST` | `/api/tasks/:id/request-changes` | Request revision with feedback |
-| `GET` | `/api/tasks/:id/revisions` | Get revision history |
-| `GET` | `/api/tasks/:id/logs` | Get task logs |
-| `GET` | `/api/tasks/:id/detail` | Get task with commits, revisions, attachments |
-
-### Webhooks
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/projects/:id/webhooks` | List project webhooks |
-| `POST` | `/api/projects/:id/webhooks` | Create webhook |
-| `PUT` | `/api/webhooks/:id` | Update webhook |
-| `DELETE` | `/api/webhooks/:id` | Delete webhook |
-| `POST` | `/api/webhooks/:id/test` | Send test notification |
-
-### Context Snippets
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/projects/:id/snippets` | List project snippets |
-| `POST` | `/api/projects/:id/snippets` | Create snippet |
-| `PUT` | `/api/snippets/:id` | Update snippet |
-| `DELETE` | `/api/snippets/:id` | Delete snippet |
-
-### Templates
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/projects/:id/templates` | List project templates |
-| `POST` | `/api/projects/:id/templates` | Create template |
-| `PUT` | `/api/templates/:id` | Update template |
-| `DELETE` | `/api/templates/:id` | Delete template |
-
-### Attachments
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/tasks/:id/attachments` | Upload files to task |
-| `GET` | `/api/tasks/:id/attachments` | List task attachments |
-| `DELETE` | `/api/attachments/:id` | Delete attachment |
-
-### Stats & Activity
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/projects/:id/stats` | Project statistics |
-| `GET` | `/api/projects/:id/activity` | Activity timeline |
-| `GET` | `/api/stats/claude-usage` | Global Claude usage stats |
-
-### Socket.IO Events
-
-| Event | Direction | Description |
-|-------|-----------|-------------|
-| `task:created` | Server -> Client | New task created |
-| `task:updated` | Server -> Client | Task data changed |
-| `task:deleted` | Server -> Client | Task removed |
-| `task:log` | Server -> Client | Live log entry |
-| `task:usage` | Server -> Client | Live token update |
-| `claude:limits` | Server -> Client | Rate limit status |
-| `claude:finished` | Server -> Client | Claude process ended |
 
 ## Contributing
 

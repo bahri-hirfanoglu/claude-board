@@ -4,8 +4,8 @@
 
 | Version | Supported          |
 |---------|--------------------|
-| 3.x     | :white_check_mark: |
-| < 3.0   | :x:                |
+| 5.x     | :white_check_mark: |
+| < 5.0   | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -26,10 +26,9 @@ Claude Board spawns Claude CLI processes with configurable permission modes. Ple
 
 ### Recommendations
 
-- Run Claude Board in an isolated environment (Docker container or VM) when using `auto-accept` mode.
+- Run Claude Board in an isolated environment (VM or sandboxed environment) when using `auto-accept` mode.
 - Use `allow-tools` mode in production and restrict to only necessary tools.
-- Enable API key authentication for any network-exposed deployment.
-- Do not expose Claude Board to the public internet without authentication enabled.
+- Keep your Tauri and Rust dependencies up to date.
 - Regularly update dependencies to patch known vulnerabilities.
 
 ## Scope

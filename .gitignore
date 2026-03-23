@@ -4,9 +4,9 @@ client/node_modules/
 
 # Build
 client/dist/
+src-tauri/target/
 
 # Database
-data/
 *.db
 
 # Environment
@@ -16,14 +16,12 @@ data/
 .claude/
 .mcp.json
 
-# Uploads
-uploads/
-
 # OS
 .DS_Store
 Thumbs.db
-scripts/
-logs/
-dist-electron/
 
-promo-frames/
+# Logs
+logs/
+
+# Signing keys
+src-tauri/keys/

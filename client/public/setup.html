@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #1f1b17; height: 100vh; overflow: hidden;
+  }
+  .card {
+    background: #1f1b17;
+    padding: 44px 40px 36px; height: 100vh;
+  }
+  .icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #E8926E, #C45A3C);
+    border-radius: 16px; margin: 0 auto 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .icon svg { width: 36px; height: 36px; }
+  h1 { color: #ebe4d8; font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+  .subtitle { color: #736858; font-size: 12px; text-align: center; margin-bottom: 32px; }
+  label { display: block; color: #b5ab9a; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+  .desc { color: #564d40; font-size: 11px; margin-bottom: 20px; line-height: 1.5; }
+  .path-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .path-input {
+    flex: 1; padding: 10px 14px; background: #2a2520; border: 1px solid #3d372e;
+    border-radius: 10px; color: #ebe4d8; font-size: 12px; font-family: monospace; outline: none;
+  }
+  .path-input:focus { border-color: #DA7756; }
+  .browse-btn {
+    padding: 10px 16px; background: #2a2520; border: 1px solid #3d372e;
+    border-radius: 10px; color: #b5ab9a; font-size: 12px; cursor: pointer;
+    white-space: nowrap; transition: all 0.15s;
+  }
+  .browse-btn:hover { border-color: #DA7756; color: #DA7756; }
+  .info {
+    display: flex; align-items: flex-start; gap: 8px; padding: 12px;
+    background: #2a2520; border-radius: 10px; margin-bottom: 28px;
+  }
+  .info-icon { color: #DA7756; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .info-text { color: #918678; font-size: 11px; line-height: 1.5; }
+  .actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn {
+    padding: 10px 28px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-secondary { background: #2a2520; color: #b5ab9a; border: 1px solid #3d372e; }
+  .btn-secondary:hover { border-color: #918678; color: #ebe4d8; }
+  .btn-primary { background: linear-gradient(135deg, #DA7756, #C45A3C); color: white; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
+  .port-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .port-input {
+    width: 80px; padding: 10px 14px; background: #2a2520; border: 1px solid #3d372e;
+    border-radius: 10px; color: #ebe4d8; font-size: 12px; font-family: monospace;
+    outline: none; text-align: center;
+  }
+  .port-input:focus { border-color: #DA7756; }
+  .port-label { color: #564d40; font-size: 11px; }
+</style></head>
+<body><div class="card">
+  <div class="icon">
+    <svg viewBox="0 0 512 512" fill="none">
+      <path d="M256 72 C256 72,272 188,276 212 C280 236,324 256,440 256 C324 256,280 276,276 300 C272 324,256 440,256 440 C256 440,240 324,236 300 C232 276,188 256,72 256 C188 256,232 236,236 212 C240 188,256 72,256 72Z" fill="white" opacity="0.95"/>
+    </svg>
+  </div>
+  <h1>Welcome to Claude Board</h1>
+  <div class="subtitle">Let's set up a few things before we start</div>
+  <label>Data Directory</label>
+  <div class="desc">Where your projects, tasks, and database will be stored.</div>
+  <div class="path-row">
+    <input class="path-input" id="dataPath" value="" />
+    <button class="browse-btn" onclick="browse()">Browse</button>
+  </div>
+  <div class="info">
+    <span class="info-icon">i</span>
+    <span class="info-text">This folder will contain your SQLite database and uploaded files. You can change this later in the config file.</span>
+  </div>
+  <label>Server Port</label>
+  <div class="port-row">
+    <input class="port-input" id="portInput" type="number" value="4000" min="1024" max="65535" />
+    <span class="port-label">Default: 4000</span>
+  </div>
+  <div class="actions">
+    <button class="btn btn-secondary" onclick="quit()">Cancel</button>
+    <button class="btn btn-primary" id="startBtn" onclick="start()">Get Started</button>
+  </div>
+</div>
+<script>
+  const invoke = window.__TAURI_INTERNALS__.invoke;
+
+  // Load default directory on page load
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const dir = await invoke('get_default_dir');
+      document.getElementById('dataPath').value = dir;
+    } catch(e) { console.error(e); }
+  });
+
+  async function browse() {
+    try {
+      const result = await invoke('browse_folder');
+      if (result) document.getElementById('dataPath').value = result;
+    } catch(e) { console.error(e); }
+  }
+
+  async function start() {
+    const btn = document.getElementById('startBtn');
+    btn.disabled = true; btn.textContent = 'Setting up...';
+    try {
+      const dataDir = document.getElementById('dataPath').value;
+      const port = parseInt(document.getElementById('portInput').value) || 4000;
+      await invoke('finish', { dataDir: dataDir, port: port });
+    } catch(e) {
+      console.error('Setup error:', e);
+      btn.disabled = false; btn.textContent = 'Get Started';
+    }
+  }
+
+  function quit() {
+    invoke('quit');
+  }
+</script>
+</body></html>

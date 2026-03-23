@@ -1,34 +1,46 @@
 ---
-title: "Environment Variables"
-description: "Configure Claude Board with environment variables"
+title: "Configuration"
+description: "Configure Claude Board via config.json and environment variables"
 icon: "sliders"
 ---
 
-Claude Board uses environment variables for core configuration. Set these before starting the server or desktop app.
+Claude Board stores its configuration in a `config.json` file inside the application data directory. Settings can also be changed through the [setup wizard](/desktop/setup) on first launch or the in-app settings menu.
 
-## Available Variables
+## Config File Location
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `4000` | HTTP server port |
-| `CLAUDE_BOARD_DATA` | OS-specific | Directory for database and uploads |
+| Platform | Default Path |
+|----------|-------------|
+| Windows | `%APPDATA%/claude-board/config.json` |
+| macOS | `~/Library/Application Support/claude-board/config.json` |
+| Linux | `~/.config/claude-board/config.json` |
 
-## PORT
+## Available Settings
 
-Set the port that Claude Board's Express server listens on:
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `port` | `4000` | MCP HTTP server port for Claude runner integration |
+| `dataDir` | OS-specific | Directory for database and uploads |
 
-```bash
-PORT=8080 npm start
+## MCP Server Port
+
+The built-in MCP HTTP server allows Claude Code runners to communicate with Claude Board. Set the port in `config.json`:
+
+```json
+{
+  "port": 8080
+}
 ```
 
-<Note>If the port is in use, the server will fail to start. Choose an available port or stop the conflicting process.</Note>
+<Note>If the port is in use, the MCP server will fail to start. Choose an available port or stop the conflicting process.</Note>
 
-## CLAUDE_BOARD_DATA
+## Data Directory
 
 Controls where Claude Board stores its SQLite database and uploaded file attachments:
 
-```bash
-CLAUDE_BOARD_DATA=/path/to/data npm start
+```json
+{
+  "dataDir": "/path/to/data"
+}
 ```
 
 Default locations by platform:
@@ -43,17 +55,15 @@ The directory contains:
 
 - `claude-board.db` — SQLite database (all projects, tasks, settings)
 - `uploads/` — file attachments
+- `config.json` — application configuration
 
-<Warning>Back up the `CLAUDE_BOARD_DATA` directory regularly. It contains all your project data, task history, and logs.</Warning>
+<Warning>Back up the data directory regularly. It contains all your project data, task history, and logs.</Warning>
 
-## Desktop App
+## Environment Variables
 
-When running the Electron desktop app, these variables can be set in the system environment or configured through the [setup wizard](/desktop/setup) on first launch.
+For advanced use cases, the following environment variables are still respected and override `config.json` values:
 
-## Docker (Optional)
-
-If running Claude Board in Docker, pass variables with `-e`:
-
-```bash
-docker run -e PORT=4000 -e CLAUDE_BOARD_DATA=/data claude-board
-```
+| Variable | Description |
+|----------|-------------|
+| `CLAUDE_BOARD_DATA` | Override the data directory path |
+| `PORT` | Override the MCP server port |
