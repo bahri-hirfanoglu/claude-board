@@ -35,7 +35,8 @@
       "minimumSystemVersion": "10.15"
     },
     "resources": ["resources/mcp-server.js"],
-    "publisher": "Bahri Hirfanoglu"
+    "publisher": "Bahri Hirfanoglu",
+    "createUpdaterArtifacts": "v2Compatible"
   },
   "plugins": {
     "updater": {
