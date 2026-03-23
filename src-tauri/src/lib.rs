@@ -147,6 +147,27 @@ pub fn run() {
             commands::planning::approve_plan,
             commands::planning::cancel_planning,
             commands::planning::get_planning_status,
+            // Claude Manager
+            commands::claude_manager::get_auth_info,
+            commands::claude_manager::list_mcp_servers,
+            commands::claude_manager::add_mcp_server,
+            commands::claude_manager::remove_mcp_server,
+            commands::claude_manager::list_plugins,
+            commands::claude_manager::install_plugin,
+            commands::claude_manager::uninstall_plugin,
+            commands::claude_manager::toggle_plugin,
+            commands::claude_manager::list_marketplaces,
+            commands::claude_manager::add_marketplace,
+            commands::claude_manager::remove_marketplace,
+            commands::claude_manager::get_claude_settings,
+            commands::claude_manager::save_claude_settings,
+            commands::claude_manager::list_agents,
+            commands::claude_manager::get_claude_version,
+            commands::claude_manager::update_claude_cli,
+            commands::claude_manager::get_hooks,
+            commands::claude_manager::save_hooks,
+            commands::claude_manager::list_sessions,
+            commands::claude_manager::get_permission_rules,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

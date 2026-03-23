@@ -8,3 +8,4 @@ pub mod webhooks;
 pub mod roles;
 pub mod auth;
 pub mod planning;
+pub mod claude_manager;

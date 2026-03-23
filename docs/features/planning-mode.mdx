@@ -1,10 +1,12 @@
 ---
 title: "Planning Mode"
-description: "AI-powered task breakdown with live progress tracking"
+description: "AI-powered task breakdown with review, approval, and live progress tracking"
 icon: "sparkles"
 ---
 
 Planning Mode uses Claude to analyze a topic and automatically break it down into structured, actionable tasks on your board. Instead of manually creating tasks, describe what you want to build and let Claude explore your codebase, research the approach, and generate a complete task breakdown.
+
+<Frame><img src="/images/feature-planning.svg" alt="Planning Mode Workflow" /></Frame>
 
 ## How It Works
 
@@ -46,14 +48,37 @@ Controls Claude's thinking budget:
 | **Medium** | Balanced depth (default) |
 | **High** | Deep research and thorough exploration |
 
+## Review & Approve Workflow
+
+Generated tasks are no longer added to your board immediately. Instead, Planning Mode presents them as **proposals** that you can review before committing.
+
+<Steps>
+  <Step title="Claude generates proposals" icon="list-check">
+    After analyzing your codebase, Claude produces a list of proposed tasks with titles, descriptions, types, and priorities.
+  </Step>
+  <Step title="Review the breakdown" icon="magnifying-glass">
+    Each proposed task is displayed in an expandable card. Read the description, check acceptance criteria, and verify the dependency order.
+  </Step>
+  <Step title="Approve or revise" icon="check">
+    Approve the entire plan to create all tasks at once, or select individual tasks to approve. You can also remove tasks you don't need before approving.
+  </Step>
+</Steps>
+
+### Revise Capability
+
+If the proposed breakdown doesn't match your expectations, click **Revise** to provide feedback. Describe what should change — different scope, more or fewer tasks, different priorities — and Claude regenerates the plan using your guidance. You can revise as many times as needed before approving.
+
+<Tip>Use the revise step to steer Claude toward your preferred task structure. For example: "Split the API work into separate tasks per endpoint" or "Combine the CSS tasks into one."</Tip>
+
 ## Live Progress
 
-While Claude works, the modal shows real-time feedback:
+While Claude works, the modal shows real-time feedback through an improved activity feed:
 
-- **Phase stepper** — Starting, Exploring, Planning, Done
+- **Phase stepper** — Starting, Exploring, Planning, Reviewing, Done
 - **Live stats** — Elapsed time, token usage, tool calls, turns
-- **Tool call log** — File reads, searches, and commands Claude executes
+- **Activity feed** — A structured, scrollable log showing file reads, searches, and commands as they happen, with clear labels and timestamps
 - **Text output** — Claude's reasoning as it analyzes the codebase
+- **Progress indicators** — Visual progress bars for each phase transition, so you know how far along the planning process is
 
 ## Session Persistence
 

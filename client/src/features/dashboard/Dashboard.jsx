@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3 } from 'lucide-react';
+import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3, Bot } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { api } from '../../lib/api';
 import { formatTokens, formatTimeAgo as timeAgo } from '../../lib/formatters';
 import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 import LanguageSelector from '../../i18n/LanguageSelector';
+import { IS_TAURI } from '../../lib/tauriEvents';
+import ClaudeManager from '../claude-manager/ClaudeManager';
 
 function MiniStatusBar({ backlog, active, testing, done, total }) {
   if (total === 0) return null;
@@ -289,10 +291,46 @@ function ClaudeUsageCard({ t }) {
   );
 }
 
+function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
+  return (
+    <div className="flex items-center justify-between gap-4 mb-8">
+      <div className="min-w-0">
+        <div className="flex items-center gap-3 mb-1">
+          <span className="text-claude text-2xl flex-shrink-0">&#10022;</span>
+          <h1 className="text-xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+        </div>
+        <div className="flex items-center gap-1 mt-2">
+          <button onClick={() => setDashTab('projects')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dashTab === 'projects' ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'}`}>
+            <Layers size={12} className="inline mr-1.5 -mt-0.5" />{t('dashboard.projects')}
+          </button>
+          {IS_TAURI && (
+            <button onClick={() => setDashTab('claude-manager')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dashTab === 'claude-manager' ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'}`}>
+              <Bot size={12} className="inline mr-1.5 -mt-0.5" />{t('cm.title')}
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <span className="text-[10px] text-surface-600 font-mono">v{__APP_VERSION__}</span>
+        <LanguageSelector />
+        {dashTab === 'projects' && (
+          <button onClick={onNewProject}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex-shrink-0 whitespace-nowrap">
+            <Plus size={15} />{t('dashboard.newProject')}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   const { t } = useTranslation();
   const [summary, setSummary] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dashTab, setDashTab] = useState('projects');
 
   useEffect(() => {
     loadSummary();
@@ -316,29 +354,21 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   const allTokens = summary.reduce((s, p) => s + (p.total_tokens || 0), 0);
   const allCost = summary.reduce((s, p) => s + (p.total_cost || 0), 0);
 
+  if (dashTab === 'claude-manager' && IS_TAURI) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <div className="max-w-5xl mx-auto px-6 py-8">
+          <DashHeader t={t} dashTab={dashTab} setDashTab={setDashTab} onNewProject={onNewProject} />
+          <ClaudeManager />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-8">
-          <div className="min-w-0">
-            <div className="flex items-center gap-3 mb-1">
-              <span className="text-claude text-2xl flex-shrink-0">&#10022;</span>
-              <h1 className="text-xl font-bold tracking-tight">{t('dashboard.title')}</h1>
-            </div>
-            <p className="text-sm text-surface-500 hidden sm:block">{t('dashboard.tagline')}</p>
-          </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <LanguageSelector />
-            <button
-              onClick={onNewProject}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex-shrink-0 whitespace-nowrap"
-            >
-              <Plus size={15} />
-              {t('dashboard.newProject')}
-            </button>
-          </div>
-        </div>
+        <DashHeader t={t} dashTab={dashTab} setDashTab={setDashTab} onNewProject={onNewProject} />
 
         {/* Global Stats */}
         {totalProjects > 0 && (

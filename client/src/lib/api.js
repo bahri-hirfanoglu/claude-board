@@ -142,6 +142,29 @@ export const api = IS_TAURI
       getAuthStatus: () => tauriCall('get_auth_status'),
       enableAuth: () => tauriCall('enable_auth'),
       disableAuth: () => tauriCall('disable_auth'),
+
+      // Claude Manager
+      getAuthInfo: () => tauriCall('get_auth_info'),
+      listMcpServers: () => tauriCall('list_mcp_servers'),
+      addMcpServer: (name, commandStr, args, scope, env) =>
+        tauriCall('add_mcp_server', { name, commandStr, args, scope, env }),
+      removeMcpServer: (name, scope) => tauriCall('remove_mcp_server', { name, scope }),
+      listPlugins: () => tauriCall('list_plugins'),
+      installPlugin: (name) => tauriCall('install_plugin', { name }),
+      uninstallPlugin: (name) => tauriCall('uninstall_plugin', { name }),
+      togglePlugin: (name, enabled) => tauriCall('toggle_plugin', { name, enabled }),
+      listMarketplaces: () => tauriCall('list_marketplaces'),
+      addMarketplace: (source, scope) => tauriCall('add_marketplace', { source, scope }),
+      removeMarketplace: (name) => tauriCall('remove_marketplace', { name }),
+      getClaudeSettings: () => tauriCall('get_claude_settings'),
+      saveClaudeSettings: (settings) => tauriCall('save_claude_settings', { settings }),
+      listAgents: () => tauriCall('list_agents'),
+      getClaudeVersion: () => tauriCall('get_claude_version'),
+      updateClaudeCli: () => tauriCall('update_claude_cli'),
+      getHooks: () => tauriCall('get_hooks'),
+      saveHooks: (hooks) => tauriCall('save_hooks', { hooks }),
+      listSessions: () => tauriCall('list_sessions'),
+      getPermissionRules: () => tauriCall('get_permission_rules'),
     }
   : {
       // ─── HTTP mode (web / Node.js server) ───
