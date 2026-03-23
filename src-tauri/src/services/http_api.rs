@@ -9,7 +9,7 @@ use axum::{
 };
 use tower_http::cors::CorsLayer;
 use serde::Deserialize;
-use crate::db::{self, projects, tasks, stats, activity, snippets, attachments, roles};
+use crate::db::{self, projects, tasks, stats, activity, attachments};
 
 pub async fn start_server(port: u16) {
     let app = Router::new()

@@ -5,7 +5,7 @@ use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter};
 use crate::db::{self, DbPool};
-use crate::db::{tasks, snippets, attachments, roles, projects, activity, stats};
+use crate::db::{tasks, snippets, attachments, roles, projects, activity};
 use super::events::{EventContext, UsageTracker, UsageBaseline, UsageSession};
 use super::prompt::build_prompt;
 
@@ -260,7 +260,7 @@ pub fn start(
     let working_dir = working_dir.to_string();
     let project_id = task.project_id;
     let task_title = task.title.clone();
-    let auto_pr = project.auto_pr.unwrap_or(0) == 1;
+    let _auto_pr = project.auto_pr.unwrap_or(0) == 1;
 
     std::thread::spawn(move || {
         let mut cmd = Command::new("claude");

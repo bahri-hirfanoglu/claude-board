@@ -1,5 +1,5 @@
 use tauri::{AppHandle, Emitter};
-use crate::db::{DbPool, tasks, projects, snippets, attachments, roles, activity};
+use crate::db::{DbPool, tasks, projects, activity};
 use crate::claude::runner;
 
 pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
