@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" fill="none">
+  <defs>
+    <linearGradient id="abg" x1="0" y1="0" x2="1000" y2="400"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+    <linearGradient id="aaccent" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#E8926E"/><stop offset="100%" stop-color="#C45A3C"/></linearGradient>
+    <clipPath id="around"><rect width="1000" height="400" rx="16"/></clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="400" rx="16" fill="url(#abg)"/>
+  <ellipse cx="500" cy="0" rx="500" ry="160" fill="#DA7756" fill-opacity="0.04" clip-path="url(#around)"/>
+
+  <!-- ==================== Header ==================== -->
+  <text x="30" y="36" fill="#ebe4d8" font-size="16" font-weight="700" font-family="system-ui">Activity</text>
+
+  <!-- Project filter dropdown -->
+  <rect x="840" y="14" width="140" height="28" rx="7" fill="#2a2520" stroke="#3d372e" stroke-width="0.5"/>
+  <text x="856" y="32" fill="#ebe4d8" font-size="9" font-weight="600" font-family="system-ui">All Projects</text>
+  <path d="M960 26 L966 31 L972 26" stroke="#918678" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+  <!-- Subtle divider -->
+  <rect x="30" y="50" width="940" height="1" fill="#2a2520"/>
+
+  <!-- ==================== Timeline: Today ==================== -->
+  <!-- Date separator -->
+  <rect x="30" y="62" width="940" height="24" rx="0" fill="transparent"/>
+  <rect x="30" y="73" width="60" height="1" fill="#3d372e"/>
+  <text x="100" y="77" fill="#918678" font-size="9" font-weight="700" font-family="system-ui">Today</text>
+  <rect x="140" y="73" width="830" height="1" fill="#3d372e"/>
+
+  <!-- Timeline vertical line -->
+  <line x1="70" y1="92" x2="70" y2="310" stroke="#3d372e" stroke-width="1" stroke-dasharray="3 2"/>
+
+  <!-- ==================== Activity Entry 1: Task completed ==================== -->
+  <!-- Icon circle -->
+  <circle cx="70" cy="112" r="14" fill="#22c55e" fill-opacity="0.12"/>
+  <path d="M64 112 L68 116 L76 108" stroke="#22c55e" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Card -->
+  <rect x="98" y="92" width="870" height="46" rx="8" fill="#2a2520" stroke="#3d372e" stroke-width="0.5"/>
+  <!-- Status badge -->
+  <rect x="112" y="100" width="62" height="16" rx="4" fill="#22c55e" fill-opacity="0.1"/>
+  <text x="143" y="111" text-anchor="middle" fill="#22c55e" font-size="7" font-weight="700" font-family="system-ui">COMPLETED</text>
+  <!-- Task name -->
+  <text x="184" y="111" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Task completed: Add JWT auth</text>
+  <!-- Project pill -->
+  <rect x="112" y="120" width="52" height="14" rx="3" fill="#3b82f6" fill-opacity="0.1"/>
+  <text x="138" y="130" text-anchor="middle" fill="#60a5fa" font-size="7" font-family="system-ui">my-app</text>
+  <text x="174" y="130" fill="#564d40" font-size="7" font-family="system-ui">Tokens: 12.4K</text>
+  <text x="260" y="130" fill="#564d40" font-size="7" font-family="system-ui">Duration: 3m 42s</text>
+  <text x="370" y="130" fill="#564d40" font-size="7" font-family="system-ui">Model: sonnet</text>
+  <!-- Timestamp -->
+  <text x="930" y="111" text-anchor="end" fill="#918678" font-size="9" font-weight="600" font-family="system-ui">14:32</text>
+
+  <!-- ==================== Activity Entry 2: Claude started ==================== -->
+  <circle cx="70" cy="166" r="14" fill="#f59e0b" fill-opacity="0.12"/>
+  <path d="M66 159 L66 173 L77 166Z" fill="#f59e0b"/>
+
+  <rect x="98" y="146" width="870" height="46" rx="8" fill="#2a2520" stroke="#3d372e" stroke-width="0.5"/>
+  <rect x="112" y="154" width="52" height="16" rx="4" fill="#f59e0b" fill-opacity="0.1"/>
+  <text x="138" y="165" text-anchor="middle" fill="#f59e0b" font-size="7" font-weight="700" font-family="system-ui">STARTED</text>
+  <text x="174" y="165" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Claude started: Fix login bug</text>
+  <rect x="112" y="174" width="52" height="14" rx="3" fill="#3b82f6" fill-opacity="0.1"/>
+  <text x="138" y="184" text-anchor="middle" fill="#60a5fa" font-size="7" font-family="system-ui">my-app</text>
+  <text x="174" y="184" fill="#564d40" font-size="7" font-family="system-ui">Model: sonnet</text>
+  <text x="260" y="184" fill="#564d40" font-size="7" font-family="system-ui">Type: bugfix</text>
+  <!-- Animated running indicator -->
+  <rect x="870" y="155" width="56" height="16" rx="4" fill="#f59e0b" fill-opacity="0.1"/>
+  <circle cx="882" cy="163" r="3" fill="#f59e0b">
+    <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <text x="893" y="167" fill="#f59e0b" font-size="7" font-weight="600" font-family="system-ui">Running</text>
+  <text x="930" y="165" text-anchor="end" fill="#918678" font-size="9" font-weight="600" font-family="system-ui">14:28</text>
+
+  <!-- ==================== Activity Entry 3: Task created ==================== -->
+  <circle cx="70" cy="220" r="14" fill="#3b82f6" fill-opacity="0.12"/>
+  <line x1="70" y1="213" x2="70" y2="227" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+  <line x1="63" y1="220" x2="77" y2="220" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+
+  <rect x="98" y="200" width="870" height="46" rx="8" fill="#2a2520" stroke="#3d372e" stroke-width="0.5"/>
+  <rect x="112" y="208" width="50" height="16" rx="4" fill="#3b82f6" fill-opacity="0.1"/>
+  <text x="137" y="219" text-anchor="middle" fill="#3b82f6" font-size="7" font-weight="700" font-family="system-ui">CREATED</text>
+  <text x="172" y="219" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Task created: API docs</text>
+  <rect x="112" y="228" width="62" height="14" rx="3" fill="#a78bfa" fill-opacity="0.1"/>
+  <text x="143" y="238" text-anchor="middle" fill="#a78bfa" font-size="7" font-family="system-ui">api-server</text>
+  <text x="184" y="238" fill="#564d40" font-size="7" font-family="system-ui">Type: docs</text>
+  <text x="240" y="238" fill="#564d40" font-size="7" font-family="system-ui">Priority: low</text>
+  <text x="930" y="219" text-anchor="end" fill="#918678" font-size="9" font-weight="600" font-family="system-ui">13:45</text>
+
+  <!-- ==================== Date separator: Yesterday ==================== -->
+  <rect x="30" y="258" width="60" height="1" fill="#3d372e"/>
+  <text x="100" y="262" fill="#918678" font-size="9" font-weight="700" font-family="system-ui">Yesterday</text>
+  <rect x="166" y="258" width="804" height="1" fill="#3d372e"/>
+
+  <!-- ==================== Activity Entry 4: Branch created ==================== -->
+  <circle cx="70" cy="290" r="14" fill="#a78bfa" fill-opacity="0.12"/>
+  <path d="M66 283 L66 293 M74 283 L74 293 M66 288 Q66 297 74 293" stroke="#a78bfa" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <rect x="98" y="270" width="870" height="46" rx="8" fill="#2a2520" stroke="#3d372e" stroke-width="0.5"/>
+  <rect x="112" y="278" width="48" height="16" rx="4" fill="#a78bfa" fill-opacity="0.1"/>
+  <text x="136" y="289" text-anchor="middle" fill="#a78bfa" font-size="7" font-weight="700" font-family="system-ui">BRANCH</text>
+  <text x="170" y="289" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Branch created: feature/jwt-auth</text>
+  <rect x="112" y="298" width="52" height="14" rx="3" fill="#3b82f6" fill-opacity="0.1"/>
+  <text x="138" y="308" text-anchor="middle" fill="#60a5fa" font-size="7" font-family="system-ui">my-app</text>
+  <text x="174" y="308" fill="#564d40" font-size="7" font-family="system-ui">from: main</text>
+  <text x="930" y="289" text-anchor="end" fill="#918678" font-size="9" font-weight="600" font-family="system-ui">13:20</text>
+
+  <!-- ==================== Activity Entry 5: Task failed ==================== -->
+  <circle cx="70" cy="344" r="14" fill="#ef4444" fill-opacity="0.12"/>
+  <line x1="64" y1="338" x2="76" y2="350" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+  <line x1="76" y1="338" x2="64" y2="350" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+
+  <rect x="98" y="324" width="870" height="46" rx="8" fill="#2a2520" stroke="#ef4444" stroke-width="0.5" stroke-opacity="0.3"/>
+  <rect x="112" y="332" width="42" height="16" rx="4" fill="#ef4444" fill-opacity="0.1"/>
+  <text x="133" y="343" text-anchor="middle" fill="#ef4444" font-size="7" font-weight="700" font-family="system-ui">FAILED</text>
+  <text x="164" y="343" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Task failed (exit 1): Deploy script</text>
+  <rect x="112" y="352" width="62" height="14" rx="3" fill="#a78bfa" fill-opacity="0.1"/>
+  <text x="143" y="362" text-anchor="middle" fill="#a78bfa" font-size="7" font-family="system-ui">api-server</text>
+  <text x="184" y="362" fill="#ef4444" font-size="7" font-family="system-ui">Exit code: 1</text>
+  <text x="260" y="362" fill="#564d40" font-size="7" font-family="system-ui">Duration: 0m 12s</text>
+  <text x="930" y="343" text-anchor="end" fill="#918678" font-size="9" font-weight="600" font-family="system-ui">12:55</text>
+
+  <!-- ==================== Activity Entry 6: Auto-queued (partially visible) ==================== -->
+  <circle cx="70" cy="392" r="14" fill="#06b6d4" fill-opacity="0.12"/>
+  <path d="M64 392 L72 392 M68 388 L72 392 L68 396" stroke="#06b6d4" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="98" y="376" width="870" height="46" rx="8" fill="#2a2520" stroke="#3d372e" stroke-width="0.5"/>
+  <rect x="112" y="384" width="58" height="16" rx="4" fill="#06b6d4" fill-opacity="0.1"/>
+  <text x="141" y="395" text-anchor="middle" fill="#06b6d4" font-size="7" font-weight="700" font-family="system-ui">QUEUED</text>
+  <text x="180" y="395" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Auto-queued: Write unit tests</text>
+  <text x="930" y="395" text-anchor="end" fill="#918678" font-size="9" font-weight="600" font-family="system-ui">12:50</text>
+</svg>
