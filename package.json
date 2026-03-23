@@ -1,6 +1,6 @@
 {
   "name": "claude-board",
-  "version": "4.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Visual task management board for Claude Code — manage AI-powered development tasks with a Kanban-style interface",
   "author": {
@@ -12,166 +12,34 @@
     "node": ">=18.0.0"
   },
   "type": "module",
-  "main": "electron/main.cjs",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "node server.js",
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "start": "node server.js",
     "setup": "npm install && cd client && npm install",
-    "lint": "eslint src/ server.js && cd client && npx eslint src/",
-    "lint:fix": "eslint src/ server.js --fix && cd client && npx eslint src/ --fix",
-    "format": "prettier --write \"src/**/*.js\" \"server.js\"",
-    "format:check": "prettier --check \"src/**/*.js\" \"server.js\"",
-    "prepare": "husky",
-    "electron:dev": "npm run build && electron .",
-    "electron:build": "npm run build && electron-builder",
-    "electron:build:win": "npm run build && electron-builder --win",
-    "electron:build:mac": "npm run build && electron-builder --mac",
-    "electron:build:linux": "npm run build && electron-builder --linux",
-    "icons": "node scripts/generate-icons.js"
-  },
-  "build": {
-    "appId": "com.claudeboard.app",
-    "productName": "Claude Board",
-    "directories": {
-      "output": "dist-electron"
-    },
-    "files": [
-      "electron/**/*",
-      "src/**/*",
-      "server.js",
-      "client/dist/**/*",
-      "node_modules/**/*",
-      "!node_modules/puppeteer/**",
-      "!node_modules/electron/**",
-      "!node_modules/electron-builder/**",
-      "!node_modules/.cache/**"
-    ],
-    "asarUnpack": [
-      "client/dist/**/*",
-      "node_modules/sql.js/**/*"
-    ],
-    "extraResources": [
-      {
-        "from": "build/icon.png",
-        "to": "build/icon.png"
-      },
-      {
-        "from": "build/icon.ico",
-        "to": "build/icon.ico"
-      }
-    ],
-    "forceCodeSigning": false,
-    "publish": {
-      "provider": "github",
-      "owner": "bahri-hirfanoglu",
-      "repo": "claude-board",
-      "releaseType": "release"
-    },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "build/icon.png",
-      "artifactName": "ClaudeBoard-${version}-Setup-${arch}.${ext}"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico",
-      "installerHeaderIcon": "build/icon.ico",
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Claude Board"
-    },
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
-      "icon": "build/icon.png",
-      "category": "public.app-category.developer-tools",
-      "artifactName": "ClaudeBoard-${version}-${arch}.${ext}"
-    },
-    "dmg": {
-      "title": "Claude Board",
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "icon": "build/icon.png",
-      "category": "Development",
-      "artifactName": "ClaudeBoard-${version}-${arch}.${ext}"
-    }
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.1",
-    "concurrently": "^9.1.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "electron-updater": "^6.8.3",
-    "express": "^4.21.0",
-    "multer": "^2.1.1",
-    "socket.io": "^4.8.0",
-    "sql.js": "^1.11.0"
+    "tauri:dev": "npx tauri dev",
+    "tauri:build": "npx tauri build",
+    "lint": "cd client && npx eslint src/",
+    "lint:fix": "cd client && npx eslint src/ --fix",
+    "format": "prettier --write \"client/src/**/*.{js,jsx}\"",
+    "format:check": "prettier --check \"client/src/**/*.{js,jsx}\"",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "electron": "^41.0.2",
-    "electron-builder": "^26.8.1",
+    "@tauri-apps/api": "^2.10.1",
+    "@tauri-apps/cli": "^2.10.1",
     "eslint": "^10.0.3",
     "eslint-config-prettier": "^10.1.8",
-    "gif-encoder-2": "^1.0.5",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
-    "pngjs": "^7.0.0",
-    "prettier": "^3.8.1",
-    "puppeteer": "^24.39.1",
-    "sharp": "^0.34.5"
+    "prettier": "^3.8.1"
   },
   "lint-staged": {
-    "src/**/*.js": [
-      "eslint --max-warnings 5",
-      "prettier --check"
-    ],
-    "server.js": [
-      "eslint --max-warnings 5",
-      "prettier --check"
-    ],
     "client/src/**/*.{js,jsx}": [
       "eslint --max-warnings 10"
     ]
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "zod": "^4.3.6"
   }
 }

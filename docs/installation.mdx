@@ -1,13 +1,12 @@
 ---
 title: "Installation"
-description: "Download Claude Board or install from source"
+description: "Download Claude Board or build from source"
 icon: "download"
 ---
 
 ## Prerequisites
 
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
-- [Node.js](https://nodejs.org) >= 18.0.0 (only for source install)
 
 ## Desktop App
 
@@ -15,7 +14,7 @@ Download the latest release for your platform:
 
 <Columns cols={3}>
   <Card title="Windows" icon="windows" href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest">
-    `.exe` installer (x64)
+    `.exe` / `.msi` installer (x64)
   </Card>
   <Card title="macOS" icon="apple" href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest">
     `.dmg` — Intel & Apple Silicon
@@ -25,43 +24,39 @@ Download the latest release for your platform:
   </Card>
 </Columns>
 
-On first launch, a setup wizard will guide you through choosing a data directory and server port.
+On first launch, a setup wizard will guide you through choosing a data directory and configuring the MCP server port.
 
 <Frame caption="First-run setup wizard">
   <img src="/images/setup-wizard.png" alt="Setup Wizard" />
 </Frame>
 
-## Install from Source
+## Build from Source
 
-<Tabs>
-  <Tab title="npm">
-    ```bash
-    git clone https://github.com/bahri-hirfanoglu/claude-board.git
-    cd claude-board
-    npm run setup
-    npm run dev
-    ```
-  </Tab>
-  <Tab title="Docker">
-    ```bash
-    docker build -t claude-board .
-    docker run -p 4000:4000 -v claude-data:/app/data claude-board
-    ```
-  </Tab>
-  <Tab title="Docker Compose">
-    ```bash
-    docker compose up -d
-    ```
-  </Tab>
-</Tabs>
+Building from source requires both **Rust** and **Node.js** toolchains.
 
-Open [http://localhost:4000](http://localhost:4000) in your browser.
+### Prerequisites
 
-## Production
+- [Rust](https://rustup.rs/) (stable toolchain)
+- [Node.js](https://nodejs.org) >= 18.0.0
+- Platform-specific dependencies for Tauri — see the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/)
+
+### Steps
 
 ```bash
-npm run build
-npm start
+git clone https://github.com/bahri-hirfanoglu/claude-board.git
+cd claude-board
+npm install
+npx tauri dev
 ```
 
-The server starts on port `4000` by default. Set the `PORT` environment variable to change it.
+`npx tauri dev` builds the Rust backend, starts the Vite dev server for the React frontend, and opens the app window with hot-reload enabled.
+
+## Production Build
+
+To produce a distributable installer:
+
+```bash
+npx tauri build
+```
+
+The output is written to `src-tauri/target/release/bundle/` and includes platform-specific installers (`.exe`/`.msi` on Windows, `.dmg` on macOS, `.deb`/`.AppImage` on Linux).

@@ -15,11 +15,13 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            platform: win
+            target: x86_64-pc-windows-msvc
           - os: macos-latest
-            platform: mac
-          - os: ubuntu-latest
-            platform: linux
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
 
     runs-on: ${{ matrix.os }}
 
@@ -31,70 +33,33 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
       - name: Install root dependencies
         run: npm ci
 
       - name: Install client dependencies
         run: cd client && npm ci
 
-      - name: Build client
-        run: npm run build
-
-      - name: Build Electron (Windows)
-        if: matrix.platform == 'win'
-        run: npx electron-builder --win --publish never
+      - name: Build Tauri
+        uses: tauri-apps/tauri-action@v0
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-
-      - name: Build Electron (macOS)
-        if: matrix.platform == 'mac'
-        run: npx electron-builder --mac --publish never
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-
-      - name: Build Electron (Linux)
-        if: matrix.platform == 'linux'
-        run: npx electron-builder --linux --publish never
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          name: release-${{ matrix.platform }}
-          path: |
-            dist-electron/*.exe
-            dist-electron/*.dmg
-            dist-electron/*.AppImage
-            dist-electron/*.deb
-            dist-electron/*.yml
-          if-no-files-found: ignore
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-
-      - name: List artifacts
-        run: find artifacts -type f | head -20
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Claude Board ${{ github.ref_name }}
-          draft: false
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Claude Board ${{ github.ref_name }}'
+          releaseBody: 'See the assets to download and install this version.'
+          releaseDraft: false
           prerelease: false
-          generate_release_notes: true
-          files: |
-            artifacts/**/*.exe
-            artifacts/**/*.dmg
-            artifacts/**/*.AppImage
-            artifacts/**/*.deb
-            artifacts/**/*.yml
-            artifacts/**/*.blockmap
+          args: --target ${{ matrix.target }}

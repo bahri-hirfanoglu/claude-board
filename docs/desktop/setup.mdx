@@ -4,7 +4,7 @@ description: "First-launch setup wizard, data directory, and instance management
 icon: "desktop"
 ---
 
-The Claude Board desktop app is an Electron wrapper around the web application. It provides a native experience with a setup wizard on first launch.
+The Claude Board desktop app is a native application built with Tauri v2 and a Rust backend. It provides a lightweight, high-performance experience with a setup wizard on first launch.
 
 ## Setup Wizard
 
@@ -12,10 +12,10 @@ When you open Claude Board for the first time, the setup wizard guides you throu
 
 <Steps>
   <Step title="Data directory" icon="folder">
-    Choose where Claude Board stores its database and uploads. Defaults to the OS-specific application data path.
+    Choose where Claude Board stores its SQLite database and uploads. Defaults to the OS-specific application data path.
   </Step>
-  <Step title="Port selection" icon="plug">
-    Pick the port for the embedded Express server. Default is `4000`. The wizard checks if the port is available.
+  <Step title="MCP server port" icon="plug">
+    Pick the port for the built-in MCP HTTP server used by Claude runner integration. Default is `4000`. The wizard checks if the port is available.
   </Step>
   <Step title="Claude CLI check" icon="check">
     The wizard verifies that the `claude` CLI is installed and accessible on your PATH.
@@ -24,7 +24,7 @@ When you open Claude Board for the first time, the setup wizard guides you throu
 
 ## Splash Screen
 
-While the server starts up, a splash screen displays the Claude Board logo and a loading indicator. The main window opens once the server is ready to accept connections.
+While the Rust backend initializes, a splash screen displays the Claude Board logo and a loading indicator. The main window opens once the backend is ready.
 
 ## Single Instance Lock
 
@@ -33,18 +33,18 @@ Only one instance of Claude Board can run at a time. If you try to open a second
 - The existing window is brought to the front
 - The second instance exits silently
 
-<Info>This prevents port conflicts and database locking issues from multiple processes accessing the same data directory.</Info>
+<Info>This prevents database locking issues from multiple processes accessing the same data directory.</Info>
 
 ## System Tray
 
 The desktop app minimizes to the system tray. Right-click the tray icon for options:
 
 - **Show** — bring the window to front
-- **Quit** — stop the server and exit
+- **Quit** — stop the backend and exit
 
 ## Changing Settings After Setup
 
-To reconfigure the data directory or port after initial setup:
+To reconfigure the data directory or MCP server port after initial setup:
 
 1. Open the app's settings from the menu
 2. Update the values

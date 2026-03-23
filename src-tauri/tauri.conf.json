@@ -1,0 +1,51 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicedoc/schemas/refs/heads/master/tauri-v2-conf/json-schema.json",
+  "productName": "Claude Board",
+  "version": "1.0.0",
+  "identifier": "com.claudeboard.desktop",
+  "build": {
+    "frontendDist": "../client/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run client",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "wix": null,
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    },
+    "resources": ["resources/mcp-server.js"],
+    "publisher": "Bahri Hirfanoglu"
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE3RjU4MjY0OTk0NjE5NjEKUldSaEdVYVpaSUwxRndQUFN5S0REb1dBNVJscG1rdHdjd3kwOEpZeGdzVjA1Y0UyZCttY1dXTisK",
+      "endpoints": [
+        "https://github.com/bahri-hirfanoglu/claude-board/releases/latest/download/latest.json"
+      ]
+    },
+    "shell": {
+      "open": true
+    }
+  }
+}

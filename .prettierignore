@@ -1,7 +1,7 @@
 node_modules/
 client/node_modules/
 client/dist/
-data/
+src-tauri/target/
 *.db
 package-lock.json
 client/package-lock.json

@@ -7,6 +7,7 @@ import {
   GitBranch, AlertTriangle, CheckCircle2, Timer, Layers
 } from 'lucide-react';
 import { socket } from '../../lib/socket';
+import { tauriListen, IS_TAURI } from '../../lib/tauriEvents';
 import { api } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
 
@@ -488,8 +489,12 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
         setLogs(prev => [...prev, entry]);
       }
     };
-    socket.on('task:log', handler);
-    return () => socket.off('task:log', handler);
+    if (IS_TAURI) {
+      return tauriListen('task:log', handler);
+    } else {
+      socket.on('task:log', handler);
+      return () => socket.off('task:log', handler);
+    }
   }, [task.id, paused]);
 
   const resumeLogs = useCallback(() => {

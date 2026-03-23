@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { socket } from '../../lib/socket';
+import { tauriListen, IS_TAURI } from '../../lib/tauriEvents';
 import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
@@ -154,20 +155,32 @@ export default function PlanningModal({ projectId, onClose }) {
       setTextChunks('');
     };
 
-    socket.on('plan:progress', onProgress);
-    socket.on('plan:log', onLog);
-    socket.on('plan:phase', onPhase);
-    socket.on('plan:stats', onStats);
-    socket.on('plan:completed', onCompleted);
-    socket.on('plan:cancelled', onCancelled);
-    return () => {
-      socket.off('plan:progress', onProgress);
-      socket.off('plan:log', onLog);
-      socket.off('plan:phase', onPhase);
-      socket.off('plan:stats', onStats);
-      socket.off('plan:completed', onCompleted);
-      socket.off('plan:cancelled', onCancelled);
-    };
+    if (IS_TAURI) {
+      const unsubs = [
+        tauriListen('plan:progress', onProgress),
+        tauriListen('plan:log', onLog),
+        tauriListen('plan:phase', onPhase),
+        tauriListen('plan:stats', onStats),
+        tauriListen('plan:completed', onCompleted),
+        tauriListen('plan:cancelled', onCancelled),
+      ];
+      return () => unsubs.forEach(fn => fn());
+    } else {
+      socket.on('plan:progress', onProgress);
+      socket.on('plan:log', onLog);
+      socket.on('plan:phase', onPhase);
+      socket.on('plan:stats', onStats);
+      socket.on('plan:completed', onCompleted);
+      socket.on('plan:cancelled', onCancelled);
+      return () => {
+        socket.off('plan:progress', onProgress);
+        socket.off('plan:log', onLog);
+        socket.off('plan:phase', onPhase);
+        socket.off('plan:stats', onStats);
+        socket.off('plan:completed', onCompleted);
+        socket.off('plan:cancelled', onCancelled);
+      };
+    }
   }, [projectId]);
 
   // Auto-scroll logs

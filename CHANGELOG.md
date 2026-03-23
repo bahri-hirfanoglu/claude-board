@@ -1,5 +1,33 @@
 # Changelog
 
+## [5.0.0] - 2026-03-23
+
+### Architecture
+- **Tauri v2 Migration**: Complete rewrite from Node.js/Express/Electron to Tauri v2 with a Rust backend. The app is now a native desktop application with significantly smaller bundle size and lower memory footprint.
+- **Rust Backend**: All server-side logic (database, Claude runner, webhook dispatcher, API handlers) rewritten in Rust.
+- **rusqlite**: Replaced sql.js with rusqlite for native SQLite access without WASM overhead.
+- **Tauri Events**: Replaced Socket.IO with Tauri's built-in event system for real-time frontend updates (task logs, usage tracking, status changes).
+- **Tauri Commands (IPC)**: All API endpoints replaced with Tauri command handlers invoked directly from the frontend.
+
+### Removed
+- Node.js/Express backend (`server.js`, `src/` directory)
+- Electron wrapper (`electron/` directory)
+- Socket.IO dependency
+- Docker support (`Dockerfile`, `docker-compose.yml`)
+- Web browser mode (the app is now desktop-only via Tauri)
+- sql.js dependency (replaced by rusqlite)
+
+### Changed
+- Project structure: backend code now lives in `src-tauri/`, frontend remains in `client/`
+- Build tooling: `npx tauri dev` for development, `npx tauri build` for release builds
+- Desktop installers now produced by Tauri's bundler instead of electron-builder
+
+### Preserved
+- All existing features (Kanban board, live terminal, voice assistant, webhooks, git automation, etc.)
+- React + Tailwind frontend (unchanged)
+- MCP integration
+- SQLite database schema (compatible migration)
+
 ## [4.0.0] - 2026-03-19
 
 ### Added

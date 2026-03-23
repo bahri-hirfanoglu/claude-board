@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { socket } from '../lib/socket';
+import { tauriListen, IS_TAURI } from '../lib/tauriEvents';
 
 export function useProjects() {
   const [projects, setProjects] = useState([]);
@@ -63,14 +64,23 @@ export function useProjects() {
       });
     };
 
-    socket.on('project:created', onCreate);
-    socket.on('project:updated', onUpdate);
-    socket.on('project:deleted', onDelete);
-    return () => {
-      socket.off('project:created', onCreate);
-      socket.off('project:updated', onUpdate);
-      socket.off('project:deleted', onDelete);
-    };
+    if (IS_TAURI) {
+      const unsubs = [
+        tauriListen('project:created', onCreate),
+        tauriListen('project:updated', onUpdate),
+        tauriListen('project:deleted', onDelete),
+      ];
+      return () => unsubs.forEach(fn => fn());
+    } else {
+      socket.on('project:created', onCreate);
+      socket.on('project:updated', onUpdate);
+      socket.on('project:deleted', onDelete);
+      return () => {
+        socket.off('project:created', onCreate);
+        socket.off('project:updated', onUpdate);
+        socket.off('project:deleted', onDelete);
+      };
+    }
   }, []);
 
   const navigateToProject = useCallback((project) => {

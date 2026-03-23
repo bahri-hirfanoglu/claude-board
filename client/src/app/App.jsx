@@ -6,6 +6,7 @@ import { useTerminalTabs } from '../hooks/useTerminalTabs';
 import { useToast } from '../hooks/useToast';
 import { api, onApiError } from '../lib/api';
 import { socket } from '../lib/socket';
+import { tauriListen, IS_TAURI } from '../lib/tauriEvents';
 import AppLayout from './AppLayout';
 import { StatusTransitionProvider, emitStatusTransition } from '../features/board/StatusTransitionContext';
 import { I18nProvider, useTranslation } from '../i18n/I18nProvider';
@@ -15,7 +16,7 @@ function AppInner() {
   const connected = useSocket();
   const { toasts, addToast } = useToast();
   const { projects, currentProject, initialLoad, navigateToProject, navigateToDashboard } = useProjects();
-  const { tasks } = useTasks(currentProject, addToast);
+  const { tasks, setTasks } = useTasks(currentProject, addToast);
   const terminal = useTerminalTabs(tasks);
 
   // Global API error -> toast
@@ -52,8 +53,12 @@ function AppInner() {
         setActivePanel('logs');
       }
     };
-    socket.on('task:updated', handler);
-    return () => socket.off('task:updated', handler);
+    if (IS_TAURI) {
+      return tauriListen('task:updated', handler);
+    } else {
+      socket.on('task:updated', handler);
+      return () => socket.off('task:updated', handler);
+    }
   }, [terminal]);
 
   // Clear panels on project change
@@ -125,7 +130,8 @@ function AppInner() {
           onConfirm: async () => {
             setConfirm(null);
             emitStatusTransition(taskId, fromStatus, newStatus);
-            await api.updateStatus(taskId, newStatus);
+            const updated = await api.updateStatus(taskId, newStatus);
+            setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
             addToast(t('toast.claudeStarted', { title: task.title }), 'success');
           },
           onCancel: () => setConfirm(null),
@@ -133,9 +139,10 @@ function AppInner() {
         return;
       }
       emitStatusTransition(taskId, fromStatus, newStatus);
-      await api.updateStatus(taskId, newStatus);
+      const updated = await api.updateStatus(taskId, newStatus);
+      setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
     },
-    [tasks, addToast, t],
+    [tasks, addToast, t, setTasks],
   );
 
   const handleCreateTask = useCallback(
@@ -143,6 +150,7 @@ function AppInner() {
       const files = data._files;
       delete data._files;
       const task = await api.createTask(currentProject.id, data);
+      setTasks(prev => prev.some(t => t.id === task.id) ? prev : [...prev, task]);
       if (files?.length > 0) {
         try {
           await api.uploadAttachments(task.id, files);
@@ -153,13 +161,14 @@ function AppInner() {
       setShowModal(false);
       addToast(t('toast.taskCreated'), 'success');
     },
-    [currentProject, addToast, t],
+    [currentProject, addToast, t, setTasks],
   );
   const handleUpdateTask = useCallback(
     async (data) => {
       const files = data._files;
       delete data._files;
-      await api.updateTask(editingTask.id, data);
+      const updated = await api.updateTask(editingTask.id, data);
+      setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
       if (files?.length > 0) {
         try {
           await api.uploadAttachments(editingTask.id, files);
@@ -171,7 +180,7 @@ function AppInner() {
       setShowModal(false);
       addToast(t('toast.taskUpdated'), 'success');
     },
-    [editingTask, addToast, t],
+    [editingTask, addToast, t, setTasks],
   );
   const handleDeleteTask = useCallback(
     (task) => {
@@ -182,12 +191,13 @@ function AppInner() {
         onConfirm: async () => {
           setConfirm(null);
           await api.deleteTask(task.id);
+          setTasks(prev => prev.filter(t => t.id !== task.id));
           addToast(t('toast.taskDeleted'), 'info');
         },
         onCancel: () => setConfirm(null),
       });
     },
-    [addToast, t],
+    [addToast, t, setTasks],
   );
   const handleViewLogs = useCallback(
     (task) => {
@@ -200,19 +210,21 @@ function AppInner() {
   const handleReviewTask = useCallback((task) => setReviewTask(task), []);
   const handleApproveTask = useCallback(
     async (taskId) => {
-      await api.updateStatus(taskId, 'done');
+      const updated = await api.updateStatus(taskId, 'done');
+      setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
       setReviewTask(null);
       addToast(t('toast.taskApproved'), 'success');
     },
-    [addToast, t],
+    [addToast, t, setTasks],
   );
   const handleRequestChanges = useCallback(
     async (taskId, feedback) => {
-      await api.requestChanges(taskId, feedback);
+      const updated = await api.requestChanges(taskId, feedback);
+      setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
       setReviewTask(null);
       addToast(t('toast.revisionRequested'), 'info');
     },
-    [addToast, t],
+    [addToast, t, setTasks],
   );
 
   // ─── Project handlers ───
