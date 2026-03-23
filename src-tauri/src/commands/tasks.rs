@@ -1,5 +1,5 @@
 use tauri::{AppHandle, Emitter};
-use crate::db::{self, tasks as tq, projects as pq, activity};
+use crate::db::{self, tasks as tq, projects as pq, attachments, activity};
 use crate::claude::runner;
 use crate::services::queue;
 
