@@ -480,7 +480,7 @@
       <button class="preview-tab" onclick="switchPreview('task-modal', this)">Task Creation</button>
     </div>
     <div class="preview-frame">
-      <img id="previewImg" src="../docs/images/hero-board.svg" alt="Claude Board Preview" />
+      <img id="previewImg" src="hero-board.svg" alt="Claude Board Preview" />
     </div>
   </div>
 </section>
@@ -533,7 +533,7 @@
   function switchPreview(name, btn) {
     var img = document.getElementById('previewImg');
     if (name === 'board') {
-      img.src = '../docs/images/hero-board.svg';
+      img.src = 'hero-board.svg';
     } else {
       img.src = 'screenshots/' + name + '.png';
     }
