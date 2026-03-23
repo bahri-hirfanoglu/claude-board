@@ -142,7 +142,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
   const modelDisplay = task.model_used || task.model || 'sonnet';
   const modelColorClass = modelColors[modelDisplay] || modelColors[task.model] || 'text-surface-400';
 
-  const moveTargets = STATUS_OPTIONS_RAW.filter(s => s.id !== task.status);
+  const moveTargets = STATUS_OPTIONS_RAW.filter(s => s.id !== (task.status || 'backlog'));
 
   return (
     <>

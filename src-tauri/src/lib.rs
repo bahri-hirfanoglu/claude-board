@@ -41,6 +41,7 @@ pub fn run() {
                 .inner_size(1400.0, 900.0)
                 .min_inner_size(800.0, 600.0)
                 .center()
+                .disable_drag_drop_handler()
                 .build()?;
             } else {
                 tauri::WebviewWindowBuilder::new(
@@ -122,6 +123,7 @@ pub fn run() {
             commands::auth::disable_auth,
             // Planning
             commands::planning::start_planning,
+            commands::planning::approve_plan,
             commands::planning::cancel_planning,
             commands::planning::get_planning_status,
         ])

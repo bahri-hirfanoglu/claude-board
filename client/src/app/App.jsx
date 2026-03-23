@@ -122,25 +122,38 @@ function AppInner() {
     async (taskId, newStatus) => {
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
-      const fromStatus = task.status;
-      if (newStatus === 'in_progress' && task.status !== 'in_progress') {
+      const fromStatus = task.status || 'backlog';
+      if (newStatus === 'in_progress' && fromStatus !== 'in_progress') {
         setConfirm({
           title: t('toast.startClaude'),
           message: `Moving "${task.title}" to In Progress will automatically start Claude. Continue?`,
           onConfirm: async () => {
             setConfirm(null);
             emitStatusTransition(taskId, fromStatus, newStatus);
-            const updated = await api.updateStatus(taskId, newStatus);
-            setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
-            addToast(t('toast.claudeStarted', { title: task.title }), 'success');
+            setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+            try {
+              const updated = await api.updateStatus(taskId, newStatus);
+              setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
+              addToast(t('toast.claudeStarted', { title: task.title }), 'success');
+            } catch (e) {
+              setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: fromStatus } : t));
+              addToast(e.message, 'error');
+            }
           },
           onCancel: () => setConfirm(null),
         });
         return;
       }
       emitStatusTransition(taskId, fromStatus, newStatus);
-      const updated = await api.updateStatus(taskId, newStatus);
-      setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
+      // Optimistic update
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+      try {
+        const updated = await api.updateStatus(taskId, newStatus);
+        setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
+      } catch (e) {
+        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: fromStatus } : t));
+        addToast(e.message, 'error');
+      }
     },
     [tasks, addToast, t, setTasks],
   );

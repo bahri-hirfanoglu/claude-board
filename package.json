@@ -1,6 +1,6 @@
 {
   "name": "claude-board",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Visual task management board for Claude Code — manage AI-powered development tasks with a Kanban-style interface",
   "author": {

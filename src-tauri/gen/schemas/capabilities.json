@@ -1,1 +1,1 @@
-{"default":{"identifier":"default","description":"Default capabilities for Claude Board","local":true,"windows":["*"],"permissions":["core:default","core:event:default","core:event:allow-emit","core:event:allow-listen","shell:allow-open","dialog:default","fs:default"]}}
+{"default":{"identifier":"default","description":"Default capabilities for Claude Board","local":true,"windows":["*"],"permissions":["core:default","core:event:default","core:event:allow-emit","core:event:allow-listen","shell:allow-open","dialog:default","fs:default","updater:default"]}}

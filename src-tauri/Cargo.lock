@@ -586,12 +586,13 @@ dependencies = [
 
 [[package]]
 name = "claude-board"
-version = "4.1.0"
+version = "1.0.0"
 dependencies = [
  "axum",
  "chrono",
  "env_logger",
  "hex",
+ "libc",
  "log",
  "once_cell",
  "parking_lot",

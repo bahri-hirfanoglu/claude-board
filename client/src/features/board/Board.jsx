@@ -46,7 +46,7 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
     return tasks.filter(t => (t.model_used || t.model || 'sonnet') === modelFilter);
   }, [tasks, modelFilter]);
 
-  const columnTasks = (colId) => filteredTasks.filter(t => t.status === colId);
+  const columnTasks = (colId) => filteredTasks.filter(t => (t.status || 'backlog') === colId);
 
   return (
     <div className="h-full flex flex-col">

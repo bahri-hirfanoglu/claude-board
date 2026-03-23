@@ -79,6 +79,7 @@ export const api = IS_TAURI
 
       // Planning
       startPlanning: (projectId, data) => tauriCall('start_planning', { projectId, ...data }),
+      approvePlan: (projectId, tasks, model) => tauriCall('approve_plan', { projectId, tasks, model }),
       cancelPlanning: (projectId) => tauriCall('cancel_planning', { projectId }),
       getPlanningStatus: (projectId) => tauriCall('get_planning_status', { projectId }),
 
