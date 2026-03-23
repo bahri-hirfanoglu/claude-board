@@ -473,14 +473,14 @@
     <h2 class="section-title">See it in action.</h2>
     <p class="section-desc">Click to explore different views.</p>
     <div class="preview-tabs">
-      <button class="preview-tab active" onclick="switchPreview('dashboard', this)">Dashboard</button>
-      <button class="preview-tab" onclick="switchPreview('board', this)">Board</button>
+      <button class="preview-tab active" onclick="switchPreview('board', this)">Board</button>
+      <button class="preview-tab" onclick="switchPreview('dashboard', this)">Dashboard</button>
       <button class="preview-tab" onclick="switchPreview('stats', this)">Statistics</button>
       <button class="preview-tab" onclick="switchPreview('activity', this)">Activity</button>
       <button class="preview-tab" onclick="switchPreview('task-modal', this)">Task Creation</button>
     </div>
     <div class="preview-frame">
-      <img id="previewImg" src="screenshots/dashboard.png" alt="Preview" />
+      <img id="previewImg" src="../docs/images/hero-board.svg" alt="Claude Board Preview" />
     </div>
   </div>
 </section>
@@ -531,7 +531,12 @@
 <script>
   // Preview tab switcher
   function switchPreview(name, btn) {
-    document.getElementById('previewImg').src = 'screenshots/' + name + '.png';
+    var img = document.getElementById('previewImg');
+    if (name === 'board') {
+      img.src = '../docs/images/hero-board.svg';
+    } else {
+      img.src = 'screenshots/' + name + '.png';
+    }
     document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
   }

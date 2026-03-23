@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" fill="none">
+  <defs>
+    <filter id="amberGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.98  0 0 0 0 0.75  0 0 0 0 0.14  0 0 0 0.4 0" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="greenGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.29  0 0 0 0 0.87  0 0 0 0 0.5  0 0 0 0.4 0" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="260" rx="12" fill="#1a1613"/>
+
+  <!-- Header -->
+  <text x="40" y="34" font-family="system-ui" font-size="14" font-weight="600" fill="#ebe4d8">Timeline View</text>
+  <text x="148" y="34" font-family="system-ui" font-size="12" fill="#736858">Sprint 12 - Mar 17-21</text>
+
+  <!-- Legend -->
+  <g transform="translate(620, 20)">
+    <circle cx="8" cy="10" r="5" fill="#fbbf24" filter="url(#amberGlow)"/>
+    <text x="20" y="14" font-family="system-ui" font-size="10" fill="#b5ab9a">In Progress</text>
+    <circle cx="108" cy="10" r="5" fill="#4ade80" filter="url(#greenGlow)"/>
+    <text x="120" y="14" font-family="system-ui" font-size="10" fill="#b5ab9a">Done</text>
+    <rect x="178" y="4" width="12" height="12" rx="3" fill="#3d372e"/>
+    <text x="196" y="14" font-family="system-ui" font-size="10" fill="#b5ab9a">Planned</text>
+  </g>
+
+  <!-- Timeline container -->
+  <rect x="24" y="48" width="852" height="196" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1.5"/>
+
+  <!-- Day columns - dividers -->
+  <line x1="194" y1="48" x2="194" y2="244" stroke="#3d372e" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+  <line x1="364" y1="48" x2="364" y2="244" stroke="#3d372e" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+  <line x1="534" y1="48" x2="534" y2="244" stroke="#3d372e" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+  <line x1="704" y1="48" x2="704" y2="244" stroke="#3d372e" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+
+  <!-- Day headers -->
+  <text x="109" y="72" font-family="system-ui" font-size="12" font-weight="600" fill="#ebe4d8" text-anchor="middle">Mon 17</text>
+  <text x="279" y="72" font-family="system-ui" font-size="12" font-weight="600" fill="#ebe4d8" text-anchor="middle">Tue 18</text>
+  <text x="449" y="72" font-family="system-ui" font-size="12" font-weight="600" fill="#ebe4d8" text-anchor="middle">Wed 19</text>
+  <text x="619" y="72" font-family="system-ui" font-size="12" font-weight="600" fill="#ebe4d8" text-anchor="middle">Thu 20</text>
+  <text x="789" y="72" font-family="system-ui" font-size="12" font-weight="600" fill="#ebe4d8" text-anchor="middle">Fri 21</text>
+
+  <!-- Header divider -->
+  <line x1="36" y1="84" x2="864" y2="84" stroke="#3d372e" stroke-width="1"/>
+
+  <!-- Task 1: API endpoints (Mon-Wed, blue, in_progress) -->
+  <g transform="translate(48, 96)">
+    <!-- Task label -->
+    <text x="0" y="18" font-family="system-ui" font-size="11" fill="#b5ab9a">API endpoints</text>
+    <!-- Bar background -->
+    <rect x="0" y="24" width="480" height="28" rx="6" fill="#1e3a5f" opacity="0.4"/>
+    <!-- Progress fill -->
+    <rect x="0" y="24" width="360" height="28" rx="6" fill="#1e3a5f"/>
+    <!-- Status glow indicator -->
+    <circle cx="468" cy="38" r="5" fill="#fbbf24" filter="url(#amberGlow)"/>
+    <!-- Bar text -->
+    <text x="14" y="43" font-family="monospace" font-size="10" font-weight="600" fill="#60a5fa">FTR-CB-1001</text>
+    <text x="130" y="43" font-family="system-ui" font-size="10" fill="#93c5fd">75%</text>
+  </g>
+
+  <!-- Task 2: Database schema (Mon-Tue, purple, done) -->
+  <g transform="translate(48, 138)">
+    <text x="0" y="18" font-family="system-ui" font-size="11" fill="#b5ab9a">Database schema</text>
+    <rect x="0" y="24" width="310" height="28" rx="6" fill="#3a1e5f"/>
+    <!-- Done indicator -->
+    <circle cx="298" cy="38" r="5" fill="#4ade80" filter="url(#greenGlow)"/>
+    <!-- Check mark inside -->
+    <text x="14" y="43" font-family="monospace" font-size="10" font-weight="600" fill="#c084fc">REF-CB-1003</text>
+    <text x="130" y="43" font-family="system-ui" font-size="10" fill="#d8b4fe">100%</text>
+  </g>
+
+  <!-- Task 3: Frontend pages (Wed-Fri, amber, in_progress) -->
+  <g transform="translate(388, 96)">
+    <text x="0" y="18" font-family="system-ui" font-size="11" fill="#b5ab9a">Frontend pages</text>
+    <rect x="0" y="24" width="476" height="28" rx="6" fill="#5f3a1e" opacity="0.4"/>
+    <rect x="0" y="24" width="240" height="28" rx="6" fill="#5f3a1e"/>
+    <circle cx="464" cy="38" r="5" fill="#fbbf24" filter="url(#amberGlow)"/>
+    <text x="14" y="43" font-family="monospace" font-size="10" font-weight="600" fill="#fbbf24">FTR-CB-1005</text>
+    <text x="130" y="43" font-family="system-ui" font-size="10" fill="#fcd34d">50%</text>
+  </g>
+
+  <!-- Task 4: Test suite (Thu-Fri, green, planned) -->
+  <g transform="translate(558, 138)">
+    <text x="0" y="18" font-family="system-ui" font-size="11" fill="#b5ab9a">Test suite</text>
+    <rect x="0" y="24" width="306" height="28" rx="6" fill="#1e5f2a" opacity="0.3"/>
+    <rect x="0" y="24" width="306" height="28" rx="6" fill="none" stroke="#4ade80" stroke-width="1" stroke-dasharray="6 3" opacity="0.5"/>
+    <rect x="286" y="32" width="12" height="12" rx="3" fill="#3d372e"/>
+    <text x="14" y="43" font-family="monospace" font-size="10" font-weight="600" fill="#4ade80" opacity="0.7">TST-CB-1004</text>
+    <text x="130" y="43" font-family="system-ui" font-size="10" fill="#86efac" opacity="0.7">Planned</text>
+  </g>
+
+  <!-- Today marker -->
+  <line x1="500" y1="84" x2="500" y2="244" stroke="#DA7756" stroke-width="2" stroke-dasharray="6 3"/>
+  <rect x="484" y="84" width="32" height="16" rx="4" fill="#DA7756"/>
+  <text x="500" y="95" font-family="system-ui" font-size="9" font-weight="600" fill="#1a1613" text-anchor="middle">Today</text>
+</svg>

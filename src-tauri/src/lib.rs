@@ -106,6 +106,9 @@ pub fn run() {
             commands::tasks::request_changes,
             commands::tasks::get_revisions,
             commands::tasks::get_task_detail,
+            commands::tasks::reorder_queue,
+            commands::tasks::set_task_dependency,
+            commands::tasks::get_pipeline_status,
             // Stats
             commands::stats::get_project_stats,
             commands::stats::get_claude_usage,

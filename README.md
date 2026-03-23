@@ -14,6 +14,10 @@
 
 </div>
 
+<div align="center">
+  <img src="docs/images/hero-board.svg" alt="Claude Board" width="100%" />
+</div>
+
 ---
 
 ## What is Claude Board?

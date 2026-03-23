@@ -195,6 +195,9 @@ pub fn run_migrations(conn: &Connection) {
         ("tasks", "role_id", "ALTER TABLE tasks ADD COLUMN role_id INTEGER"),
         ("tasks", "task_key", "ALTER TABLE tasks ADD COLUMN task_key TEXT DEFAULT ''"),
         ("task_logs", "meta", "ALTER TABLE task_logs ADD COLUMN meta TEXT"),
+        ("tasks", "depends_on", "ALTER TABLE tasks ADD COLUMN depends_on INTEGER"),
+        ("tasks", "retry_count", "ALTER TABLE tasks ADD COLUMN retry_count INTEGER DEFAULT 0"),
+        ("projects", "max_retries", "ALTER TABLE projects ADD COLUMN max_retries INTEGER DEFAULT 0"),
     ];
 
     for (table, col, sql) in migrations {

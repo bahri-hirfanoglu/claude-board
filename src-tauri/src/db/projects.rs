@@ -20,6 +20,7 @@ pub struct Project {
     pub pr_base_branch: Option<String>,
     pub project_key: Option<String>,
     pub task_counter: Option<i64>,
+    pub max_retries: Option<i64>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
@@ -55,6 +56,7 @@ fn row_to_project(row: &rusqlite::Row) -> rusqlite::Result<Project> {
         pr_base_branch: row.get("pr_base_branch")?,
         project_key: row.get("project_key")?,
         task_counter: row.get("task_counter")?,
+        max_retries: row.get("max_retries")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })

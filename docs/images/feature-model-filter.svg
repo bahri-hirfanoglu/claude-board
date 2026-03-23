@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" fill="none">
+  <!-- Background -->
+  <rect width="900" height="300" rx="12" fill="#1a1613"/>
+
+  <!-- Top: Filter bar -->
+  <rect x="24" y="16" width="852" height="54" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1.5"/>
+
+  <!-- Filter icon -->
+  <g transform="translate(44, 32)">
+    <path d="M0 2h20M3 9h14M6 16h8" stroke="#DA7756" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <text x="76" y="48" font-family="system-ui" font-size="12" font-weight="600" fill="#ebe4d8">Filter by Model</text>
+
+  <!-- Haiku chip (green, inactive) -->
+  <g transform="translate(220, 28)">
+    <rect x="0" y="0" width="100" height="30" rx="8" fill="#1e3a2a" stroke="#3d372e" stroke-width="1.2"/>
+    <circle cx="16" cy="15" r="5" fill="#4ade80"/>
+    <text x="30" y="19" font-family="system-ui" font-size="11" font-weight="500" fill="#ebe4d8">Haiku</text>
+    <rect x="72" y="7" width="20" height="16" rx="8" fill="#3d372e"/>
+    <text x="82" y="19" font-family="system-ui" font-size="10" font-weight="600" fill="#4ade80" text-anchor="middle">4</text>
+  </g>
+
+  <!-- Sonnet chip (blue, active/highlighted with ring) -->
+  <g transform="translate(336, 28)">
+    <rect x="-2" y="-2" width="108" height="34" rx="10" fill="none" stroke="#60a5fa" stroke-width="2" opacity="0.8"/>
+    <rect x="0" y="0" width="104" height="30" rx="8" fill="#1e2a4f" stroke="#60a5fa" stroke-width="1.5"/>
+    <circle cx="16" cy="15" r="5" fill="#60a5fa"/>
+    <text x="30" y="19" font-family="system-ui" font-size="11" font-weight="600" fill="#ebe4d8">Sonnet</text>
+    <rect x="76" y="7" width="20" height="16" rx="8" fill="#1e3a5f"/>
+    <text x="86" y="19" font-family="system-ui" font-size="10" font-weight="600" fill="#60a5fa" text-anchor="middle">8</text>
+  </g>
+
+  <!-- Opus chip (purple, inactive) -->
+  <g transform="translate(458, 28)">
+    <rect x="0" y="0" width="96" height="30" rx="8" fill="#2a1e4a" stroke="#3d372e" stroke-width="1.2"/>
+    <circle cx="16" cy="15" r="5" fill="#c084fc"/>
+    <text x="30" y="19" font-family="system-ui" font-size="11" font-weight="500" fill="#ebe4d8">Opus</text>
+    <rect x="68" y="7" width="20" height="16" rx="8" fill="#3d372e"/>
+    <text x="78" y="19" font-family="system-ui" font-size="10" font-weight="600" fill="#c084fc" text-anchor="middle">2</text>
+  </g>
+
+  <!-- Clear filter link -->
+  <text x="580" y="48" font-family="system-ui" font-size="11" fill="#DA7756" text-decoration="underline" opacity="0.8">Clear filter</text>
+
+  <!-- Results count -->
+  <text x="790" y="48" font-family="system-ui" font-size="11" fill="#736858">Showing 8 of 14</text>
+
+  <!-- Visible task cards (Sonnet model) -->
+
+  <!-- Card 1 -->
+  <rect x="24" y="86" width="268" height="116" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1.5"/>
+  <rect x="24" y="86" width="268" height="4" rx="2" fill="#60a5fa"/>
+  <text x="44" y="116" font-family="monospace" font-size="11" font-weight="600" fill="#b5ab9a">FTR-CB-1001</text>
+  <text x="44" y="136" font-family="system-ui" font-size="12" font-weight="500" fill="#ebe4d8">API rate limiting</text>
+  <text x="44" y="154" font-family="system-ui" font-size="11" fill="#736858">Implement token bucket</text>
+  <!-- Sonnet model badge -->
+  <rect x="44" y="168" width="64" height="22" rx="6" fill="#1e2a4f" stroke="#60a5fa" stroke-width="1"/>
+  <circle cx="58" cy="179" r="4" fill="#60a5fa"/>
+  <text x="68" y="183" font-family="system-ui" font-size="9" font-weight="600" fill="#60a5fa">sonnet</text>
+  <!-- Status badge -->
+  <rect x="118" y="168" width="72" height="22" rx="6" fill="#5f3a1e"/>
+  <text x="154" y="183" font-family="system-ui" font-size="9" font-weight="600" fill="#fbbf24" text-anchor="middle">in progress</text>
+
+  <!-- Card 2 -->
+  <rect x="308" y="86" width="268" height="116" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1.5"/>
+  <rect x="308" y="86" width="268" height="4" rx="2" fill="#60a5fa"/>
+  <text x="328" y="116" font-family="monospace" font-size="11" font-weight="600" fill="#b5ab9a">BUG-CB-1002</text>
+  <text x="328" y="136" font-family="system-ui" font-size="12" font-weight="500" fill="#ebe4d8">Fix websocket reconnect</text>
+  <text x="328" y="154" font-family="system-ui" font-size="11" fill="#736858">Handle connection drops</text>
+  <rect x="328" y="168" width="64" height="22" rx="6" fill="#1e2a4f" stroke="#60a5fa" stroke-width="1"/>
+  <circle cx="342" cy="179" r="4" fill="#60a5fa"/>
+  <text x="352" y="183" font-family="system-ui" font-size="9" font-weight="600" fill="#60a5fa">sonnet</text>
+  <rect x="402" y="168" width="50" height="22" rx="6" fill="#1e5f2a"/>
+  <text x="427" y="183" font-family="system-ui" font-size="9" font-weight="600" fill="#4ade80" text-anchor="middle">done</text>
+
+  <!-- Card 3 -->
+  <rect x="592" y="86" width="268" height="116" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1.5"/>
+  <rect x="592" y="86" width="268" height="4" rx="2" fill="#60a5fa"/>
+  <text x="612" y="116" font-family="monospace" font-size="11" font-weight="600" fill="#b5ab9a">REF-CB-1003</text>
+  <text x="612" y="136" font-family="system-ui" font-size="12" font-weight="500" fill="#ebe4d8">Refactor auth module</text>
+  <text x="612" y="154" font-family="system-ui" font-size="11" fill="#736858">Extract middleware logic</text>
+  <rect x="612" y="168" width="64" height="22" rx="6" fill="#1e2a4f" stroke="#60a5fa" stroke-width="1"/>
+  <circle cx="626" cy="179" r="4" fill="#60a5fa"/>
+  <text x="636" y="183" font-family="system-ui" font-size="9" font-weight="600" fill="#60a5fa">sonnet</text>
+  <rect x="686" y="168" width="58" height="22" rx="6" fill="#3d372e"/>
+  <text x="715" y="183" font-family="system-ui" font-size="9" font-weight="600" fill="#b5ab9a" text-anchor="middle">backlog</text>
+
+  <!-- Faded/hidden card (Opus - filtered out) -->
+  <g opacity="0.22">
+    <rect x="308" y="214" width="268" height="72" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1.5"/>
+    <rect x="308" y="214" width="268" height="4" rx="2" fill="#c084fc"/>
+    <text x="328" y="242" font-family="monospace" font-size="11" font-weight="600" fill="#b5ab9a">TST-CB-1004</text>
+    <text x="328" y="260" font-family="system-ui" font-size="12" font-weight="500" fill="#ebe4d8">E2E test suite</text>
+    <rect x="328" y="268" width="54" height="18" rx="5" fill="#2a1e4a" stroke="#c084fc" stroke-width="1"/>
+    <text x="355" y="280" font-family="system-ui" font-size="9" font-weight="600" fill="#c084fc" text-anchor="middle">opus</text>
+  </g>
+
+  <!-- "Filtered out" label on faded card -->
+  <g transform="translate(408, 240)">
+    <rect x="0" y="0" width="100" height="24" rx="6" fill="#1a1613" stroke="#3d372e" stroke-width="1"/>
+    <!-- Eye-off icon -->
+    <g transform="translate(10, 4)">
+      <circle cx="8" cy="8" r="5" fill="none" stroke="#736858" stroke-width="1.2"/>
+      <circle cx="8" cy="8" r="2" fill="#736858"/>
+      <line x1="2" y1="14" x2="14" y2="2" stroke="#736858" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+    <text x="32" y="16" font-family="system-ui" font-size="10" fill="#736858">Filtered out</text>
+  </g>
+</svg>

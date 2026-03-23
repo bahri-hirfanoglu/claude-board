@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" fill="none">
+  <defs>
+    <linearGradient id="wh-bg" x1="0" y1="0" x2="900" y2="260"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+  </defs>
+  <rect width="900" height="260" rx="16" fill="url(#wh-bg)"/>
+
+  <!-- Left: Task card completing -->
+  <rect x="20" y="30" width="220" height="200" rx="12" fill="#2a2520" stroke="#10b981" stroke-width="1" stroke-opacity="0.4"/>
+  <text x="36" y="54" fill="#b5ab9a" font-size="10" font-weight="600" font-family="system-ui">COMPLETED TASK</text>
+  <rect x="36" y="68" width="188" height="70" rx="8" fill="#1f1b17" stroke="#10b981" stroke-width="0.5" stroke-opacity="0.3"/>
+  <!-- Checkmark circle -->
+  <circle cx="56" cy="96" r="12" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-width="1"/>
+  <polyline points="50,96 54,100 62,91" stroke="#10b981" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="74" y="93" fill="#ebe4d8" font-size="11" font-weight="600" font-family="system-ui">Deploy API</text>
+  <text x="74" y="107" fill="#736858" font-size="8" font-family="system-ui">Completed 2m ago</text>
+  <rect x="36" y="148" width="56" height="16" rx="4" fill="#10b981" fill-opacity="0.15"/>
+  <text x="64" y="159" text-anchor="middle" fill="#10b981" font-size="8" font-weight="600" font-family="system-ui">success</text>
+  <text x="100" y="159" fill="#736858" font-size="8" font-family="monospace">14.2k tokens</text>
+  <!-- Webhook trigger indicator -->
+  <rect x="36" y="174" width="188" height="22" rx="4" fill="#DA7756" fill-opacity="0.08" stroke="#DA7756" stroke-width="0.5" stroke-opacity="0.3"/>
+  <circle cx="48" cy="185" r="3" fill="#DA7756"><animate attributeName="opacity" values="1;0.3;1" dur="1.2s" repeatCount="indefinite"/></circle>
+  <text x="56" y="189" fill="#DA7756" font-size="8" font-family="system-ui">Webhook triggered</text>
+
+  <!-- Arrow 1 -->
+  <line x1="250" y1="130" x2="295" y2="130" stroke="#DA7756" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="293,125 301,130 293,135" fill="#DA7756"/>
+
+  <!-- Middle: Webhook config card -->
+  <rect x="310" y="30" width="250" height="200" rx="12" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <text x="326" y="54" fill="#b5ab9a" font-size="10" font-weight="600" font-family="system-ui">WEBHOOK CONFIG</text>
+  <rect x="326" y="68" width="218" height="90" rx="8" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <!-- Webhook icon -->
+  <circle cx="346" cy="88" r="10" fill="#DA7756" fill-opacity="0.15"/>
+  <path d="M342,88 L346,84 L350,88 L346,92 Z" fill="#DA7756"/>
+  <text x="362" y="86" fill="#ebe4d8" font-size="11" font-weight="600" font-family="system-ui">slack-alerts</text>
+  <text x="362" y="100" fill="#736858" font-size="8" font-family="monospace">POST https://hooks.slack...</text>
+  <!-- Platform badge -->
+  <rect x="340" y="116" width="48" height="18" rx="4" fill="#4ade80" fill-opacity="0.12"/>
+  <text x="364" y="128" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600" font-family="system-ui">Slack</text>
+  <!-- Trigger type -->
+  <rect x="396" y="116" width="72" height="18" rx="4" fill="#3b82f6" fill-opacity="0.12"/>
+  <text x="432" y="128" text-anchor="middle" fill="#60a5fa" font-size="8" font-weight="600" font-family="system-ui">on:complete</text>
+  <!-- Status -->
+  <rect x="326" y="170" width="218" height="24" rx="6" fill="#10b981" fill-opacity="0.06"/>
+  <circle cx="340" cy="182" r="3" fill="#10b981"/>
+  <text x="350" y="186" fill="#10b981" font-size="9" font-family="system-ui">Active - Last fired: 2m ago</text>
+
+  <!-- Arrow 2 -->
+  <line x1="570" y1="130" x2="615" y2="130" stroke="#DA7756" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="613,125 621,130 613,135" fill="#DA7756"/>
+
+  <!-- Right: 3 notification destinations -->
+  <rect x="630" y="30" width="250" height="200" rx="12" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <text x="646" y="54" fill="#b5ab9a" font-size="10" font-weight="600" font-family="system-ui">NOTIFICATIONS SENT</text>
+
+  <!-- Discord -->
+  <rect x="646" y="66" width="218" height="48" rx="8" fill="#1f1b17" stroke="#7c3aed" stroke-width="0.5" stroke-opacity="0.4"/>
+  <rect x="656" y="74" width="50" height="16" rx="4" fill="#7c3aed" fill-opacity="0.15"/>
+  <text x="681" y="85" text-anchor="middle" fill="#a78bfa" font-size="8" font-weight="600" font-family="system-ui">Discord</text>
+  <circle cx="718" cy="82" r="3" fill="#10b981"/>
+  <text x="656" y="104" fill="#736858" font-size="8" font-family="monospace">Task completed: Deploy API</text>
+
+  <!-- Slack -->
+  <rect x="646" y="120" width="218" height="48" rx="8" fill="#1f1b17" stroke="#10b981" stroke-width="0.5" stroke-opacity="0.4"/>
+  <rect x="656" y="128" width="42" height="16" rx="4" fill="#10b981" fill-opacity="0.15"/>
+  <text x="677" y="139" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600" font-family="system-ui">Slack</text>
+  <circle cx="710" cy="136" r="3" fill="#10b981"/>
+  <text x="656" y="158" fill="#736858" font-size="8" font-family="monospace">Task completed: Deploy API</text>
+
+  <!-- Teams -->
+  <rect x="646" y="174" width="218" height="48" rx="8" fill="#1f1b17" stroke="#3b82f6" stroke-width="0.5" stroke-opacity="0.4"/>
+  <rect x="656" y="182" width="46" height="16" rx="4" fill="#3b82f6" fill-opacity="0.15"/>
+  <text x="679" y="193" text-anchor="middle" fill="#60a5fa" font-size="8" font-weight="600" font-family="system-ui">Teams</text>
+  <circle cx="714" cy="190" r="3" fill="#10b981"/>
+  <text x="656" y="212" fill="#736858" font-size="8" font-family="monospace">Task completed: Deploy API</text>
+</svg>
