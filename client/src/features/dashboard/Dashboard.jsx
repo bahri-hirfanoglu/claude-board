@@ -313,6 +313,7 @@ function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
         </div>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
+        <span className="text-[10px] text-surface-600 font-mono">v{__APP_VERSION__}</span>
         <LanguageSelector />
         {dashTab === 'projects' && (
           <button onClick={onNewProject}
