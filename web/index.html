@@ -475,6 +475,9 @@
     <div class="preview-tabs">
       <button class="preview-tab active" onclick="switchPreview('board', this)">Board</button>
       <button class="preview-tab" onclick="switchPreview('dashboard', this)">Dashboard</button>
+      <button class="preview-tab" onclick="switchPreview('terminal', this)">Terminal</button>
+      <button class="preview-tab" onclick="switchPreview('pipeline', this)">Pipeline</button>
+      <button class="preview-tab" onclick="switchPreview('planning', this)">Planning</button>
       <button class="preview-tab" onclick="switchPreview('stats', this)">Statistics</button>
       <button class="preview-tab" onclick="switchPreview('activity', this)">Activity</button>
       <button class="preview-tab" onclick="switchPreview('task-modal', this)">Task Creation</button>
@@ -532,10 +535,11 @@
   // Preview tab switcher
   function switchPreview(name, btn) {
     var img = document.getElementById('previewImg');
+    var svgTabs = ['board', 'dashboard', 'terminal', 'pipeline', 'planning', 'stats', 'activity', 'task-modal'];
     if (name === 'board') {
       img.src = 'hero-board.svg';
-    } else {
-      img.src = 'screenshots/' + name + '.png';
+    } else if (svgTabs.includes(name)) {
+      img.src = 'preview-' + name + '.svg';
     }
     document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');

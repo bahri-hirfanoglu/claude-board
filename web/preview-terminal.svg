@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" fill="none">
+  <defs>
+    <linearGradient id="tbg" x1="0" y1="0" x2="1000" y2="400"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+    <linearGradient id="taccent" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#E8926E"/><stop offset="100%" stop-color="#C45A3C"/></linearGradient>
+    <clipPath id="tround"><rect width="1000" height="400" rx="16"/></clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="400" rx="16" fill="url(#tbg)"/>
+  <ellipse cx="500" cy="0" rx="500" ry="160" fill="#DA7756" fill-opacity="0.04" clip-path="url(#tround)"/>
+
+  <!-- ==================== Header Bar ==================== -->
+  <rect x="0" y="0" width="1000" height="44" rx="0" fill="#15120f" clip-path="url(#tround)"/>
+  <rect x="0" y="43" width="1000" height="1" fill="#2a2520"/>
+  <!-- App logo -->
+  <rect x="18" y="10" width="24" height="24" rx="6" fill="url(#taccent)"/>
+  <path d="M30 15 C30 15,31 21,31.2 22.4 C31.4 23.8,34.2 25,38 25 C34.2 25,31.4 26.2,31.2 27.6 C31 29,30 35,30 35 C30 35,29 29,28.8 27.6 C28.6 26.2,25.8 25,22 25 C25.8 25,28.6 23.8,28.8 22.4 C29 21,30 15,30 15Z" fill="white" opacity="0.9"/>
+  <text x="50" y="27" fill="#ebe4d8" font-size="13" font-weight="700" font-family="system-ui">Claude Board</text>
+  <rect x="146" y="14" width="1" height="16" rx="0.5" fill="#3d372e"/>
+  <rect x="157" y="12" width="16" height="16" rx="4" fill="url(#taccent)" opacity="0.6"/>
+  <text x="180" y="25" fill="#918678" font-size="11" font-weight="600" font-family="system-ui">my-app</text>
+  <!-- View tabs -->
+  <text x="570" y="26" fill="#564d40" font-size="10" font-weight="600" font-family="system-ui">Board</text>
+  <text x="614" y="26" fill="#564d40" font-size="10" font-weight="600" font-family="system-ui">List</text>
+  <rect x="640" y="10" width="62" height="24" rx="6" fill="rgba(218,119,86,0.15)"/>
+  <text x="671" y="26" text-anchor="middle" fill="#DA7756" font-size="10" font-weight="600" font-family="system-ui">Terminal</text>
+  <text x="722" y="26" fill="#564d40" font-size="10" font-weight="600" font-family="system-ui">Summary</text>
+  <!-- Window controls -->
+  <circle cx="940" cy="22" r="5" fill="#3d372e"/><circle cx="958" cy="22" r="5" fill="#3d372e"/><circle cx="976" cy="22" r="5" fill="#3d372e"/>
+
+  <!-- ==================== Left: Terminal Panel (60%) ==================== -->
+  <rect x="14" y="52" width="586" height="340" rx="10" fill="#0f0d0b" stroke="#2a2520" stroke-width="1" clip-path="url(#tround)"/>
+
+  <!-- Terminal title bar -->
+  <rect x="14" y="52" width="586" height="34" rx="10" fill="#161311"/>
+  <rect x="14" y="76" width="586" height="10" fill="#161311"/>
+  <rect x="14" y="85" width="586" height="1" fill="#2a2520"/>
+  <!-- Amber pulse dot -->
+  <circle cx="32" cy="69" r="4" fill="#f59e0b">
+    <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <text x="44" y="73" fill="#ebe4d8" font-size="11" font-weight="600" font-family="system-ui">Live Terminal &#x2014; Add JWT auth</text>
+  <!-- Task ID badge -->
+  <rect x="538" y="59" width="48" height="18" rx="4" fill="#DA7756" fill-opacity="0.12"/>
+  <text x="562" y="72" text-anchor="middle" fill="#DA7756" font-size="9" font-weight="600" font-family="system-ui">#7</text>
+
+  <!-- Turn separator -->
+  <rect x="28" y="96" width="558" height="1" fill="#2a2520"/>
+  <rect x="220" y="90" width="80" height="13" fill="#0f0d0b"/>
+  <text x="260" y="100" text-anchor="middle" fill="#564d40" font-size="9" font-weight="600" font-family="system-ui"># Turn 3</text>
+
+  <!-- Claude message -->
+  <rect x="28" y="112" width="558" height="32" rx="6" fill="#1a1613"/>
+  <circle cx="42" cy="128" r="8" fill="url(#taccent)" opacity="0.7"/>
+  <path d="M42 122 C42 122,42.6 126,42.7 126.8 C42.8 127.6,44.4 128.5,46 128.5 C44.4 128.5,42.8 129.4,42.7 130.2 C42.6 131,42 135,42 135 C42 135,41.4 131,41.3 130.2 C41.2 129.4,39.6 128.5,38 128.5 C39.6 128.5,41.2 127.6,41.3 126.8 C41.4 126,42 122,42 122Z" fill="white" opacity="0.9"/>
+  <text x="58" y="132" fill="#c4b8a6" font-size="9.5" font-family="system-ui">I'll update the middleware to validate JWT tokens and add refresh token rotation...</text>
+
+  <!-- ─── Tool Call Cards ─── -->
+
+  <!-- Tool 1: Read -->
+  <rect x="28" y="154" width="558" height="34" rx="6" fill="#1a1613" stroke="#2a2520" stroke-width="0.5"/>
+  <!-- Read icon (blue file) -->
+  <rect x="38" y="160" width="22" height="22" rx="5" fill="#0ea5e9" fill-opacity="0.12"/>
+  <text x="49" y="175" text-anchor="middle" fill="#38bdf8" font-size="10" font-weight="700" font-family="system-ui">R</text>
+  <!-- Tool name -->
+  <text x="68" y="170" fill="#38bdf8" font-size="9.5" font-weight="600" font-family="system-ui">Read</text>
+  <rect x="95" y="163" width="1" height="12" fill="#2a2520"/>
+  <text x="104" y="175" fill="#918678" font-size="9" font-family="monospace">src/middleware/auth.ts</text>
+  <!-- Duration + status -->
+  <text x="504" y="175" fill="#564d40" font-size="8.5" font-family="system-ui">42ms</text>
+  <circle cx="560" cy="171" r="7" fill="#22c55e" fill-opacity="0.12"/>
+  <path d="M556 171 L559 174 L564 168" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Tool 2: Bash -->
+  <rect x="28" y="196" width="558" height="34" rx="6" fill="#1a1613" stroke="#2a2520" stroke-width="0.5"/>
+  <rect x="38" y="202" width="22" height="22" rx="5" fill="#f59e0b" fill-opacity="0.12"/>
+  <text x="49" y="217" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="700" font-family="system-ui">$</text>
+  <text x="68" y="212" fill="#fbbf24" font-size="9.5" font-weight="600" font-family="system-ui">Bash</text>
+  <rect x="97" y="205" width="1" height="12" fill="#2a2520"/>
+  <text x="106" y="217" fill="#918678" font-size="9" font-family="monospace">npm install jsonwebtoken</text>
+  <text x="496" y="217" fill="#564d40" font-size="8.5" font-family="system-ui">3.2s</text>
+  <circle cx="560" cy="213" r="7" fill="#22c55e" fill-opacity="0.12"/>
+  <path d="M556 213 L559 216 L564 210" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Tool 3: Write -->
+  <rect x="28" y="238" width="558" height="34" rx="6" fill="#1a1613" stroke="#2a2520" stroke-width="0.5"/>
+  <rect x="38" y="244" width="22" height="22" rx="5" fill="#22c55e" fill-opacity="0.12"/>
+  <text x="49" y="259" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700" font-family="system-ui">W</text>
+  <text x="68" y="254" fill="#4ade80" font-size="9.5" font-weight="600" font-family="system-ui">Write</text>
+  <rect x="101" y="247" width="1" height="12" fill="#2a2520"/>
+  <text x="110" y="259" fill="#918678" font-size="9" font-family="monospace">src/auth/jwt.ts</text>
+  <text x="500" y="259" fill="#564d40" font-size="8.5" font-family="system-ui">15ms</text>
+  <circle cx="560" cy="255" r="7" fill="#22c55e" fill-opacity="0.12"/>
+  <path d="M556 255 L559 258 L564 252" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Tool 4: Edit (running) -->
+  <rect x="28" y="280" width="558" height="34" rx="6" fill="#1a1613" stroke="#f59e0b" stroke-width="0.8" stroke-opacity="0.4"/>
+  <rect x="38" y="286" width="22" height="22" rx="5" fill="#eab308" fill-opacity="0.12"/>
+  <text x="49" y="301" text-anchor="middle" fill="#facc15" font-size="10" font-weight="700" font-family="system-ui">E</text>
+  <text x="68" y="296" fill="#facc15" font-size="9.5" font-weight="600" font-family="system-ui">Edit</text>
+  <rect x="97" y="289" width="1" height="12" fill="#2a2520"/>
+  <text x="106" y="301" fill="#918678" font-size="9" font-family="monospace">src/routes/auth.ts</text>
+  <!-- Running indicator with pulse -->
+  <circle cx="524" cy="297" r="3.5" fill="#f59e0b">
+    <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <text x="534" y="301" fill="#f59e0b" font-size="8.5" font-weight="500" font-family="system-ui">running</text>
+
+  <!-- Scrollbar hint -->
+  <rect x="590" y="160" width="3" height="80" rx="1.5" fill="#2a2520" opacity="0.5"/>
+
+  <!-- ==================== Right: Task Detail Panel (40%) ==================== -->
+  <rect x="608" y="52" width="384" height="340" rx="10" fill="#1a1613" stroke="#2a2520" stroke-width="1" clip-path="url(#tround)"/>
+
+  <!-- Task header -->
+  <text x="626" y="78" fill="#ebe4d8" font-size="13" font-weight="700" font-family="system-ui">Add JWT auth middleware</text>
+  <!-- Badges -->
+  <rect x="626" y="88" width="42" height="16" rx="4" fill="#3b82f6" fill-opacity="0.12"/>
+  <text x="647" y="99" text-anchor="middle" fill="#60a5fa" font-size="8" font-weight="600" font-family="system-ui">feature</text>
+  <rect x="674" y="88" width="52" height="16" rx="4" fill="#f59e0b" fill-opacity="0.12"/>
+  <text x="700" y="99" text-anchor="middle" fill="#fbbf24" font-size="8" font-weight="600" font-family="system-ui">running</text>
+  <!-- Model badge -->
+  <rect x="732" y="88" width="46" height="16" rx="4" fill="#2a2520"/>
+  <text x="755" y="99" text-anchor="middle" fill="#918678" font-size="8" font-weight="500" font-family="system-ui">sonnet</text>
+
+  <!-- Divider -->
+  <rect x="626" y="114" width="350" height="1" fill="#2a2520"/>
+
+  <!-- Stats section -->
+  <text x="626" y="136" fill="#564d40" font-size="9" font-weight="600" font-family="system-ui" letter-spacing="0.5">TOKEN USAGE</text>
+  <!-- Input tokens -->
+  <rect x="626" y="144" width="166" height="36" rx="6" fill="#0f0d0b"/>
+  <text x="636" y="160" fill="#564d40" font-size="8" font-family="system-ui">Input</text>
+  <text x="636" y="174" fill="#ebe4d8" font-size="12" font-weight="700" font-family="system-ui">12.4k</text>
+  <!-- Output tokens -->
+  <rect x="800" y="144" width="166" height="36" rx="6" fill="#0f0d0b"/>
+  <text x="810" y="160" fill="#564d40" font-size="8" font-family="system-ui">Output</text>
+  <text x="810" y="174" fill="#ebe4d8" font-size="12" font-weight="700" font-family="system-ui">3.2k</text>
+
+  <!-- Cost -->
+  <rect x="626" y="188" width="340" height="36" rx="6" fill="#0f0d0b"/>
+  <text x="636" y="204" fill="#564d40" font-size="8" font-family="system-ui">Estimated Cost</text>
+  <text x="636" y="218" fill="#4ade80" font-size="12" font-weight="700" font-family="system-ui">$0.08</text>
+  <text x="680" y="218" fill="#564d40" font-size="9" font-family="system-ui">Turn 3 of 5</text>
+
+  <!-- Divider -->
+  <rect x="626" y="232" width="350" height="1" fill="#2a2520"/>
+
+  <!-- Commits section -->
+  <text x="626" y="254" fill="#564d40" font-size="9" font-weight="600" font-family="system-ui" letter-spacing="0.5">COMMITS</text>
+  <rect x="698" y="244" width="18" height="14" rx="7" fill="#22c55e" fill-opacity="0.12"/>
+  <text x="707" y="254" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600" font-family="system-ui">3</text>
+
+  <!-- Commit 1 -->
+  <rect x="626" y="264" width="340" height="30" rx="5" fill="#0f0d0b"/>
+  <circle cx="641" cy="279" r="4" fill="#DA7756" opacity="0.4"/>
+  <text x="651" y="276" fill="#ebe4d8" font-size="8.5" font-weight="500" font-family="system-ui">feat: add JWT validation middleware</text>
+  <text x="651" y="288" fill="#564d40" font-size="7.5" font-family="monospace">a3f2c1d</text>
+  <text x="704" y="288" fill="#564d40" font-size="7.5" font-family="system-ui">2m ago</text>
+
+  <!-- Commit 2 -->
+  <rect x="626" y="300" width="340" height="30" rx="5" fill="#0f0d0b"/>
+  <circle cx="641" cy="315" r="4" fill="#DA7756" opacity="0.4"/>
+  <text x="651" y="312" fill="#ebe4d8" font-size="8.5" font-weight="500" font-family="system-ui">feat: implement refresh token rotation</text>
+  <text x="651" y="324" fill="#564d40" font-size="7.5" font-family="monospace">b7e9f4a</text>
+  <text x="704" y="324" fill="#564d40" font-size="7.5" font-family="system-ui">1m ago</text>
+
+  <!-- Commit 3 -->
+  <rect x="626" y="336" width="340" height="30" rx="5" fill="#0f0d0b"/>
+  <circle cx="641" cy="351" r="4" fill="#DA7756" opacity="0.4"/>
+  <text x="651" y="348" fill="#ebe4d8" font-size="8.5" font-weight="500" font-family="system-ui">chore: install jsonwebtoken dependency</text>
+  <text x="651" y="360" fill="#564d40" font-size="7.5" font-family="monospace">c1d8e3b</text>
+  <text x="704" y="360" fill="#564d40" font-size="7.5" font-family="system-ui">3m ago</text>
+</svg>

@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" fill="none">
+  <defs>
+    <linearGradient id="plbg" x1="0" y1="0" x2="1000" y2="400"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+    <linearGradient id="placcent" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#E8926E"/><stop offset="100%" stop-color="#C45A3C"/></linearGradient>
+    <clipPath id="plround"><rect width="1000" height="400" rx="16"/></clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="400" rx="16" fill="url(#plbg)"/>
+  <ellipse cx="500" cy="0" rx="500" ry="160" fill="#DA7756" fill-opacity="0.04" clip-path="url(#plround)"/>
+
+  <!-- ==================== Dimmed app behind modal ==================== -->
+  <rect x="0" y="0" width="1000" height="400" rx="16" fill="#0f0d0b" fill-opacity="0.6" clip-path="url(#plround)"/>
+
+  <!-- Faint header bar behind overlay -->
+  <rect x="0" y="0" width="1000" height="44" rx="0" fill="#15120f" opacity="0.3" clip-path="url(#plround)"/>
+
+  <!-- ==================== Planning Modal ==================== -->
+  <rect x="80" y="20" width="840" height="366" rx="14" fill="#1a1613" stroke="#3d372e" stroke-width="1"/>
+  <!-- Modal shadow glow -->
+  <rect x="80" y="20" width="840" height="366" rx="14" fill="none" stroke="#DA7756" stroke-width="0.5" stroke-opacity="0.1"/>
+
+  <!-- ─── Modal Header ─── -->
+  <rect x="80" y="20" width="840" height="48" rx="14" fill="#15120f"/>
+  <rect x="80" y="54" width="840" height="14" fill="#15120f"/>
+  <rect x="80" y="67" width="840" height="1" fill="#2a2520"/>
+
+  <!-- Sparkles icon -->
+  <path d="M104 38 C104 38,105 42,105.2 42.8 C105.4 43.6,107 44.5,109 44.5 C107 44.5,105.4 45.4,105.2 46.2 C105 47,104 51,104 51 C104 51,103 47,102.8 46.2 C102.6 45.4,101 44.5,99 44.5 C101 44.5,102.6 43.6,102.8 42.8 C103 42,104 38,104 38Z" fill="#DA7756"/>
+  <path d="M115 42 C115 42,115.5 44,115.6 44.4 C115.7 44.8,116.5 45.2,117.5 45.2 C116.5 45.2,115.7 45.6,115.6 46 C115.5 46.4,115 48.5,115 48.5 C115 48.5,114.5 46.4,114.4 46 C114.3 45.6,113.5 45.2,112.5 45.2 C113.5 45.2,114.3 44.8,114.4 44.4 C114.5 44,115 42,115 42Z" fill="#DA7756" opacity="0.6"/>
+  <!-- Title -->
+  <text x="126" y="49" fill="#ebe4d8" font-size="14" font-weight="700" font-family="system-ui">Planning Mode</text>
+
+  <!-- Close button -->
+  <rect x="878" y="33" width="26" height="26" rx="6" fill="#2a2520"/>
+  <path d="M887 42 L898 53 M898 42 L887 53" stroke="#918678" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- ─── Phase Stepper ─── -->
+  <rect x="100" y="78" width="800" height="30" rx="6" fill="#0f0d0b"/>
+
+  <!-- Phase 1: Starting (done) -->
+  <circle cx="190" cy="93" r="8" fill="#22c55e" fill-opacity="0.15"/>
+  <path d="M186 93 L189 96 L194 90" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="204" y="97" fill="#4ade80" font-size="9" font-weight="600" font-family="system-ui">Starting</text>
+
+  <!-- Connector -->
+  <rect x="254" y="92" width="50" height="1.5" rx="0.75" fill="#22c55e" opacity="0.4"/>
+
+  <!-- Phase 2: Exploring (done) -->
+  <circle cx="320" cy="93" r="8" fill="#22c55e" fill-opacity="0.15"/>
+  <path d="M316 93 L319 96 L324 90" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="334" y="97" fill="#4ade80" font-size="9" font-weight="600" font-family="system-ui">Exploring</text>
+
+  <!-- Connector -->
+  <rect x="396" y="92" width="50" height="1.5" rx="0.75" fill="#22c55e" opacity="0.4"/>
+
+  <!-- Phase 3: Planning (done) -->
+  <circle cx="462" cy="93" r="8" fill="#22c55e" fill-opacity="0.15"/>
+  <path d="M458 93 L461 96 L466 90" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="476" y="97" fill="#4ade80" font-size="9" font-weight="600" font-family="system-ui">Planning</text>
+
+  <!-- Connector -->
+  <rect x="536" y="92" width="50" height="1.5" rx="0.75" fill="#f59e0b" opacity="0.4"/>
+
+  <!-- Phase 4: Review (active) -->
+  <circle cx="602" cy="93" r="8" fill="#f59e0b" fill-opacity="0.15" stroke="#f59e0b" stroke-width="1">
+    <animate attributeName="stroke-opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="602" cy="93" r="3" fill="#f59e0b">
+    <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <text x="616" y="97" fill="#fbbf24" font-size="9" font-weight="600" font-family="system-ui">Review</text>
+
+  <!-- Remaining connector (dim) -->
+  <rect x="656" y="92" width="50" height="1.5" rx="0.75" fill="#2a2520"/>
+
+  <!-- Phase 5: Execute (pending) -->
+  <circle cx="722" cy="93" r="8" fill="#2a2520"/>
+  <text x="736" y="97" fill="#564d40" font-size="9" font-weight="600" font-family="system-ui">Execute</text>
+
+  <!-- ─── Stats Row ─── -->
+  <rect x="100" y="116" width="800" height="26" rx="6" fill="#15120f"/>
+
+  <!-- Elapsed -->
+  <text x="120" y="133" fill="#564d40" font-size="8.5" font-family="system-ui">Elapsed</text>
+  <text x="164" y="133" fill="#ebe4d8" font-size="9" font-weight="600" font-family="system-ui">45s</text>
+
+  <rect x="198" y="122" width="1" height="14" fill="#2a2520"/>
+
+  <!-- Tokens -->
+  <text x="214" y="133" fill="#564d40" font-size="8.5" font-family="system-ui">Tokens</text>
+  <text x="254" y="133" fill="#ebe4d8" font-size="9" font-weight="600" font-family="system-ui">28k</text>
+
+  <rect x="286" y="122" width="1" height="14" fill="#2a2520"/>
+
+  <!-- Tools -->
+  <text x="302" y="133" fill="#564d40" font-size="8.5" font-family="system-ui">Tools</text>
+  <text x="334" y="133" fill="#ebe4d8" font-size="9" font-weight="600" font-family="system-ui">12</text>
+
+  <rect x="358" y="122" width="1" height="14" fill="#2a2520"/>
+
+  <!-- Turns -->
+  <text x="374" y="133" fill="#564d40" font-size="8.5" font-family="system-ui">Turns</text>
+  <text x="406" y="133" fill="#ebe4d8" font-size="9" font-weight="600" font-family="system-ui">4</text>
+
+  <!-- ─── Proposed Tasks Section ─── -->
+  <text x="100" y="164" fill="#918678" font-size="9" font-weight="700" font-family="system-ui" letter-spacing="0.5">PROPOSED TASKS</text>
+  <rect x="196" y="154" width="18" height="14" rx="7" fill="#DA7756" fill-opacity="0.12"/>
+  <text x="205" y="164" text-anchor="middle" fill="#DA7756" font-size="8" font-weight="600" font-family="system-ui">5</text>
+
+  <!-- Task card 1 -->
+  <rect x="100" y="174" width="800" height="38" rx="7" fill="#1f1b17" stroke="#2a2520" stroke-width="0.5"/>
+  <!-- Position -->
+  <rect x="110" y="182" width="20" height="20" rx="5" fill="#2a2520"/>
+  <text x="120" y="196" text-anchor="middle" fill="#ebe4d8" font-size="9" font-weight="700" font-family="system-ui">1</text>
+  <!-- Type badge -->
+  <rect x="138" y="184" width="42" height="14" rx="3" fill="#3b82f6" fill-opacity="0.12"/>
+  <text x="159" y="194" text-anchor="middle" fill="#60a5fa" font-size="7.5" font-weight="600" font-family="system-ui">feature</text>
+  <!-- Title -->
+  <text x="188" y="198" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Set up authentication module structure</text>
+  <!-- Model -->
+  <text x="720" y="198" fill="#564d40" font-size="8" font-family="system-ui">sonnet</text>
+
+  <!-- Task card 2 -->
+  <rect x="100" y="218" width="800" height="38" rx="7" fill="#1f1b17" stroke="#2a2520" stroke-width="0.5"/>
+  <rect x="110" y="226" width="20" height="20" rx="5" fill="#2a2520"/>
+  <text x="120" y="240" text-anchor="middle" fill="#ebe4d8" font-size="9" font-weight="700" font-family="system-ui">2</text>
+  <rect x="138" y="228" width="42" height="14" rx="3" fill="#3b82f6" fill-opacity="0.12"/>
+  <text x="159" y="238" text-anchor="middle" fill="#60a5fa" font-size="7.5" font-weight="600" font-family="system-ui">feature</text>
+  <text x="188" y="242" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Implement JWT token validation middleware</text>
+  <text x="720" y="242" fill="#564d40" font-size="8" font-family="system-ui">sonnet</text>
+
+  <!-- Task card 3 -->
+  <rect x="100" y="262" width="800" height="38" rx="7" fill="#1f1b17" stroke="#2a2520" stroke-width="0.5"/>
+  <rect x="110" y="270" width="20" height="20" rx="5" fill="#2a2520"/>
+  <text x="120" y="284" text-anchor="middle" fill="#ebe4d8" font-size="9" font-weight="700" font-family="system-ui">3</text>
+  <rect x="138" y="272" width="42" height="14" rx="3" fill="#8b5cf6" fill-opacity="0.12"/>
+  <text x="159" y="282" text-anchor="middle" fill="#a78bfa" font-size="7.5" font-weight="600" font-family="system-ui">refactor</text>
+  <text x="188" y="286" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Add refresh token rotation logic</text>
+  <text x="720" y="286" fill="#564d40" font-size="8" font-family="system-ui">sonnet</text>
+
+  <!-- Task card 4 (with remove button highlighted) -->
+  <rect x="100" y="306" width="800" height="38" rx="7" fill="#1f1b17" stroke="#2a2520" stroke-width="0.5"/>
+  <rect x="110" y="314" width="20" height="20" rx="5" fill="#2a2520"/>
+  <text x="120" y="328" text-anchor="middle" fill="#ebe4d8" font-size="9" font-weight="700" font-family="system-ui">4</text>
+  <rect x="138" y="316" width="28" height="14" rx="3" fill="#22c55e" fill-opacity="0.12"/>
+  <text x="152" y="326" text-anchor="middle" fill="#4ade80" font-size="7.5" font-weight="600" font-family="system-ui">test</text>
+  <text x="174" y="330" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Write auth integration tests</text>
+  <text x="720" y="330" fill="#564d40" font-size="8" font-family="system-ui">haiku</text>
+  <!-- Red X remove button -->
+  <rect x="866" y="316" width="22" height="22" rx="5" fill="#ef4444" fill-opacity="0.1" stroke="#ef4444" stroke-width="0.5" stroke-opacity="0.3"/>
+  <path d="M873 323 L882 332 M882 323 L873 332" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Task card 5 -->
+  <rect x="100" y="350" width="800" height="38" rx="7" fill="#1f1b17" stroke="#2a2520" stroke-width="0.5" clip-path="url(#plround)"/>
+  <rect x="110" y="358" width="20" height="20" rx="5" fill="#2a2520"/>
+  <text x="120" y="372" text-anchor="middle" fill="#ebe4d8" font-size="9" font-weight="700" font-family="system-ui">5</text>
+  <rect x="138" y="360" width="28" height="14" rx="3" fill="#a78bfa" fill-opacity="0.12"/>
+  <text x="152" y="370" text-anchor="middle" fill="#a78bfa" font-size="7.5" font-weight="600" font-family="system-ui">docs</text>
+  <text x="174" y="374" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Update API reference documentation</text>
+  <text x="720" y="374" fill="#564d40" font-size="8" font-family="system-ui">haiku</text>
+
+  <!-- ─── Bottom Action Bar (overlaps last card slightly for depth) ─── -->
+  <rect x="80" y="362" width="840" height="24" rx="0" fill="#15120f" clip-path="url(#plround)"/>
+  <rect x="80" y="360" width="840" height="1" fill="#2a2520"/>
+
+  <!-- Revise button (secondary) -->
+  <rect x="614" y="365" width="80" height="26" rx="6" fill="#2a2520" stroke="#3d372e" stroke-width="0.5" clip-path="url(#plround)"/>
+  <text x="654" y="382" text-anchor="middle" fill="#918678" font-size="10" font-weight="600" font-family="system-ui">Revise</text>
+
+  <!-- Approve button (green CTA) -->
+  <rect x="704" y="365" width="196" height="26" rx="6" fill="#22c55e" fill-opacity="0.15" stroke="#22c55e" stroke-width="0.8" stroke-opacity="0.4" clip-path="url(#plround)"/>
+  <text x="802" y="382" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="600" font-family="system-ui">Approve &amp; Create 5 Tasks</text>
+</svg>

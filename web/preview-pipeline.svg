@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" fill="none">
+  <defs>
+    <linearGradient id="pbg" x1="0" y1="0" x2="1000" y2="400"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+    <linearGradient id="paccent" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#E8926E"/><stop offset="100%" stop-color="#C45A3C"/></linearGradient>
+    <clipPath id="pround"><rect width="1000" height="400" rx="16"/></clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="400" rx="16" fill="url(#pbg)"/>
+  <ellipse cx="500" cy="0" rx="500" ry="160" fill="#DA7756" fill-opacity="0.04" clip-path="url(#pround)"/>
+
+  <!-- ==================== Header Bar ==================== -->
+  <rect x="0" y="0" width="1000" height="44" rx="0" fill="#15120f" clip-path="url(#pround)"/>
+  <rect x="0" y="43" width="1000" height="1" fill="#2a2520"/>
+  <!-- App logo -->
+  <rect x="18" y="10" width="24" height="24" rx="6" fill="url(#paccent)"/>
+  <path d="M30 15 C30 15,31 21,31.2 22.4 C31.4 23.8,34.2 25,38 25 C34.2 25,31.4 26.2,31.2 27.6 C31 29,30 35,30 35 C30 35,29 29,28.8 27.6 C28.6 26.2,25.8 25,22 25 C25.8 25,28.6 23.8,28.8 22.4 C29 21,30 15,30 15Z" fill="white" opacity="0.9"/>
+  <text x="50" y="27" fill="#ebe4d8" font-size="13" font-weight="700" font-family="system-ui">Claude Board</text>
+  <rect x="146" y="14" width="1" height="16" rx="0.5" fill="#3d372e"/>
+  <rect x="157" y="12" width="16" height="16" rx="4" fill="url(#paccent)" opacity="0.6"/>
+  <text x="180" y="25" fill="#918678" font-size="11" font-weight="600" font-family="system-ui">my-app</text>
+  <!-- View tabs -->
+  <text x="570" y="26" fill="#564d40" font-size="10" font-weight="600" font-family="system-ui">Board</text>
+  <rect x="608" y="10" width="58" height="24" rx="6" fill="rgba(218,119,86,0.15)"/>
+  <text x="637" y="26" text-anchor="middle" fill="#DA7756" font-size="10" font-weight="600" font-family="system-ui">Pipeline</text>
+  <text x="684" y="26" fill="#564d40" font-size="10" font-weight="600" font-family="system-ui">Terminal</text>
+  <text x="742" y="26" fill="#564d40" font-size="10" font-weight="600" font-family="system-ui">Summary</text>
+  <!-- Window controls -->
+  <circle cx="940" cy="22" r="5" fill="#3d372e"/><circle cx="958" cy="22" r="5" fill="#3d372e"/><circle cx="976" cy="22" r="5" fill="#3d372e"/>
+
+  <!-- ==================== Stats Bar ==================== -->
+  <rect x="14" y="52" width="972" height="32" rx="8" fill="#15120f" stroke="#2a2520" stroke-width="0.5"/>
+
+  <!-- Running stat -->
+  <circle cx="30" cy="68" r="4" fill="#f59e0b">
+    <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <text x="40" y="72" fill="#fbbf24" font-size="10" font-weight="600" font-family="system-ui">Running 2</text>
+  <rect x="108" y="60" width="1" height="16" fill="#2a2520"/>
+
+  <!-- Queued stat -->
+  <circle cx="122" cy="68" r="4" fill="#6b7280"/>
+  <text x="132" y="72" fill="#9ca3af" font-size="10" font-weight="600" font-family="system-ui">Queued 4</text>
+  <rect x="198" y="60" width="1" height="16" fill="#2a2520"/>
+
+  <!-- Completed stat -->
+  <circle cx="212" cy="68" r="4" fill="#22c55e"/>
+  <text x="222" y="72" fill="#4ade80" font-size="10" font-weight="600" font-family="system-ui">Completed 8</text>
+  <rect x="314" y="60" width="1" height="16" fill="#2a2520"/>
+
+  <!-- Avg duration -->
+  <text x="328" y="72" fill="#564d40" font-size="9" font-family="system-ui">Avg:</text>
+  <text x="352" y="72" fill="#918678" font-size="10" font-weight="600" font-family="system-ui">3m</text>
+  <rect x="376" y="60" width="1" height="16" fill="#2a2520"/>
+
+  <!-- Tokens -->
+  <text x="390" y="72" fill="#564d40" font-size="9" font-family="system-ui">Tokens:</text>
+  <text x="432" y="72" fill="#918678" font-size="10" font-weight="600" font-family="system-ui">256k</text>
+  <rect x="470" y="60" width="1" height="16" fill="#2a2520"/>
+
+  <!-- Cost -->
+  <text x="484" y="72" fill="#564d40" font-size="9" font-family="system-ui">Cost:</text>
+  <text x="514" y="72" fill="#4ade80" font-size="10" font-weight="600" font-family="system-ui">$8.40</text>
+
+  <!-- ==================== Running Section ==================== -->
+  <text x="24" y="106" fill="#fbbf24" font-size="10" font-weight="700" font-family="system-ui" letter-spacing="0.5">RUNNING</text>
+  <circle cx="84" cy="102" r="3" fill="#f59e0b">
+    <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Running card 1 -->
+  <rect x="14" y="114" width="478" height="54" rx="8" fill="#1a1613" stroke="#f59e0b" stroke-width="0.8" stroke-opacity="0.35"/>
+  <!-- Pulse dot -->
+  <circle cx="30" cy="132" r="4" fill="#f59e0b">
+    <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Task ID -->
+  <text x="42" y="136" fill="#DA7756" font-size="9" font-weight="700" font-family="system-ui">#5</text>
+  <!-- Type badge -->
+  <rect x="60" y="126" width="42" height="14" rx="3" fill="#3b82f6" fill-opacity="0.12"/>
+  <text x="81" y="136" text-anchor="middle" fill="#60a5fa" font-size="7.5" font-weight="600" font-family="system-ui">feature</text>
+  <!-- Title -->
+  <text x="110" y="136" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Add JWT authentication</text>
+  <!-- Bottom info -->
+  <text x="42" y="156" fill="#564d40" font-size="8" font-family="system-ui">sonnet</text>
+  <rect x="76" y="148" width="1" height="10" fill="#2a2520"/>
+  <text x="84" y="156" fill="#564d40" font-size="8" font-family="system-ui">18.2k tokens</text>
+  <rect x="148" y="148" width="1" height="10" fill="#2a2520"/>
+  <text x="156" y="156" fill="#564d40" font-size="8" font-family="system-ui">Turn 4</text>
+  <rect x="188" y="148" width="1" height="10" fill="#2a2520"/>
+  <text x="196" y="156" fill="#564d40" font-size="8" font-family="system-ui">2m 14s</text>
+  <!-- Terminal button -->
+  <rect x="420" y="126" width="58" height="22" rx="5" fill="#2a2520"/>
+  <text x="449" y="140" text-anchor="middle" fill="#918678" font-size="8.5" font-weight="500" font-family="system-ui">Terminal</text>
+
+  <!-- Running card 2 -->
+  <rect x="508" y="114" width="478" height="54" rx="8" fill="#1a1613" stroke="#f59e0b" stroke-width="0.8" stroke-opacity="0.35"/>
+  <circle cx="524" cy="132" r="4" fill="#f59e0b">
+    <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <text x="536" y="136" fill="#DA7756" font-size="9" font-weight="700" font-family="system-ui">#6</text>
+  <rect x="554" y="126" width="32" height="14" rx="3" fill="#ef4444" fill-opacity="0.12"/>
+  <text x="570" y="136" text-anchor="middle" fill="#f87171" font-size="7.5" font-weight="600" font-family="system-ui">bugfix</text>
+  <text x="594" y="136" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Fix session timeout handling</text>
+  <text x="536" y="156" fill="#564d40" font-size="8" font-family="system-ui">haiku</text>
+  <rect x="564" y="148" width="1" height="10" fill="#2a2520"/>
+  <text x="572" y="156" fill="#564d40" font-size="8" font-family="system-ui">4.8k tokens</text>
+  <rect x="630" y="148" width="1" height="10" fill="#2a2520"/>
+  <text x="638" y="156" fill="#564d40" font-size="8" font-family="system-ui">Turn 2</text>
+  <rect x="668" y="148" width="1" height="10" fill="#2a2520"/>
+  <text x="676" y="156" fill="#564d40" font-size="8" font-family="system-ui">0m 48s</text>
+  <rect x="914" y="126" width="58" height="22" rx="5" fill="#2a2520"/>
+  <text x="943" y="140" text-anchor="middle" fill="#918678" font-size="8.5" font-weight="500" font-family="system-ui">Terminal</text>
+
+  <!-- ==================== Queue Section ==================== -->
+  <text x="24" y="194" fill="#9ca3af" font-size="10" font-weight="700" font-family="system-ui" letter-spacing="0.5">QUEUE</text>
+  <rect x="64" y="184" width="18" height="14" rx="7" fill="#2a2520"/>
+  <text x="73" y="194" text-anchor="middle" fill="#9ca3af" font-size="8" font-weight="600" font-family="system-ui">4</text>
+
+  <!-- Queue card 1 -->
+  <rect x="14" y="204" width="478" height="46" rx="8" fill="#1a1613" stroke="#2a2520" stroke-width="0.5"/>
+  <!-- Grip handle -->
+  <rect x="24" y="220" width="2" height="2" rx="1" fill="#564d40"/><rect x="24" y="226" width="2" height="2" rx="1" fill="#564d40"/><rect x="24" y="232" width="2" height="2" rx="1" fill="#564d40"/>
+  <rect x="29" y="220" width="2" height="2" rx="1" fill="#564d40"/><rect x="29" y="226" width="2" height="2" rx="1" fill="#564d40"/><rect x="29" y="232" width="2" height="2" rx="1" fill="#564d40"/>
+  <!-- Position number -->
+  <rect x="40" y="218" width="18" height="18" rx="4" fill="#2a2520"/>
+  <text x="49" y="231" text-anchor="middle" fill="#918678" font-size="9" font-weight="700" font-family="system-ui">1</text>
+  <!-- Type badge -->
+  <rect x="66" y="219" width="42" height="14" rx="3" fill="#8b5cf6" fill-opacity="0.12"/>
+  <text x="87" y="229" text-anchor="middle" fill="#a78bfa" font-size="7.5" font-weight="600" font-family="system-ui">refactor</text>
+  <text x="116" y="230" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Extract auth utilities</text>
+  <text x="66" y="244" fill="#564d40" font-size="8" font-family="system-ui">sonnet</text>
+  <!-- Up/Down arrows -->
+  <path d="M454 220 L458 216 L462 220" stroke="#564d40" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M454 232 L458 236 L462 232" stroke="#564d40" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+  <!-- Queue card 2 (with dependency badge) -->
+  <rect x="14" y="258" width="478" height="46" rx="8" fill="#1a1613" stroke="#2a2520" stroke-width="0.5"/>
+  <rect x="24" y="274" width="2" height="2" rx="1" fill="#564d40"/><rect x="24" y="280" width="2" height="2" rx="1" fill="#564d40"/><rect x="24" y="286" width="2" height="2" rx="1" fill="#564d40"/>
+  <rect x="29" y="274" width="2" height="2" rx="1" fill="#564d40"/><rect x="29" y="280" width="2" height="2" rx="1" fill="#564d40"/><rect x="29" y="286" width="2" height="2" rx="1" fill="#564d40"/>
+  <rect x="40" y="272" width="18" height="18" rx="4" fill="#2a2520"/>
+  <text x="49" y="285" text-anchor="middle" fill="#918678" font-size="9" font-weight="700" font-family="system-ui">2</text>
+  <rect x="66" y="273" width="42" height="14" rx="3" fill="#3b82f6" fill-opacity="0.12"/>
+  <text x="87" y="283" text-anchor="middle" fill="#60a5fa" font-size="7.5" font-weight="600" font-family="system-ui">feature</text>
+  <text x="116" y="284" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Add rate limiter</text>
+  <!-- Dependency badge -->
+  <rect x="232" y="275" width="42" height="14" rx="3" fill="#3b82f6" fill-opacity="0.1"/>
+  <text x="253" y="285" text-anchor="middle" fill="#60a5fa" font-size="7.5" font-weight="500" font-family="system-ui">&#x2192;#3</text>
+  <text x="66" y="298" fill="#564d40" font-size="8" font-family="system-ui">sonnet</text>
+  <path d="M454 274 L458 270 L462 274" stroke="#564d40" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M454 286 L458 290 L462 286" stroke="#564d40" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+  <!-- Queue card 3 -->
+  <rect x="508" y="204" width="478" height="46" rx="8" fill="#1a1613" stroke="#2a2520" stroke-width="0.5"/>
+  <rect x="518" y="220" width="2" height="2" rx="1" fill="#564d40"/><rect x="518" y="226" width="2" height="2" rx="1" fill="#564d40"/><rect x="518" y="232" width="2" height="2" rx="1" fill="#564d40"/>
+  <rect x="523" y="220" width="2" height="2" rx="1" fill="#564d40"/><rect x="523" y="226" width="2" height="2" rx="1" fill="#564d40"/><rect x="523" y="232" width="2" height="2" rx="1" fill="#564d40"/>
+  <rect x="534" y="218" width="18" height="18" rx="4" fill="#2a2520"/>
+  <text x="543" y="231" text-anchor="middle" fill="#918678" font-size="9" font-weight="700" font-family="system-ui">3</text>
+  <rect x="560" y="219" width="28" height="14" rx="3" fill="#22c55e" fill-opacity="0.12"/>
+  <text x="574" y="229" text-anchor="middle" fill="#4ade80" font-size="7.5" font-weight="600" font-family="system-ui">test</text>
+  <text x="596" y="230" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Write integration tests</text>
+  <text x="560" y="244" fill="#564d40" font-size="8" font-family="system-ui">sonnet</text>
+  <path d="M948 220 L952 216 L956 220" stroke="#564d40" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M948 232 L952 236 L956 232" stroke="#564d40" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+  <!-- Queue card 4 (with retry badge) -->
+  <rect x="508" y="258" width="478" height="46" rx="8" fill="#1a1613" stroke="#2a2520" stroke-width="0.5"/>
+  <rect x="518" y="274" width="2" height="2" rx="1" fill="#564d40"/><rect x="518" y="280" width="2" height="2" rx="1" fill="#564d40"/><rect x="518" y="286" width="2" height="2" rx="1" fill="#564d40"/>
+  <rect x="523" y="274" width="2" height="2" rx="1" fill="#564d40"/><rect x="523" y="280" width="2" height="2" rx="1" fill="#564d40"/><rect x="523" y="286" width="2" height="2" rx="1" fill="#564d40"/>
+  <rect x="534" y="272" width="18" height="18" rx="4" fill="#2a2520"/>
+  <text x="543" y="285" text-anchor="middle" fill="#918678" font-size="9" font-weight="700" font-family="system-ui">4</text>
+  <rect x="560" y="273" width="28" height="14" rx="3" fill="#a78bfa" fill-opacity="0.12"/>
+  <text x="574" y="283" text-anchor="middle" fill="#a78bfa" font-size="7.5" font-weight="600" font-family="system-ui">docs</text>
+  <text x="596" y="284" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Update API documentation</text>
+  <!-- Retry badge -->
+  <rect x="760" y="275" width="44" height="14" rx="3" fill="#f59e0b" fill-opacity="0.1"/>
+  <text x="782" y="285" text-anchor="middle" fill="#fbbf24" font-size="7.5" font-weight="500" font-family="system-ui">retry 1</text>
+  <text x="560" y="298" fill="#564d40" font-size="8" font-family="system-ui">haiku</text>
+  <path d="M948 274 L952 270 L956 274" stroke="#564d40" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M948 286 L952 290 L956 286" stroke="#564d40" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+  <!-- ==================== Completed Section (collapsed) ==================== -->
+  <rect x="14" y="316" width="972" height="34" rx="8" fill="#15120f" stroke="#2a2520" stroke-width="0.5"/>
+  <!-- Chevron (right, collapsed) -->
+  <path d="M30 329 L35 333 L30 337" stroke="#564d40" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="50" cy="333" r="4" fill="#22c55e"/>
+  <text x="60" y="337" fill="#4ade80" font-size="10" font-weight="700" font-family="system-ui">Completed (8)</text>
+  <!-- Summary tokens -->
+  <text x="800" y="337" fill="#564d40" font-size="8.5" font-family="system-ui">Total: 184k tokens</text>
+  <rect x="890" y="326" width="1" height="14" fill="#2a2520"/>
+  <text x="900" y="337" fill="#564d40" font-size="8.5" font-family="system-ui">$5.20</text>
+
+  <!-- Bottom fade hint (more content below) -->
+  <rect x="14" y="360" width="972" height="28" rx="8" fill="#1a1613" opacity="0.5" clip-path="url(#pround)"/>
+  <rect x="460" y="370" width="80" height="4" rx="2" fill="#2a2520" opacity="0.5"/>
+</svg>
