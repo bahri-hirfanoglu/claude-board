@@ -16,6 +16,7 @@
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build",
     "setup": "npm install && cd client && npm install",
+    "tauri": "tauri",
     "tauri:dev": "npx tauri dev",
     "tauri:build": "npx tauri build",
     "lint": "cd client && npx eslint src/",
