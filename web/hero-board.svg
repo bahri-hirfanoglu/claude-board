@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" fill="none">
+  <defs>
+    <linearGradient id="hbg" x1="0" y1="0" x2="1000" y2="400"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#E8926E"/><stop offset="100%" stop-color="#C45A3C"/></linearGradient>
+    <clipPath id="round"><rect width="1000" height="400" rx="16"/></clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="400" rx="16" fill="url(#hbg)"/>
+  <!-- Subtle vignette glow at top-center -->
+  <ellipse cx="500" cy="0" rx="500" ry="160" fill="#DA7756" fill-opacity="0.04" clip-path="url(#round)"/>
+
+  <!-- ==================== Header Bar ==================== -->
+  <rect x="0" y="0" width="1000" height="44" rx="0" fill="#15120f" clip-path="url(#round)"/>
+  <rect x="0" y="43" width="1000" height="1" fill="#2a2520"/>
+  <!-- App logo -->
+  <rect x="18" y="10" width="24" height="24" rx="6" fill="url(#accent)"/>
+  <path d="M30 15 C30 15,31 21,31.2 22.4 C31.4 23.8,34.2 25,38 25 C34.2 25,31.4 26.2,31.2 27.6 C31 29,30 35,30 35 C30 35,29 29,28.8 27.6 C28.6 26.2,25.8 25,22 25 C25.8 25,28.6 23.8,28.8 22.4 C29 21,30 15,30 15Z" fill="white" opacity="0.9"/>
+  <!-- Title text -->
+  <text x="50" y="27" fill="#ebe4d8" font-size="13" font-weight="700" font-family="system-ui">Claude Board</text>
+  <!-- Separator -->
+  <rect x="146" y="14" width="1" height="16" rx="0.5" fill="#3d372e"/>
+  <!-- Project name -->
+  <rect x="157" y="12" width="16" height="16" rx="4" fill="url(#accent)" opacity="0.6"/>
+  <text x="180" y="25" fill="#918678" font-size="11" font-weight="600" font-family="system-ui">my-app</text>
+  <!-- View tabs -->
+  <rect x="570" y="10" width="48" height="24" rx="6" fill="rgba(218,119,86,0.15)"/>
+  <text x="594" y="26" text-anchor="middle" fill="#DA7756" font-size="10" font-weight="600" font-family="system-ui">Board</text>
+  <text x="642" y="26" fill="#564d40" font-size="10" font-weight="600" font-family="system-ui">List</text>
+  <text x="686" y="26" fill="#564d40" font-size="10" font-weight="600" font-family="system-ui">Timeline</text>
+  <text x="746" y="26" fill="#564d40" font-size="10" font-weight="600" font-family="system-ui">Summary</text>
+  <!-- Window controls (right side) -->
+  <circle cx="940" cy="22" r="5" fill="#3d372e"/><circle cx="958" cy="22" r="5" fill="#3d372e"/><circle cx="976" cy="22" r="5" fill="#3d372e"/>
+
+  <!-- ==================== Kanban Board ==================== -->
+
+  <!-- ─── Column 1: Backlog ─── -->
+  <rect x="20" y="56" width="228" height="244" rx="10" fill="#15120f" stroke="#2a2520" stroke-width="1"/>
+  <!-- Column header -->
+  <circle cx="36" cy="72" r="4" fill="#6b7280"/>
+  <text x="46" y="76" fill="#9ca3af" font-size="10" font-weight="700" font-family="system-ui" letter-spacing="0.5">BACKLOG</text>
+  <rect x="212" y="64" width="22" height="16" rx="8" fill="#2a2520"/><text x="223" y="75" text-anchor="middle" fill="#6b7280" font-size="9" font-family="system-ui">3</text>
+
+  <!-- Card 1 -->
+  <rect x="32" y="90" width="204" height="56" rx="8" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <rect x="40" y="98" width="38" height="14" rx="3" fill="#3b82f6" fill-opacity="0.15"/><text x="59" y="108" text-anchor="middle" fill="#60a5fa" font-size="7" font-weight="600" font-family="system-ui">feature</text>
+  <text x="40" y="125" fill="#ebe4d8" font-size="9.5" font-weight="600" font-family="system-ui">Add dark mode support</text>
+  <text x="40" y="138" fill="#564d40" font-size="8" font-family="system-ui">sonnet</text>
+  <text x="84" y="138" fill="#564d40" font-size="8" font-family="system-ui">2.1k tokens</text>
+
+  <!-- Card 2 -->
+  <rect x="32" y="154" width="204" height="56" rx="8" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <rect x="40" y="162" width="32" height="14" rx="3" fill="#ef4444" fill-opacity="0.15"/><text x="56" y="172" text-anchor="middle" fill="#f87171" font-size="7" font-weight="600" font-family="system-ui">bugfix</text>
+  <text x="40" y="189" fill="#ebe4d8" font-size="9.5" font-weight="600" font-family="system-ui">Fix login redirect loop</text>
+  <text x="40" y="202" fill="#564d40" font-size="8" font-family="system-ui">haiku</text>
+  <text x="78" y="202" fill="#564d40" font-size="8" font-family="system-ui">800 tokens</text>
+
+  <!-- Card 3 -->
+  <rect x="32" y="218" width="204" height="56" rx="8" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <rect x="40" y="226" width="28" height="14" rx="3" fill="#a78bfa" fill-opacity="0.15"/><text x="54" y="236" text-anchor="middle" fill="#a78bfa" font-size="7" font-weight="600" font-family="system-ui">docs</text>
+  <text x="40" y="253" fill="#ebe4d8" font-size="9.5" font-weight="600" font-family="system-ui">Update API reference</text>
+  <text x="40" y="266" fill="#564d40" font-size="8" font-family="system-ui">haiku</text>
+  <text x="78" y="266" fill="#564d40" font-size="8" font-family="system-ui">500 tokens</text>
+
+  <!-- ─── Column 2: In Progress ─── -->
+  <rect x="260" y="56" width="228" height="244" rx="10" fill="#15120f" stroke="#f59e0b" stroke-width="1" stroke-opacity="0.25"/>
+  <!-- Column header -->
+  <circle cx="276" cy="72" r="4" fill="#f59e0b">
+    <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <text x="286" y="76" fill="#f59e0b" font-size="10" font-weight="700" font-family="system-ui" letter-spacing="0.5">IN PROGRESS</text>
+  <rect x="452" y="64" width="22" height="16" rx="8" fill="#1f1b17"/><text x="463" y="75" text-anchor="middle" fill="#f59e0b" font-size="9" font-family="system-ui">1</text>
+
+  <!-- Active card -->
+  <rect x="272" y="90" width="204" height="80" rx="8" fill="#1f1b17" stroke="#f59e0b" stroke-width="0.8" stroke-opacity="0.35"/>
+  <rect x="280" y="98" width="40" height="14" rx="3" fill="#8b5cf6" fill-opacity="0.15"/><text x="300" y="108" text-anchor="middle" fill="#c084fc" font-size="7" font-weight="600" font-family="system-ui">refactor</text>
+  <!-- Running indicator -->
+  <rect x="420" y="97" width="48" height="16" rx="4" fill="#f59e0b" fill-opacity="0.1"/>
+  <circle cx="432" cy="105" r="3" fill="#f59e0b">
+    <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <text x="440" y="109" fill="#f59e0b" font-size="7" font-weight="600" font-family="system-ui">Live</text>
+
+  <text x="280" y="127" fill="#ebe4d8" font-size="9.5" font-weight="600" font-family="system-ui">Migrate API to REST v2</text>
+  <!-- Model badge -->
+  <rect x="280" y="134" width="40" height="14" rx="3" fill="#f59e0b" fill-opacity="0.1"/>
+  <text x="300" y="144" text-anchor="middle" fill="#f59e0b" font-size="7.5" font-weight="600" font-family="system-ui">sonnet</text>
+  <text x="328" y="144" fill="#564d40" font-size="8" font-family="system-ui">12.4k tokens</text>
+  <!-- Mini terminal in card -->
+  <rect x="280" y="152" width="188" height="12" rx="3" fill="#0f0d0b"/>
+  <text x="286" y="161" fill="#DA7756" font-size="7" font-family="monospace">&#x25B8;</text>
+  <text x="294" y="161" fill="#736858" font-size="7" font-family="monospace">Editing src/api/routes.js</text>
+
+  <!-- ─── Column 3: Testing ─── -->
+  <rect x="500" y="56" width="228" height="244" rx="10" fill="#15120f" stroke="#DA7756" stroke-width="1" stroke-opacity="0.25"/>
+  <!-- Column header -->
+  <circle cx="516" cy="72" r="4" fill="#DA7756"/>
+  <text x="526" y="76" fill="#DA7756" font-size="10" font-weight="700" font-family="system-ui" letter-spacing="0.5">TESTING</text>
+  <rect x="692" y="64" width="22" height="16" rx="8" fill="#1f1b17"/><text x="703" y="75" text-anchor="middle" fill="#DA7756" font-size="9" font-family="system-ui">1</text>
+
+  <!-- Card with claude-colored border -->
+  <rect x="512" y="90" width="204" height="62" rx="8" fill="#1f1b17" stroke="#DA7756" stroke-width="0.8" stroke-opacity="0.4"/>
+  <rect x="520" y="98" width="38" height="14" rx="3" fill="#3b82f6" fill-opacity="0.15"/><text x="539" y="108" text-anchor="middle" fill="#60a5fa" font-size="7" font-weight="600" font-family="system-ui">feature</text>
+  <text x="520" y="127" fill="#ebe4d8" font-size="9.5" font-weight="600" font-family="system-ui">User profile settings</text>
+  <text x="520" y="142" fill="#564d40" font-size="8" font-family="system-ui">opus</text>
+  <text x="548" y="142" fill="#564d40" font-size="8" font-family="system-ui">48.2k tokens</text>
+  <text x="680" y="142" fill="#DA7756" font-size="8" font-weight="600" font-family="system-ui">Review</text>
+
+  <!-- ─── Column 4: Done ─── -->
+  <rect x="740" y="56" width="240" height="244" rx="10" fill="#15120f" stroke="#10b981" stroke-width="1" stroke-opacity="0.2"/>
+  <!-- Column header -->
+  <circle cx="756" cy="72" r="4" fill="#10b981"/>
+  <text x="766" y="76" fill="#10b981" font-size="10" font-weight="700" font-family="system-ui" letter-spacing="0.5">DONE</text>
+  <rect x="944" y="64" width="22" height="16" rx="8" fill="#1f1b17"/><text x="955" y="75" text-anchor="middle" fill="#10b981" font-size="9" font-family="system-ui">2</text>
+
+  <!-- Done card 1 -->
+  <rect x="752" y="90" width="216" height="56" rx="8" fill="#1f1b17" stroke="#10b981" stroke-width="0.5" stroke-opacity="0.2"/>
+  <rect x="760" y="98" width="28" height="14" rx="3" fill="#22c55e" fill-opacity="0.15"/><text x="774" y="108" text-anchor="middle" fill="#4ade80" font-size="7" font-weight="600" font-family="system-ui">docs</text>
+  <!-- Green checkmark -->
+  <text x="940" y="110" fill="#34d399" font-size="12" font-family="system-ui">&#x2713;</text>
+  <text x="760" y="125" fill="#ebe4d8" font-size="9.5" font-weight="600" font-family="system-ui">Update API documentation</text>
+  <text x="760" y="138" fill="#564d40" font-size="8" font-family="system-ui">sonnet</text>
+  <text x="800" y="138" fill="#564d40" font-size="8" font-family="system-ui">5.6k tokens</text>
+  <text x="870" y="138" fill="#34d399" font-size="8" font-family="system-ui">$0.04</text>
+
+  <!-- Done card 2 -->
+  <rect x="752" y="154" width="216" height="56" rx="8" fill="#1f1b17" stroke="#10b981" stroke-width="0.5" stroke-opacity="0.2"/>
+  <rect x="760" y="162" width="24" height="14" rx="3" fill="#eab308" fill-opacity="0.15"/><text x="772" y="172" text-anchor="middle" fill="#facc15" font-size="7" font-weight="600" font-family="system-ui">test</text>
+  <!-- Green checkmark -->
+  <text x="940" y="174" fill="#34d399" font-size="12" font-family="system-ui">&#x2713;</text>
+  <text x="760" y="189" fill="#ebe4d8" font-size="9.5" font-weight="600" font-family="system-ui">Add integration tests</text>
+  <text x="760" y="202" fill="#564d40" font-size="8" font-family="system-ui">opus</text>
+  <text x="788" y="202" fill="#564d40" font-size="8" font-family="system-ui">32.1k tokens</text>
+  <text x="870" y="202" fill="#34d399" font-size="8" font-family="system-ui">$0.12</text>
+
+  <!-- ==================== Terminal Panel ==================== -->
+  <rect x="20" y="312" width="960" height="76" rx="10" fill="#0f0d0b" stroke="#2a2520" stroke-width="1"/>
+  <!-- Terminal header dots -->
+  <circle cx="36" cy="326" r="3.5" fill="#ef4444" opacity="0.6"/>
+  <circle cx="48" cy="326" r="3.5" fill="#f59e0b" opacity="0.6"/>
+  <circle cx="60" cy="326" r="3.5" fill="#22c55e" opacity="0.6"/>
+  <text x="78" y="330" fill="#564d40" font-size="9" font-weight="600" font-family="system-ui">Terminal &mdash; Migrate API to REST v2</text>
+
+  <!-- Terminal line 1: Read -->
+  <text x="36" y="350" fill="#DA7756" font-size="9" font-weight="600" font-family="monospace">Read</text>
+  <text x="72" y="350" fill="#736858" font-size="9" font-family="monospace">src/api/routes.js</text>
+  <text x="260" y="350" fill="#34d399" font-size="9" font-family="monospace">&#x2713; 142 lines</text>
+
+  <!-- Terminal line 2: Edit -->
+  <text x="36" y="365" fill="#DA7756" font-size="9" font-weight="600" font-family="monospace">Edit</text>
+  <text x="72" y="365" fill="#736858" font-size="9" font-family="monospace">src/api/v2/handlers.ts</text>
+  <text x="260" y="365" fill="#34d399" font-size="9" font-family="monospace">&#x2713; +86 -12</text>
+
+  <!-- Terminal line 3: Bash (active with cursor) -->
+  <text x="36" y="380" fill="#DA7756" font-size="9" font-weight="600" font-family="monospace">Bash</text>
+  <text x="72" y="380" fill="#736858" font-size="9" font-family="monospace">npm run test -- --coverage</text>
+  <rect x="252" y="372" width="6" height="12" rx="1" fill="#DA7756" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.2s" repeatCount="indefinite"/>
+  </rect>
+</svg>

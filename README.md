@@ -14,9 +14,9 @@
 
 </div>
 
-<div align="center">
-  <img src="docs/images/hero-board.svg" alt="Claude Board" width="100%" />
-</div>
+<p align="center">
+  <img src="web/demo.gif" alt="Claude Board Demo" width="100%" />
+</p>
 
 ---
 
