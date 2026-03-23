@@ -37,6 +37,8 @@ pub struct Task {
     pub diff_stat: Option<String>,
     pub role_id: Option<i64>,
     pub task_key: Option<String>,
+    pub depends_on: Option<i64>,
+    pub retry_count: Option<i64>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     #[serde(default)]
@@ -96,10 +98,40 @@ fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
         diff_stat: row.get("diff_stat")?,
         role_id: row.get("role_id")?,
         task_key: row.get("task_key")?,
+        depends_on: row.get("depends_on")?,
+        retry_count: row.get("retry_count")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         is_running: false,
     })
+}
+
+pub fn update_queue_position(db: &DbPool, task_id: i64, position: i64) {
+    let conn = db.lock();
+    conn.execute("UPDATE tasks SET queue_position=?1 WHERE id=?2", params![position, task_id]).ok();
+}
+
+pub fn update_depends_on(db: &DbPool, task_id: i64, depends_on: Option<i64>) {
+    let conn = db.lock();
+    conn.execute("UPDATE tasks SET depends_on=?1 WHERE id=?2", params![depends_on, task_id]).ok();
+}
+
+pub fn increment_retry(db: &DbPool, task_id: i64) {
+    let conn = db.lock();
+    conn.execute("UPDATE tasks SET retry_count=COALESCE(retry_count,0)+1 WHERE id=?1", params![task_id]).ok();
+}
+
+pub fn is_dependency_met(db: &DbPool, task: &Task) -> bool {
+    match task.depends_on {
+        None => true,
+        Some(dep_id) => {
+            let conn = db.lock();
+            let status: Option<String> = conn
+                .query_row("SELECT status FROM tasks WHERE id=?1", params![dep_id], |r| r.get(0))
+                .ok();
+            matches!(status.as_deref(), Some("done") | Some("testing"))
+        }
+    }
 }
 
 pub fn get_by_project(db: &DbPool, project_id: i64) -> Vec<Task> {

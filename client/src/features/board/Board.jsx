@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { LayoutGrid, List, BarChart3, Clock, X } from 'lucide-react';
+import { LayoutGrid, List, BarChart3, Clock, X, GitBranch } from 'lucide-react';
 import Column from './Column';
 import ListView from './ListView';
 import SummaryView from './SummaryView';
 import TimelineView from './TimelineView';
+import PipelineView from './PipelineView';
 import { MODELS, MODEL_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 
@@ -19,6 +20,7 @@ const VIEWS = [
   { id: 'list', labelKey: 'board.list', icon: List },
   { id: 'timeline', labelKey: 'board.timeline', icon: Clock },
   { id: 'summary', labelKey: 'board.summary', icon: BarChart3 },
+  { id: 'pipeline', labelKey: 'board.pipeline', icon: GitBranch },
 ];
 
 const MODEL_DOT = { haiku: '#4ade80', sonnet: '#60a5fa', opus: '#c084fc' };
@@ -205,6 +207,17 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
       {viewMode === 'summary' && (
         <div className="flex-1 overflow-hidden">
           <SummaryView tasks={filteredTasks} />
+        </div>
+      )}
+
+      {viewMode === 'pipeline' && (
+        <div className="flex-1 overflow-hidden">
+          <PipelineView
+            tasks={filteredTasks}
+            onStatusChange={onStatusChange}
+            onViewLogs={onViewLogs}
+            onViewDetail={onViewDetail}
+          />
         </div>
       )}
     </div>

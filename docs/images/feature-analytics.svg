@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" fill="none">
+  <defs>
+    <linearGradient id="an-bg" x1="0" y1="0" x2="900" y2="260"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+  </defs>
+  <rect width="900" height="260" rx="16" fill="url(#an-bg)"/>
+
+  <!-- Left: Bar chart - Token usage across days -->
+  <rect x="20" y="30" width="270" height="200" rx="12" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <text x="36" y="54" fill="#b5ab9a" font-size="10" font-weight="600" font-family="system-ui">TOKEN USAGE (7 DAYS)</text>
+
+  <!-- Y-axis labels -->
+  <text x="44" y="80" fill="#736858" font-size="7" font-family="monospace" text-anchor="end">200k</text>
+  <text x="44" y="110" fill="#736858" font-size="7" font-family="monospace" text-anchor="end">150k</text>
+  <text x="44" y="140" fill="#736858" font-size="7" font-family="monospace" text-anchor="end">100k</text>
+  <text x="44" y="170" fill="#736858" font-size="7" font-family="monospace" text-anchor="end">50k</text>
+  <text x="44" y="200" fill="#736858" font-size="7" font-family="monospace" text-anchor="end">0</text>
+  <!-- Grid lines -->
+  <line x1="50" y1="77" x2="270" y2="77" stroke="#3d372e" stroke-width="0.5" stroke-opacity="0.5"/>
+  <line x1="50" y1="107" x2="270" y2="107" stroke="#3d372e" stroke-width="0.5" stroke-opacity="0.5"/>
+  <line x1="50" y1="137" x2="270" y2="137" stroke="#3d372e" stroke-width="0.5" stroke-opacity="0.5"/>
+  <line x1="50" y1="167" x2="270" y2="167" stroke="#3d372e" stroke-width="0.5" stroke-opacity="0.5"/>
+  <!-- Baseline -->
+  <line x1="50" y1="197" x2="270" y2="197" stroke="#3d372e" stroke-width="1"/>
+
+  <!-- Bars - Mon to Sun -->
+  <rect x="60" y="107" width="22" height="90" rx="3" fill="#3b82f6" fill-opacity="0.7"/>
+  <rect x="90" y="87" width="22" height="110" rx="3" fill="#3b82f6" fill-opacity="0.7"/>
+  <rect x="120" y="127" width="22" height="70" rx="3" fill="#3b82f6" fill-opacity="0.7"/>
+  <rect x="150" y="77" width="22" height="120" rx="3" fill="#DA7756" fill-opacity="0.8"/>
+  <rect x="180" y="97" width="22" height="100" rx="3" fill="#3b82f6" fill-opacity="0.7"/>
+  <rect x="210" y="147" width="22" height="50" rx="3" fill="#3b82f6" fill-opacity="0.7"/>
+  <rect x="240" y="157" width="22" height="40" rx="3" fill="#3b82f6" fill-opacity="0.4"/>
+  <!-- Highlight bar label -->
+  <text x="161" y="72" text-anchor="middle" fill="#DA7756" font-size="7" font-weight="600" font-family="monospace">198k</text>
+
+  <!-- Day labels -->
+  <text x="71" y="212" text-anchor="middle" fill="#736858" font-size="7" font-family="system-ui">Mon</text>
+  <text x="101" y="212" text-anchor="middle" fill="#736858" font-size="7" font-family="system-ui">Tue</text>
+  <text x="131" y="212" text-anchor="middle" fill="#736858" font-size="7" font-family="system-ui">Wed</text>
+  <text x="161" y="212" text-anchor="middle" fill="#DA7756" font-size="7" font-weight="600" font-family="system-ui">Thu</text>
+  <text x="191" y="212" text-anchor="middle" fill="#736858" font-size="7" font-family="system-ui">Fri</text>
+  <text x="221" y="212" text-anchor="middle" fill="#736858" font-size="7" font-family="system-ui">Sat</text>
+  <text x="251" y="212" text-anchor="middle" fill="#736858" font-size="7" font-family="system-ui">Sun</text>
+
+  <!-- Middle: Stats grid -->
+  <rect x="310" y="30" width="260" height="200" rx="12" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <text x="326" y="54" fill="#b5ab9a" font-size="10" font-weight="600" font-family="system-ui">OVERVIEW</text>
+
+  <!-- Stat card 1: Total Tokens -->
+  <rect x="326" y="68" width="114" height="56" rx="8" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <text x="338" y="86" fill="#736858" font-size="8" font-family="system-ui">Total Tokens</text>
+  <text x="338" y="108" fill="#ebe4d8" font-size="18" font-weight="700" font-family="system-ui">1.2M</text>
+  <text x="400" y="108" fill="#10b981" font-size="8" font-family="system-ui">+12%</text>
+
+  <!-- Stat card 2: Total Cost -->
+  <rect x="450" y="68" width="114" height="56" rx="8" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <text x="462" y="86" fill="#736858" font-size="8" font-family="system-ui">Total Cost</text>
+  <text x="462" y="108" fill="#ebe4d8" font-size="18" font-weight="700" font-family="system-ui">$24.50</text>
+
+  <!-- Stat card 3: Avg/Task -->
+  <rect x="326" y="134" width="114" height="56" rx="8" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <text x="338" y="152" fill="#736858" font-size="8" font-family="system-ui">Avg / Task</text>
+  <text x="338" y="174" fill="#ebe4d8" font-size="18" font-weight="700" font-family="system-ui">8.4k</text>
+  <text x="385" y="174" fill="#736858" font-size="8" font-family="system-ui">tokens</text>
+
+  <!-- Stat card 4: Rate Limits -->
+  <rect x="450" y="134" width="114" height="56" rx="8" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <text x="462" y="152" fill="#736858" font-size="8" font-family="system-ui">Rate Limits</text>
+  <text x="462" y="174" fill="#f59e0b" font-size="18" font-weight="700" font-family="system-ui">2</text>
+  <text x="480" y="174" fill="#736858" font-size="8" font-family="system-ui">this week</text>
+
+  <!-- Trend line mini sparkline in cost card -->
+  <polyline points="462,118 472,116 482,119 492,114 502,117 512,112 522,115 532,110 542,113" fill="none" stroke="#DA7756" stroke-width="1" stroke-opacity="0.5"/>
+
+  <!-- Right: Model breakdown -->
+  <rect x="590" y="30" width="290" height="200" rx="12" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <text x="606" y="54" fill="#b5ab9a" font-size="10" font-weight="600" font-family="system-ui">MODEL BREAKDOWN</text>
+
+  <!-- Donut chart -->
+  <circle cx="680" cy="140" r="55" fill="none" stroke="#1f1b17" stroke-width="18"/>
+  <!-- Sonnet 65% - blue: stroke-dasharray = 65% of 2*PI*55 = 224.4 -->
+  <circle cx="680" cy="140" r="55" fill="none" stroke="#3b82f6" stroke-width="18" stroke-dasharray="224.4 345.6" stroke-dashoffset="86.4" stroke-linecap="butt"/>
+  <!-- Opus 25% - purple: 86.4 -->
+  <circle cx="680" cy="140" r="55" fill="none" stroke="#a78bfa" stroke-width="18" stroke-dasharray="86.4 259.2" stroke-dashoffset="-138" stroke-linecap="butt"/>
+  <!-- Haiku 10% - green: 34.56 -->
+  <circle cx="680" cy="140" r="55" fill="none" stroke="#10b981" stroke-width="18" stroke-dasharray="34.56 311.04" stroke-dashoffset="-224.4" stroke-linecap="butt"/>
+
+  <!-- Center label -->
+  <text x="680" y="136" text-anchor="middle" fill="#ebe4d8" font-size="14" font-weight="700" font-family="system-ui">1.2M</text>
+  <text x="680" y="150" text-anchor="middle" fill="#736858" font-size="8" font-family="system-ui">total tokens</text>
+
+  <!-- Legend -->
+  <rect x="770" y="90" width="10" height="10" rx="2" fill="#3b82f6"/>
+  <text x="786" y="99" fill="#ebe4d8" font-size="9" font-family="system-ui">Sonnet</text>
+  <text x="840" y="99" fill="#60a5fa" font-size="9" font-weight="600" font-family="monospace">65%</text>
+
+  <rect x="770" y="112" width="10" height="10" rx="2" fill="#a78bfa"/>
+  <text x="786" y="121" fill="#ebe4d8" font-size="9" font-family="system-ui">Opus</text>
+  <text x="840" y="121" fill="#a78bfa" font-size="9" font-weight="600" font-family="monospace">25%</text>
+
+  <rect x="770" y="134" width="10" height="10" rx="2" fill="#10b981"/>
+  <text x="786" y="143" fill="#ebe4d8" font-size="9" font-family="system-ui">Haiku</text>
+  <text x="840" y="143" fill="#10b981" font-size="9" font-weight="600" font-family="monospace">10%</text>
+
+  <!-- Usage per model -->
+  <text x="786" y="164" fill="#736858" font-size="7" font-family="monospace">780k tokens</text>
+  <text x="786" y="176" fill="#736858" font-size="7" font-family="monospace">300k tokens</text>
+  <text x="786" y="188" fill="#736858" font-size="7" font-family="monospace">120k tokens</text>
+</svg>

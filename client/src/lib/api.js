@@ -76,6 +76,9 @@ export const api = IS_TAURI
       requestChanges: (id, feedback) => tauriCall('request_changes', { id, feedback, mcpPort: MCP_PORT }),
       getRevisions: (id) => tauriCall('get_revisions', { id }),
       getTaskDetail: (id) => tauriCall('get_task_detail', { id }),
+      reorderQueue: (projectId, taskIds) => tauriCall('reorder_queue', { projectId, taskIds }),
+      setTaskDependency: (id, dependsOn) => tauriCall('set_task_dependency', { id, dependsOn }),
+      getPipelineStatus: (projectId) => tauriCall('get_pipeline_status', { projectId }),
 
       // Planning
       startPlanning: (projectId, data) => tauriCall('start_planning', { projectId, ...data }),

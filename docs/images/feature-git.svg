@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" fill="none">
+  <defs>
+    <linearGradient id="git-bg" x1="0" y1="0" x2="900" y2="260"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+  </defs>
+  <rect width="900" height="260" rx="16" fill="url(#git-bg)"/>
+
+  <!-- Left: Task card with branch icon -->
+  <rect x="20" y="30" width="220" height="200" rx="12" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <text x="36" y="54" fill="#b5ab9a" font-size="10" font-weight="600" font-family="system-ui">TASK</text>
+  <rect x="36" y="68" width="188" height="80" rx="8" fill="#1f1b17" stroke="#3b82f6" stroke-width="0.5" stroke-opacity="0.3"/>
+  <rect x="46" y="78" width="36" height="14" rx="3" fill="#3b82f6" fill-opacity="0.15"/>
+  <text x="64" y="88" text-anchor="middle" fill="#60a5fa" font-size="7" font-weight="600" font-family="system-ui">feature</text>
+  <text x="46" y="110" fill="#ebe4d8" font-size="11" font-weight="600" font-family="system-ui">Add login page</text>
+  <text x="46" y="126" fill="#736858" font-size="8" font-family="system-ui">Assigned to Claude</text>
+  <!-- Branch badge -->
+  <rect x="36" y="160" width="188" height="28" rx="6" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-width="0.5" stroke-opacity="0.3"/>
+  <!-- Branch icon -->
+  <circle cx="52" cy="174" r="3" fill="none" stroke="#a78bfa" stroke-width="1.2"/>
+  <line x1="52" y1="171" x2="52" y2="166" stroke="#a78bfa" stroke-width="1.2"/>
+  <circle cx="60" cy="166" r="3" fill="none" stroke="#a78bfa" stroke-width="1.2"/>
+  <path d="M55,174 Q60,174 60,169" fill="none" stroke="#a78bfa" stroke-width="1.2"/>
+  <text x="70" y="177" fill="#a78bfa" font-size="8" font-family="monospace">feature/add-login-page</text>
+  <!-- Git auto badge -->
+  <rect x="36" y="198" width="64" height="18" rx="4" fill="#DA7756" fill-opacity="0.12"/>
+  <text x="68" y="210" text-anchor="middle" fill="#DA7756" font-size="8" font-weight="600" font-family="system-ui">Git Auto</text>
+  <circle cx="112" cy="207" r="3" fill="#10b981"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+  <text x="120" y="210" fill="#10b981" font-size="8" font-family="system-ui">Enabled</text>
+
+  <!-- Middle: Git branch diagram -->
+  <rect x="270" y="30" width="300" height="200" rx="12" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <text x="286" y="54" fill="#b5ab9a" font-size="10" font-weight="600" font-family="system-ui">BRANCH ACTIVITY</text>
+
+  <!-- Main branch line -->
+  <line x1="310" y1="90" x2="540" y2="90" stroke="#736858" stroke-width="2"/>
+  <text x="300" y="80" fill="#736858" font-size="8" font-family="monospace" text-anchor="end">main</text>
+  <!-- Main branch dots -->
+  <circle cx="310" cy="90" r="4" fill="#736858"/>
+  <circle cx="540" cy="90" r="4" fill="#736858"/>
+
+  <!-- Feature branch forking off -->
+  <path d="M340,90 C340,110 360,140 380,140" fill="none" stroke="#3b82f6" stroke-width="2"/>
+  <!-- Feature branch line -->
+  <line x1="380" y1="140" x2="510" y2="140" stroke="#3b82f6" stroke-width="2"/>
+  <!-- Merge back -->
+  <path d="M510,140 C520,140 530,110 540,90" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,3"/>
+
+  <!-- Commit dots on feature branch -->
+  <circle cx="400" cy="140" r="5" fill="#1f1b17" stroke="#3b82f6" stroke-width="2"/>
+  <circle cx="440" cy="140" r="5" fill="#1f1b17" stroke="#3b82f6" stroke-width="2"/>
+  <circle cx="480" cy="140" r="5" fill="#1f1b17" stroke="#3b82f6" stroke-width="2"/>
+
+  <!-- Commit labels -->
+  <text x="400" y="162" text-anchor="middle" fill="#60a5fa" font-size="7" font-family="monospace">a3f1b2c</text>
+  <text x="440" y="162" text-anchor="middle" fill="#60a5fa" font-size="7" font-family="monospace">e7d4a9f</text>
+  <text x="480" y="162" text-anchor="middle" fill="#60a5fa" font-size="7" font-family="monospace">c2b8e1d</text>
+
+  <!-- Commit messages -->
+  <text x="400" y="175" text-anchor="middle" fill="#736858" font-size="7" font-family="system-ui">Add form</text>
+  <text x="440" y="175" text-anchor="middle" fill="#736858" font-size="7" font-family="system-ui">Add auth</text>
+  <text x="480" y="175" text-anchor="middle" fill="#736858" font-size="7" font-family="system-ui">Add tests</text>
+
+  <!-- Feature branch label -->
+  <rect x="340" y="190" width="160" height="18" rx="4" fill="#3b82f6" fill-opacity="0.1"/>
+  <text x="420" y="202" text-anchor="middle" fill="#60a5fa" font-size="8" font-family="monospace">feature/add-login-page</text>
+
+  <!-- Arrow to PR -->
+  <line x1="580" y1="130" x2="615" y2="130" stroke="#DA7756" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="613,125 621,130 613,135" fill="#DA7756"/>
+
+  <!-- Right: PR card -->
+  <rect x="630" y="30" width="250" height="200" rx="12" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <text x="646" y="54" fill="#b5ab9a" font-size="10" font-weight="600" font-family="system-ui">PULL REQUEST</text>
+
+  <rect x="646" y="68" width="218" height="148" rx="8" fill="#1f1b17" stroke="#3d372e" stroke-width="0.5"/>
+  <!-- PR title with green badge -->
+  <rect x="656" y="78" width="72" height="18" rx="4" fill="#10b981" fill-opacity="0.15"/>
+  <text x="692" y="90" text-anchor="middle" fill="#10b981" font-size="8" font-weight="700" font-family="system-ui">PR #42 opened</text>
+  <text x="656" y="112" fill="#ebe4d8" font-size="10" font-weight="600" font-family="system-ui">Add login page</text>
+  <!-- Branch info -->
+  <rect x="656" y="122" width="198" height="20" rx="4" fill="#2a2520"/>
+  <text x="666" y="135" fill="#a78bfa" font-size="8" font-family="monospace">feature/add-login-page</text>
+  <text x="830" y="135" fill="#736858" font-size="8" font-family="system-ui">→ main</text>
+  <!-- File stats -->
+  <rect x="656" y="152" width="198" height="24" rx="4" fill="#2a2520"/>
+  <text x="666" y="168" fill="#736858" font-size="8" font-family="system-ui">3 commits</text>
+  <text x="740" y="168" fill="#10b981" font-size="9" font-weight="600" font-family="monospace">+142</text>
+  <text x="775" y="168" fill="#ef4444" font-size="9" font-weight="600" font-family="monospace">-38</text>
+  <text x="800" y="168" fill="#736858" font-size="8" font-family="system-ui">5 files</text>
+  <!-- Files changed list -->
+  <text x="666" y="190" fill="#60a5fa" font-size="7" font-family="monospace">src/pages/Login.tsx</text>
+  <text x="666" y="202" fill="#60a5fa" font-size="7" font-family="monospace">src/lib/auth.ts</text>
+  <text x="666" y="214" fill="#736858" font-size="7" font-family="monospace">+3 more files</text>
+</svg>

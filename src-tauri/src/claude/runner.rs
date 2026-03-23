@@ -321,6 +321,8 @@ pub fn start(
         } else {
             tasks::add_log(&db, task_id, &format!("Claude exited with code {}.", status), "error", None);
             activity::add(&db, project_id, Some(task_id), "task_failed", &format!("Task failed (exit {}): {}", status, task_title), None);
+            // Try auto-retry via queue
+            crate::services::queue::handle_task_failure(&db, &app, project_id, task_id);
         }
 
         // Cleanup attachments

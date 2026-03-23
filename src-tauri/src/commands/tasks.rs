@@ -197,3 +197,61 @@ pub fn get_task_detail(id: i64) -> Result<serde_json::Value, String> {
     obj.insert("is_running".into(), serde_json::Value::Bool(runner::is_running(id)));
     Ok(val)
 }
+
+#[tauri::command]
+pub fn reorder_queue(project_id: i64, task_ids: Vec<i64>) -> Vec<tq::Task> {
+    let db = db::get_db();
+    for (i, id) in task_ids.iter().enumerate() {
+        tq::update_queue_position(&db, *id, i as i64);
+    }
+    tq::get_by_project(&db, project_id)
+        .into_iter()
+        .map(|mut t| { t.is_running = runner::is_running(t.id); t })
+        .collect()
+}
+
+#[tauri::command]
+pub fn set_task_dependency(app: AppHandle, id: i64, depends_on: Option<i64>) -> Result<tq::Task, String> {
+    let db = db::get_db();
+    let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
+    // Prevent circular dependency
+    if let Some(dep_id) = depends_on {
+        if dep_id == id { return Err("Task cannot depend on itself".into()); }
+        if tq::get_by_id(&db, dep_id).is_none() { return Err("Dependency task not found".into()); }
+    }
+    tq::update_depends_on(&db, id, depends_on);
+    let updated = tq::get_by_id(&db, id).unwrap();
+    app.emit("task:updated", &updated).ok();
+    Ok(updated)
+}
+
+#[tauri::command]
+pub fn get_pipeline_status(project_id: i64) -> serde_json::Value {
+    let db = db::get_db();
+    let tasks = tq::get_by_project(&db, project_id);
+    let running: Vec<_> = tasks.iter().filter(|t| t.status.as_deref() == Some("in_progress") || runner::is_running(t.id)).collect();
+    let queued: Vec<_> = tasks.iter().filter(|t| t.status.as_deref() == Some("backlog"))
+        .collect();
+    let completed: Vec<_> = tasks.iter().filter(|t| matches!(t.status.as_deref(), Some("done") | Some("testing")))
+        .collect();
+    let total_cost: f64 = tasks.iter().map(|t| t.total_cost.unwrap_or(0.0)).sum();
+    let total_tokens: i64 = tasks.iter().map(|t| t.input_tokens.unwrap_or(0) + t.output_tokens.unwrap_or(0)).sum();
+    let avg_duration: i64 = {
+        let durations: Vec<i64> = completed.iter().filter_map(|t| t.work_duration_ms).filter(|d| *d > 0).collect();
+        if durations.is_empty() { 0 } else { durations.iter().sum::<i64>() / durations.len() as i64 }
+    };
+
+    serde_json::json!({
+        "running": running.len(),
+        "queued": queued.len(),
+        "completed": completed.len(),
+        "total": tasks.len(),
+        "totalCost": total_cost,
+        "totalTokens": total_tokens,
+        "avgDurationMs": avg_duration,
+        "tasks": {
+            "running": running,
+            "queued": queued,
+        }
+    })
+}

@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" fill="none">
+  <!-- Background -->
+  <rect width="900" height="260" rx="12" fill="#1a1613"/>
+
+  <!-- Left: Microphone with waveform -->
+  <rect x="24" y="20" width="220" height="192" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1.5"/>
+
+  <!-- Mic icon -->
+  <g transform="translate(104, 44)">
+    <!-- Mic body -->
+    <rect x="12" y="0" width="16" height="36" rx="8" fill="none" stroke="#DA7756" stroke-width="2"/>
+    <!-- Mic base arc -->
+    <path d="M6 24c0 10 8 16 14 16s14-6 14-16" fill="none" stroke="#DA7756" stroke-width="2" stroke-linecap="round"/>
+    <!-- Mic stand -->
+    <line x1="20" y1="40" x2="20" y2="50" stroke="#DA7756" stroke-width="2" stroke-linecap="round"/>
+    <line x1="12" y1="50" x2="28" y2="50" stroke="#DA7756" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Recording indicator -->
+  <circle cx="134" cy="50" r="5" fill="#ef4444" opacity="0.9"/>
+  <circle cx="134" cy="50" r="8" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.4"/>
+
+  <!-- Audio waveform visualization -->
+  <g transform="translate(44, 120)">
+    <!-- Waveform bars (sine-wave-like pattern) -->
+    <rect x="0" y="16" width="3" height="8" rx="1.5" fill="#DA7756" opacity="0.5"/>
+    <rect x="8" y="12" width="3" height="16" rx="1.5" fill="#DA7756" opacity="0.6"/>
+    <rect x="16" y="6" width="3" height="28" rx="1.5" fill="#DA7756" opacity="0.8"/>
+    <rect x="24" y="2" width="3" height="36" rx="1.5" fill="#DA7756" opacity="1"/>
+    <rect x="32" y="6" width="3" height="28" rx="1.5" fill="#DA7756" opacity="0.9"/>
+    <rect x="40" y="10" width="3" height="20" rx="1.5" fill="#DA7756" opacity="0.7"/>
+    <rect x="48" y="14" width="3" height="12" rx="1.5" fill="#DA7756" opacity="0.5"/>
+    <rect x="56" y="10" width="3" height="20" rx="1.5" fill="#DA7756" opacity="0.6"/>
+    <rect x="64" y="4" width="3" height="32" rx="1.5" fill="#DA7756" opacity="0.9"/>
+    <rect x="72" y="0" width="3" height="40" rx="1.5" fill="#DA7756" opacity="1"/>
+    <rect x="80" y="4" width="3" height="32" rx="1.5" fill="#DA7756" opacity="0.9"/>
+    <rect x="88" y="8" width="3" height="24" rx="1.5" fill="#DA7756" opacity="0.7"/>
+    <rect x="96" y="12" width="3" height="16" rx="1.5" fill="#DA7756" opacity="0.6"/>
+    <rect x="104" y="8" width="3" height="24" rx="1.5" fill="#DA7756" opacity="0.7"/>
+    <rect x="112" y="4" width="3" height="32" rx="1.5" fill="#DA7756" opacity="0.9"/>
+    <rect x="120" y="2" width="3" height="36" rx="1.5" fill="#DA7756" opacity="1"/>
+    <rect x="128" y="6" width="3" height="28" rx="1.5" fill="#DA7756" opacity="0.8"/>
+    <rect x="136" y="10" width="3" height="20" rx="1.5" fill="#DA7756" opacity="0.6"/>
+    <rect x="144" y="14" width="3" height="12" rx="1.5" fill="#DA7756" opacity="0.5"/>
+    <rect x="152" y="10" width="3" height="20" rx="1.5" fill="#DA7756" opacity="0.6"/>
+    <rect x="160" y="6" width="3" height="28" rx="1.5" fill="#DA7756" opacity="0.8"/>
+    <rect x="168" y="2" width="3" height="36" rx="1.5" fill="#DA7756" opacity="1"/>
+    <rect x="176" y="6" width="3" height="28" rx="1.5" fill="#DA7756" opacity="0.9"/>
+    <rect x="184" y="12" width="3" height="16" rx="1.5" fill="#DA7756" opacity="0.6"/>
+  </g>
+
+  <text x="134" y="186" font-family="system-ui" font-size="11" fill="#b5ab9a" text-anchor="middle">Listening...</text>
+
+  <!-- Connecting arrow -->
+  <g transform="translate(252, 100)">
+    <line x1="0" y1="16" x2="30" y2="16" stroke="#3d372e" stroke-width="2" stroke-dasharray="4 3"/>
+    <polygon points="30,10 42,16 30,22" fill="#3d372e"/>
+  </g>
+
+  <!-- Middle: Speech bubble with recognized text -->
+  <rect x="298" y="20" width="270" height="192" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1.5"/>
+
+  <!-- Speech bubble -->
+  <rect x="316" y="44" width="234" height="68" rx="10" fill="#1a1613" stroke="#3d372e" stroke-width="1.5"/>
+  <!-- Bubble tail -->
+  <polygon points="340,112 350,128 360,112" fill="#1a1613" stroke="#3d372e" stroke-width="1.5"/>
+  <line x1="341" y1="112" x2="359" y2="112" stroke="#1a1613" stroke-width="2"/>
+
+  <!-- Recognized text -->
+  <text x="332" y="68" font-family="system-ui" font-size="11" fill="#ebe4d8" font-style="italic">"Create a new feature task</text>
+  <text x="340" y="85" font-family="system-ui" font-size="11" fill="#ebe4d8" font-style="italic">for user authentication"</text>
+
+  <!-- NLP label -->
+  <text x="332" y="104" font-family="system-ui" font-size="10" fill="#736858">Speech recognized via Web Speech API</text>
+
+  <!-- Processing indicator -->
+  <g transform="translate(316, 146)">
+    <circle cx="6" cy="6" r="3" fill="#DA7756" opacity="1"/>
+    <circle cx="18" cy="6" r="3" fill="#DA7756" opacity="0.6"/>
+    <circle cx="30" cy="6" r="3" fill="#DA7756" opacity="0.3"/>
+    <text x="42" y="10" font-family="system-ui" font-size="10" fill="#b5ab9a">Processing command...</text>
+  </g>
+
+  <!-- Parsed entities -->
+  <g transform="translate(316, 172)">
+    <rect x="0" y="0" width="48" height="18" rx="4" fill="#1e3a5f"/>
+    <text x="24" y="13" font-family="system-ui" font-size="9" font-weight="600" fill="#60a5fa" text-anchor="middle">create</text>
+    <rect x="56" y="0" width="52" height="18" rx="4" fill="#1e5f2a"/>
+    <text x="82" y="13" font-family="system-ui" font-size="9" font-weight="600" fill="#4ade80" text-anchor="middle">feature</text>
+    <rect x="116" y="0" width="120" height="18" rx="4" fill="#3a2a1e"/>
+    <text x="176" y="13" font-family="system-ui" font-size="9" font-weight="600" fill="#fbbf24" text-anchor="middle">user authentication</text>
+  </g>
+
+  <!-- Connecting arrow -->
+  <g transform="translate(576, 100)">
+    <line x1="0" y1="16" x2="30" y2="16" stroke="#3d372e" stroke-width="2" stroke-dasharray="4 3"/>
+    <polygon points="30,10 42,16 30,22" fill="#3d372e"/>
+  </g>
+
+  <!-- Right: Result card -->
+  <rect x="622" y="20" width="254" height="192" rx="10" fill="#2a2520" stroke="#3d372e" stroke-width="1.5"/>
+
+  <!-- Success header -->
+  <g transform="translate(642, 38)">
+    <circle cx="8" cy="8" r="8" fill="#1e5f2a"/>
+    <path d="M5 8l2.5 3 5-6" fill="none" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="666" y="50" font-family="system-ui" font-size="12" font-weight="600" fill="#4ade80">Task Created</text>
+
+  <line x1="640" y1="62" x2="858" y2="62" stroke="#3d372e" stroke-width="1"/>
+
+  <!-- Task details -->
+  <text x="642" y="84" font-family="system-ui" font-size="10" fill="#736858">TITLE</text>
+  <text x="642" y="100" font-family="system-ui" font-size="12" font-weight="500" fill="#ebe4d8">User authentication</text>
+
+  <text x="642" y="124" font-family="system-ui" font-size="10" fill="#736858">TYPE</text>
+  <rect x="642" y="130" width="58" height="20" rx="5" fill="#1e3a5f"/>
+  <text x="671" y="144" font-family="system-ui" font-size="10" font-weight="600" fill="#60a5fa" text-anchor="middle">feature</text>
+
+  <text x="712" y="124" font-family="system-ui" font-size="10" fill="#736858">STATUS</text>
+  <rect x="712" y="130" width="58" height="20" rx="5" fill="#3d372e"/>
+  <text x="741" y="144" font-family="system-ui" font-size="10" font-weight="600" fill="#b5ab9a" text-anchor="middle">backlog</text>
+
+  <text x="642" y="172" font-family="system-ui" font-size="10" fill="#736858">KEY</text>
+  <text x="642" y="188" font-family="monospace" font-size="12" font-weight="600" fill="#DA7756">FTR-CB-1005</text>
+
+  <!-- Bottom: Keyboard shortcut badge -->
+  <rect x="348" y="224" width="204" height="28" rx="8" fill="#2a2520" stroke="#3d372e" stroke-width="1.5"/>
+  <!-- Keyboard icon -->
+  <g transform="translate(360, 230)">
+    <rect x="0" y="2" width="16" height="12" rx="2" fill="none" stroke="#DA7756" stroke-width="1.2"/>
+    <line x1="4" y1="7" x2="6" y2="7" stroke="#DA7756" stroke-width="1" stroke-linecap="round"/>
+    <line x1="8" y1="7" x2="10" y2="7" stroke="#DA7756" stroke-width="1" stroke-linecap="round"/>
+    <line x1="5" y1="11" x2="11" y2="11" stroke="#DA7756" stroke-width="1" stroke-linecap="round"/>
+  </g>
+  <text x="384" y="243" font-family="system-ui" font-size="11" fill="#b5ab9a">Press</text>
+  <rect x="416" y="230" width="40" height="20" rx="5" fill="#1a1613" stroke="#DA7756" stroke-width="1.2"/>
+  <text x="436" y="244" font-family="monospace" font-size="11" font-weight="700" fill="#DA7756" text-anchor="middle">Alt</text>
+  <text x="462" y="243" font-family="system-ui" font-size="11" fill="#b5ab9a">+</text>
+  <rect x="474" y="230" width="26" height="20" rx="5" fill="#1a1613" stroke="#DA7756" stroke-width="1.2"/>
+  <text x="487" y="244" font-family="monospace" font-size="11" font-weight="700" fill="#DA7756" text-anchor="middle">V</text>
+  <text x="508" y="243" font-family="system-ui" font-size="11" fill="#b5ab9a">to activate</text>
+</svg>

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" fill="none">
+  <defs>
+    <linearGradient id="bgp" x1="0" y1="0" x2="900" y2="300"><stop offset="0%" stop-color="#1a1613"/><stop offset="100%" stop-color="#1f1b17"/></linearGradient>
+  </defs>
+  <rect width="900" height="300" rx="16" fill="url(#bgp)"/>
+  <!-- Stats bar -->
+  <rect x="20" y="20" width="860" height="36" rx="8" fill="#2a2520" stroke="#3d372e" stroke-width="1"/>
+  <circle cx="42" cy="38" r="4" fill="#f59e0b"/><text x="52" y="42" fill="#f59e0b" font-size="10" font-weight="600" font-family="system-ui">Running 2</text>
+  <line x1="120" y1="28" x2="120" y2="48" stroke="#3d372e" stroke-width="1"/>
+  <circle cx="136" cy="38" r="4" fill="#6b7280"/><text x="146" y="42" fill="#9ca3af" font-size="10" font-family="system-ui">Queued 4</text>
+  <line x1="210" y1="28" x2="210" y2="48" stroke="#3d372e" stroke-width="1"/>
+  <circle cx="226" cy="38" r="4" fill="#10b981"/><text x="236" y="42" fill="#10b981" font-size="10" font-family="system-ui">Completed 6</text>
+  <text x="680" y="42" fill="#4b4538" font-size="9" font-family="system-ui">Avg: 3m 22s</text>
+  <text x="770" y="42" fill="#4b4538" font-size="9" font-family="system-ui">128k tokens</text>
+  <text x="850" y="42" fill="#4b4538" font-size="9" font-family="system-ui">$4.20</text>
+
+  <!-- Running section -->
+  <text x="28" y="80" fill="#f59e0b" font-size="10" font-weight="600" font-family="system-ui">Running</text>
+  <!-- Running task 1 -->
+  <rect x="20" y="88" width="430" height="42" rx="8" fill="#f59e0b" fill-opacity="0.05" stroke="#f59e0b" stroke-width="1" stroke-opacity="0.3"/>
+  <circle cx="40" cy="109" r="6" fill="#f59e0b"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+  <rect x="54" y="100" width="40" height="14" rx="3" fill="#3b82f6" fill-opacity="0.15"/><text x="74" y="110" text-anchor="middle" fill="#60a5fa" font-size="7" font-weight="600" font-family="system-ui">feature</text>
+  <text x="100" y="110" fill="#ebe4d8" font-size="10" font-family="system-ui">Add JWT authentication</text>
+  <text x="280" y="110" fill="#736858" font-size="8" font-family="monospace">opus | 24.1k</text>
+  <rect x="380" y="98" width="56" height="20" rx="4" fill="#f59e0b" fill-opacity="0.1"/><text x="408" y="112" text-anchor="middle" fill="#f59e0b" font-size="8" font-family="system-ui">Terminal</text>
+  <!-- Running task 2 -->
+  <rect x="460" y="88" width="420" height="42" rx="8" fill="#f59e0b" fill-opacity="0.05" stroke="#f59e0b" stroke-width="1" stroke-opacity="0.3"/>
+  <circle cx="480" cy="109" r="6" fill="#f59e0b"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+  <rect x="494" y="100" width="32" height="14" rx="3" fill="#f59e0b" fill-opacity="0.15"/><text x="510" y="110" text-anchor="middle" fill="#f59e0b" font-size="7" font-weight="600" font-family="system-ui">bugfix</text>
+  <text x="532" y="110" fill="#ebe4d8" font-size="10" font-family="system-ui">Fix login redirect loop</text>
+  <text x="710" y="110" fill="#736858" font-size="8" font-family="monospace">sonnet | 6.2k</text>
+
+  <!-- Queue section -->
+  <text x="28" y="154" fill="#b5ab9a" font-size="10" font-weight="600" font-family="system-ui">Queue</text>
+  <rect x="90" y="144" width="18" height="16" rx="8" fill="#2a2520"/><text x="99" y="155" text-anchor="middle" fill="#736858" font-size="8" font-family="system-ui">4</text>
+  <!-- Queue items with grip handles -->
+  <rect x="20" y="162" width="212" height="36" rx="6" fill="#2a2520" stroke="#3d372e" stroke-width="0.5"/>
+  <text x="32" y="176" fill="#4b4538" font-size="10" font-family="system-ui">⠿</text>
+  <text x="48" y="176" fill="#736858" font-size="9" font-family="monospace">1</text>
+  <text x="62" y="180" fill="#b5ab9a" font-size="9" font-family="system-ui">Write API tests</text>
+  <text x="180" y="180" fill="#4b4538" font-size="7" font-family="system-ui">▲ ▼</text>
+  <text x="204" y="180" fill="#60a5fa" font-size="7" font-family="system-ui">→#1</text>
+
+  <rect x="240" y="162" width="212" height="36" rx="6" fill="#2a2520" stroke="#3d372e" stroke-width="0.5"/>
+  <text x="252" y="176" fill="#4b4538" font-size="10" font-family="system-ui">⠿</text>
+  <text x="268" y="176" fill="#736858" font-size="9" font-family="monospace">2</text>
+  <text x="282" y="180" fill="#b5ab9a" font-size="9" font-family="system-ui">Add rate limiting</text>
+  <text x="400" y="180" fill="#4b4538" font-size="7" font-family="system-ui">▲ ▼</text>
+
+  <rect x="460" y="162" width="212" height="36" rx="6" fill="#2a2520" stroke="#3d372e" stroke-width="0.5"/>
+  <text x="472" y="176" fill="#4b4538" font-size="10" font-family="system-ui">⠿</text>
+  <text x="488" y="176" fill="#736858" font-size="9" font-family="monospace">3</text>
+  <text x="502" y="180" fill="#b5ab9a" font-size="9" font-family="system-ui">Update docs</text>
+  <text x="620" y="180" fill="#4b4538" font-size="7" font-family="system-ui">▲ ▼</text>
+
+  <rect x="680" y="162" width="200" height="36" rx="6" fill="#DA7756" fill-opacity="0.05" stroke="#DA7756" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="692" y="176" fill="#4b4538" font-size="10" font-family="system-ui">⠿</text>
+  <text x="708" y="176" fill="#736858" font-size="9" font-family="monospace">4</text>
+  <text x="722" y="180" fill="#b5ab9a" font-size="9" font-family="system-ui">Deploy to staging</text>
+  <text x="840" y="180" fill="#f59e0b" font-size="7" font-family="system-ui">retry 1</text>
+
+  <!-- Completed section -->
+  <text x="28" y="222" fill="#10b981" font-size="10" font-weight="600" font-family="system-ui">Completed</text>
+  <rect x="106" y="212" width="18" height="16" rx="8" fill="#2a2520"/><text x="115" y="223" text-anchor="middle" fill="#10b981" font-size="8" font-family="system-ui">6</text>
+  <rect x="20" y="230" width="280" height="32" rx="6" fill="#10b981" fill-opacity="0.04" stroke="#10b981" stroke-width="0.5" stroke-opacity="0.2"/>
+  <circle cx="36" cy="246" r="5" fill="#10b981" fill-opacity="0.2"/><text x="36" y="249" text-anchor="middle" fill="#10b981" font-size="8">✓</text>
+  <text x="48" y="249" fill="#736858" font-size="9" font-family="system-ui">Setup database schema</text>
+  <text x="215" y="249" fill="#4b4538" font-size="8" font-family="system-ui">2m 14s | $0.04</text>
+
+  <rect x="310" y="230" width="280" height="32" rx="6" fill="#10b981" fill-opacity="0.04" stroke="#10b981" stroke-width="0.5" stroke-opacity="0.2"/>
+  <circle cx="326" cy="246" r="5" fill="#10b981" fill-opacity="0.2"/><text x="326" y="249" text-anchor="middle" fill="#10b981" font-size="8">✓</text>
+  <text x="338" y="249" fill="#736858" font-size="9" font-family="system-ui">Create user model</text>
+  <text x="505" y="249" fill="#4b4538" font-size="8" font-family="system-ui">1m 48s | $0.03</text>
+
+  <rect x="600" y="230" width="280" height="32" rx="6" fill="#10b981" fill-opacity="0.04" stroke="#10b981" stroke-width="0.5" stroke-opacity="0.2"/>
+  <circle cx="616" cy="246" r="5" fill="#10b981" fill-opacity="0.2"/><text x="616" y="249" text-anchor="middle" fill="#10b981" font-size="8">✓</text>
+  <text x="628" y="249" fill="#736858" font-size="9" font-family="system-ui">Add input validation</text>
+  <text x="795" y="249" fill="#4b4538" font-size="8" font-family="system-ui">4m 01s | $0.08</text>
+</svg>

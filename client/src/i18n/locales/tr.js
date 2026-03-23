@@ -373,6 +373,15 @@ export default {
   'toast.projectDeleted': 'Proje silindi',
   'toast.startClaude': 'Claude ba\u015flat\u0131ls\u0131n m\u0131?',
 
+  // ─── Pipeline ───
+  'board.pipeline': 'Pipeline',
+  'pipeline.running': '\u00c7al\u0131\u015f\u0131yor',
+  'pipeline.queued': 'S\u0131rada',
+  'pipeline.completed': 'Tamamlanan',
+  'pipeline.queue': 'S\u0131ra',
+  'pipeline.emptyQueue': 'S\u0131rada g\u00f6rev yok. G\u00f6rev olu\u015fturun ve proje ayarlar\u0131ndan otomatik s\u0131ray\u0131 etkinle\u015ftirin.',
+  'pipeline.avgTime': 'Ort. s\u00fcre',
+
   // ─── Claude Manager ───
   'cm.title': 'Claude Y\u00f6neticisi',
   'cm.tabs.mcp': 'MCP Sunucular\u0131',

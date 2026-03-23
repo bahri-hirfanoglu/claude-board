@@ -373,6 +373,15 @@ export default {
   'toast.projectDeleted': 'Project deleted',
   'toast.startClaude': 'Start Claude?',
 
+  // ─── Pipeline ───
+  'board.pipeline': 'Pipeline',
+  'pipeline.running': 'Running',
+  'pipeline.queued': 'Queued',
+  'pipeline.completed': 'Completed',
+  'pipeline.queue': 'Queue',
+  'pipeline.emptyQueue': 'No tasks in queue. Create tasks and enable auto-queue in project settings.',
+  'pipeline.avgTime': 'Avg time',
+
   // ─── Claude Manager ───
   'cm.title': 'Claude Manager',
   'cm.tabs.mcp': 'MCP Servers',
