@@ -43,6 +43,17 @@ function AppInner() {
   const [detailTask, setDetailTask] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [search, setSearch] = useState('');
+  const [updateInfo, setUpdateInfo] = useState(null);
+
+  // Listen for app updates
+  useEffect(() => {
+    if (!IS_TAURI) return;
+    const unsubs = [
+      tauriListen('update:available', (data) => setUpdateInfo(data)),
+      tauriListen('update:ready', (data) => setUpdateInfo({ ...data, status: 'ready' })),
+    ];
+    return () => unsubs.forEach(fn => fn());
+  }, []);
 
   // Auto-open terminal when task starts running
   useEffect(() => {
@@ -299,6 +310,21 @@ function AppInner() {
 
   return (
     <StatusTransitionProvider>
+    {updateInfo && (
+      <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-2 bg-claude text-white text-xs font-medium">
+        {updateInfo.status === 'ready' ? (
+          <>
+            <span>v{updateInfo.version} is ready. Restart to update.</span>
+            <button onClick={() => { window.__TAURI_INTERNALS__?.invoke('plugin:process|restart').catch(() => window.location.reload()); }} className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded text-xs">Restart Now</button>
+          </>
+        ) : updateInfo.status === 'downloading' ? (
+          <span>Downloading v{updateInfo.version}...</span>
+        ) : (
+          <span>v{updateInfo.version} available</span>
+        )}
+        <button onClick={() => setUpdateInfo(null)} className="ml-auto text-white/60 hover:text-white">&#x2715;</button>
+      </div>
+    )}
     <AppLayout
       // Data
       connected={connected}

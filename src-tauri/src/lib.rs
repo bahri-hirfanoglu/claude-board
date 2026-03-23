@@ -48,17 +48,33 @@ pub fn run() {
                 // Check for updates in background
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                     let updater = match app_handle.updater() {
                         Ok(u) => u,
                         Err(e) => { log::warn!("Updater init failed: {}", e); return; }
                     };
                     match updater.check().await {
                         Ok(Some(update)) => {
-                            log::info!("Update available: {}", update.version);
+                            let version = update.version.clone();
+                            log::info!("Update available: {}", version);
                             app_handle.emit("update:available", &serde_json::json!({
-                                "version": update.version,
+                                "version": version, "status": "downloading",
                             })).ok();
+                            // Download and install
+                            match update.download_and_install(|_, _| {}, || {}).await {
+                                Ok(_) => {
+                                    log::info!("Update installed, restart required");
+                                    app_handle.emit("update:ready", &serde_json::json!({
+                                        "version": version,
+                                    })).ok();
+                                }
+                                Err(e) => {
+                                    log::warn!("Update install failed: {}", e);
+                                    app_handle.emit("update:available", &serde_json::json!({
+                                        "version": version, "status": "available",
+                                    })).ok();
+                                }
+                            }
                         }
                         Ok(None) => log::info!("App is up to date"),
                         Err(e) => log::warn!("Update check failed: {}", e),
