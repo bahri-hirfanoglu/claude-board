@@ -68,11 +68,13 @@ pub fn handle_event(
 
 fn add_log(task_id: i64, message: &str, log_type: &str, db: &DbPool, app: &AppHandle, meta: Option<&str>) {
     tasks::add_log(db, task_id, message, log_type, meta);
+    let meta_val = meta.and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok());
     let payload = serde_json::json!({
         "taskId": task_id,
         "message": message,
         "logType": log_type,
         "created_at": chrono::Local::now().to_rfc3339(),
+        "meta": meta_val,
     });
     app.emit("task:log", &payload).ok();
 }
@@ -102,7 +104,30 @@ fn handle_assistant(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, c
                         display = format!("{} → {}", display, p);
                     }
 
-                    let meta = serde_json::json!({"toolName": tool_name, "toolId": tool_id}).to_string();
+                    // Build input summary for frontend expansion
+                    let mut input_summary = serde_json::Map::new();
+                    if let Some(f) = input.get("file_path").or(input.get("path")).and_then(|v| v.as_str()) {
+                        input_summary.insert("file".into(), serde_json::Value::String(f.to_string()));
+                    }
+                    if let Some(c) = input.get("command").and_then(|v| v.as_str()) {
+                        input_summary.insert("command".into(), serde_json::Value::String(c.to_string()));
+                    }
+                    if let Some(p) = input.get("pattern").and_then(|v| v.as_str()) {
+                        input_summary.insert("pattern".into(), serde_json::Value::String(p.to_string()));
+                    }
+                    if let Some(d) = input.get("description").and_then(|v| v.as_str()) {
+                        input_summary.insert("description".into(), serde_json::Value::String(d.to_string()));
+                    }
+                    if let Some(q) = input.get("query").and_then(|v| v.as_str()) {
+                        input_summary.insert("query".into(), serde_json::Value::String(q.to_string()));
+                    }
+                    if let Some(p) = input.get("prompt").and_then(|v| v.as_str()) {
+                        input_summary.insert("prompt".into(), serde_json::Value::String(p[..p.len().min(500)].to_string()));
+                    }
+                    if let Some(c) = input.get("content").and_then(|v| v.as_str()) {
+                        input_summary.insert("content".into(), serde_json::Value::String(c[..c.len().min(500)].to_string()));
+                    }
+                    let meta = serde_json::json!({"toolName": tool_name, "toolId": tool_id, "input": input_summary}).to_string();
                     add_log(task_id, &display, "tool", db, app, Some(&meta));
 
                     if !tool_id.is_empty() {
@@ -176,7 +201,15 @@ fn handle_user(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, ctx: &
                 };
 
                 let lt = if is_error { "error" } else { "tool_result" };
-                add_log(task_id, &display, lt, db, app, None);
+                let result_meta = serde_json::json!({
+                    "toolId": tool_id,
+                    "toolName": tool_name,
+                    "isError": is_error,
+                    "duration": duration,
+                    "isResult": true,
+                    "output": result_preview,
+                }).to_string();
+                add_log(task_id, &display, lt, db, app, Some(&result_meta));
             }
         }
     }

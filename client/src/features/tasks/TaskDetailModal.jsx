@@ -60,6 +60,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
     setShowStatusMenu(false);
     setCurrentStatus(newStatus);
     onStatusChange?.(task.id, newStatus);
+    onClose?.();
   };
 
   const d = detail || task;

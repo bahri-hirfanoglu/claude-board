@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   X, Sparkles, Cpu, CheckCircle2, AlertCircle, StopCircle,
   Clock, Zap, Terminal, ChevronDown, ChevronRight, FileCode, Hash,
-  Loader2, Search, Brain, ListChecks,
+  Loader2, Search, Brain, ListChecks, Trash2, Edit3, RotateCcw,
+  Check, ArrowRight,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { socket } from '../../lib/socket';
@@ -24,19 +25,19 @@ const EFFORTS = [
 ];
 
 const GRANULARITIES = [
-  { value: 'high-level', label: 'High-level', desc: '3-5 big tasks with checklists', color: 'bg-blue-500/20 text-blue-300' },
+  { value: 'high-level', label: 'High-level', desc: '3-5 big tasks', color: 'bg-blue-500/20 text-blue-300' },
   { value: 'balanced', label: 'Balanced', desc: '5-10 medium tasks', color: 'bg-amber-500/20 text-amber-300' },
   { value: 'detailed', label: 'Detailed', desc: '10-20 atomic tasks', color: 'bg-purple-500/20 text-purple-300' },
 ];
 
 const PHASES = [
-  { key: 'starting', label: 'Starting', icon: Loader2, color: 'text-amber-400' },
+  { key: 'starting', label: 'Analyzing', icon: Loader2, color: 'text-amber-400' },
   { key: 'exploring', label: 'Exploring', icon: Search, color: 'text-blue-400' },
   { key: 'writing', label: 'Planning', icon: Brain, color: 'text-purple-400' },
-  { key: 'done', label: 'Done', icon: ListChecks, color: 'text-emerald-400' },
+  { key: 'done', label: 'Review', icon: ListChecks, color: 'text-emerald-400' },
 ];
 
-const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High'];
+const PRIORITY_LABELS = ['None', 'Low', 'Medium', 'High'];
 const PRIORITY_COLORS = ['text-surface-500', 'text-yellow-400', 'text-orange-400', 'text-red-400'];
 
 function formatElapsed(ms) {
@@ -53,20 +54,22 @@ export default function PlanningModal({ projectId, onClose }) {
   const [model, setModel] = useState('sonnet');
   const [effort, setEffort] = useState('medium');
   const [granularity, setGranularity] = useState('balanced');
-  const [phase, setPhase] = useState('idle'); // idle | thinking | done | error
-  const [planPhase, setPlanPhase] = useState('starting'); // starting | exploring | writing
+  const [phase, setPhase] = useState('idle'); // idle | thinking | review | approved | error
+  const [planPhase, setPlanPhase] = useState('starting');
   const [logs, setLogs] = useState([]);
-  const [textChunks, setTextChunks] = useState('');
-  const [createdTasks, setCreatedTasks] = useState([]);
+  const [analysis, setAnalysis] = useState('');
+  const [proposals, setProposals] = useState([]);
   const [stats, setStats] = useState({ elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 });
   const [error, setError] = useState(null);
-  const [showOutput, setShowOutput] = useState(true);
+  const [showLogs, setShowLogs] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
   const [expandedTask, setExpandedTask] = useState(null);
+  const [approving, setApproving] = useState(false);
   const logsEndRef = useRef(null);
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
 
-  // Resume active session on mount (e.g. after F5)
+  // Resume active session
   useEffect(() => {
     let cancelled = false;
     api.getPlanningStatus(projectId).then((data) => {
@@ -75,14 +78,6 @@ export default function PlanningModal({ projectId, onClose }) {
         startTimeRef.current = Date.now() - (data.elapsed || 0);
         setPhase('thinking');
         setPlanPhase(data.phase || 'starting');
-        if (data.topic) setTopic(data.topic);
-        setStats((s) => ({
-          ...s,
-          elapsed: data.elapsed || 0,
-          tokens: data.tokens || s.tokens,
-          toolCalls: data.toolCalls || s.toolCalls,
-          turns: data.turns || s.turns,
-        }));
       } else {
         sessionStorage.removeItem('planning:active');
       }
@@ -101,23 +96,19 @@ export default function PlanningModal({ projectId, onClose }) {
     return () => clearInterval(timerRef.current);
   }, [phase]);
 
-  // Socket events
+  // Events
   useEffect(() => {
     const pid = projectId;
 
     const onProgress = (data) => {
       if (data.projectId !== pid) return;
       setPhase('thinking');
-      if (data.type === 'text') {
-        setTextChunks((prev) => prev + data.content);
-      }
+      if (data.type === 'text') setAnalysis((prev) => prev + data.content);
     };
 
     const onLog = (data) => {
-      if (data.projectId !== pid) return;
-      // Phase logs are informational, don't add to tool log list
-      if (data.type === 'phase') return;
-      setLogs((prev) => [...prev, { type: data.type, message: data.message, tool: data.tool, ts: Date.now() }]);
+      if (data.projectId !== pid || data.type === 'phase') return;
+      setLogs((prev) => [...prev, { type: data.type, message: data.message, ts: Date.now() }]);
     };
 
     const onPhase = (data) => {
@@ -135,10 +126,11 @@ export default function PlanningModal({ projectId, onClose }) {
       clearInterval(timerRef.current);
       sessionStorage.removeItem('planning:active');
       if (data.stats) setStats((prev) => ({ ...prev, ...data.stats }));
-      if (data.tasks?.length > 0) {
-        setPhase('done');
+      if (data.analysis) setAnalysis(data.analysis);
+      if (data.proposals?.length > 0) {
+        setProposals(data.proposals);
+        setPhase('review');
         setPlanPhase('done');
-        setCreatedTasks(data.tasks);
       } else {
         setPhase('error');
         setError('Claude could not generate structured tasks. Try rephrasing or adding more context.');
@@ -152,7 +144,7 @@ export default function PlanningModal({ projectId, onClose }) {
       setPhase('idle');
       setPlanPhase('starting');
       setLogs([]);
-      setTextChunks('');
+      setAnalysis('');
     };
 
     if (IS_TAURI) {
@@ -183,18 +175,17 @@ export default function PlanningModal({ projectId, onClose }) {
     }
   }, [projectId]);
 
-  // Auto-scroll logs
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs, textChunks]);
+  }, [logs]);
 
   const handleStart = async () => {
     if (!topic.trim()) return;
     setPhase('thinking');
     setPlanPhase('starting');
     setLogs([]);
-    setTextChunks('');
-    setCreatedTasks([]);
+    setAnalysis('');
+    setProposals([]);
     setError(null);
     setStats({ elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 });
     try {
@@ -212,11 +203,34 @@ export default function PlanningModal({ projectId, onClose }) {
     setPhase('idle');
   };
 
+  const handleRemoveProposal = (idx) => {
+    setProposals((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleApprove = async () => {
+    if (proposals.length === 0) return;
+    setApproving(true);
+    try {
+      await api.approvePlan(projectId, proposals, model);
+      setPhase('approved');
+    } catch (e) {
+      setError(e.message);
+    }
+    setApproving(false);
+  };
+
+  const handleRevise = () => {
+    setPhase('idle');
+    setPlanPhase('starting');
+    setProposals([]);
+    setLogs([]);
+    setAnalysis('');
+    // Keep topic and context so user can modify
+  };
+
   const isActive = phase === 'thinking';
   const totalTokens = stats.tokens.input + stats.tokens.output;
-
-  // Find current phase index for stepper
-  const currentPhaseIdx = PHASES.findIndex((p) => p.key === (phase === 'done' ? 'done' : planPhase));
+  const currentPhaseIdx = PHASES.findIndex((p) => p.key === (phase === 'review' || phase === 'approved' ? 'done' : planPhase));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
@@ -225,121 +239,83 @@ export default function PlanningModal({ projectId, onClose }) {
         style={{ maxHeight: '90vh' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ─── Header ─── */}
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-surface-800 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-claude" />
             <h2 className="text-sm font-semibold">{t('planning.title')}</h2>
+            {phase === 'review' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">Review</span>}
+            {phase === 'approved' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">Approved</span>}
           </div>
 
-          {/* Live stats bar */}
           {phase !== 'idle' && (
-            <div className="flex items-center gap-3 text-[10px] text-surface-500 ml-auto">
+            <div className="flex items-center gap-3 text-[10px] text-surface-500 ml-auto mr-3">
               <span className="flex items-center gap-1">
                 <Clock size={10} className={isActive ? 'text-amber-400' : ''} />
                 {formatElapsed(stats.elapsed)}
               </span>
-              {totalTokens > 0 && (
-                <span className="flex items-center gap-1">
-                  <Zap size={10} />
-                  {formatTokens(totalTokens)}
-                </span>
-              )}
-              {stats.toolCalls > 0 && (
-                <span className="flex items-center gap-1">
-                  <Terminal size={10} />
-                  {stats.toolCalls} tools
-                </span>
-              )}
-              {stats.turns > 0 && (
-                <span className="flex items-center gap-1">
-                  <Hash size={10} />
-                  {stats.turns} turns
-                </span>
-              )}
+              {totalTokens > 0 && <span className="flex items-center gap-1"><Zap size={10} />{formatTokens(totalTokens)}</span>}
+              {stats.toolCalls > 0 && <span className="flex items-center gap-1"><Terminal size={10} />{stats.toolCalls}</span>}
+              {stats.turns > 0 && <span className="flex items-center gap-1"><Hash size={10} />{stats.turns}</span>}
               {isActive && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
-              {phase === 'done' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
             </div>
           )}
 
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400">
             <X size={18} />
           </button>
         </div>
 
-        {/* ─── Body ─── */}
+        {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0">
 
-          {/* Input section — only when idle/error */}
+          {/* Input — idle/error */}
           {(phase === 'idle' || phase === 'error') && (
             <>
               <div>
                 <label className="block text-xs font-medium text-surface-400 mb-1">{t('planning.whatToBuild')}</label>
-                <textarea
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder={t('planning.topicPlaceholder')}
-                  rows={3}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none"
-                  autoFocus
-                />
+                <textarea value={topic} onChange={(e) => setTopic(e.target.value)}
+                  placeholder={t('planning.topicPlaceholder')} rows={3} autoFocus
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 resize-none" />
               </div>
-
               <div>
                 <label className="block text-xs font-medium text-surface-400 mb-1">
                   {t('planning.context')} <span className="text-surface-600 font-normal">— {t('common.optional')}</span>
                 </label>
-                <textarea
-                  value={context}
-                  onChange={(e) => setContext(e.target.value)}
-                  placeholder={t('planning.contextPlaceholder')}
-                  rows={2}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600 resize-none"
-                />
+                <textarea value={context} onChange={(e) => setContext(e.target.value)}
+                  placeholder={t('planning.contextPlaceholder')} rows={2}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 resize-none" />
               </div>
-
-              {/* Granularity */}
               <div>
                 <label className="block text-xs font-medium text-surface-400 mb-1.5">{t('planning.taskBreakdown')}</label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {GRANULARITIES.map((g) => (
-                    <button
-                      key={g.value}
-                      onClick={() => setGranularity(g.value)}
-                      className={`px-2 py-2.5 rounded-lg text-center transition-all border ${
-                        granularity === g.value
-                          ? `${g.color} ring-1 ring-current border-current/20`
-                          : 'bg-surface-800 text-surface-500 hover:text-surface-300 border-transparent'
-                      }`}
-                    >
+                    <button key={g.value} onClick={() => setGranularity(g.value)}
+                      className={`px-2 py-2.5 rounded-lg text-center transition-all border ${granularity === g.value ? `${g.color} ring-1 ring-current border-current/20` : 'bg-surface-800 text-surface-500 hover:text-surface-300 border-transparent'}`}>
                       <div className="text-xs font-semibold">{g.label}</div>
                       <div className="text-[9px] opacity-70 mt-0.5 hidden sm:block">{g.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
-
-              {/* Model + Effort */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5">
-                    <Cpu size={11} /> {t('planning.model')}
-                  </label>
+                  <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5"><Cpu size={11} /> {t('planning.model')}</label>
                   <div className="grid grid-cols-3 gap-1.5">
                     {MODELS.map((m) => (
-                      <button key={m.value} onClick={() => setModel(m.value)} className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${model === m.value ? `${m.color} ring-1 ring-current` : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
+                      <button key={m.value} onClick={() => setModel(m.value)}
+                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${model === m.value ? `${m.color} ring-1 ring-current` : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
                         {m.label}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5">
-                    <Zap size={11} /> {t('planning.effort')}
-                  </label>
+                  <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5"><Zap size={11} /> {t('planning.effort')}</label>
                   <div className="grid grid-cols-3 gap-1.5">
                     {EFFORTS.map((e) => (
-                      <button key={e.value} onClick={() => setEffort(e.value)} className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${effort === e.value ? `${e.color} ring-1 ring-current` : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
+                      <button key={e.value} onClick={() => setEffort(e.value)}
+                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${effort === e.value ? `${e.color} ring-1 ring-current` : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
                         {e.label}
                       </button>
                     ))}
@@ -349,8 +325,8 @@ export default function PlanningModal({ projectId, onClose }) {
             </>
           )}
 
-          {/* ─── Phase stepper — visible during thinking ─── */}
-          {(isActive || phase === 'done') && (
+          {/* Phase stepper */}
+          {(isActive || phase === 'review' || phase === 'approved') && (
             <div className="flex items-center gap-1 px-1">
               {PHASES.map((p, i) => {
                 const isComplete = i < currentPhaseIdx;
@@ -358,79 +334,57 @@ export default function PlanningModal({ projectId, onClose }) {
                 const Icon = p.icon;
                 return (
                   <div key={p.key} className="flex items-center gap-1 flex-1">
-                    <div className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-                      isCurrent
-                        ? `${p.color} bg-current/10`
-                        : isComplete
-                          ? 'text-surface-500'
-                          : 'text-surface-700'
-                    }`}>
-                      {isComplete ? (
-                        <CheckCircle2 size={12} className="text-emerald-500" />
-                      ) : isCurrent ? (
-                        <Icon size={12} className={`${p.color} ${p.key !== 'done' ? 'animate-spin' : ''}`} />
-                      ) : (
-                        <Icon size={12} />
-                      )}
+                    <div className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all ${isCurrent ? `${p.color} bg-current/10` : isComplete ? 'text-surface-500' : 'text-surface-700'}`}>
+                      {isComplete ? <CheckCircle2 size={12} className="text-emerald-500" /> : isCurrent ? <Icon size={12} className={`${p.color} ${p.key !== 'done' ? 'animate-spin' : ''}`} /> : <Icon size={12} />}
                       <span>{p.label}</span>
                     </div>
-                    {i < PHASES.length - 1 && (
-                      <div className={`flex-1 h-px ${isComplete ? 'bg-emerald-500/30' : 'bg-surface-800'}`} />
-                    )}
+                    {i < PHASES.length - 1 && <div className={`flex-1 h-px ${isComplete ? 'bg-emerald-500/30' : 'bg-surface-800'}`} />}
                   </div>
                 );
               })}
             </div>
           )}
 
-          {/* ─── Topic reminder during thinking ─── */}
-          {isActive && topic && (
-            <div className="bg-surface-800/40 border border-surface-800 rounded-lg px-3 py-2">
-              <p className="text-[11px] text-surface-500 font-medium">{t('planning.planning')}</p>
-              <p className="text-xs text-surface-300 mt-0.5 line-clamp-2">{topic}</p>
-            </div>
-          )}
+          {/* Live activity during thinking */}
+          {isActive && (
+            <div className="space-y-2">
+              {topic && (
+                <div className="bg-surface-800/40 border border-surface-800 rounded-lg px-3 py-2">
+                  <p className="text-[11px] text-surface-500 font-medium">Planning</p>
+                  <p className="text-xs text-surface-300 mt-0.5 line-clamp-2">{topic}</p>
+                </div>
+              )}
 
-          {/* ─── Live output ─── */}
-          {(isActive || phase === 'done') && (
-            <div>
-              <button
-                onClick={() => setShowOutput(!showOutput)}
-                className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5 hover:text-surface-300 transition-colors"
-              >
-                {showOutput ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                <Terminal size={12} />
-                {t('planning.claudeOutput')}
-                {logs.length > 0 && <span className="text-surface-600">({logs.length} events)</span>}
-              </button>
+              {/* Live log feed */}
+              <div className="bg-surface-950 border border-surface-800 rounded-lg overflow-hidden">
+                <div className="p-2 space-y-0.5 max-h-48 overflow-y-auto">
+                  {logs.length === 0 && (
+                    <div className="flex items-center gap-2 text-[11px] text-surface-600 py-2 px-1">
+                      <Loader2 size={12} className="animate-spin" /> Claude is analyzing the codebase...
+                    </div>
+                  )}
+                  {logs.map((log, i) => (
+                    <div key={i} className="flex items-start gap-2 text-[11px] font-mono py-0.5">
+                      {log.type === 'tool' && <><FileCode size={10} className="text-violet-400 flex-shrink-0 mt-0.5" /><span className="text-violet-400/80 truncate">{log.message}</span></>}
+                      {log.type === 'result' && <><CheckCircle2 size={10} className="text-emerald-400/60 flex-shrink-0 mt-0.5" /><span className="text-surface-600 truncate">{log.message}</span></>}
+                      {log.type === 'error' && <><AlertCircle size={10} className="text-red-400 flex-shrink-0 mt-0.5" /><span className="text-red-400/80 truncate">{log.message}</span></>}
+                    </div>
+                  ))}
+                  <div ref={logsEndRef} />
+                </div>
+              </div>
 
-              {showOutput && (
-                <div className="bg-surface-950 border border-surface-800 rounded-lg overflow-hidden">
-                  {/* Tool calls */}
-                  {logs.length > 0 && (
-                    <div className="border-b border-surface-800/50 p-2 space-y-0.5 max-h-32 overflow-y-auto">
-                      {logs.map((log, i) => (
-                        <div key={i} className="flex items-start gap-2 text-[11px] font-mono py-0.5">
-                          {log.type === 'tool' && (
-                            <>
-                              <FileCode size={10} className="text-violet-400 flex-shrink-0 mt-0.5" />
-                              <span className="text-violet-400/80">{log.message}</span>
-                            </>
-                          )}
-                          {log.type === 'result' && (
-                            <>
-                              <CheckCircle2 size={10} className="text-emerald-400/60 flex-shrink-0 mt-0.5" />
-                              <span className="text-surface-600 truncate">{log.message}</span>
-                            </>
-                          )}
-                          {log.type === 'error' && (
-                            <>
-                              <AlertCircle size={10} className="text-red-400 flex-shrink-0 mt-0.5" />
-                              <span className="text-red-400/80">{log.message}</span>
-                            </>
-                          )}
-                        </div>
-                      ))}
+              {/* Live analysis text */}
+              {analysis && (
+                <div>
+                  <button onClick={() => setShowAnalysis(!showAnalysis)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1 hover:text-surface-300">
+                    {showAnalysis ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    Claude's analysis
+                  </button>
+                  {showAnalysis && (
+                    <div className="bg-surface-950 border border-surface-800 rounded-lg p-3 max-h-40 overflow-y-auto">
+                      <pre className="text-[11px] text-surface-400 whitespace-pre-wrap font-sans leading-relaxed">{analysis}</pre>
                     </div>
                   )}
                 </div>
@@ -438,62 +392,93 @@ export default function PlanningModal({ projectId, onClose }) {
             </div>
           )}
 
-          {/* ─── Created tasks ─── */}
-          {createdTasks.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
-                  <CheckCircle2 size={13} />
-                  {t('planning.tasksCreated', { count: createdTasks.length })}
-                </label>
-                <span className="text-[10px] text-surface-600">{t('planning.clickToExpand')}</span>
-              </div>
-              <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                {createdTasks.map((t, i) => {
-                  const isExpanded = expandedTask === t.id;
-                  const typeColor = TYPE_COLORS[t.task_type] || 'bg-surface-500/15 text-surface-400';
-                  return (
-                    <div
-                      key={t.id}
-                      className={`rounded-lg border transition-all cursor-pointer ${isExpanded ? 'bg-surface-800/60 border-surface-600' : 'bg-surface-800/30 border-surface-700/30 hover:border-surface-600/50'}`}
-                      onClick={() => setExpandedTask(isExpanded ? null : t.id)}
-                    >
-                      <div className="flex items-start gap-2.5 px-3 py-2">
-                        <span className="text-[10px] text-surface-600 font-mono mt-1 w-4 text-right flex-shrink-0">{i + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${typeColor}`}>{t.task_type}</span>
-                            <span className="text-[10px] text-surface-500 font-mono">{t.task_key}</span>
-                            {t.priority > 0 && (
-                              <span className={`text-[9px] font-medium ${PRIORITY_COLORS[t.priority]}`}>
-                                {PRIORITY_LABELS[t.priority]}
-                              </span>
+          {/* Review phase — proposals */}
+          {(phase === 'review' || phase === 'approved') && (
+            <div className="space-y-3">
+              {/* Analysis collapsible */}
+              {analysis && (
+                <div>
+                  <button onClick={() => setShowAnalysis(!showAnalysis)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1 hover:text-surface-300">
+                    {showAnalysis ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    <Brain size={12} /> Claude's Analysis
+                  </button>
+                  {showAnalysis && (
+                    <div className="bg-surface-950 border border-surface-800 rounded-lg p-3 max-h-48 overflow-y-auto">
+                      <pre className="text-[11px] text-surface-400 whitespace-pre-wrap font-sans leading-relaxed">{analysis}</pre>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Logs collapsible */}
+              {logs.length > 0 && (
+                <div>
+                  <button onClick={() => setShowLogs(!showLogs)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1 hover:text-surface-300">
+                    {showLogs ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    <Terminal size={12} /> Activity Log <span className="text-surface-600">({logs.length})</span>
+                  </button>
+                  {showLogs && (
+                    <div className="bg-surface-950 border border-surface-800 rounded-lg p-2 max-h-32 overflow-y-auto space-y-0.5">
+                      {logs.map((log, i) => (
+                        <div key={i} className="flex items-start gap-2 text-[11px] font-mono py-0.5">
+                          {log.type === 'tool' && <><FileCode size={10} className="text-violet-400 flex-shrink-0 mt-0.5" /><span className="text-violet-400/80 truncate">{log.message}</span></>}
+                          {log.type === 'result' && <><CheckCircle2 size={10} className="text-emerald-400/60 flex-shrink-0 mt-0.5" /><span className="text-surface-600 truncate">{log.message}</span></>}
+                          {log.type === 'error' && <><AlertCircle size={10} className="text-red-400 flex-shrink-0 mt-0.5" /><span className="text-red-400/80 truncate">{log.message}</span></>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Proposed tasks */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-surface-300">
+                    {phase === 'approved' ? <CheckCircle2 size={13} className="text-emerald-400" /> : <ListChecks size={13} className="text-amber-400" />}
+                    {phase === 'approved' ? `${proposals.length} tasks created` : `${proposals.length} proposed tasks`}
+                  </label>
+                  {phase === 'review' && <span className="text-[10px] text-surface-600">Remove tasks you don't want</span>}
+                </div>
+                <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
+                  {proposals.map((task, i) => {
+                    const isExpanded = expandedTask === i;
+                    const typeColor = TYPE_COLORS[task.task_type] || 'bg-surface-500/15 text-surface-400';
+                    return (
+                      <div key={i}
+                        className={`rounded-lg border transition-all ${isExpanded ? 'bg-surface-800/60 border-surface-600' : 'bg-surface-800/30 border-surface-700/30 hover:border-surface-600/50'}`}>
+                        <div className="flex items-start gap-2.5 px-3 py-2 cursor-pointer" onClick={() => setExpandedTask(isExpanded ? null : i)}>
+                          <span className="text-[10px] text-surface-600 font-mono mt-1 w-4 text-right flex-shrink-0">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${typeColor}`}>{task.task_type}</span>
+                              {task.priority > 0 && <span className={`text-[9px] font-medium ${PRIORITY_COLORS[task.priority]}`}>{PRIORITY_LABELS[task.priority]}</span>}
+                            </div>
+                            <p className="text-[12px] text-surface-200 font-medium mt-0.5 leading-snug">{task.title}</p>
+                            {isExpanded && (
+                              <div className="mt-2 space-y-2 text-[11px] text-surface-400 border-t border-surface-700/30 pt-2">
+                                {task.description && <div><span className="text-[10px] font-medium text-surface-500">Description</span><p className="mt-0.5 whitespace-pre-wrap leading-relaxed">{task.description}</p></div>}
+                                {task.acceptance_criteria && <div><span className="text-[10px] font-medium text-surface-500">Acceptance Criteria</span><p className="mt-0.5 whitespace-pre-wrap leading-relaxed">{task.acceptance_criteria}</p></div>}
+                              </div>
                             )}
                           </div>
-                          <p className="text-[12px] text-surface-200 font-medium mt-0.5 leading-snug">{t.title}</p>
-
-                          {isExpanded && (
-                            <div className="mt-2 space-y-2 text-[11px] text-surface-400 border-t border-surface-700/30 pt-2">
-                              {t.description && (
-                                <div>
-                                  <span className="text-[10px] font-medium text-surface-500">Description</span>
-                                  <p className="mt-0.5 whitespace-pre-wrap leading-relaxed">{t.description}</p>
-                                </div>
-                              )}
-                              {t.acceptance_criteria && (
-                                <div>
-                                  <span className="text-[10px] font-medium text-surface-500">Acceptance Criteria</span>
-                                  <p className="mt-0.5 whitespace-pre-wrap leading-relaxed">{t.acceptance_criteria}</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                            {phase === 'review' && (
+                              <button onClick={(e) => { e.stopPropagation(); handleRemoveProposal(i); }}
+                                className="p-1 rounded hover:bg-red-500/20 text-surface-600 hover:text-red-400 transition-colors"
+                                title="Remove this task">
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                            {isExpanded ? <ChevronDown size={12} className="text-surface-500" /> : <ChevronRight size={12} className="text-surface-600" />}
+                          </div>
                         </div>
-                        {isExpanded ? <ChevronDown size={12} className="text-surface-500 mt-1" /> : <ChevronRight size={12} className="text-surface-600 mt-1" />}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
@@ -510,20 +495,31 @@ export default function PlanningModal({ projectId, onClose }) {
           )}
         </div>
 
-        {/* ─── Footer ─── */}
+        {/* Footer */}
         <div className="flex gap-2 px-5 py-3 border-t border-surface-800 flex-shrink-0">
           {isActive ? (
             <button onClick={handleCancel} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors">
-              <StopCircle size={14} />
-              {t('planning.cancelBtn')}
+              <StopCircle size={14} /> {t('planning.cancelBtn')}
             </button>
-          ) : phase === 'done' ? (
+          ) : phase === 'review' ? (
             <>
-              <button onClick={() => { setPhase('idle'); setPlanPhase('starting'); setCreatedTasks([]); setLogs([]); setTextChunks(''); }} className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
-                {t('planning.planAgain')}
+              <button onClick={handleRevise} className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
+                <RotateCcw size={14} /> Revise
               </button>
-              <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors">
-                {t('planning.doneViewBoard')}
+              <button onClick={handleApprove} disabled={proposals.length === 0 || approving}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg transition-colors">
+                {approving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                {approving ? 'Creating...' : `Approve & Create ${proposals.length} Tasks`}
+              </button>
+            </>
+          ) : phase === 'approved' ? (
+            <>
+              <button onClick={() => { setPhase('idle'); setProposals([]); setLogs([]); setAnalysis(''); }}
+                className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
+                Plan Again
+              </button>
+              <button onClick={onClose} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors">
+                <ArrowRight size={14} /> View Board
               </button>
             </>
           ) : (
@@ -531,13 +527,9 @@ export default function PlanningModal({ projectId, onClose }) {
               <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
                 {t('planning.cancelBtn')}
               </button>
-              <button
-                onClick={handleStart}
-                disabled={!topic.trim()}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-claude hover:bg-claude-light disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
-              >
-                <Sparkles size={14} />
-                {t('planning.startPlanning')}
+              <button onClick={handleStart} disabled={!topic.trim()}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-claude hover:bg-claude-light disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors">
+                <Sparkles size={14} /> {t('planning.startPlanning')}
               </button>
             </>
           )}
