@@ -139,7 +139,7 @@
   <circle cx="36" cy="326" r="3.5" fill="#ef4444" opacity="0.6"/>
   <circle cx="48" cy="326" r="3.5" fill="#f59e0b" opacity="0.6"/>
   <circle cx="60" cy="326" r="3.5" fill="#22c55e" opacity="0.6"/>
-  <text x="78" y="330" fill="#564d40" font-size="9" font-weight="600" font-family="system-ui">Terminal &mdash; Migrate API to REST v2</text>
+  <text x="78" y="330" fill="#564d40" font-size="9" font-weight="600" font-family="system-ui">Terminal &#x2014; Migrate API to REST v2</text>
 
   <!-- Terminal line 1: Read -->
   <text x="36" y="350" fill="#DA7756" font-size="9" font-weight="600" font-family="monospace">Read</text>
