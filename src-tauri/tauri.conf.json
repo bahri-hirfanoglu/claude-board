@@ -36,7 +36,7 @@
     },
     "resources": ["resources/mcp-server.js"],
     "publisher": "Bahri Hirfanoglu",
-    "createUpdaterArtifacts": "v2Compatible"
+    "createUpdaterArtifacts": true
   },
   "plugins": {
     "updater": {
