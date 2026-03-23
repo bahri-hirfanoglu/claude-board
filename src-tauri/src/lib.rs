@@ -6,7 +6,8 @@ mod migration;
 mod services;
 mod setup;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+use tauri_plugin_updater::UpdaterExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -43,6 +44,26 @@ pub fn run() {
                 .center()
                 .disable_drag_drop_handler()
                 .build()?;
+
+                // Check for updates in background
+                let app_handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                    let updater = match app_handle.updater() {
+                        Ok(u) => u,
+                        Err(e) => { log::warn!("Updater init failed: {}", e); return; }
+                    };
+                    match updater.check().await {
+                        Ok(Some(update)) => {
+                            log::info!("Update available: {}", update.version);
+                            app_handle.emit("update:available", &serde_json::json!({
+                                "version": update.version,
+                            })).ok();
+                        }
+                        Ok(None) => log::info!("App is up to date"),
+                        Err(e) => log::warn!("Update check failed: {}", e),
+                    }
+                });
             } else {
                 tauri::WebviewWindowBuilder::new(
                     app,
