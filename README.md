@@ -14,6 +14,10 @@
 
 </div>
 
+<p align="center">
+  <img src="web/demo.gif" alt="Claude Board Demo" width="100%" />
+</p>
+
 ---
 
 ## What is Claude Board?
