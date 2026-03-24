@@ -39,7 +39,7 @@ pub fn start_planning(
         "--dangerously-skip-permissions".to_string(),
         "--model".to_string(), model.clone(),
     ];
-    if effort != "medium" { args.extend(["--thinking-budget".to_string(), effort.clone()]); }
+    if effort != "medium" { args.extend(["--effort".to_string(), effort.clone()]); }
 
     let plan_id_clone = plan_id.clone();
     let working_dir = project.working_dir.clone();
