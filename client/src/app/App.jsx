@@ -55,13 +55,22 @@ function AppInner() {
     return () => unsubs.forEach(fn => fn());
   }, []);
 
-  // Auto-open terminal when task starts running
+  // Auto-open terminal when task starts running (only for newly started tasks)
+  const runningIdsRef = useRef(new Set());
+  useEffect(() => {
+    // Track currently running tasks
+    runningIdsRef.current = new Set(tasks.filter(t => t.is_running).map(t => t.id));
+  }, [tasks]);
+
   useEffect(() => {
     const handler = (task) => {
-      if (task.is_running) {
+      if (task.is_running && !runningIdsRef.current.has(task.id)) {
+        runningIdsRef.current.add(task.id);
         terminal.openTab(task);
         setSelectedTask(task);
         setActivePanel('logs');
+      } else if (!task.is_running) {
+        runningIdsRef.current.delete(task.id);
       }
     };
     if (IS_TAURI) {
