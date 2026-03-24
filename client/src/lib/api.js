@@ -62,6 +62,7 @@ export const api = IS_TAURI
       createProject: (data) => tauriCall('create_project', data),
       updateProject: (id, data) => tauriCall('update_project', { id, ...data }),
       deleteProject: (id) => tauriCall('delete_project', { id }),
+      getProjectGroups: () => tauriCall('get_project_groups'),
 
       // Tasks
       getTasks: (projectId) => tauriCall('get_tasks', { projectId }),

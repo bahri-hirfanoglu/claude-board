@@ -373,6 +373,9 @@ export default {
   'toast.projectDeleted': 'Project deleted',
   'toast.startClaude': 'Start Claude?',
 
+  'dashboard.groupByNamespace': 'Group by namespace',
+  'dashboard.groups': 'groups',
+
   // ─── Pipeline ───
   'board.pipeline': 'Pipeline',
   'pipeline.running': 'Running',

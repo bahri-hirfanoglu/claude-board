@@ -91,3 +91,75 @@ pub fn delete_project(app: AppHandle, id: i64) -> Result<(), String> {
     app.emit("project:deleted", &serde_json::json!({"id": project.id})).ok();
     Ok(())
 }
+
+#[tauri::command]
+pub fn get_project_groups() -> Vec<serde_json::Value> {
+    let db = db::get_db();
+    let projects = pq::get_all(&db);
+    let mut groups: std::collections::HashMap<String, Vec<serde_json::Value>> = std::collections::HashMap::new();
+
+    for p in &projects {
+        let namespace = detect_namespace(&p.working_dir);
+        groups.entry(namespace).or_default().push(serde_json::json!({
+            "id": p.id,
+            "name": p.name,
+            "slug": p.slug,
+        }));
+    }
+
+    groups.into_iter().map(|(ns, projs)| serde_json::json!({
+        "namespace": ns,
+        "projects": projs,
+        "count": projs.len(),
+    })).collect()
+}
+
+fn detect_namespace(working_dir: &str) -> String {
+    // Try git remote first
+    if let Some(ns) = git_namespace(working_dir) {
+        return ns;
+    }
+    // Fallback: parent directory name
+    std::path::Path::new(working_dir)
+        .parent()
+        .and_then(|p| p.file_name())
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "Other".into())
+}
+
+fn git_namespace(working_dir: &str) -> Option<String> {
+    let output = std::process::Command::new("git")
+        .args(["remote", "get-url", "origin"])
+        .current_dir(working_dir)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .output()
+        .ok()?;
+    if !output.status.success() { return None; }
+    let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    parse_git_namespace(&url)
+}
+
+fn parse_git_namespace(url: &str) -> Option<String> {
+    // https://github.com/org/repo.git -> org
+    // git@github.com:org/repo.git -> org
+    // https://gitlab.com/group/subgroup/repo.git -> group/subgroup
+    if let Some(rest) = url.strip_prefix("https://").or_else(|| url.strip_prefix("http://")) {
+        let parts: Vec<&str> = rest.splitn(2, '/').collect();
+        if parts.len() == 2 {
+            let path = parts[1].trim_end_matches(".git");
+            let segments: Vec<&str> = path.split('/').collect();
+            if segments.len() >= 2 {
+                return Some(segments[..segments.len() - 1].join("/"));
+            }
+        }
+    }
+    if let Some(rest) = url.split(':').nth(1) {
+        let path = rest.trim_end_matches(".git");
+        let segments: Vec<&str> = path.split('/').collect();
+        if segments.len() >= 2 {
+            return Some(segments[..segments.len() - 1].join("/"));
+        }
+    }
+    None
+}

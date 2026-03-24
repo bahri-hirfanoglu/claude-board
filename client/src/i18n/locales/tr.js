@@ -373,6 +373,9 @@ export default {
   'toast.projectDeleted': 'Proje silindi',
   'toast.startClaude': 'Claude ba\u015flat\u0131ls\u0131n m\u0131?',
 
+  'dashboard.groupByNamespace': 'Ad alan\u0131na g\u00f6re grupla',
+  'dashboard.groups': 'grup',
+
   // ─── Pipeline ───
   'board.pipeline': 'Pipeline',
   'pipeline.running': '\u00c7al\u0131\u015f\u0131yor',
