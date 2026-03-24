@@ -4,9 +4,9 @@ import { api } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
 
 const POPULAR_REPOS = [
-  { repo: 'anthropics/claude-code', path: 'skills', label: 'Claude Code Official', desc: 'Official skills from Anthropic' },
-  { repo: 'eastlondoner/awesome-claude-code', path: 'skills', label: 'Awesome Claude Code', desc: 'Community-curated skills collection' },
-  { repo: 'hesreallygood/claude-code-skills', path: '', label: 'Claude Code Skills', desc: 'Practical skill templates' },
+  { repo: 'sickn33/antigravity-awesome-skills', path: 'skills', label: 'Antigravity Awesome Skills', desc: 'Categorized skill collection with 500+ skills' },
+  { repo: 'hesreallyhim/awesome-claude-code', path: '', label: 'Awesome Claude Code', desc: 'Community-curated resources and skills' },
+  { repo: 'travisvn/awesome-claude-skills', path: '', label: 'Awesome Claude Skills', desc: 'Curated skill collection' },
 ];
 
 export default function SkillsModal({ onClose }) {
