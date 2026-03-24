@@ -1,28 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
-import { X, Plus, Pencil, Trash2, Layers, Variable, Eye, ChevronLeft } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Pencil, Trash2, Layers, Variable, Eye, ChevronLeft } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
+import { TASK_TYPE_OPTIONS, MODEL_OPTIONS, EFFORT_OPTIONS } from '../../lib/constants';
+import { useCrudResource } from '../../hooks/useCrudResource';
+import ModalShell from '../../components/ModalShell';
+import Spinner from '../../components/Spinner';
+import EmptyState from '../../components/EmptyState';
+import InlineDeleteConfirm from '../../components/InlineDeleteConfirm';
 
-const TASK_TYPES = [
-  { value: 'feature', label: 'Feature' },
-  { value: 'bugfix', label: 'Bug Fix' },
-  { value: 'refactor', label: 'Refactor' },
-  { value: 'docs', label: 'Docs' },
-  { value: 'test', label: 'Test' },
-  { value: 'chore', label: 'Chore' },
-];
-
-const MODELS = [
-  { value: 'haiku', label: 'Haiku' },
-  { value: 'sonnet', label: 'Sonnet' },
-  { value: 'opus', label: 'Opus' },
-];
-
-const EFFORTS = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-];
+const TASK_TYPES = TASK_TYPE_OPTIONS;
+const MODELS = MODEL_OPTIONS;
+const EFFORTS = EFFORT_OPTIONS;
 
 function VariableEditor({ variables, onChange }) {
   const addVariable = () => {
@@ -289,73 +278,23 @@ function TemplateForm({ template, onSave, onCancel }) {
 
 export default function TemplatesModal({ projectId, projectName, onClose }) {
   const { t } = useTranslation();
-  const [templates, setTemplates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(null); // null | 'new' | template object
-  const [deleting, setDeleting] = useState(null);
-
-  const loadTemplates = useCallback(async () => {
-    try {
-      const data = await api.getTemplates(projectId);
-      setTemplates(data);
-    } catch {}
-    setLoading(false);
-  }, [projectId]);
-
-  useEffect(() => {
-    loadTemplates();
-  }, [loadTemplates]);
-
-  const handleSave = async (data) => {
-    if (editing === 'new') {
-      await api.createTemplate(projectId, data);
-    } else if (editing?.id) {
-      await api.updateTemplate(editing.id, data);
-    }
-    setEditing(null);
-    loadTemplates();
-  };
-
-  const handleDelete = async (id) => {
-    await api.deleteTemplate(id);
-    setDeleting(null);
-    loadTemplates();
-  };
+  const crud = useCrudResource({
+    projectId,
+    getAll: api.getTemplates,
+    create: api.createTemplate,
+    update: api.updateTemplate,
+    remove: api.deleteTemplate,
+  });
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-2xl shadow-2xl animate-slide-up max-h-[85vh] overflow-y-auto relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-800">
-          <div>
-            <h2 className="text-base font-semibold text-surface-100 flex items-center gap-2">
-              <Layers size={16} className="text-claude" />
-              Prompt Templates
-            </h2>
-            <p className="text-xs text-surface-500 mt-0.5">{projectName} — reusable prompts with variables</p>
-          </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400">
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="px-5 py-4">
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="w-5 h-5 rounded-full border-2 border-claude/20 border-t-claude animate-spin" />
-            </div>
-          ) : (
+    <ModalShell title="Prompt Templates" subtitle={`${projectName} — reusable prompts with variables`} icon={Layers} onClose={onClose} maxWidth="max-w-2xl">
+      <div className="px-5 py-4">
+        {crud.loading ? <Spinner /> : (
             <>
               {/* Template list */}
-              {templates.length > 0 && !editing && (
+              {crud.items.length > 0 && !crud.editing && (
                 <div className="space-y-2 mb-4">
-                  {templates.map((t) => {
+                  {crud.items.map((t) => {
                     let vars = [];
                     try {
                       vars = JSON.parse(t.variables || '[]');
@@ -377,14 +316,14 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
                               {t.task_type} / {t.model}
                             </span>
                             <button
-                              onClick={() => setEditing(t)}
+                              onClick={() => crud.setEditing(t)}
                               className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors"
                               title="Edit"
                             >
                               <Pencil size={13} />
                             </button>
                             <button
-                              onClick={() => setDeleting(t.id)}
+                              onClick={() => crud.setDeleting(t.id)}
                               className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-red-400 transition-colors"
                               title="Delete"
                             >
@@ -402,37 +341,33 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
                 </div>
               )}
 
-              {templates.length === 0 && !editing && (
-                <div className="text-center py-8 text-surface-500">
-                  <Layers size={24} className="mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">{t('templates.noTemplates')}</p>
-                  <p className="text-xs mt-1">Create reusable prompts with {'{{variable}}'} placeholders</p>
-                </div>
+              {crud.items.length === 0 && !crud.editing && (
+                <EmptyState icon={Layers} title={t('templates.noTemplates')} description={"Create reusable prompts with {{variable}} placeholders"} />
               )}
 
               {/* Edit/Create form */}
-              {editing && (
+              {crud.editing && (
                 <div className="bg-surface-800/30 rounded-lg p-4 border border-surface-700/50">
                   <h3 className="text-xs font-medium text-surface-400 mb-3 flex items-center gap-1.5">
-                    {editing !== 'new' && (
-                      <button onClick={() => setEditing(null)} className="hover:text-surface-200 transition-colors">
+                    {crud.editing !== 'new' && (
+                      <button onClick={() => crud.setEditing(null)} className="hover:text-surface-200 transition-colors">
                         <ChevronLeft size={14} />
                       </button>
                     )}
-                    {editing === 'new' ? 'New Template' : `Edit: ${editing.name}`}
+                    {crud.editing === 'new' ? 'New Template' : `Edit: ${crud.editing.name}`}
                   </h3>
                   <TemplateForm
-                    template={editing === 'new' ? null : editing}
-                    onSave={handleSave}
-                    onCancel={() => setEditing(null)}
+                    template={crud.editing === 'new' ? null : crud.editing}
+                    onSave={crud.handleSave}
+                    onCancel={() => crud.setEditing(null)}
                   />
                 </div>
               )}
 
               {/* Add button */}
-              {!editing && (
+              {!crud.editing && (
                 <button
-                  onClick={() => setEditing('new')}
+                  onClick={() => crud.setEditing('new')}
                   className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-dashed border-surface-700 text-xs text-surface-400 hover:text-claude hover:border-claude/50 transition-colors"
                 >
                   <Plus size={14} />
@@ -443,29 +378,9 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
           )}
         </div>
 
-        {/* Delete confirmation */}
-        {deleting && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-xl">
-            <div className="bg-surface-800 rounded-lg p-4 border border-surface-700 shadow-xl mx-4">
-              <p className="text-sm text-surface-200 mb-3">Delete this template?</p>
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setDeleting(null)}
-                  className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleDelete(deleting)}
-                  className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      {crud.deleting && (
+        <InlineDeleteConfirm message="Delete this template?" onConfirm={() => crud.handleDelete(crud.deleting)} onCancel={() => crud.setDeleting(null)} />
+      )}
+    </ModalShell>
   );
 }

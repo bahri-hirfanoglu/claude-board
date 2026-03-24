@@ -9,6 +9,15 @@ export const COLUMNS = [
 // ─── Task types ───
 export const TASK_TYPES = ['feature', 'bugfix', 'refactor', 'docs', 'test', 'chore'];
 
+export const TASK_TYPE_OPTIONS = [
+  { value: 'feature', label: 'Feature', color: 'bg-blue-500/20 text-blue-300' },
+  { value: 'bugfix', label: 'Bug Fix', color: 'bg-red-500/20 text-red-300' },
+  { value: 'refactor', label: 'Refactor', color: 'bg-purple-500/20 text-purple-300' },
+  { value: 'docs', label: 'Docs', color: 'bg-green-500/20 text-green-300' },
+  { value: 'test', label: 'Test', color: 'bg-yellow-500/20 text-yellow-300' },
+  { value: 'chore', label: 'Chore', color: 'bg-surface-500/20 text-surface-300' },
+];
+
 export const TYPE_COLORS = {
   feature: 'bg-blue-500/15 text-blue-400',
   bugfix: 'bg-red-500/15 text-red-400',
@@ -19,15 +28,48 @@ export const TYPE_COLORS = {
 };
 
 // ─── Priority ───
+export const PRIORITY_OPTIONS = [
+  { value: 0, label: 'None', style: 'bg-surface-700 text-surface-300' },
+  { value: 1, label: 'Low', style: 'bg-yellow-500/20 text-yellow-300' },
+  { value: 2, label: 'Medium', style: 'bg-orange-500/20 text-orange-300' },
+  { value: 3, label: 'High', style: 'bg-red-500/20 text-red-300' },
+];
 export const PRIORITY_COLORS = { 0: '', 1: 'border-l-yellow-500', 2: 'border-l-orange-500', 3: 'border-l-red-500' };
 export const PRIORITY_LABELS = ['', 'Low', 'Medium', 'High'];
 
 // ─── Models ───
 export const MODELS = ['haiku', 'sonnet', 'opus'];
+
+export const MODEL_OPTIONS = [
+  { value: 'haiku', label: 'Haiku', color: 'bg-green-500/20 text-green-300' },
+  { value: 'sonnet', label: 'Sonnet', color: 'bg-blue-500/20 text-blue-300' },
+  { value: 'opus', label: 'Opus', color: 'bg-purple-500/20 text-purple-300' },
+];
+
 export const MODEL_COLORS = { haiku: 'text-green-400', sonnet: 'text-blue-400', opus: 'text-purple-400' };
+export const MODEL_DOT_COLORS = { haiku: '#4ade80', sonnet: '#60a5fa', opus: '#c084fc' };
+export const MODEL_BG_ACTIVE = { haiku: 'bg-green-500/15 ring-green-500/30', sonnet: 'bg-blue-500/15 ring-blue-500/30', opus: 'bg-purple-500/15 ring-purple-500/30' };
 
 // ─── Effort levels ───
 export const EFFORT_LEVELS = ['low', 'medium', 'high'];
+
+export const EFFORT_OPTIONS = [
+  { value: 'low', label: 'Low', color: 'bg-green-500/20 text-green-300' },
+  { value: 'medium', label: 'Medium', color: 'bg-amber-500/20 text-amber-300' },
+  { value: 'high', label: 'High', color: 'bg-red-500/20 text-red-300' },
+];
+
+// ─── Token costs (USD per million tokens) ───
+export const MODEL_COSTS = {
+  haiku:  { input: 0.25,  output: 1.25 },
+  sonnet: { input: 3.0,   output: 15.0 },
+  opus:   { input: 15.0,  output: 75.0 },
+};
+
+// ─── Defaults ───
+export const DEFAULT_MODEL = 'sonnet';
+export const DEFAULT_EFFORT = 'medium';
+export const TOAST_TIMEOUT_MS = 3000;
 
 // ─── Avatar ───
 export const AVATAR_COLORS = ['#DA7756', '#c4624a', '#e5936f', '#2a2520', '#918678'];
