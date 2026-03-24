@@ -465,6 +465,22 @@ export default {
   'cm.cancel': 'Cancel',
   'cm.save': 'Save',
 
+  // ─── Custom Commands ───
+  'header.commands': 'Commands',
+  'commands.title': 'Custom Commands',
+  'commands.empty': 'No custom commands',
+  'commands.emptyDesc': 'Add .md files to ~/.claude/commands/ to create custom slash commands for Claude.',
+  'commands.selectOne': 'Select a command to view its content',
+  'commands.commandCount': 'command(s)',
+
+  // ─── Custom Skills ───
+  'header.skills': 'Skills',
+  'skills.title': 'Custom Skills',
+  'skills.empty': 'No custom skills',
+  'skills.emptyDesc': 'Add .md files to ~/.claude/skills/ to create custom skills for Claude.',
+  'skills.selectOne': 'Select a skill to view its content',
+  'skills.skillCount': 'skill(s)',
+
   // ─── Language selector ───
   'lang.en': 'English',
   'lang.tr': 'T\u00fcrk\u00e7e',
