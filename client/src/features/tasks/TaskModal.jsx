@@ -168,11 +168,11 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
         title: title.trim(),
         description: finalDescription,
         priority,
-        task_type: taskType,
-        acceptance_criteria: acceptanceCriteria.trim(),
+        taskType: taskType,
+        acceptanceCriteria: acceptanceCriteria.trim(),
         model,
-        thinking_effort: thinkingEffort,
-        role_id: roleId || null,
+        thinkingEffort: thinkingEffort,
+        roleId: roleId || null,
         _files: attachedFiles.length > 0 ? attachedFiles : undefined,
       });
     } catch (err) {

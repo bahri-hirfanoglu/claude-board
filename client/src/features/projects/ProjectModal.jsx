@@ -99,16 +99,16 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
       await onSubmit({
         name: name.trim(),
         slug: slug.trim(),
-        working_dir: workingDir.trim(),
+        workingDir: workingDir.trim(),
         icon,
-        icon_seed: iconSeed,
-        permission_mode: permissionMode,
-        allowed_tools: allowedTools.trim(),
-        auto_queue: autoQueue ? 1 : 0,
-        max_concurrent: maxConcurrent,
-        auto_branch: autoBranch ? 1 : 0,
-        auto_pr: autoPr ? 1 : 0,
-        pr_base_branch: prBaseBranch.trim() || 'main',
+        iconSeed: iconSeed,
+        permissionMode: permissionMode,
+        allowedTools: allowedTools.trim(),
+        autoQueue: autoQueue ? 1 : 0,
+        maxConcurrent: maxConcurrent,
+        autoBranch: autoBranch ? 1 : 0,
+        autoPr: autoPr ? 1 : 0,
+        prBaseBranch: prBaseBranch.trim() || 'main',
       });
     } catch (err) {
       console.error(err);
