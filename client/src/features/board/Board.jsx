@@ -34,13 +34,13 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
   const [modelFilter, setModelFilter] = useState(null);
 
   // Models actually present in current tasks
-  const activeModels = useMemo(() => {
-    const set = new Set();
+  const { activeModels, modelCounts } = useMemo(() => {
+    const counts = {};
     tasks.forEach(t => {
       const m = t.model_used || t.model || 'sonnet';
-      set.add(m);
+      counts[m] = (counts[m] || 0) + 1;
     });
-    return MODELS.filter(m => set.has(m));
+    return { activeModels: MODELS.filter(m => counts[m]), modelCounts: counts };
   }, [tasks]);
 
   const filteredTasks = useMemo(() => {
@@ -48,7 +48,15 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
     return tasks.filter(t => (t.model_used || t.model || 'sonnet') === modelFilter);
   }, [tasks, modelFilter]);
 
-  const columnTasks = (colId) => filteredTasks.filter(t => (t.status || 'backlog') === colId);
+  const groupedTasks = useMemo(() => {
+    const grouped = { backlog: [], in_progress: [], testing: [], done: [] };
+    for (const t of filteredTasks) {
+      const s = t.status || 'backlog';
+      if (grouped[s]) grouped[s].push(t);
+    }
+    return grouped;
+  }, [filteredTasks]);
+  const columnTasks = (colId) => groupedTasks[colId] || [];
 
   return (
     <div className="h-full flex flex-col">
@@ -78,7 +86,7 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
         {/* Model filter chips */}
         {activeModels.length > 1 && activeModels.map(m => {
           const isActive = modelFilter === m;
-          const count = tasks.filter(t => (t.model_used || t.model || 'sonnet') === m).length;
+          const count = modelCounts[m] || 0;
           return (
             <button
               key={m}

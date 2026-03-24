@@ -378,6 +378,8 @@ function SuggestionBanner({ suggestions, setSuggestions, t }) {
 // Cache outside component so it survives remounts
 let summaryCache = null;
 let groupsCache = null;
+let suggestionsCache = null;
+let suggestionsLoaded = false;
 
 function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
   return (
@@ -431,16 +433,24 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   const loadSummary = async () => {
     if (!summaryCache) setLoading(true);
     try {
-      const [data, grp, sug] = await Promise.all([
+      const promises = [
         api.getProjectsSummary(),
         IS_TAURI ? api.getProjectGroups().catch(() => []) : Promise.resolve([]),
-        IS_TAURI ? api.getSuggestions().catch(() => []) : Promise.resolve([]),
-      ]);
+      ];
+      // Only load suggestions once per app session (it shells out to claude CLI)
+      if (IS_TAURI && !suggestionsLoaded) {
+        promises.push(api.getSuggestions().catch(() => []));
+      } else {
+        promises.push(Promise.resolve(suggestionsCache || []));
+      }
+      const [data, grp, sug] = await Promise.all(promises);
       summaryCache = data;
       groupsCache = Array.isArray(grp) ? grp : [];
+      suggestionsCache = Array.isArray(sug) ? sug : [];
+      suggestionsLoaded = true;
       setSummary(data);
       setGroups(groupsCache);
-      setSuggestions(Array.isArray(sug) ? sug : []);
+      setSuggestions(suggestionsCache);
     } catch {
       setSummary(projects.map(p => ({ ...p, total_tasks: 0, done_tasks: 0, active_tasks: 0, backlog_tasks: 0, testing_tasks: 0, total_tokens: 0, total_cost: 0, last_activity: null })));
     } finally {
@@ -448,12 +458,17 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
     }
   };
 
-  const totalProjects = summary.length;
-  const totalTasks = summary.reduce((s, p) => s + (p.total_tasks || 0), 0);
-  const totalDone = summary.reduce((s, p) => s + (p.done_tasks || 0), 0);
-  const totalActive = summary.reduce((s, p) => s + (p.active_tasks || 0), 0);
-  const allTokens = summary.reduce((s, p) => s + (p.total_tokens || 0), 0);
-  const allCost = summary.reduce((s, p) => s + (p.total_cost || 0), 0);
+  const { totalProjects, totalTasks, totalDone, totalActive, allTokens, allCost } = useMemo(() => {
+    let tasks = 0, done = 0, active = 0, tokens = 0, cost = 0;
+    for (const p of summary) {
+      tasks += p.total_tasks || 0;
+      done += p.done_tasks || 0;
+      active += p.active_tasks || 0;
+      tokens += p.total_tokens || 0;
+      cost += p.total_cost || 0;
+    }
+    return { totalProjects: summary.length, totalTasks: tasks, totalDone: done, totalActive: active, allTokens: tokens, allCost: cost };
+  }, [summary]);
 
   if (dashTab === 'claude-manager' && IS_TAURI) {
     return (
