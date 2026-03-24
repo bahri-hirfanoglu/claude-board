@@ -44,12 +44,26 @@ export function useTaskHandlers({ tasks, setTasks, addToast, t, setConfirm, term
 
   const onCreate = useCallback(async (data) => {
     const files = data._files;
+    const pendingDeps = data._pendingDeps;
     delete data._files;
+    delete data._pendingDeps;
     const task = await api.createTask(currentProject.id, data);
     setTasks(prev => prev.some(x => x.id === task.id) ? prev : [...prev, task]);
     if (files?.length > 0) {
       try { await api.uploadAttachments(task.id, files); }
       catch (e) { addToast('File upload failed: ' + e.message, 'error'); }
+    }
+    if (pendingDeps && pendingDeps.length > 0) {
+      let depOk = 0;
+      for (const depId of pendingDeps) {
+        try {
+          await api.addDependency(task.id, depId);
+          depOk++;
+        } catch (e) {
+          addToast(`Dependency failed: ${e.message || e}`, 'error');
+        }
+      }
+      if (depOk > 0) addToast(`${depOk} dependency added`, 'info');
     }
     closeModal('task');
     addToast(t('toast.taskCreated'), 'success');

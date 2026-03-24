@@ -4,11 +4,12 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { MODEL_OPTIONS, EFFORT_OPTIONS } from '../../lib/constants';
+import DependencySelector from './DependencySelector';
 
 const MODELS = MODEL_OPTIONS;
 const EFFORTS = EFFORT_OPTIONS;
 
-export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort, onEffortChange, roleId, onRoleChange, roles, acceptanceCriteria, onAcceptanceChange, attachedFiles, onFilesChange }) {
+export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort, onEffortChange, roleId, onRoleChange, roles, acceptanceCriteria, onAcceptanceChange, attachedFiles, onFilesChange, taskId, allTasks, dependencies, onAddDependency, onRemoveDependency }) {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
 
@@ -114,6 +115,17 @@ export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort,
             ))}
           </div>
         </div>
+      )}
+
+      {/* Dependencies */}
+      {allTasks && allTasks.length > 0 && (
+        <DependencySelector
+          taskId={taskId}
+          allTasks={allTasks}
+          dependencies={dependencies}
+          onAdd={onAddDependency}
+          onRemove={onRemoveDependency}
+        />
       )}
 
       {/* Attachments */}

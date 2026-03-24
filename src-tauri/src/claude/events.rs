@@ -66,6 +66,18 @@ pub fn handle_event(
     }
 }
 
+fn store_event(task_id: i64, event_type: &str, data: &serde_json::Value, db: &DbPool) {
+    let conn = db.lock();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0);
+    conn.execute(
+        "INSERT INTO task_events (task_id, event_type, event_data, timestamp_ms) VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![task_id, event_type, data.to_string(), now],
+    ).ok();
+}
+
 fn add_log(task_id: i64, message: &str, log_type: &str, db: &DbPool, app: &AppHandle, meta: Option<&str>) {
     tasks::add_log(db, task_id, message, log_type, meta);
     let meta_val = meta.and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok());
@@ -127,8 +139,9 @@ fn handle_assistant(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, c
                     if let Some(c) = input.get("content").and_then(|v| v.as_str()) {
                         input_summary.insert("content".into(), serde_json::Value::String(c[..c.len().min(500)].to_string()));
                     }
-                    let meta = serde_json::json!({"toolName": tool_name, "toolId": tool_id, "input": input_summary}).to_string();
-                    add_log(task_id, &display, "tool", db, app, Some(&meta));
+                    let meta = serde_json::json!({"toolName": tool_name, "toolId": tool_id, "input": input_summary});
+                    add_log(task_id, &display, "tool", db, app, Some(&meta.to_string()));
+                    store_event(task_id, "tool_call", &meta, db);
 
                     if !tool_id.is_empty() {
                         ctx.active_tool_calls.lock().unwrap().insert(tool_id.to_string(), ToolCall {
@@ -208,8 +221,9 @@ fn handle_user(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, ctx: &
                     "duration": duration,
                     "isResult": true,
                     "output": result_preview,
-                }).to_string();
-                add_log(task_id, &display, lt, db, app, Some(&result_meta));
+                });
+                add_log(task_id, &display, lt, db, app, Some(&result_meta.to_string()));
+                store_event(task_id, "tool_result", &result_meta, db);
             }
         }
     }
@@ -278,6 +292,13 @@ fn handle_result(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, ctx:
         }
     }
 
+    // Store final usage as event
+    store_event(task_id, "usage_final", &serde_json::json!({
+        "inputTokens": session_input, "outputTokens": session_output,
+        "totalCost": total_cost, "numTurns": num_turns,
+        "durationMs": duration_ms, "model": model_used,
+    }), db);
+
     if let Some(result) = event.get("result").and_then(|v| v.as_str()) {
         let preview = &result[..result.len().min(500)];
         add_log(task_id, &format!("Result: {}", preview), "success", db, app, None);
@@ -299,6 +320,7 @@ fn handle_system(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle) {
             tasks::increment_rate_limit_hits(db, task_id);
         }
         add_log(task_id, msg, "system", db, app, None);
+        store_event(task_id, "system", &serde_json::json!({"subtype": subtype, "message": msg}), db);
     }
 }
 
@@ -323,6 +345,10 @@ fn handle_rate_limit(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle) 
         "overageStatus": overage_status,
         "isUsingOverage": is_using_overage,
     })).ok();
+
+    store_event(task_id, "rate_limit", &serde_json::json!({
+        "rateLimitType": rlt, "status": status, "resetsAt": resets_at,
+    }), db);
 
     if status != "allowed" {
         tasks::increment_rate_limit_hits(db, task_id);

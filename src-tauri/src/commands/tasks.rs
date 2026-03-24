@@ -117,8 +117,17 @@ pub fn delete_task(app: AppHandle, id: i64) -> Result<(), String> {
     let db = db::get_db();
     let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
     if runner::is_running(id) { runner::stop(id, &db, &app); }
+    // Notify children that their parent is being removed
+    let children = db::dependencies::get_child_ids(&db, id);
+    db::dependencies::remove_all_for_task(&db, id);
     tq::delete(&db, id);
     app.emit("task:deleted", &serde_json::json!({"id": task.id})).ok();
+    // Emit updates for children so they refresh dependency state
+    for child_id in children {
+        if let Some(child) = tq::get_by_id(&db, child_id) {
+            app.emit("task:updated", &child).ok();
+        }
+    }
     Ok(())
 }
 
@@ -180,6 +189,28 @@ pub fn get_revisions(id: i64) -> Vec<tq::TaskRevision> {
 }
 
 #[tauri::command]
+#[allow(non_snake_case)]
+pub fn get_task_events(taskId: i64, limit: Option<i64>) -> Vec<serde_json::Value> {
+    let db = db::get_db();
+    let conn = db.lock();
+    let lim = limit.unwrap_or(500);
+    let mut stmt = conn.prepare(
+        "SELECT id, event_type, event_data, timestamp_ms FROM task_events
+         WHERE task_id=?1 ORDER BY timestamp_ms ASC LIMIT ?2"
+    ).unwrap();
+    stmt.query_map(rusqlite::params![taskId, lim], |r| {
+        let data_str: String = r.get(2)?;
+        let data: serde_json::Value = serde_json::from_str(&data_str).unwrap_or(serde_json::json!({}));
+        Ok(serde_json::json!({
+            "id": r.get::<_, i64>(0)?,
+            "eventType": r.get::<_, String>(1)?,
+            "data": data,
+            "timestampMs": r.get::<_, i64>(3)?,
+        }))
+    }).unwrap().flatten().collect()
+}
+
+#[tauri::command]
 pub fn get_task_detail(id: i64) -> Result<serde_json::Value, String> {
     let db = db::get_db();
     let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
@@ -225,38 +256,41 @@ pub fn set_task_dependency(app: AppHandle, id: i64, depends_on: Option<i64>) -> 
 }
 
 #[tauri::command]
-pub fn add_task_dependency(app: AppHandle, task_id: i64, depends_on_id: i64) -> Result<serde_json::Value, String> {
+#[allow(non_snake_case)]
+pub fn add_task_dependency(app: AppHandle, taskId: i64, dependsOnId: i64) -> Result<serde_json::Value, String> {
     let db = db::get_db();
-    tq::get_by_id(&db, task_id).ok_or("Task not found")?;
-    tq::get_by_id(&db, depends_on_id).ok_or("Parent task not found")?;
-    db::dependencies::add_dependency(&db, task_id, depends_on_id).map_err(|e| e.to_string())?;
-    let updated = tq::get_by_id(&db, task_id).ok_or("Task not found")?;
+    tq::get_by_id(&db, taskId).ok_or("Task not found")?;
+    tq::get_by_id(&db, dependsOnId).ok_or("Parent task not found")?;
+    db::dependencies::add_dependency(&db, taskId, dependsOnId).map_err(|e| e.to_string())?;
+    let updated = tq::get_by_id(&db, taskId).ok_or("Task not found")?;
     app.emit("task:updated", &updated).ok();
     Ok(serde_json::json!({
         "task": updated,
-        "parents": db::dependencies::get_parent_ids(&db, task_id),
-        "children": db::dependencies::get_child_ids(&db, task_id),
+        "parents": db::dependencies::get_parent_ids(&db, taskId),
+        "children": db::dependencies::get_child_ids(&db, taskId),
     }))
 }
 
 #[tauri::command]
-pub fn remove_task_dependency(app: AppHandle, task_id: i64, depends_on_id: i64) -> Result<serde_json::Value, String> {
+#[allow(non_snake_case)]
+pub fn remove_task_dependency(app: AppHandle, taskId: i64, dependsOnId: i64) -> Result<serde_json::Value, String> {
     let db = db::get_db();
-    db::dependencies::remove_dependency(&db, task_id, depends_on_id);
-    let updated = tq::get_by_id(&db, task_id).ok_or("Task not found")?;
+    db::dependencies::remove_dependency(&db, taskId, dependsOnId);
+    let updated = tq::get_by_id(&db, taskId).ok_or("Task not found")?;
     app.emit("task:updated", &updated).ok();
     Ok(serde_json::json!({
         "task": updated,
-        "parents": db::dependencies::get_parent_ids(&db, task_id),
-        "children": db::dependencies::get_child_ids(&db, task_id),
+        "parents": db::dependencies::get_parent_ids(&db, taskId),
+        "children": db::dependencies::get_child_ids(&db, taskId),
     }))
 }
 
 #[tauri::command]
-pub fn get_task_dependencies(task_id: i64) -> serde_json::Value {
+#[allow(non_snake_case)]
+pub fn get_task_dependencies(taskId: i64) -> serde_json::Value {
     let db = db::get_db();
-    let parents = db::dependencies::get_parent_ids(&db, task_id);
-    let children = db::dependencies::get_child_ids(&db, task_id);
+    let parents = db::dependencies::get_parent_ids(&db, taskId);
+    let children = db::dependencies::get_child_ids(&db, taskId);
     serde_json::json!({ "parents": parents, "children": children })
 }
 
@@ -264,6 +298,12 @@ pub fn get_task_dependencies(task_id: i64) -> serde_json::Value {
 pub fn get_execution_waves(project_id: i64) -> Vec<Vec<tq::Task>> {
     let db = db::get_db();
     db::dependencies::get_execution_waves(&db, project_id)
+}
+
+#[tauri::command]
+pub fn get_dependency_graph(project_id: i64) -> serde_json::Value {
+    let db = db::get_db();
+    db::dependencies::get_graph_data(&db, project_id)
 }
 
 #[tauri::command]

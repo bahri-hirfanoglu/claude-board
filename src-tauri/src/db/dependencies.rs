@@ -163,3 +163,35 @@ pub fn get_execution_waves(db: &DbPool, project_id: i64) -> Vec<Vec<Task>> {
 
     waves
 }
+
+/// Get dependency graph summary for a project (used by frontend orchestration view).
+pub fn get_graph_data(db: &DbPool, project_id: i64) -> serde_json::Value {
+    let all_tasks = super::tasks::get_by_project(db, project_id);
+
+    let edges: Vec<serde_json::Value> = {
+        let conn = db.lock();
+        let mut stmt = conn.prepare(
+            "SELECT td.task_id, td.depends_on_id FROM task_dependencies td
+             JOIN tasks t ON t.id = td.task_id WHERE t.project_id = ?1"
+        ).unwrap();
+        let rows: Vec<(i64, i64)> = stmt.query_map(params![project_id], |r| {
+            Ok((r.get(0)?, r.get(1)?))
+        }).unwrap().flatten().collect();
+        rows.into_iter().map(|(child, parent)| {
+            serde_json::json!({ "from": parent, "to": child })
+        }).collect()
+    };
+
+    let waves = get_execution_waves(db, project_id);
+
+    serde_json::json!({
+        "tasks": all_tasks,
+        "edges": edges,
+        "waves": waves.iter().enumerate().map(|(i, w)| {
+            serde_json::json!({
+                "index": i,
+                "taskIds": w.iter().map(|t| t.id).collect::<Vec<_>>(),
+            })
+        }).collect::<Vec<_>>(),
+    })
+}

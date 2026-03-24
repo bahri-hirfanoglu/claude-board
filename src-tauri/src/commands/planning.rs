@@ -153,11 +153,12 @@ pub fn start_planning(
         let elapsed = start_time.elapsed().as_millis() as i64;
 
         // Parse tasks as PROPOSALS — don't create in DB yet
-        let proposals = parse_tasks_from_output(&full_text);
+        let plan = parse_tasks_from_output(&full_text);
 
         app.emit("plan:completed", &serde_json::json!({
             "projectId": project_id, "planId": &plan_id_clone,
-            "proposals": proposals,
+            "proposals": plan.tasks,
+            "dependencies": plan.dependencies,
             "analysis": full_text,
             "stats": {"elapsed": elapsed, "toolCalls": tool_calls, "turns": turns, "exitCode": status}
         })).ok();
@@ -166,11 +167,12 @@ pub fn start_planning(
     Ok(serde_json::json!({"planId": plan_id, "status": "started"}))
 }
 
-/// User approved the proposed tasks — create them in DB
+/// User approved the proposed tasks — create them in DB with optional dependency edges.
 #[tauri::command]
 pub fn approve_plan(
     app: AppHandle, project_id: i64, tasks: Vec<serde_json::Value>,
     model: Option<String>,
+    dependencies: Option<Vec<Vec<i64>>>,
 ) -> Result<Vec<tq::Task>, String> {
     let db = db::get_db();
     if pq::get_by_id(&db, project_id).is_none() { return Err("Project not found".into()); }
@@ -191,6 +193,22 @@ pub fn approve_plan(
             created.push(task);
         }
     }
+
+    // Create dependency edges: each entry is [parentIndex, childIndex] referencing the tasks array
+    if let Some(deps) = dependencies {
+        for edge in &deps {
+            if edge.len() == 2 {
+                let parent_idx = edge[0] as usize;
+                let child_idx = edge[1] as usize;
+                if parent_idx < created.len() && child_idx < created.len() {
+                    let parent_id = created[parent_idx].id;
+                    let child_id = created[child_idx].id;
+                    db::dependencies::add_dependency(&db, child_id, parent_id).ok();
+                }
+            }
+        }
+    }
+
     activity::add(&db, project_id, None, "plan_completed",
         &format!("Plan approved: {} tasks created", created.len()), None);
     Ok(created)
@@ -249,32 +267,46 @@ Working Directory: {}
 4. End with a JSON code block containing the task breakdown
 
 ## CRITICAL: Output Format
-End your response with a JSON code block:
+End your response with a JSON code block containing tasks AND their dependency relationships:
 
 ```json
-[
-  {{
-    "title": "Short task title",
-    "description": "Detailed description of what to implement",
-    "task_type": "feature|bugfix|refactor|docs|test|chore",
-    "priority": 0,
-    "acceptance_criteria": "Clear definition of done"
-  }}
-]
+{{
+  "tasks": [
+    {{
+      "title": "Short task title",
+      "description": "Detailed description of what to implement",
+      "task_type": "feature|bugfix|refactor|docs|test|chore",
+      "priority": 0,
+      "acceptance_criteria": "Clear definition of done"
+    }}
+  ],
+  "dependencies": [[0, 1], [0, 2], [1, 3]]
+}}
 ```
+
+The `dependencies` array contains [parentIndex, childIndex] pairs where the child task depends on the parent.
+Example: [0, 1] means task at index 1 depends on task at index 0 (task 0 must complete before task 1 starts).
+Tasks with no dependencies can run in parallel.
 
 Rules:
 - Create {} tasks
 - Descriptions should be detailed enough for Claude to implement autonomously
-- Order tasks by dependency (earlier tasks should be done first)
-- Each task should be independently executable"#,
+- Define dependency relationships between tasks
+- Tasks that CAN run in parallel SHOULD have no dependency between them
+- Each task should be independently executable once its dependencies are met"#,
         project.name, project.working_dir, topic.trim(),
         if context.is_empty() { String::new() } else { format!("## Additional Context\n{}", context) },
         granularity.to_uppercase(), style, count
     )
 }
 
-fn parse_tasks_from_output(text: &str) -> Vec<serde_json::Value> {
+/// Parsed planning output: tasks + optional dependency edges.
+struct ParsedPlan {
+    tasks: Vec<serde_json::Value>,
+    dependencies: Vec<Vec<i64>>,
+}
+
+fn parse_tasks_from_output(text: &str) -> ParsedPlan {
     let re = regex_lite::Regex::new(r"```(?:json)?\s*\n?([\s\S]*?)```").unwrap();
     let mut last_block = None;
     for cap in re.captures_iter(text) {
@@ -282,12 +314,34 @@ fn parse_tasks_from_output(text: &str) -> Vec<serde_json::Value> {
     }
     let block = match last_block {
         Some(b) => b,
-        None => return vec![],
+        None => return ParsedPlan { tasks: vec![], dependencies: vec![] },
     };
-    match serde_json::from_str::<Vec<serde_json::Value>>(&block) {
+
+    // Try new format: { "tasks": [...], "dependencies": [...] }
+    if let Ok(obj) = serde_json::from_str::<serde_json::Value>(&block) {
+        if let Some(tasks) = obj.get("tasks").and_then(|v| v.as_array()) {
+            let filtered: Vec<serde_json::Value> = tasks.iter()
+                .filter(|t| t.get("title").and_then(|v| v.as_str()).map(|s| !s.trim().is_empty()).unwrap_or(false))
+                .cloned()
+                .collect();
+            if !filtered.is_empty() {
+                let deps = obj.get("dependencies").and_then(|v| v.as_array()).map(|arr| {
+                    arr.iter().filter_map(|e| {
+                        let a = e.as_array()?;
+                        Some(vec![a.first()?.as_i64()?, a.get(1)?.as_i64()?])
+                    }).collect()
+                }).unwrap_or_default();
+                return ParsedPlan { tasks: filtered, dependencies: deps };
+            }
+        }
+    }
+
+    // Fallback: plain array format (backward compatible, no deps)
+    let tasks = match serde_json::from_str::<Vec<serde_json::Value>>(&block) {
         Ok(arr) => arr.into_iter().filter(|t| {
             t.get("title").and_then(|v| v.as_str()).map(|s| !s.trim().is_empty()).unwrap_or(false)
         }).collect(),
         Err(_) => vec![],
-    }
+    };
+    ParsedPlan { tasks, dependencies: vec![] }
 }
