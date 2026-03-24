@@ -4,15 +4,8 @@ import Column from './Column';
 import ListView from './ListView';
 import SummaryView from './SummaryView';
 import PipelineView from './PipelineView';
-import { MODELS, MODEL_COLORS } from '../../lib/constants';
+import { COLUMNS, MODELS, MODEL_COLORS, MODEL_DOT_COLORS, MODEL_BG_ACTIVE } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
-
-const COLUMNS = [
-  { id: 'backlog', color: 'text-surface-400', bg: 'bg-surface-400' },
-  { id: 'in_progress', color: 'text-amber-400', bg: 'bg-amber-400' },
-  { id: 'testing', color: 'text-claude', bg: 'bg-claude' },
-  { id: 'done', color: 'text-emerald-400', bg: 'bg-emerald-400' },
-];
 
 const VIEWS = [
   { id: 'board', labelKey: 'board.board', icon: LayoutGrid },
@@ -21,8 +14,7 @@ const VIEWS = [
   { id: 'pipeline', labelKey: 'board.pipeline', icon: GitBranch },
 ];
 
-const MODEL_DOT = { haiku: '#4ade80', sonnet: '#60a5fa', opus: '#c084fc' };
-const MODEL_BG_ACTIVE = { haiku: 'bg-green-500/15 ring-green-500/30', sonnet: 'bg-blue-500/15 ring-blue-500/30', opus: 'bg-purple-500/15 ring-purple-500/30' };
+const MODEL_DOT = MODEL_DOT_COLORS;
 
 export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, onDeleteTask, onReviewTask, onViewDetail }) {
   const { t } = useTranslation();

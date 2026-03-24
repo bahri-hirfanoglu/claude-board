@@ -11,18 +11,10 @@ import { tauriListen, IS_TAURI } from '../../lib/tauriEvents';
 import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
+import { MODEL_OPTIONS, EFFORT_OPTIONS, PRIORITY_LABELS } from '../../lib/constants';
 
-const MODELS = [
-  { value: 'haiku', label: 'Haiku', color: 'bg-green-500/20 text-green-300' },
-  { value: 'sonnet', label: 'Sonnet', color: 'bg-blue-500/20 text-blue-300' },
-  { value: 'opus', label: 'Opus', color: 'bg-purple-500/20 text-purple-300' },
-];
-
-const EFFORTS = [
-  { value: 'low', label: 'Low', color: 'bg-green-500/20 text-green-300' },
-  { value: 'medium', label: 'Medium', color: 'bg-amber-500/20 text-amber-300' },
-  { value: 'high', label: 'High', color: 'bg-red-500/20 text-red-300' },
-];
+const MODELS = MODEL_OPTIONS;
+const EFFORTS = EFFORT_OPTIONS;
 
 const GRANULARITIES = [
   { value: 'high-level', label: 'High-level', desc: '3-5 big tasks', color: 'bg-blue-500/20 text-blue-300' },
@@ -37,7 +29,6 @@ const PHASES = [
   { key: 'done', label: 'Review', icon: ListChecks, color: 'text-emerald-400' },
 ];
 
-const PRIORITY_LABELS = ['None', 'Low', 'Medium', 'High'];
 const PRIORITY_COLORS = ['text-surface-500', 'text-yellow-400', 'text-orange-400', 'text-red-400'];
 
 function formatElapsed(ms) {

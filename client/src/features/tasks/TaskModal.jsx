@@ -19,41 +19,12 @@ import {
 } from 'lucide-react';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { useTranslation } from '../../i18n/I18nProvider';
+import { TASK_TYPE_OPTIONS, PRIORITY_OPTIONS, MODEL_OPTIONS, EFFORT_OPTIONS, MODEL_COSTS } from '../../lib/constants';
 
-const TASK_TYPES = [
-  { value: 'feature', label: 'Feature', color: 'bg-blue-500/20 text-blue-300' },
-  { value: 'bugfix', label: 'Bug Fix', color: 'bg-red-500/20 text-red-300' },
-  { value: 'refactor', label: 'Refactor', color: 'bg-purple-500/20 text-purple-300' },
-  { value: 'docs', label: 'Docs', color: 'bg-green-500/20 text-green-300' },
-  { value: 'test', label: 'Test', color: 'bg-yellow-500/20 text-yellow-300' },
-  { value: 'chore', label: 'Chore', color: 'bg-surface-500/20 text-surface-300' },
-];
-
-const PRIORITIES = [
-  { value: 0, label: 'None', style: 'bg-surface-700 text-surface-300' },
-  { value: 1, label: 'Low', style: 'bg-yellow-500/20 text-yellow-300' },
-  { value: 2, label: 'Medium', style: 'bg-orange-500/20 text-orange-300' },
-  { value: 3, label: 'High', style: 'bg-red-500/20 text-red-300' },
-];
-
-const MODELS = [
-  { value: 'haiku', label: 'Haiku', color: 'bg-green-500/20 text-green-300' },
-  { value: 'sonnet', label: 'Sonnet', color: 'bg-blue-500/20 text-blue-300' },
-  { value: 'opus', label: 'Opus', color: 'bg-purple-500/20 text-purple-300' },
-];
-
-const EFFORTS = [
-  { value: 'low', label: 'Low', color: 'bg-green-500/20 text-green-300' },
-  { value: 'medium', label: 'Medium', color: 'bg-amber-500/20 text-amber-300' },
-  { value: 'high', label: 'High', color: 'bg-red-500/20 text-red-300' },
-];
-
-// Token cost per million tokens (USD)
-const MODEL_COSTS = {
-  haiku:  { input: 0.25,  output: 1.25 },
-  sonnet: { input: 3.0,   output: 15.0 },
-  opus:   { input: 15.0,  output: 75.0 },
-};
+const TASK_TYPES = TASK_TYPE_OPTIONS;
+const PRIORITIES = PRIORITY_OPTIONS;
+const MODELS = MODEL_OPTIONS;
+const EFFORTS = EFFORT_OPTIONS;
 
 function estimateTokens(text) {
   if (!text) return 0;
