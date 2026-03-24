@@ -21,6 +21,8 @@ pub struct Project {
     pub project_key: Option<String>,
     pub task_counter: Option<i64>,
     pub max_retries: Option<i64>,
+    pub auto_test: Option<i64>,
+    pub test_prompt: Option<String>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
@@ -57,6 +59,8 @@ fn row_to_project(row: &rusqlite::Row) -> rusqlite::Result<Project> {
         project_key: row.get("project_key")?,
         task_counter: row.get("task_counter")?,
         max_retries: row.get("max_retries")?,
+        auto_test: row.get("auto_test")?,
+        test_prompt: row.get("test_prompt")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -140,6 +144,14 @@ pub fn update_git_settings(db: &DbPool, id: i64, auto_branch: bool, auto_pr: boo
     conn.execute(
         "UPDATE projects SET auto_branch=?1,auto_pr=?2,pr_base_branch=?3,updated_at=datetime('now','localtime') WHERE id=?4",
         params![auto_branch as i64, auto_pr as i64, pr_base_branch, id],
+    ).unwrap();
+}
+
+pub fn update_test_settings(db: &DbPool, id: i64, auto_test: bool, test_prompt: &str) {
+    let conn = db.lock();
+    conn.execute(
+        "UPDATE projects SET auto_test=?1,test_prompt=?2,updated_at=datetime('now','localtime') WHERE id=?3",
+        params![auto_test as i64, test_prompt, id],
     ).unwrap();
 }
 

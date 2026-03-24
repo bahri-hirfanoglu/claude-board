@@ -48,6 +48,7 @@ pub fn update_project(
     permission_mode: Option<String>, allowed_tools: Option<String>,
     auto_queue: Option<bool>, max_concurrent: Option<i64>,
     auto_branch: Option<bool>, auto_pr: Option<bool>, pr_base_branch: Option<String>,
+    auto_test: Option<bool>, test_prompt: Option<String>,
 ) -> Result<pq::Project, String> {
     let db = db::get_db();
     let project = pq::get_by_id(&db, id).ok_or("Project not found")?;
@@ -66,6 +67,11 @@ pub fn update_project(
         pq::update_queue(&db, id,
             auto_queue.unwrap_or(project.auto_queue.unwrap_or(0) == 1),
             max_concurrent.unwrap_or(project.max_concurrent.unwrap_or(1)));
+    }
+    if auto_test.is_some() || test_prompt.is_some() {
+        pq::update_test_settings(&db, id,
+            auto_test.unwrap_or(project.auto_test.unwrap_or(0) == 1),
+            test_prompt.as_deref().unwrap_or(project.test_prompt.as_deref().unwrap_or("")));
     }
     if auto_branch.is_some() || auto_pr.is_some() || pr_base_branch.is_some() {
         pq::update_git_settings(&db, id,

@@ -3,12 +3,14 @@ use serde::{Deserialize, Serialize};
 use super::DbPool;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct CountRow {
     pub label: String,
     pub count: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct DurationStats {
     pub avg_minutes: Option<f64>,
     pub min_minutes: Option<f64>,
@@ -23,6 +25,7 @@ pub struct TimelinePoint {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RecentCompleted {
     pub id: i64,
     pub title: String,
@@ -44,6 +47,7 @@ pub struct RecentCompleted {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct ClaudeUsage {
     pub total_input_tokens: Option<i64>,
     pub total_output_tokens: Option<i64>,
@@ -56,6 +60,7 @@ pub struct ClaudeUsage {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ModelBreakdown {
     pub model_name: String,
     pub count: i64,
@@ -109,6 +114,7 @@ pub struct ClaudeLimits {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectStats {
     pub by_status: Vec<CountRow>,
     pub by_priority: Vec<CountRow>,

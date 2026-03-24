@@ -3,6 +3,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum AppError {
     NotFound(String),
+    Validation(String),
     Database(String),
     Io(String),
     Process(String),
@@ -12,6 +13,7 @@ impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             AppError::NotFound(msg) => write!(f, "{}", msg),
+            AppError::Validation(msg) => write!(f, "{}", msg),
             AppError::Database(msg) => write!(f, "Database error: {}", msg),
             AppError::Io(msg) => write!(f, "IO error: {}", msg),
             AppError::Process(msg) => write!(f, "{}", msg),

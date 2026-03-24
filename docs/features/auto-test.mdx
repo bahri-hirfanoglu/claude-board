@@ -1,0 +1,61 @@
+---
+title: "Auto Test"
+description: "Automatic verification of completed tasks"
+icon: "flask-conical"
+---
+
+When a task completes, it enters **Testing** status for manual review. With Auto Test enabled, an AI agent automatically verifies the work before you see it.
+
+## How It Works
+
+1. Task completes and enters **Testing** status
+2. A verification agent starts automatically
+3. The agent reviews code changes, runs tests, and checks acceptance criteria
+4. **Pass** — task moves to **Done** automatically
+5. **Fail** — task stays in **Testing** with failure details logged
+
+## Enabling Auto Test
+
+Open **Project Settings > Automation** tab:
+
+1. Toggle **Auto Test** to enabled
+2. Optionally add **Custom test instructions** for project-specific checks
+
+## Custom Instructions
+
+Add project-specific test commands in the text area:
+
+```
+Run 'npm test' and verify all tests pass.
+Check TypeScript compilation with 'npx tsc --noEmit'.
+Ensure no console.log statements remain in production code.
+Verify that new API endpoints have corresponding test files.
+```
+
+## What Gets Verified
+
+The verification agent automatically:
+
+- Reviews the git diff of changes made
+- Runs the project's existing test suite
+- Checks each acceptance criterion (if specified on the task)
+- Performs a build/compile check
+- Looks for common issues (broken imports, missing error handling)
+
+## Verdict Outcomes
+
+| Verdict | Action | Description |
+|---------|--------|-------------|
+| **Approve** | Task → Done | All checks passed |
+| **Reject** | Stays in Testing | Issues found, feedback logged |
+| **Unknown** | Stays in Testing | Could not determine result, manual review needed |
+
+## Activity Tracking
+
+All auto-test actions appear in the activity timeline:
+
+- `test_started` — Verification began
+- `test_passed` — All checks passed, task approved
+- `test_failed` — Issues found, details in task logs
+
+<Note>Auto Test uses the Sonnet model with low thinking effort for cost efficiency. Custom instructions override the default verification behavior.</Note>

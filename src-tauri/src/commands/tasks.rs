@@ -119,7 +119,7 @@ pub fn delete_task(app: AppHandle, id: i64) -> Result<(), String> {
     if runner::is_running(id) { runner::stop(id, &db, &app); }
     // Notify children that their parent is being removed
     let children = db::dependencies::get_child_ids(&db, id);
-    db::dependencies::remove_all_for_task(&db, id);
+    db::dependencies::remove_all_for_task(&db, id).map_err(|e| e.to_string())?;
     tq::delete(&db, id);
     app.emit("task:deleted", &serde_json::json!({"id": task.id})).ok();
     // Emit updates for children so they refresh dependency state
@@ -275,7 +275,7 @@ pub fn add_task_dependency(app: AppHandle, taskId: i64, dependsOnId: i64) -> Res
 #[allow(non_snake_case)]
 pub fn remove_task_dependency(app: AppHandle, taskId: i64, dependsOnId: i64) -> Result<serde_json::Value, String> {
     let db = db::get_db();
-    db::dependencies::remove_dependency(&db, taskId, dependsOnId);
+    db::dependencies::remove_dependency(&db, taskId, dependsOnId).map_err(|e| e.to_string())?;
     let updated = tq::get_by_id(&db, taskId).ok_or("Task not found")?;
     app.emit("task:updated", &updated).ok();
     Ok(serde_json::json!({
@@ -338,4 +338,58 @@ pub fn get_pipeline_status(project_id: i64) -> serde_json::Value {
             "queued": queued,
         }
     })
+}
+
+#[tauri::command]
+#[allow(non_snake_case)]
+pub fn get_task_diff(taskId: i64) -> Result<serde_json::Value, String> {
+    let db = db::get_db();
+    let task = tq::get_by_id(&db, taskId).ok_or("Task not found")?;
+    let project = pq::get_by_id(&db, task.project_id).ok_or("Project not found")?;
+    let working_dir = &project.working_dir;
+
+    let exec = |args: &[&str]| -> Option<String> {
+        let mut cmd = std::process::Command::new("git");
+        cmd.args(args).current_dir(working_dir)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::null());
+        #[cfg(target_os = "windows")]
+        { use std::os::windows::process::CommandExt; cmd.creation_flags(0x08000000); }
+        cmd.output().ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    };
+
+    // Parse task commits to find the range
+    let commits: Vec<serde_json::Value> = task.commits.as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or_default();
+
+    let diff = if commits.len() >= 2 {
+        // Multiple commits: diff from parent of first to last
+        let first = commits.last().and_then(|c| c.get("short").and_then(|v| v.as_str())).unwrap_or("HEAD~1");
+        let last = commits.first().and_then(|c| c.get("short").and_then(|v| v.as_str())).unwrap_or("HEAD");
+        exec(&["diff", "--no-color", &format!("{}~1..{}", first, last)])
+            .unwrap_or_default()
+    } else if commits.len() == 1 {
+        let hash = commits[0].get("short").and_then(|v| v.as_str()).unwrap_or("HEAD");
+        exec(&["diff", "--no-color", &format!("{}~1..{}", hash, hash)])
+            .unwrap_or_default()
+    } else {
+        // Fallback: last commit
+        exec(&["diff", "--no-color", "HEAD~1..HEAD"])
+            .unwrap_or_default()
+    };
+
+    // Truncate if too large (max ~200KB), safe for UTF-8
+    let diff = if diff.len() > 200_000 {
+        let mut end = 200_000;
+        while end > 0 && !diff.is_char_boundary(end) { end -= 1; }
+        format!("{}\n\n--- Diff truncated ({} bytes total) ---", &diff[..end], diff.len())
+    } else {
+        diff
+    };
+
+    Ok(serde_json::json!({ "diff": diff }))
 }

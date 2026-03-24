@@ -18,6 +18,8 @@ import {
   FileText,
   Trash2,
   ChevronDown,
+  ChevronRight,
+  FileDiff,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatTokens, formatDuration } from '../../lib/formatters';
@@ -31,6 +33,9 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
   const [loading, setLoading] = useState(true);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [showReplay, setShowReplay] = useState(false);
+  const [showFullDiff, setShowFullDiff] = useState(false);
+  const [fullDiff, setFullDiff] = useState(null);
+  const [diffLoading, setDiffLoading] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(task.status);
   const statusMenuRef = useRef(null);
 
@@ -308,6 +313,58 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* Full Diff Viewer */}
+            {detail?.diff_stat && (
+              <div>
+                <button
+                  onClick={() => {
+                    if (!showFullDiff && fullDiff === null) {
+                      setDiffLoading(true);
+                      api.getTaskDiff(task.id)
+                        .then(r => setFullDiff(r.diff || ''))
+                        .catch(() => setFullDiff(''))
+                        .finally(() => setDiffLoading(false));
+                    }
+                    setShowFullDiff(!showFullDiff);
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-medium text-surface-400 hover:text-surface-300 transition-colors"
+                >
+                  {showFullDiff ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  <FileDiff size={12} className="text-violet-400" />
+                  View Full Diff
+                  {diffLoading && <div className="w-3 h-3 rounded-full border border-surface-600 border-t-claude animate-spin ml-1" />}
+                </button>
+                {showFullDiff && fullDiff !== null && (
+                  <div className="mt-2 bg-surface-950 border border-surface-800 rounded-lg overflow-hidden">
+                    <div className="max-h-[400px] overflow-auto">
+                      {fullDiff ? (
+                        <pre className="text-[11px] font-mono leading-[1.6]">
+                          {fullDiff.split('\n').map((line, i) => {
+                            let cls = 'text-surface-500 px-4 py-0';
+                            if (line.startsWith('+++') || line.startsWith('---')) cls = 'text-surface-300 font-semibold px-4 py-0';
+                            else if (line.startsWith('@@')) cls = 'text-cyan-400 bg-cyan-500/5 px-4 py-0.5';
+                            else if (line.startsWith('diff --git')) cls = 'text-surface-200 font-semibold bg-surface-800/80 px-4 py-1 border-t border-surface-700/50';
+                            else if (line.startsWith('+')) cls = 'text-emerald-400 bg-emerald-500/5 px-4 py-0';
+                            else if (line.startsWith('-')) cls = 'text-red-400 bg-red-500/5 px-4 py-0';
+                            return (
+                              <div key={i} className={cls}>
+                                <span className="text-surface-700 select-none inline-block w-8 text-right mr-3">{i + 1}</span>
+                                {line}
+                              </div>
+                            );
+                          })}
+                        </pre>
+                      ) : (
+                        <div className="text-center py-8 text-surface-600 text-xs">
+                          No diff available for this task
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

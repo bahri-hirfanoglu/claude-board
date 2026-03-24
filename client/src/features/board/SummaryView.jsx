@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { Activity, CheckCircle, Clock, Cpu, Coins, AlertCircle, BarChart3 } from 'lucide-react';
+import { Activity, CheckCircle, Clock, Cpu, Coins, AlertCircle, BarChart3, Zap, TrendingUp } from 'lucide-react';
 import { formatTokens } from '../../lib/formatters';
-import { TYPE_COLORS, COLUMNS } from '../../lib/constants';
+import { TYPE_COLORS, COLUMNS, MODEL_DOT_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 
 function StatCard({ icon: Icon, label, value, sublabel, color = 'text-surface-200' }) {
@@ -38,12 +38,21 @@ export default function SummaryView({ tasks }) {
   const stats = useMemo(() => {
     const byStatus = {};
     const byType = {};
+    const byPriority = { 0: 0, 1: 0, 2: 0, 3: 0 };
+    const byModel = {};
     let totalTokens = 0, totalCost = 0, totalTurns = 0, running = 0;
+    let inputTokens = 0, outputTokens = 0;
 
     for (const t of tasks) {
       byStatus[t.status] = (byStatus[t.status] || 0) + 1;
       const type = t.task_type || 'feature';
       byType[type] = (byType[type] || 0) + 1;
+      const pri = t.priority || 0;
+      byPriority[pri] = (byPriority[pri] || 0) + 1;
+      const model = t.model_used || t.model || 'sonnet';
+      byModel[model] = (byModel[model] || 0) + 1;
+      inputTokens += t.input_tokens || 0;
+      outputTokens += t.output_tokens || 0;
       totalTokens += (t.input_tokens || 0) + (t.output_tokens || 0);
       totalCost += t.total_cost || 0;
       totalTurns += t.num_turns || 0;
@@ -54,7 +63,7 @@ export default function SummaryView({ tasks }) {
     const total = tasks.length;
     const completionRate = total > 0 ? ((completed / total) * 100).toFixed(0) : 0;
 
-    // Avg duration for completed tasks (use work_duration_ms if available)
+    // Avg duration for completed tasks
     const completedTasks = tasks.filter(t => t.started_at && t.completed_at);
     let avgMinutes = 0;
     if (completedTasks.length > 0) {
@@ -65,7 +74,17 @@ export default function SummaryView({ tasks }) {
       avgMinutes = Math.round(totalMs / completedTasks.length / 60000);
     }
 
-    return { byStatus, byType, totalTokens, totalCost, totalTurns, running, completed, total, completionRate, avgMinutes };
+    // Top cost tasks
+    const topCost = [...tasks]
+      .filter(t => t.total_cost > 0)
+      .sort((a, b) => b.total_cost - a.total_cost)
+      .slice(0, 5);
+
+    // Cost per task average
+    const tasksWithCost = tasks.filter(t => t.total_cost > 0);
+    const avgCost = tasksWithCost.length > 0 ? totalCost / tasksWithCost.length : 0;
+
+    return { byStatus, byType, byPriority, byModel, totalTokens, inputTokens, outputTokens, totalCost, totalTurns, running, completed, total, completionRate, avgMinutes, topCost, avgCost };
   }, [tasks]);
 
   const formatMinutes = (m) => {
@@ -81,6 +100,9 @@ export default function SummaryView({ tasks }) {
     done: 'bg-emerald-500',
   };
 
+  const priorityLabels = ['None', 'Low', 'Medium', 'High'];
+  const priorityColors = ['bg-surface-600', 'bg-yellow-500', 'bg-orange-500', 'bg-red-500'];
+
   return (
     <div className="h-full overflow-auto p-4 space-y-6">
       {/* Top stats grid */}
@@ -92,56 +114,114 @@ export default function SummaryView({ tasks }) {
       </div>
 
       {/* Usage stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <StatCard icon={Cpu} label={t('summary.totalTokens')} value={formatTokens(stats.totalTokens)} />
-        <StatCard icon={Coins} label={t('summary.totalCost')} value={stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '-'} />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard icon={Cpu} label={t('summary.totalTokens')} value={formatTokens(stats.totalTokens)} sublabel={`In: ${formatTokens(stats.inputTokens)} / Out: ${formatTokens(stats.outputTokens)}`} />
+        <StatCard icon={Coins} label={t('summary.totalCost')} value={stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '-'} sublabel={stats.avgCost > 0 ? `Avg: $${stats.avgCost.toFixed(4)}/task` : undefined} />
         <StatCard icon={Activity} label={t('summary.totalTurns')} value={stats.totalTurns || '-'} />
+        <StatCard icon={TrendingUp} label="Throughput" value={stats.completed > 0 && stats.avgMinutes > 0 ? `${(60 / stats.avgMinutes).toFixed(1)}/hr` : '-'} color="text-blue-400" />
       </div>
 
-      {/* Status Distribution */}
-      <div>
-        <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">{t('summary.statusDist')}</h3>
-        {/* Progress bar */}
-        <div className="h-3 rounded-full bg-surface-800 overflow-hidden flex mb-3">
-          {COLUMNS.map(col => {
-            const count = stats.byStatus[col.id] || 0;
-            const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
-            if (pct === 0) return null;
-            return (
-              <div
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Status Distribution */}
+        <div>
+          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">{t('summary.statusDist')}</h3>
+          <div className="h-3 rounded-full bg-surface-800 overflow-hidden flex mb-3">
+            {COLUMNS.map(col => {
+              const count = stats.byStatus[col.id] || 0;
+              const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
+              if (pct === 0) return null;
+              return (
+                <div
+                  key={col.id}
+                  className={`${statusColors[col.id]} transition-all duration-500`}
+                  style={{ width: `${pct}%` }}
+                  title={`${t('status.' + col.id)}: ${count}`}
+                />
+              );
+            })}
+          </div>
+          <div className="space-y-1.5">
+            {COLUMNS.map(col => (
+              <MiniBar
                 key={col.id}
-                className={`${statusColors[col.id]} transition-all duration-500`}
-                style={{ width: `${pct}%` }}
-                title={`${t('status.' + col.id)}: ${count}`}
+                label={t('status.' + col.id)}
+                count={stats.byStatus[col.id] || 0}
+                total={stats.total}
+                color={statusColors[col.id]}
               />
-            );
-          })}
+            ))}
+          </div>
         </div>
-        <div className="space-y-1.5">
-          {COLUMNS.map(col => (
-            <MiniBar
-              key={col.id}
-              label={t('status.' + col.id)}
-              count={stats.byStatus[col.id] || 0}
-              total={stats.total}
-              color={statusColors[col.id]}
-            />
-          ))}
+
+        {/* Priority Distribution */}
+        <div>
+          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">Priority Distribution</h3>
+          <div className="h-3 rounded-full bg-surface-800 overflow-hidden flex mb-3">
+            {[0, 1, 2, 3].map(pri => {
+              const count = stats.byPriority[pri] || 0;
+              const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
+              if (pct === 0) return null;
+              return (
+                <div key={pri} className={`${priorityColors[pri]} transition-all duration-500`} style={{ width: `${pct}%` }} />
+              );
+            })}
+          </div>
+          <div className="space-y-1.5">
+            {[0, 1, 2, 3].map(pri => (
+              <MiniBar key={pri} label={priorityLabels[pri]} count={stats.byPriority[pri] || 0} total={stats.total} color={priorityColors[pri]} />
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Type Distribution */}
-      <div>
-        <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">{t('summary.typeDist')}</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {Object.entries(stats.byType).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
-            <div key={type} className="flex items-center gap-2 bg-surface-800/30 rounded-lg px-3 py-2">
-              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[type] || ''}`}>{type}</span>
-              <span className="text-sm font-semibold text-surface-200 ml-auto">{count}</span>
-            </div>
-          ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Type Distribution */}
+        <div>
+          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">{t('summary.typeDist')}</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(stats.byType).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+              <div key={type} className="flex items-center gap-2 bg-surface-800/30 rounded-lg px-3 py-2">
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[type] || ''}`}>{type}</span>
+                <span className="text-sm font-semibold text-surface-200 ml-auto">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Model Distribution */}
+        <div>
+          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">Model Usage</h3>
+          <div className="space-y-2">
+            {Object.entries(stats.byModel).sort((a, b) => b[1] - a[1]).map(([model, count]) => (
+              <div key={model} className="flex items-center gap-3 bg-surface-800/30 rounded-lg px-3 py-2.5">
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: MODEL_DOT_COLORS[model] || '#94a3b8' }} />
+                <span className="text-xs text-surface-300 capitalize flex-1">{model}</span>
+                <span className="text-sm font-semibold text-surface-200">{count}</span>
+                <span className="text-[10px] text-surface-500">{stats.total > 0 ? ((count / stats.total) * 100).toFixed(0) : 0}%</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Top Cost Tasks */}
+      {stats.topCost.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider flex items-center gap-1.5">
+            <Zap size={11} /> Top Cost Tasks
+          </h3>
+          <div className="space-y-1">
+            {stats.topCost.map((task) => (
+              <div key={task.id} className="flex items-center gap-3 bg-surface-800/30 rounded-lg px-3 py-2">
+                <span className="text-[10px] text-surface-500 font-mono w-8">{task.task_key || `#${task.id}`}</span>
+                <span className="text-xs text-surface-300 flex-1 truncate">{task.title}</span>
+                <span className="text-[10px] text-surface-500">{formatTokens((task.input_tokens || 0) + (task.output_tokens || 0))}</span>
+                <span className="text-xs font-semibold text-amber-400">${task.total_cost.toFixed(4)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {tasks.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-surface-500">

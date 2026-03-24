@@ -114,7 +114,6 @@ export default {
   // ─── Board ───
   'board.board': 'Pano',
   'board.list': 'Liste',
-  'board.timeline': 'Zaman \u00c7izelgesi',
   'board.summary': '\u00d6zet',
   'board.clearFilter': 'Filtreyi temizle',
   'board.noTasks': 'G\u00f6rev yok',
@@ -150,11 +149,6 @@ export default {
   'summary.statusDist': 'Durum Da\u011f\u0131l\u0131m\u0131',
   'summary.typeDist': 'T\u00fcr Da\u011f\u0131l\u0131m\u0131',
   'summary.noTasks': 'Bu projede g\u00f6rev yok',
-
-  // ─── Timeline View ───
-  'timeline.day': 'G\u00fcn',
-  'timeline.week': 'Hafta',
-  'timeline.month': 'Ay',
 
   // ─── Task Modal ───
   'taskModal.newTask': 'Yeni G\u00f6rev',
