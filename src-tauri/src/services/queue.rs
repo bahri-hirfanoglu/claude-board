@@ -1,8 +1,8 @@
 use tauri::{AppHandle, Emitter};
-use crate::db::{DbPool, tasks, projects, activity};
+use crate::db::{DbPool, tasks, projects, activity, dependencies};
 use crate::claude::runner;
 
-/// Try to start the next queued task(s) respecting concurrency, dependencies, and retry.
+/// Try to start the next queued task(s) respecting concurrency and DAG dependencies.
 pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
     let project = match projects::get_by_id(db, project_id) {
         Some(p) => p,
@@ -19,24 +19,17 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
         return;
     }
 
-    // Get all backlog tasks ordered by priority DESC, queue_position ASC, id ASC
-    let backlog = tasks::get_by_project(db, project_id)
-        .into_iter()
-        .filter(|t| t.status.as_deref() == Some("backlog"))
-        .collect::<Vec<_>>();
+    // Get backlog tasks with ALL dependencies met (DAG-aware)
+    let ready = dependencies::get_ready_tasks(db, project_id);
 
     let mut started = 0;
     let mcp_port: u16 = 4000;
 
-    for task in &backlog {
+    for task in &ready {
         if started >= slots {
             break;
         }
         if runner::is_running(task.id) {
-            continue;
-        }
-        // Check dependency
-        if !tasks::is_dependency_met(db, task) {
             continue;
         }
 
@@ -59,6 +52,11 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
     }
 }
 
+/// Called when a task completes — cascades to start newly unblocked dependents.
+pub fn on_task_completed(db: &DbPool, app: &AppHandle, project_id: i64, _task_id: i64) {
+    start_next_queued(db, app, project_id);
+}
+
 /// Handle task failure: retry if configured, otherwise leave as failed.
 pub fn handle_task_failure(db: &DbPool, app: &AppHandle, project_id: i64, task_id: i64) {
     let project = match projects::get_by_id(db, project_id) {
@@ -79,7 +77,6 @@ pub fn handle_task_failure(db: &DbPool, app: &AppHandle, project_id: i64, task_i
         activity::add(db, project_id, Some(task_id), "queue_retry",
             &format!("Retry {}/{}: {}", retry_count + 1, max_retries, task.title), None);
         app.emit("task:updated", &tasks::get_by_id(db, task_id)).ok();
-        // Try to start it again via queue
         start_next_queued(db, app, project_id);
     }
 }

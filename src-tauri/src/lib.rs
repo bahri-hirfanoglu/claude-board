@@ -128,6 +128,10 @@ pub fn run() {
             commands::tasks::get_task_detail,
             commands::tasks::reorder_queue,
             commands::tasks::set_task_dependency,
+            commands::tasks::add_task_dependency,
+            commands::tasks::remove_task_dependency,
+            commands::tasks::get_task_dependencies,
+            commands::tasks::get_execution_waves,
             commands::tasks::get_pipeline_status,
             // Stats
             commands::stats::get_project_stats,

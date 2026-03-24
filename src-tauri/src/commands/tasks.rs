@@ -214,15 +214,56 @@ pub fn reorder_queue(project_id: i64, task_ids: Vec<i64>) -> Vec<tq::Task> {
 pub fn set_task_dependency(app: AppHandle, id: i64, depends_on: Option<i64>) -> Result<tq::Task, String> {
     let db = db::get_db();
     let _task = tq::get_by_id(&db, id).ok_or("Task not found")?;
-    // Prevent circular dependency
     if let Some(dep_id) = depends_on {
         if dep_id == id { return Err("Task cannot depend on itself".into()); }
         if tq::get_by_id(&db, dep_id).is_none() { return Err("Dependency task not found".into()); }
     }
     tq::update_depends_on(&db, id, depends_on);
-    let updated = tq::get_by_id(&db, id).unwrap();
+    let updated = tq::get_by_id(&db, id).ok_or("Task not found")?;
     app.emit("task:updated", &updated).ok();
     Ok(updated)
+}
+
+#[tauri::command]
+pub fn add_task_dependency(app: AppHandle, task_id: i64, depends_on_id: i64) -> Result<serde_json::Value, String> {
+    let db = db::get_db();
+    tq::get_by_id(&db, task_id).ok_or("Task not found")?;
+    tq::get_by_id(&db, depends_on_id).ok_or("Parent task not found")?;
+    db::dependencies::add_dependency(&db, task_id, depends_on_id).map_err(|e| e.to_string())?;
+    let updated = tq::get_by_id(&db, task_id).ok_or("Task not found")?;
+    app.emit("task:updated", &updated).ok();
+    Ok(serde_json::json!({
+        "task": updated,
+        "parents": db::dependencies::get_parent_ids(&db, task_id),
+        "children": db::dependencies::get_child_ids(&db, task_id),
+    }))
+}
+
+#[tauri::command]
+pub fn remove_task_dependency(app: AppHandle, task_id: i64, depends_on_id: i64) -> Result<serde_json::Value, String> {
+    let db = db::get_db();
+    db::dependencies::remove_dependency(&db, task_id, depends_on_id);
+    let updated = tq::get_by_id(&db, task_id).ok_or("Task not found")?;
+    app.emit("task:updated", &updated).ok();
+    Ok(serde_json::json!({
+        "task": updated,
+        "parents": db::dependencies::get_parent_ids(&db, task_id),
+        "children": db::dependencies::get_child_ids(&db, task_id),
+    }))
+}
+
+#[tauri::command]
+pub fn get_task_dependencies(task_id: i64) -> serde_json::Value {
+    let db = db::get_db();
+    let parents = db::dependencies::get_parent_ids(&db, task_id);
+    let children = db::dependencies::get_child_ids(&db, task_id);
+    serde_json::json!({ "parents": parents, "children": children })
+}
+
+#[tauri::command]
+pub fn get_execution_waves(project_id: i64) -> Vec<Vec<tq::Task>> {
+    let db = db::get_db();
+    db::dependencies::get_execution_waves(&db, project_id)
 }
 
 #[tauri::command]
@@ -241,6 +282,8 @@ pub fn get_pipeline_status(project_id: i64) -> serde_json::Value {
         if durations.is_empty() { 0 } else { durations.iter().sum::<i64>() / durations.len() as i64 }
     };
 
+    let waves = db::dependencies::get_execution_waves(&db, project_id);
+
     serde_json::json!({
         "running": running.len(),
         "queued": queued.len(),
@@ -249,6 +292,7 @@ pub fn get_pipeline_status(project_id: i64) -> serde_json::Value {
         "totalCost": total_cost,
         "totalTokens": total_tokens,
         "avgDurationMs": avg_duration,
+        "waves": waves.len(),
         "tasks": {
             "running": running,
             "queued": queued,

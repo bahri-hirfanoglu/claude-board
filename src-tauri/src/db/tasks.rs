@@ -64,7 +64,7 @@ pub struct TaskRevision {
     pub created_at: Option<String>,
 }
 
-fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
+pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
     Ok(Task {
         id: row.get("id")?,
         project_id: row.get("project_id")?,

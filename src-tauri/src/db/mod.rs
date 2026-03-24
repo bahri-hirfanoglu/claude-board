@@ -9,6 +9,7 @@ pub mod attachments;
 pub mod webhooks;
 pub mod roles;
 pub mod auth;
+pub mod dependencies;
 
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
