@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3, Bot, LayoutGrid, List, Lightbulb, Download, X, Loader2 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { api } from '../../lib/api';
@@ -417,14 +417,16 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   const [suggestions, setSuggestions] = useState([]);
   const [groupBy, setGroupBy] = useState(() => localStorage.getItem('dashboard:groupBy') === 'true');
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard:viewMode') || 'grid');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [dashTab, setDashTab] = useState('projects');
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     loadSummary();
   }, [projects]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSummary = async () => {
+    if (!initialLoadDone.current) setLoading(true);
     try {
       const [data, grp, sug] = await Promise.all([
         api.getProjectsSummary(),
@@ -438,6 +440,7 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
       setSummary(projects.map(p => ({ ...p, total_tasks: 0, done_tasks: 0, active_tasks: 0, backlog_tasks: 0, testing_tasks: 0, total_tokens: 0, total_cost: 0, last_activity: null })));
     } finally {
       setLoading(false);
+      initialLoadDone.current = true;
     }
   };
 
