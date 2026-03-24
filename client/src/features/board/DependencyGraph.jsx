@@ -405,6 +405,7 @@ export default function DependencyGraph({
               {onStartTask && task.status === 'backlog' && isHovered && !isDragging && (
                 <g
                   transform={`translate(${NODE_W - 28}, 12)`}
+                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); onStartTask(task); }}
                   style={{ cursor: 'pointer' }}
                 >
