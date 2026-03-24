@@ -240,7 +240,35 @@ fn handle_process_lifecycle(
     ACTIVE_PROCESSES.lock().unwrap().insert(task_id, pid);
     STARTING_TASKS.lock().unwrap().remove(&task_id);
 
-    // Read stdout (safe: we configured Stdio::piped)
+    // CRITICAL: Drain stderr in background thread to prevent pipe buffer deadlock.
+    // On Windows, the pipe buffer is ~64KB. If stderr fills and nobody reads it,
+    // the child process blocks writing to stderr, while we block reading stdout → deadlock.
+    if let Some(stderr) = child.stderr.take() {
+        let app_err = app.clone();
+        std::thread::spawn(move || {
+            let reader = BufReader::new(stderr);
+            for line in reader.lines().flatten() {
+                let line = line.trim().to_string();
+                if line.is_empty() { continue; }
+                // Show stderr in task logs so users see rate limits, errors, warnings
+                let db = db::get_db();
+                let log_type = if line.contains("rate limit") || line.contains("Rate limit") || line.contains("429") {
+                    tasks::add_log(&db, task_id, &format!("Rate limited: {}", line), "error", None);
+                    app_err.emit("task:rate_limited", &serde_json::json!({"taskId": task_id, "message": &line})).ok();
+                    "error"
+                } else if line.contains("error") || line.contains("Error") || line.contains("ERROR") {
+                    tasks::add_log(&db, task_id, &line, "error", None);
+                    "error"
+                } else {
+                    tasks::add_log(&db, task_id, &line, "system", None);
+                    "system"
+                };
+                let _ = log_type; // used above
+            }
+        });
+    }
+
+    // Read stdout (safe: we configured Stdio::piped, stderr is drained above)
     if let Some(stdout) = child.stdout.take() {
         let reader = BufReader::new(stdout);
         for line in reader.lines().flatten() {
@@ -488,11 +516,23 @@ If there are issues that need fixing:
         ACTIVE_PROCESSES.lock().unwrap().insert(task_id, pid);
         STARTING_TASKS.lock().unwrap().remove(&task_id);
 
-        // Capture full output for verdict parsing
+        // wait_with_output drains both stdout and stderr to avoid pipe deadlock
         let output = child.wait_with_output();
         ACTIVE_PROCESSES.lock().unwrap().remove(&task_id);
 
         let db = db::get_db();
+
+        // Log stderr for visibility (rate limits, errors, warnings)
+        if let Ok(ref out) = output {
+            let stderr_text = String::from_utf8_lossy(&out.stderr);
+            for line in stderr_text.lines() {
+                let line = line.trim();
+                if !line.is_empty() {
+                    let lt = if line.contains("rate limit") || line.contains("429") { "error" } else { "system" };
+                    tasks::add_log(&db, task_id, &format!("Auto-test stderr: {}", line), lt, None);
+                }
+            }
+        }
 
         match output {
             Ok(out) if out.status.success() => {
