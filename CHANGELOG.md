@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.6.0] - 2026-03-24
+## [1.5.6] - 2026-03-24
 
 ### Features
 - **Multi-Agent Orchestration**: DAG-based task dependency system with cycle detection — tasks can have multiple parent dependencies, wave-based parallel execution
