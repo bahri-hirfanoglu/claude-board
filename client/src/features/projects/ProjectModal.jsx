@@ -104,10 +104,10 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         iconSeed: iconSeed,
         permissionMode: permissionMode,
         allowedTools: allowedTools.trim(),
-        autoQueue: autoQueue ? 1 : 0,
+        autoQueue: !!autoQueue,
         maxConcurrent: maxConcurrent,
-        autoBranch: autoBranch ? 1 : 0,
-        autoPr: autoPr ? 1 : 0,
+        autoBranch: !!autoBranch,
+        autoPr: !!autoPr,
         prBaseBranch: prBaseBranch.trim() || 'main',
       });
     } catch (err) {
