@@ -3,7 +3,7 @@
 use axum::{
     Router, Json,
     extract::{Path, Query},
-    routing::{get, post, put, patch, delete},
+    routing::{get, patch},
     http::StatusCode,
     response::IntoResponse,
 };

@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::Manager;
 
+#[allow(dead_code)]
 pub const DEFAULT_PORT: u16 = 4000;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -213,7 +213,7 @@ pub fn reorder_queue(project_id: i64, task_ids: Vec<i64>) -> Vec<tq::Task> {
 #[tauri::command]
 pub fn set_task_dependency(app: AppHandle, id: i64, depends_on: Option<i64>) -> Result<tq::Task, String> {
     let db = db::get_db();
-    let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
+    let _task = tq::get_by_id(&db, id).ok_or("Task not found")?;
     // Prevent circular dependency
     if let Some(dep_id) = depends_on {
         if dep_id == id { return Err("Task cannot depend on itself".into()); }

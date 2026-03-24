@@ -43,7 +43,7 @@ pub fn start_planning(
 
     let plan_id_clone = plan_id.clone();
     let working_dir = project.working_dir.clone();
-    let topic_clone = topic.clone();
+    let _topic_clone = topic.clone();
 
     app.emit("plan:started", &serde_json::json!({
         "projectId": project_id, "planId": &plan_id, "topic": &topic, "model": &model, "effort": &effort

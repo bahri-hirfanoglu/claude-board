@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 mod claude;
 mod commands;
 mod config;
