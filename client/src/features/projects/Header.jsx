@@ -24,8 +24,6 @@ import {
   Lightbulb,
   Loader2,
   Zap,
-  Terminal,
-  Wand2,
 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from '../../lib/constants';
@@ -70,8 +68,6 @@ const SETTINGS_ITEMS = [
   { key: 'templates', icon: Layers, labelKey: 'header.templates', handler: 'onEditTemplates' },
   { key: 'roles', icon: Shield, labelKey: 'header.roles', handler: 'onEditRoles' },
   { key: 'webhooks', icon: Bell, labelKey: 'header.webhooks', handler: 'onEditWebhooks' },
-  { key: 'commands', icon: Terminal, labelKey: 'header.commands', handler: 'onEditCommands' },
-  { key: 'skills', icon: Wand2, labelKey: 'header.skills', handler: 'onEditSkills' },
 ];
 
 export default function Header({
@@ -97,8 +93,6 @@ export default function Header({
   onEditTemplates,
   onEditWebhooks,
   onEditRoles,
-  onEditCommands,
-  onEditSkills,
   onOpenPlanning,
   tasks,
 }) {
@@ -106,7 +100,7 @@ export default function Header({
   const [showProjectMenu, setShowProjectMenu] = useState(false);
   const menuRef = useRef(null);
 
-  const handlers = { onEditProject, onEditClaudeMd, onEditSnippets, onEditTemplates, onEditRoles, onEditWebhooks, onEditCommands, onEditSkills };
+  const handlers = { onEditProject, onEditClaudeMd, onEditSnippets, onEditTemplates, onEditRoles, onEditWebhooks };
 
   useEffect(() => {
     if (!showProjectMenu) return;
