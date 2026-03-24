@@ -51,6 +51,7 @@ pub fn start_planning(
     activity::add(&db, project_id, None, "plan_started", &format!("Planning started: {}", topic.trim()), None);
 
     std::thread::spawn(move || {
+        log::info!("Planning: spawning claude in {}", &working_dir);
         let mut cmd = Command::new("claude");
         cmd.args(&args)
             .current_dir(&working_dir)
@@ -69,6 +70,25 @@ pub fn start_planning(
         };
 
         ACTIVE_PLANS.lock().unwrap().insert(project_id, child.id());
+        log::info!("Planning: claude spawned, pid={}", child.id());
+
+        // Drain stderr in background to prevent buffer deadlock
+        let stderr = child.stderr.take().unwrap();
+        let app_err = app.clone();
+        let pid_clone = plan_id_clone.clone();
+        std::thread::spawn(move || {
+            let reader = BufReader::new(stderr);
+            for line in reader.lines().flatten() {
+                let line = line.trim().to_string();
+                if line.is_empty() { continue; }
+                log::warn!("Planning stderr: {}", &line);
+                app_err.emit("plan:log", &serde_json::json!({
+                    "projectId": project_id, "planId": &pid_clone,
+                    "type": "error", "message": line
+                })).ok();
+            }
+        });
+
         let stdout = child.stdout.take().unwrap();
         let reader = BufReader::new(stdout);
         let mut full_text = String::new();
