@@ -93,7 +93,11 @@ pub fn delete_project(app: AppHandle, id: i64) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn get_project_groups() -> Vec<serde_json::Value> {
+pub async fn get_project_groups() -> Vec<serde_json::Value> {
+  tauri::async_runtime::spawn_blocking(get_project_groups_sync).await.unwrap_or_default()
+}
+
+fn get_project_groups_sync() -> Vec<serde_json::Value> {
     let db = db::get_db();
     let projects = pq::get_all(&db);
     let mut groups: std::collections::BTreeMap<String, Vec<serde_json::Value>> = std::collections::BTreeMap::new();
@@ -128,13 +132,17 @@ fn detect_namespace(working_dir: &str) -> String {
 }
 
 fn git_namespace(working_dir: &str) -> Option<String> {
-    let output = std::process::Command::new("git")
-        .args(["remote", "get-url", "origin"])
+    let mut cmd = std::process::Command::new("git");
+    cmd.args(["remote", "get-url", "origin"])
         .current_dir(working_dir)
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
-        .output()
-        .ok()?;
+        .stderr(std::process::Stdio::null());
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    let output = cmd.output().ok()?;
     if !output.status.success() { return None; }
     let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
     parse_git_namespace(&url)

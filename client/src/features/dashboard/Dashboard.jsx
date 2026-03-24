@@ -157,10 +157,11 @@ function normalizeModelName(raw) {
 }
 
 function ClaudeUsageCard({ t }) {
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(usageCache);
 
   useEffect(() => {
-    api.getClaudeUsage().then(setData).catch(err => console.error('Claude usage fetch failed:', err));
+    if (usageCache) { setData(usageCache); return; }
+    api.getClaudeUsage().then(d => { usageCache = d; setData(d); }).catch(() => {});
   }, []);
 
   if (!data?.usage) return null;
@@ -380,6 +381,7 @@ let summaryCache = null;
 let groupsCache = null;
 let suggestionsCache = null;
 let suggestionsLoaded = false;
+let usageCache = null;
 
 function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
   return (
