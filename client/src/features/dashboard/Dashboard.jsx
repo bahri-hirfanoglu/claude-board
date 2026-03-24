@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3, Bot, LayoutGrid, List, Lightbulb, Download, X, Loader2 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { api } from '../../lib/api';
@@ -375,6 +375,10 @@ function SuggestionBanner({ suggestions, setSuggestions, t }) {
   );
 }
 
+// Cache outside component so it survives remounts
+let summaryCache = null;
+let groupsCache = null;
+
 function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
   return (
     <div className="flex items-center justify-between gap-4 mb-8">
@@ -412,35 +416,35 @@ function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
 
 export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   const { t } = useTranslation();
-  const [summary, setSummary] = useState([]);
-  const [groups, setGroups] = useState([]);
+  const [summary, setSummary] = useState(summaryCache || []);
+  const [groups, setGroups] = useState(groupsCache || []);
   const [suggestions, setSuggestions] = useState([]);
   const [groupBy, setGroupBy] = useState(() => localStorage.getItem('dashboard:groupBy') === 'true');
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard:viewMode') || 'grid');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!summaryCache);
   const [dashTab, setDashTab] = useState('projects');
-  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     loadSummary();
   }, [projects]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSummary = async () => {
-    if (!initialLoadDone.current) setLoading(true);
+    if (!summaryCache) setLoading(true);
     try {
       const [data, grp, sug] = await Promise.all([
         api.getProjectsSummary(),
         IS_TAURI ? api.getProjectGroups().catch(() => []) : Promise.resolve([]),
         IS_TAURI ? api.getSuggestions().catch(() => []) : Promise.resolve([]),
       ]);
+      summaryCache = data;
+      groupsCache = Array.isArray(grp) ? grp : [];
       setSummary(data);
-      setGroups(Array.isArray(grp) ? grp : []);
+      setGroups(groupsCache);
       setSuggestions(Array.isArray(sug) ? sug : []);
     } catch {
       setSummary(projects.map(p => ({ ...p, total_tasks: 0, done_tasks: 0, active_tasks: 0, backlog_tasks: 0, testing_tasks: 0, total_tokens: 0, total_cost: 0, last_activity: null })));
     } finally {
       setLoading(false);
-      initialLoadDone.current = true;
     }
   };
 
