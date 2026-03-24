@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3, Bot, LayoutGrid, List } from 'lucide-react';
+import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3, Bot, LayoutGrid, List, Lightbulb, Download, X, Loader2 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { api } from '../../lib/api';
 import { formatTokens, formatTimeAgo as timeAgo } from '../../lib/formatters';
@@ -325,6 +325,56 @@ function ClaudeUsageCard({ t }) {
   );
 }
 
+function SuggestionBanner({ suggestions, setSuggestions, t }) {
+  const [installing, setInstalling] = useState(null);
+
+  const handleAction = async (s) => {
+    if (s.action === 'install_plugin') {
+      setInstalling(s.id);
+      try {
+        await api.installPlugin(s.actionArgs);
+        setSuggestions(prev => prev.filter(x => x.id !== s.id));
+      } catch (e) { console.error(e); }
+      setInstalling(null);
+    } else if (s.action === 'navigate') {
+      // Could navigate to claude manager tab
+      setSuggestions(prev => prev.filter(x => x.id !== s.id));
+    }
+  };
+
+  const dismiss = (id) => setSuggestions(prev => prev.filter(x => x.id !== id));
+
+  return (
+    <div className="space-y-2 mb-6">
+      <div className="flex items-center gap-1.5 mb-1">
+        <Lightbulb size={13} className="text-amber-400" />
+        <span className="text-xs font-medium text-surface-400">{t('dashboard.suggestions')}</span>
+      </div>
+      {suggestions.map(s => (
+        <div key={s.id} className="flex items-center gap-3 bg-surface-800/60 border border-surface-700/30 rounded-lg px-4 py-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${s.priority === 'high' ? 'bg-claude/15' : 'bg-surface-700/50'}`}>
+            {s.type === 'plugin' ? <Download size={14} className="text-claude" /> : <Lightbulb size={14} className="text-amber-400" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-surface-200">{s.title}</p>
+            <p className="text-[11px] text-surface-500 mt-0.5">{s.description}</p>
+          </div>
+          {s.action === 'install_plugin' && (
+            <button onClick={() => handleAction(s)} disabled={installing === s.id}
+              className="px-3 py-1.5 text-xs font-medium bg-claude hover:bg-claude-light rounded-lg disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0">
+              {installing === s.id ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+              {t('dashboard.install')}
+            </button>
+          )}
+          <button onClick={() => dismiss(s.id)} className="p-1 text-surface-600 hover:text-surface-400 flex-shrink-0">
+            <X size={14} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
   return (
     <div className="flex items-center justify-between gap-4 mb-8">
@@ -364,6 +414,7 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   const { t } = useTranslation();
   const [summary, setSummary] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [groupBy, setGroupBy] = useState(() => localStorage.getItem('dashboard:groupBy') === 'true');
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard:viewMode') || 'grid');
   const [loading, setLoading] = useState(true);
@@ -375,12 +426,14 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
 
   const loadSummary = async () => {
     try {
-      const [data, grp] = await Promise.all([
+      const [data, grp, sug] = await Promise.all([
         api.getProjectsSummary(),
         IS_TAURI ? api.getProjectGroups().catch(() => []) : Promise.resolve([]),
+        IS_TAURI ? api.getSuggestions().catch(() => []) : Promise.resolve([]),
       ]);
       setSummary(data);
       setGroups(Array.isArray(grp) ? grp : []);
+      setSuggestions(Array.isArray(sug) ? sug : []);
     } catch {
       setSummary(projects.map(p => ({ ...p, total_tasks: 0, done_tasks: 0, active_tasks: 0, backlog_tasks: 0, testing_tasks: 0, total_tokens: 0, total_cost: 0, last_activity: null })));
     } finally {
@@ -443,6 +496,11 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
 
         {/* Claude Usage */}
         {totalProjects > 0 && <ClaudeUsageCard t={t} />}
+
+        {/* Suggestions */}
+        {suggestions.length > 0 && (
+          <SuggestionBanner suggestions={suggestions} setSuggestions={setSuggestions} t={t} />
+        )}
 
         {/* Project Grid */}
         {loading ? (

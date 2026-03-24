@@ -377,6 +377,8 @@ export default {
   'header.scanning': 'Taran\u0131yor...',
   'header.scanned': 'Tamam',
   'header.scanCodebase': 'Kod taban\u0131n\u0131 tara ve CLAUDE.md g\u00fcncelle',
+  'dashboard.suggestions': '\u00d6neriler',
+  'dashboard.install': 'Y\u00fckle',
   'header.scanOverwrite': 'CLAUDE.md \u00fczerine yaz',
   'header.scanOverwriteDesc': 'Mevcut i\u00e7eri\u011fi yeni analizle de\u011fi\u015ftir',
   'header.scanAppend': 'CLAUDE.md sonuna ekle',

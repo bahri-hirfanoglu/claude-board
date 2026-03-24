@@ -377,6 +377,8 @@ export default {
   'header.scanning': 'Scanning...',
   'header.scanned': 'Done',
   'header.scanCodebase': 'Scan codebase and update CLAUDE.md',
+  'dashboard.suggestions': 'Suggestions',
+  'dashboard.install': 'Install',
   'header.scanOverwrite': 'Overwrite CLAUDE.md',
   'header.scanOverwriteDesc': 'Replace existing content with fresh analysis',
   'header.scanAppend': 'Append to CLAUDE.md',
