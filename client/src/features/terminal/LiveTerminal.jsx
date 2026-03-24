@@ -486,7 +486,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
       if (paused) {
         pausedLogsRef.current.push(entry);
       } else {
-        setLogs(prev => [...prev, entry]);
+        setLogs(prev => prev.length > 2000 ? [...prev.slice(-1500), entry] : [...prev, entry]);
       }
     };
     if (IS_TAURI) {
@@ -499,7 +499,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
 
   const resumeLogs = useCallback(() => {
     setPaused(false);
-    setLogs(prev => [...prev, ...pausedLogsRef.current]);
+    setLogs(prev => { const merged = [...prev, ...pausedLogsRef.current]; return merged.length > 2000 ? merged.slice(-1500) : merged; });
     pausedLogsRef.current = [];
   }, []);
 
