@@ -377,6 +377,10 @@ export default {
   'header.scanning': 'Scanning...',
   'header.scanned': 'Done',
   'header.scanCodebase': 'Scan codebase and update CLAUDE.md',
+  'header.scanOverwrite': 'Overwrite CLAUDE.md',
+  'header.scanOverwriteDesc': 'Replace existing content with fresh analysis',
+  'header.scanAppend': 'Append to CLAUDE.md',
+  'header.scanAppendDesc': 'Add analysis to the end of existing content',
   'dashboard.groupByNamespace': 'Group by namespace',
   'dashboard.groups': 'groups',
 

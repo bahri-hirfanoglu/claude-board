@@ -169,7 +169,7 @@ export const api = IS_TAURI
       saveHooks: (hooks) => tauriCall('save_hooks', { hooks }),
       listSessions: () => tauriCall('list_sessions'),
       getPermissionRules: () => tauriCall('get_permission_rules'),
-      scanCodebase: (projectId) => tauriCall('scan_codebase', { projectId }),
+      scanCodebase: (projectId, mode = 'overwrite') => tauriCall('scan_codebase', { projectId, mode }),
       getSuggestions: () => tauriCall('get_suggestions'),
     }
   : {

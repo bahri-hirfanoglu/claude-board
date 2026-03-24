@@ -288,7 +288,7 @@ pub async fn get_permission_rules() -> Result<Value, String> {
 
 // ─── Scan Codebase ───
 #[tauri::command]
-pub async fn scan_codebase(app: tauri::AppHandle, project_id: i64) -> Result<String, String> {
+pub async fn scan_codebase(app: tauri::AppHandle, project_id: i64, mode: Option<String>) -> Result<String, String> {
     let db = crate::db::get_db();
     let project = crate::db::projects::get_by_id(&db, project_id).ok_or("Project not found")?;
     let working_dir = project.working_dir.clone();
@@ -313,12 +313,17 @@ pub async fn scan_codebase(app: tauri::AppHandle, project_id: i64) -> Result<Str
     }).await.map_err(|e| e.to_string())??;
 
     // Write to CLAUDE.md
+    let write_mode = mode.unwrap_or_else(|| "overwrite".into());
     let claude_md_path = std::path::Path::new(&project.working_dir).join("CLAUDE.md");
-    let existing = std::fs::read_to_string(&claude_md_path).unwrap_or_default();
-    let new_content = if existing.is_empty() {
-        format!("# Project Overview\n\n{}", summary)
+    let new_content = if write_mode == "append" {
+        let existing = std::fs::read_to_string(&claude_md_path).unwrap_or_default();
+        if existing.is_empty() {
+            format!("# Project Overview\n\n{}", summary)
+        } else {
+            format!("{}\n\n---\n\n# Codebase Analysis (Auto-generated)\n\n{}", existing.trim(), summary)
+        }
     } else {
-        format!("{}\n\n---\n\n# Codebase Analysis (Auto-generated)\n\n{}", existing.trim(), summary)
+        format!("# Project Overview\n\n{}", summary)
     };
     std::fs::write(&claude_md_path, &new_content).map_err(|e| e.to_string())?;
 
