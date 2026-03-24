@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { LayoutGrid, List, BarChart3, X, GitBranch } from 'lucide-react';
+import { LayoutGrid, List, BarChart3, X, GitBranch, Workflow } from 'lucide-react';
 import Column from './Column';
 import ListView from './ListView';
 import SummaryView from './SummaryView';
 import PipelineView from './PipelineView';
+import OrchestrationView from './OrchestrationView';
 import { COLUMNS, MODELS, MODEL_COLORS, MODEL_DOT_COLORS, MODEL_BG_ACTIVE } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 
@@ -12,11 +13,12 @@ const VIEWS = [
   { id: 'list', labelKey: 'board.list', icon: List },
   { id: 'summary', labelKey: 'board.summary', icon: BarChart3 },
   { id: 'pipeline', labelKey: 'board.pipeline', icon: GitBranch },
+  { id: 'orchestration', labelKey: 'board.orchestration', icon: Workflow },
 ];
 
 const MODEL_DOT = MODEL_DOT_COLORS;
 
-export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, onDeleteTask, onReviewTask, onViewDetail }) {
+export default function Board({ tasks, projectId, onStatusChange, onViewLogs, onEditTask, onDeleteTask, onReviewTask, onViewDetail }) {
   const { t } = useTranslation();
   const [draggedTask, setDraggedTask] = useState(null);
   const [mobileTab, setMobileTab] = useState('backlog');
@@ -207,6 +209,18 @@ export default function Board({ tasks, onStatusChange, onViewLogs, onEditTask, o
             tasks={filteredTasks}
             onStatusChange={onStatusChange}
             onViewLogs={onViewLogs}
+            onViewDetail={onViewDetail}
+          />
+        </div>
+      )}
+
+      {viewMode === 'orchestration' && (
+        <div className="flex-1 overflow-hidden">
+          <OrchestrationView
+            tasks={filteredTasks}
+            projectId={projectId}
+            onViewLogs={onViewLogs}
+            onStatusChange={onStatusChange}
             onViewDetail={onViewDetail}
           />
         </div>

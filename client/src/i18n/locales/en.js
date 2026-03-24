@@ -388,6 +388,10 @@ export default {
 
   // ─── Pipeline ───
   'board.pipeline': 'Pipeline',
+  'board.orchestration': 'Orchestration',
+  'taskModal.dependencies': 'Dependencies',
+  'taskModal.addDependency': 'Add dependency...',
+  'taskModal.blocks': 'blocks',
   'pipeline.running': 'Running',
   'pipeline.queued': 'Queued',
   'pipeline.completed': 'Completed',

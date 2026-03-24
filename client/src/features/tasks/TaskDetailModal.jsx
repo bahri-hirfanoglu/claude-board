@@ -23,12 +23,14 @@ import { api } from '../../lib/api';
 import { formatTokens, formatDuration } from '../../lib/formatters';
 import { COLUMNS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
+import SessionReplay from '../replay/SessionReplay';
 
 export default function TaskDetailModal({ task, onClose, onStatusChange }) {
   const { t } = useTranslation();
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [showReplay, setShowReplay] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(task.status);
   const statusMenuRef = useRef(null);
 
@@ -141,7 +143,15 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
               </div>
             )}
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 ml-3 flex-shrink-0">
+          <button
+            onClick={() => setShowReplay(!showReplay)}
+            className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-colors ml-auto flex-shrink-0 ${
+              showReplay ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800'
+            }`}
+          >
+            <Activity size={11} className="inline mr-1" />Session Replay
+          </button>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 ml-2 flex-shrink-0">
             <X size={16} />
           </button>
         </div>
@@ -420,6 +430,13 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
               )}
               {d.rate_limit_hits > 0 && <span className="text-amber-500">{d.rate_limit_hits} rate limit hits</span>}
             </div>
+          </div>
+        )}
+
+        {/* Session Replay */}
+        {showReplay && (
+          <div className="border-t border-surface-800 h-80">
+            <SessionReplay taskId={task.id} />
           </div>
         )}
       </div>

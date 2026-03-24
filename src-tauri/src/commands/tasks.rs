@@ -117,8 +117,17 @@ pub fn delete_task(app: AppHandle, id: i64) -> Result<(), String> {
     let db = db::get_db();
     let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
     if runner::is_running(id) { runner::stop(id, &db, &app); }
+    // Notify children that their parent is being removed
+    let children = db::dependencies::get_child_ids(&db, id);
+    db::dependencies::remove_all_for_task(&db, id);
     tq::delete(&db, id);
     app.emit("task:deleted", &serde_json::json!({"id": task.id})).ok();
+    // Emit updates for children so they refresh dependency state
+    for child_id in children {
+        if let Some(child) = tq::get_by_id(&db, child_id) {
+            app.emit("task:updated", &child).ok();
+        }
+    }
     Ok(())
 }
 
@@ -180,6 +189,28 @@ pub fn get_revisions(id: i64) -> Vec<tq::TaskRevision> {
 }
 
 #[tauri::command]
+#[allow(non_snake_case)]
+pub fn get_task_events(taskId: i64, limit: Option<i64>) -> Vec<serde_json::Value> {
+    let db = db::get_db();
+    let conn = db.lock();
+    let lim = limit.unwrap_or(500);
+    let mut stmt = conn.prepare(
+        "SELECT id, event_type, event_data, timestamp_ms FROM task_events
+         WHERE task_id=?1 ORDER BY timestamp_ms ASC LIMIT ?2"
+    ).unwrap();
+    stmt.query_map(rusqlite::params![taskId, lim], |r| {
+        let data_str: String = r.get(2)?;
+        let data: serde_json::Value = serde_json::from_str(&data_str).unwrap_or(serde_json::json!({}));
+        Ok(serde_json::json!({
+            "id": r.get::<_, i64>(0)?,
+            "eventType": r.get::<_, String>(1)?,
+            "data": data,
+            "timestampMs": r.get::<_, i64>(3)?,
+        }))
+    }).unwrap().flatten().collect()
+}
+
+#[tauri::command]
 pub fn get_task_detail(id: i64) -> Result<serde_json::Value, String> {
     let db = db::get_db();
     let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
@@ -214,15 +245,65 @@ pub fn reorder_queue(project_id: i64, task_ids: Vec<i64>) -> Vec<tq::Task> {
 pub fn set_task_dependency(app: AppHandle, id: i64, depends_on: Option<i64>) -> Result<tq::Task, String> {
     let db = db::get_db();
     let _task = tq::get_by_id(&db, id).ok_or("Task not found")?;
-    // Prevent circular dependency
     if let Some(dep_id) = depends_on {
         if dep_id == id { return Err("Task cannot depend on itself".into()); }
         if tq::get_by_id(&db, dep_id).is_none() { return Err("Dependency task not found".into()); }
     }
     tq::update_depends_on(&db, id, depends_on);
-    let updated = tq::get_by_id(&db, id).unwrap();
+    let updated = tq::get_by_id(&db, id).ok_or("Task not found")?;
     app.emit("task:updated", &updated).ok();
     Ok(updated)
+}
+
+#[tauri::command]
+#[allow(non_snake_case)]
+pub fn add_task_dependency(app: AppHandle, taskId: i64, dependsOnId: i64) -> Result<serde_json::Value, String> {
+    let db = db::get_db();
+    tq::get_by_id(&db, taskId).ok_or("Task not found")?;
+    tq::get_by_id(&db, dependsOnId).ok_or("Parent task not found")?;
+    db::dependencies::add_dependency(&db, taskId, dependsOnId).map_err(|e| e.to_string())?;
+    let updated = tq::get_by_id(&db, taskId).ok_or("Task not found")?;
+    app.emit("task:updated", &updated).ok();
+    Ok(serde_json::json!({
+        "task": updated,
+        "parents": db::dependencies::get_parent_ids(&db, taskId),
+        "children": db::dependencies::get_child_ids(&db, taskId),
+    }))
+}
+
+#[tauri::command]
+#[allow(non_snake_case)]
+pub fn remove_task_dependency(app: AppHandle, taskId: i64, dependsOnId: i64) -> Result<serde_json::Value, String> {
+    let db = db::get_db();
+    db::dependencies::remove_dependency(&db, taskId, dependsOnId);
+    let updated = tq::get_by_id(&db, taskId).ok_or("Task not found")?;
+    app.emit("task:updated", &updated).ok();
+    Ok(serde_json::json!({
+        "task": updated,
+        "parents": db::dependencies::get_parent_ids(&db, taskId),
+        "children": db::dependencies::get_child_ids(&db, taskId),
+    }))
+}
+
+#[tauri::command]
+#[allow(non_snake_case)]
+pub fn get_task_dependencies(taskId: i64) -> serde_json::Value {
+    let db = db::get_db();
+    let parents = db::dependencies::get_parent_ids(&db, taskId);
+    let children = db::dependencies::get_child_ids(&db, taskId);
+    serde_json::json!({ "parents": parents, "children": children })
+}
+
+#[tauri::command]
+pub fn get_execution_waves(project_id: i64) -> Vec<Vec<tq::Task>> {
+    let db = db::get_db();
+    db::dependencies::get_execution_waves(&db, project_id)
+}
+
+#[tauri::command]
+pub fn get_dependency_graph(project_id: i64) -> serde_json::Value {
+    let db = db::get_db();
+    db::dependencies::get_graph_data(&db, project_id)
 }
 
 #[tauri::command]
@@ -241,6 +322,8 @@ pub fn get_pipeline_status(project_id: i64) -> serde_json::Value {
         if durations.is_empty() { 0 } else { durations.iter().sum::<i64>() / durations.len() as i64 }
     };
 
+    let waves = db::dependencies::get_execution_waves(&db, project_id);
+
     serde_json::json!({
         "running": running.len(),
         "queued": queued.len(),
@@ -249,6 +332,7 @@ pub fn get_pipeline_status(project_id: i64) -> serde_json::Value {
         "totalCost": total_cost,
         "totalTokens": total_tokens,
         "avgDurationMs": avg_duration,
+        "waves": waves.len(),
         "tasks": {
             "running": running,
             "queued": queued,

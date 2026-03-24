@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.6.0] - 2026-03-24
+
+### Features
+- **Multi-Agent Orchestration**: DAG-based task dependency system with cycle detection — tasks can have multiple parent dependencies, wave-based parallel execution
+- **Orchestration View**: New board view mode with interactive SVG dependency graph, live agent cards showing real-time token/cost/elapsed, wave progress bar with pipeline stats
+- **Dependency Editor**: Visual dependency management in task modal — searchable task picker, parent/child cards with status indicators, cycle detection warnings
+- **Session Replay**: Timeline-based replay of Claude's actions during task execution — tool calls, results, usage events with playback controls and scrubber
+- **Smart Queue Cascade**: When a task completes, all newly unblocked dependent tasks auto-start respecting `max_concurrent` limit
+- **Planning with DAG**: Planning mode now generates dependency relationships between tasks — approved plans create tasks with proper DAG structure
+- **Dependency Graph API**: New commands `addDependency`, `removeDependency`, `getTaskDependencies`, `getExecutionWaves`, `getDependencyGraph`
+
+### Improvements
+- **Pipeline View**: Now shows multiple parent dependencies per task instead of single `depends_on`
+- **Task Delete Cascade**: Deleting a task emits update events for dependent children
+- **Dependency Graph Layout**: Adaptive spacing for wide fan-out, orphan task handling, disconnected component support
+- **Session Event Recording**: Records tool calls, tool results, final usage, system events, and rate limit events
+- **Voice Agent Language Sync**: Auto-detects UI language for initial voice language, fixed stale closure bug in language switching
+
+### Fixes
+- **Voice assistant temporarily disabled** pending TTS voice selection fix on Windows/WebView2
+
 ## [1.5.5] - 2026-03-24
 
 ### Refactoring

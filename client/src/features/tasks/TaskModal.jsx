@@ -3,6 +3,8 @@ import { X, Sparkles, ChevronDown, ChevronRight, Settings2, Mic, MicOff } from '
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { TASK_TYPE_OPTIONS, PRIORITY_OPTIONS, MODEL_OPTIONS, EFFORT_OPTIONS } from '../../lib/constants';
+import { api } from '../../lib/api';
+import { IS_TAURI } from '../../lib/tauriEvents';
 import TemplateSelector from './TemplateSelector';
 import TaskOptionsPanel from './TaskOptionsPanel';
 import TokenEstimate from './TokenEstimate';
@@ -12,7 +14,7 @@ const PRIORITIES = PRIORITY_OPTIONS;
 const MODELS = MODEL_OPTIONS;
 const EFFORTS = EFFORT_OPTIONS;
 
-export default function TaskModal({ task, onSubmit, onClose, templates = [], roles = [] }) {
+export default function TaskModal({ task, onSubmit, onClose, templates = [], roles = [], allTasks = [] }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
@@ -29,10 +31,19 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
   const [showOptions, setShowOptions] = useState(
     !!(task && (task.acceptance_criteria || task.role_id || task.priority > 0)),
   );
+  const [dependencies, setDependencies] = useState({ parents: [], children: [] });
   const titleRef = useRef(null);
   const typeMenuRef = useRef(null);
 
   const isCreating = !task;
+
+  // Load dependencies when editing existing task
+  useEffect(() => {
+    if (!task?.id || !IS_TAURI) return;
+    api.getTaskDependencies(task.id)
+      .then(deps => setDependencies(deps))
+      .catch(() => {});
+  }, [task?.id]);
 
   // Voice input
   const titleVoice = useVoiceInput({
@@ -110,6 +121,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
         thinkingEffort,
         roleId: roleId || null,
         _files: attachedFiles.length > 0 ? attachedFiles : undefined,
+        _pendingDeps: isCreating ? dependencies.parents : undefined,
       });
     } catch (err) {
       console.error(err);
@@ -332,6 +344,33 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                 onAcceptanceChange={setAcceptanceCriteria}
                 attachedFiles={attachedFiles}
                 onFilesChange={setAttachedFiles}
+                taskId={task?.id || 'new'}
+                allTasks={allTasks.filter(t => t.id !== task?.id)}
+                dependencies={dependencies}
+                onAddDependency={(_, depId) => {
+                  if (task?.id) {
+                    api.addDependency(task.id, depId)
+                      .then(() => api.getTaskDependencies(task.id).then(setDependencies))
+                      .catch(() => {});
+                  } else {
+                    setDependencies(prev => ({
+                      ...prev,
+                      parents: [...prev.parents, depId],
+                    }));
+                  }
+                }}
+                onRemoveDependency={(_, depId) => {
+                  if (task?.id) {
+                    api.removeDependency(task.id, depId)
+                      .then(() => api.getTaskDependencies(task.id).then(setDependencies))
+                      .catch(() => {});
+                  } else {
+                    setDependencies(prev => ({
+                      ...prev,
+                      parents: prev.parents.filter(id => id !== depId),
+                    }));
+                  }
+                }}
               />
             )}
           </div>

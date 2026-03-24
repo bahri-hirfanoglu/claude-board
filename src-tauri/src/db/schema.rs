@@ -118,6 +118,25 @@ pub fn create_tables(conn: &Connection) {
             id INTEGER PRIMARY KEY CHECK (id = 1),
             api_key_hash TEXT, enabled INTEGER DEFAULT 0
         );
+
+        CREATE TABLE IF NOT EXISTS task_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL,
+            event_type TEXT NOT NULL,
+            event_data TEXT NOT NULL DEFAULT '{}',
+            timestamp_ms INTEGER NOT NULL,
+            FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS task_dependencies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL,
+            depends_on_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+            FOREIGN KEY (depends_on_id) REFERENCES tasks(id) ON DELETE CASCADE,
+            UNIQUE(task_id, depends_on_id)
+        );
         ",
     )
     .expect("Failed to create tables");
@@ -138,6 +157,9 @@ pub fn create_tables(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_prompt_templates_project ON prompt_templates(project_id)",
         "CREATE INDEX IF NOT EXISTS idx_webhooks_project ON webhooks(project_id)",
         "CREATE INDEX IF NOT EXISTS idx_roles_project ON roles(project_id)",
+        "CREATE INDEX IF NOT EXISTS idx_task_events_task ON task_events(task_id)",
+        "CREATE INDEX IF NOT EXISTS idx_task_deps_task ON task_dependencies(task_id)",
+        "CREATE INDEX IF NOT EXISTS idx_task_deps_parent ON task_dependencies(depends_on_id)",
     ];
     for idx in indexes {
         conn.execute_batch(idx).ok();
@@ -208,6 +230,12 @@ pub fn run_migrations(conn: &Connection) {
 
     // Backfill empty model fields
     conn.execute("UPDATE tasks SET model='sonnet' WHERE model IS NULL OR model=''", []).ok();
+
+    // Migrate depends_on → task_dependencies table
+    conn.execute_batch(
+        "INSERT OR IGNORE INTO task_dependencies (task_id, depends_on_id)
+         SELECT id, depends_on FROM tasks WHERE depends_on IS NOT NULL"
+    ).ok();
 
     // Generate project_key for projects that don't have one
     backfill_project_keys(conn);

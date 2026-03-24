@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Play, Clock, CheckCircle2, AlertCircle, Loader2, ArrowRight,
   GripVertical, Link2, Unlink, RotateCcw, Zap, Timer, Coins,
   ChevronDown, ChevronRight, ChevronUp,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { IS_TAURI } from '../../lib/tauriEvents';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { TYPE_COLORS } from '../../lib/constants';
 import { formatTokens } from '../../lib/formatters';
@@ -18,14 +19,36 @@ const STATUS_CONFIG = {
 
 export default function PipelineView({ tasks, onStatusChange, onViewLogs, onViewDetail }) {
   const { t } = useTranslation();
+  const [depMap, setDepMap] = useState({});
+
+  // Load all dependency data
+  useEffect(() => {
+    if (!IS_TAURI || tasks.length === 0) return;
+    const loadDeps = async () => {
+      const map = {};
+      for (const task of tasks) {
+        try {
+          const deps = await api.getTaskDependencies(task.id);
+          if (deps.parents?.length > 0) map[task.id] = deps.parents;
+        } catch {}
+      }
+      setDepMap(map);
+    };
+    loadDeps();
+  }, [tasks]);
+
+  const enrichedTasks = useMemo(() =>
+    tasks.map(t => ({ ...t, _parentIds: depMap[t.id] || [] })),
+    [tasks, depMap]
+  );
   const [dragId, setDragId] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [localQueue, setLocalQueue] = useState(null);
 
-  const running = tasks.filter(t => t.status === 'in_progress' || t.is_running);
-  const queued = tasks.filter(t => (t.status || 'backlog') === 'backlog')
+  const running = enrichedTasks.filter(t => t.status === 'in_progress' || t.is_running);
+  const queued = enrichedTasks.filter(t => (t.status || 'backlog') === 'backlog')
     .sort((a, b) => (a.queue_position || 0) - (b.queue_position || 0) || (a.priority || 0) - (b.priority || 0));
-  const completed = tasks.filter(t => t.status === 'testing' || t.status === 'done')
+  const completed = enrichedTasks.filter(t => t.status === 'testing' || t.status === 'done')
     .sort((a, b) => {
       const da = b.completed_at || b.updated_at || '';
       const db2 = a.completed_at || a.updated_at || '';
@@ -189,6 +212,7 @@ function PipelineCard({ task, position, draggable, onViewLogs, onViewDetail, onM
   const typeColor = TYPE_COLORS[task.task_type] || 'bg-surface-500/15 text-surface-400';
   const tokens = (task.input_tokens || 0) + (task.output_tokens || 0);
   const depName = task.depends_on ? `#${task.depends_on}` : null;
+  const depIds = task._parentIds || [];
 
   return (
     <div className={`flex items-center gap-2 rounded-lg px-3 py-2 border ${config.border} ${config.bg} cursor-pointer hover:brightness-110 transition-all`}
@@ -215,9 +239,13 @@ function PipelineCard({ task, position, draggable, onViewLogs, onViewDetail, onM
           {tokens > 0 && <span className="text-[9px] text-surface-600">{formatTokens(tokens)}</span>}
           {task.work_duration_ms > 0 && <span className="text-[9px] text-surface-600">{Math.round(task.work_duration_ms / 1000)}s</span>}
           {task.total_cost > 0 && <span className="text-[9px] text-surface-600">${task.total_cost.toFixed(3)}</span>}
-          {depName && (
+          {depIds.length > 0 ? (
+            <span className="text-[9px] text-blue-400 flex items-center gap-0.5">
+              <Link2 size={8} />{depIds.map(id => `#${id}`).join(', ')}
+            </span>
+          ) : depName ? (
             <span className="text-[9px] text-blue-400 flex items-center gap-0.5"><Link2 size={8} />{depName}</span>
-          )}
+          ) : null}
           {task.retry_count > 0 && (
             <span className="text-[9px] text-amber-400 flex items-center gap-0.5"><RotateCcw size={8} />retry {task.retry_count}</span>
           )}

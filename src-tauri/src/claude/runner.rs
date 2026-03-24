@@ -268,6 +268,8 @@ fn handle_process_lifecycle(
             app.emit("task:updated", &updated).ok();
         }
         activity::add(db, project_id, Some(task_id), "task_completed", &format!("Task completed: {}", task_title), None);
+        // Cascade: start newly unblocked dependent tasks
+        crate::services::queue::on_task_completed(db, app, project_id, task_id);
     } else {
         tasks::add_log(db, task_id, &format!("Claude exited with code {}.", status), "error", None);
         activity::add(db, project_id, Some(task_id), "task_failed", &format!("Task failed (exit {}): {}", status, task_title), None);

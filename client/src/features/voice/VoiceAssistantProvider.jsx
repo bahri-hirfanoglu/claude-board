@@ -64,7 +64,15 @@ export { VOICE_LANGUAGES };
 
 export function VoiceAssistantProvider({ children, tasks, currentProject, onCreateTask, onStatusChange }) {
   const [state, dispatch] = useReducer(reducer, initial);
-  const [voiceLang, setVoiceLang] = useState(() => localStorage.getItem('voice-lang') || 'en-US');
+  // Auto-detect voice language from app UI language
+  const [voiceLang, setVoiceLang] = useState(() => {
+    const stored = localStorage.getItem('voice-lang');
+    if (stored) return stored;
+    // Sync with app UI language
+    const uiLang = localStorage.getItem('ui-lang') || navigator.language?.split('-')[0] || 'en';
+    const langMap = { en: 'en-US', tr: 'tr-TR', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', pt: 'pt-BR', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL', ru: 'ru-RU', ja: 'ja-JP', ko: 'ko-KR', zh: 'zh-CN', ar: 'ar-SA', hi: 'hi-IN' };
+    return langMap[uiLang] || 'en-US';
+  });
 
   const changeLang = useCallback((code) => {
     setVoiceLang(code);
@@ -77,11 +85,14 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
   const projectRef = useRef(currentProject);
   const handlersRef = useRef({ onCreateTask, onStatusChange });
   const commandRefsRef = useRef({}); // mutable refs for commands (e.g., statusTarget)
+  const voiceLangRef = useRef(voiceLang);
+  const voiceRef = useRef(null); // ref to useVoiceInput return, updated below
 
   useEffect(() => { stateRef.current = state; }, [state]);
   useEffect(() => { tasksRef.current = tasks; }, [tasks]);
   useEffect(() => { projectRef.current = currentProject; }, [currentProject]);
   useEffect(() => { handlersRef.current = { onCreateTask, onStatusChange }; }, [onCreateTask, onStatusChange]);
+  useEffect(() => { voiceLangRef.current = voiceLang; }, [voiceLang]);
 
   // ─── Process input ───
   const processInput = useCallback(async (rawText) => {
@@ -96,7 +107,8 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
     const commands = getAllCommands();
     const intent = detectIntent(text, commands);
 
-    // Build context
+    // Build context (use ref for latest language)
+    const lang = voiceLangRef.current;
     const ctx = {
       flow: cur.flow,
       draft: cur.draft,
@@ -104,7 +116,7 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
       tasks: tasksRef.current,
       currentProject: projectRef.current,
       refs: commandRefsRef.current,
-      lang: voiceLang,
+      lang,
     };
 
     // Resolve command
@@ -120,8 +132,8 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
       result = {
         flow: cur.flow === 'idle' ? 'idle' : cur.flow,
         message: cur.flow === 'idle'
-          ? t('fallback.idle', voiceLang)
-          : t('fallback.active', voiceLang),
+          ? t('fallback.idle', lang)
+          : t('fallback.active', lang),
       };
     }
 
@@ -132,11 +144,11 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
     if (result.message) {
       dispatch({ type: 'ADD_MESSAGE', msg: { role: 'assistant', text: result.message, ts: Date.now() } });
 
-      // TTS
+      // TTS — stop mic before speaking, use ref for latest voice hook
       if (stateRef.current.ttsEnabled) {
         dispatch({ type: 'SET_SPEAKING', value: true });
-        voice.stop();
-        await speak(result.message, voiceLang);
+        voiceRef.current?.stop();
+        await speak(result.message, lang);
         dispatch({ type: 'SET_SPEAKING', value: false });
       }
     }
@@ -153,6 +165,7 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
     continuous: false,
     onResult: processInput,
   });
+  voiceRef.current = voice;
 
   // Sound effects on listen state changes
   const prevListening = useRef(false);

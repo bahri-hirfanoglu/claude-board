@@ -76,6 +76,7 @@ export default function AppLayout({
             {currentProject ? (
               <Board
                 tasks={filteredTasks}
+                projectId={currentProject.id}
                 onStatusChange={taskActions.onStatusChange}
                 onViewLogs={taskActions.onViewLogs}
                 onEditTask={(task) => openModal('task', task)}
@@ -129,6 +130,7 @@ export default function AppLayout({
           onClose={() => closeModal('task')}
           templates={templates || []}
           roles={roles || []}
+          allTasks={tasks}
         />
       )}
       {modals.project && (
@@ -173,6 +175,7 @@ export default function AppLayout({
       {modals.scan && currentProject && <ScanModal projectId={currentProject.id} onClose={() => closeModal('scan')} />}
       {confirm && <ConfirmDialog {...confirm} />}
       <Toast toasts={toasts} />
+      {/* Voice assistant temporarily disabled
       <VoiceAssistantProvider
         tasks={tasks}
         currentProject={currentProject}
@@ -181,6 +184,7 @@ export default function AppLayout({
       >
         <VoiceAssistant />
       </VoiceAssistantProvider>
+      */}
     </div>
   );
 }
