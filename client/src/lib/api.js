@@ -215,7 +215,8 @@ export const api = {
     getExecutionWaves: (projectId) => tauriCall('get_execution_waves', { projectId }),
     getDependencyGraph: (projectId) => tauriCall('get_dependency_graph', { projectId }),
     getPipelineStatus: (projectId) => tauriCall('get_pipeline_status', { projectId }),
-    approvePlan: (projectId, tasks, model) => tauriCall('approve_plan', { projectId, tasks, model }),
+    getTaskDiff: (taskId) => tauriCall('get_task_diff', { taskId: Number(taskId) }),
+    approvePlan: (projectId, tasks, model, dependencies) => tauriCall('approve_plan', { projectId, tasks, model, dependencies }),
     getAuthInfo: () => tauriCall('get_auth_info'),
     listMcpServers: () => tauriCall('list_mcp_servers'),
     addMcpServer: (name, commandStr, args, scope, env) => tauriCall('add_mcp_server', { name, commandStr, args, scope, env }),
@@ -241,5 +242,8 @@ export const api = {
     getSuggestions: () => tauriCall('get_suggestions'),
     listCustomCommands: () => tauriCall('list_custom_commands'),
     listCustomSkills: () => tauriCall('list_custom_skills'),
+    saveCustomSkill: (name, content) => tauriCall('save_custom_skill', { name, content }),
+    deleteCustomSkill: (name) => tauriCall('delete_custom_skill', { name }),
+    fetchGithubSkills: (repoUrl, path) => tauriCall('fetch_github_skills', { repoUrl, path: path || null }),
   } : {}),
 };

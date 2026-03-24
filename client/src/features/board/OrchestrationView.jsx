@@ -5,8 +5,24 @@ import PipelineStats from './PipelineStats';
 import AgentCard from './AgentCard';
 import DependencyGraph from './DependencyGraph';
 
+const STORAGE_KEY = 'claude-board:dag-positions:';
+
+function loadPositions(projectId) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY + projectId);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function savePositions(projectId, positions) {
+  try {
+    localStorage.setItem(STORAGE_KEY + projectId, JSON.stringify(positions));
+  } catch {}
+}
+
 export default function OrchestrationView({ tasks, projectId, onViewLogs, onStatusChange, onViewDetail }) {
   const [graphData, setGraphData] = useState({ tasks: [], edges: [], waves: [] });
+  const [savedPositions, setSavedPositions] = useState(() => loadPositions(projectId));
   const refreshCounter = useRef(0);
 
   const loadGraph = useCallback(() => {
@@ -20,6 +36,11 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
   useEffect(() => {
     loadGraph();
   }, [loadGraph, tasks]);
+
+  // Reload saved positions when project changes
+  useEffect(() => {
+    setSavedPositions(loadPositions(projectId));
+  }, [projectId]);
 
   // Also reload on task:updated events (covers dependency changes)
   useEffect(() => {
@@ -39,6 +60,21 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
     api.stopTask(task.id).catch(() => {});
   }, []);
 
+  const handleAddDependency = useCallback((taskId, dependsOnId) => {
+    if (!IS_TAURI) return;
+    api.addDependency(taskId, dependsOnId).then(() => loadGraph());
+  }, [loadGraph]);
+
+  const handlePositionsChange = useCallback((positions) => {
+    setSavedPositions(positions);
+    savePositions(projectId, positions);
+  }, [projectId]);
+
+  const handleStartTask = useCallback((task) => {
+    if (!onStatusChange) return;
+    onStatusChange(task.id, 'in_progress');
+  }, [onStatusChange]);
+
   return (
     <div className="h-full flex flex-col gap-3 p-4 overflow-auto">
       {/* Pipeline Stats */}
@@ -52,6 +88,10 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
             edges={graphData.edges || []}
             waves={waves}
             onTaskClick={onViewDetail}
+            onAddDependency={handleAddDependency}
+            onStartTask={handleStartTask}
+            savedPositions={savedPositions}
+            onPositionsChange={handlePositionsChange}
           />
         </div>
 

@@ -2,7 +2,7 @@
 
 # Claude Board
 
-**AI-powered task management platform that orchestrates Claude to autonomously execute development tasks.**
+**AI-powered task management platform that orchestrates autonomous development agents.**
 
 [![Version](https://img.shields.io/github/v/release/bahri-hirfanoglu/claude-board?color=DA7756&style=flat-square&label=version)](https://github.com/bahri-hirfanoglu/claude-board/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
@@ -22,9 +22,9 @@
 
 ## What is Claude Board?
 
-Claude Board is a self-hosted Kanban-style project management tool that integrates directly with [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code). Create tasks, drag them to "In Progress", and Claude autonomously writes code, creates branches, and commits changes &mdash; all while you watch the live terminal output.
+Claude Board is a self-hosted Kanban-style project management tool that integrates with AI coding agents. Create tasks, drag them to "In Progress", and agents autonomously write code, create branches, and commit changes &mdash; all while you watch the live terminal output.
 
-Think of it as **Jira meets AI pair programming**: you define what needs to be done, Claude does the coding, you review and approve.
+Think of it as **Jira meets AI pair programming**: you define what needs to be done, agents do the coding, you review and approve.
 
 ## Download
 
@@ -40,30 +40,46 @@ Download the latest version for your platform:
 | **Linux** | [ClaudeBoard.AppImage](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Universal Linux |
 | **Linux (Debian)** | [ClaudeBoard.deb](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Ubuntu/Debian |
 
-> **Note:** Claude Code CLI must be installed and authenticated on your system for task execution to work.
-
 ## Features
 
-- **Planning Mode** &mdash; AI-powered task breakdown with review/approve/revise workflow &mdash; describe what to build and Claude explores your codebase, then generates structured tasks you can refine before execution
+### Orchestration & Planning
+- **Multi-Agent Orchestration** &mdash; DAG-based dependency graph with visual mission control, drag-to-connect edges, and node repositioning
+- **Planning Mode** &mdash; AI-powered task breakdown with DAG preview, review/approve/revise workflow
+- **Task Dependencies** &mdash; Multi-parent DAG dependencies with cycle detection and wave-based execution
+- **Task Queue** &mdash; Auto-queue to chain tasks with configurable concurrency (1-50 agents)
+
+### Execution & Testing
+- **Live Terminal** &mdash; Watch agent tool calls, file edits, and bash commands in real-time with expandable cards
+- **Split Terminal** &mdash; View multiple agent outputs side by side (vertical or horizontal split)
+- **Auto Test** &mdash; Automatic verification of completed tasks &mdash; runs tests, checks acceptance criteria, auto-approves on success
+- **Session Replay** &mdash; Timeline-based replay of agent actions with color-coded event types
+- **Diff Viewer** &mdash; Unified diff display of code changes with syntax highlighting
+
+### Project Management
 - **Kanban Board** &mdash; Drag-and-drop tasks across Backlog, In Progress, Testing, Done
-- **Multiple Views** &mdash; Switch between Board, List, Timeline, and Summary views
-- **Autonomous Execution** &mdash; Claude CLI auto-starts when tasks move to In Progress
-- **Live Terminal** &mdash; Watch Claude's tool calls, file edits, and bash commands in real-time
+- **Multiple Views** &mdash; Board, List, Pipeline, Orchestration, and Summary views
 - **Review System** &mdash; Approve completed work or request changes with revision feedback
-- **Claude Manager** &mdash; Dashboard for managing MCP servers, plugins, agents, hooks, sessions, permissions, and settings
-- **Claude Usage Dashboard** &mdash; Token stats, model breakdown, cost analysis, 30-day sparkline, rate limit status
+- **Enhanced Dashboard** &mdash; Priority/model/type distribution, top-cost tasks, throughput metrics
+
+### AI Configuration
+- **Skill Import** &mdash; Browse and install skills from GitHub repositories (awesome-claude-code, etc.)
+- **Roles** &mdash; Specialized agent personas with custom system prompts
 - **Context Snippets & Prompt Templates** &mdash; Reusable rules, context, and templates with variable substitution
-- **Webhook Notifications** &mdash; Send task events to Slack, Discord, Microsoft Teams, or custom endpoints
-- **Task Queue** &mdash; Auto-queue to chain tasks &mdash; when one finishes, the next starts automatically
+- **Codebase Scan** &mdash; AI-powered project analysis for better context
+
+### Git & Integrations
 - **Git Automation** &mdash; Auto-create feature branches and optional auto-PR creation
+- **Webhook Notifications** &mdash; Send task events to Slack, Discord, Microsoft Teams, or custom endpoints
+- **Manager Dashboard** &mdash; Manage MCP servers, plugins, agents, hooks, sessions, and settings
+
+### Platform
+- **Desktop App** &mdash; Native Windows, macOS, and Linux builds via Tauri v2 with auto-updater
 - **Live Token Tracking** &mdash; Real-time token consumption and cost updates
 - **Multi-Project** &mdash; Manage multiple projects with custom avatars and working directories
 - **Model Selection** &mdash; Choose Opus, Sonnet, or Haiku per task with thinking effort levels
-- **Voice Assistant** &mdash; Speech recognition and text-to-speech for hands-free task management
-- **Desktop App** &mdash; Native Windows, macOS, and Linux builds via Tauri v2 with loading splash screen and auto-updater via GitHub Releases
 - **Mobile Responsive** &mdash; Full mobile support with touch-friendly controls
 
-See the [Documentation](https://docs.claboard.dev) for detailed guides with visual walkthroughs.
+See the [Documentation](https://docs.claboard.dev) for detailed guides.
 
 ## Quick Start
 
@@ -71,7 +87,7 @@ See the [Documentation](https://docs.claboard.dev) for detailed guides with visu
 
 - [Rust](https://www.rust-lang.org/tools/install) (latest stable toolchain)
 - [Node.js](https://nodejs.org) >= 18.0.0
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
+- AI coding CLI installed and authenticated
 
 ### Install from Source
 
@@ -102,9 +118,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-<div align="center">
-  Built with Claude Code
-</div>

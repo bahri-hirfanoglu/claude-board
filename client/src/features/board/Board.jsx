@@ -11,9 +11,9 @@ import { useTranslation } from '../../i18n/I18nProvider';
 const VIEWS = [
   { id: 'board', labelKey: 'board.board', icon: LayoutGrid },
   { id: 'list', labelKey: 'board.list', icon: List },
-  { id: 'summary', labelKey: 'board.summary', icon: BarChart3 },
   { id: 'pipeline', labelKey: 'board.pipeline', icon: GitBranch },
   { id: 'orchestration', labelKey: 'board.orchestration', icon: Workflow },
+  { id: 'summary', labelKey: 'board.summary', icon: BarChart3 },
 ];
 
 const MODEL_DOT = MODEL_DOT_COLORS;

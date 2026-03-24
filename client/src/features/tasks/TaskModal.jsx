@@ -42,7 +42,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
     if (!task?.id || !IS_TAURI) return;
     api.getTaskDependencies(task.id)
       .then(deps => setDependencies(deps))
-      .catch(() => {});
+      .catch(() => setDependencies({ parents: [], children: [] }));
   }, [task?.id]);
 
   // Voice input
@@ -350,8 +350,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                 onAddDependency={(_, depId) => {
                   if (task?.id) {
                     api.addDependency(task.id, depId)
-                      .then(() => api.getTaskDependencies(task.id).then(setDependencies))
-                      .catch(() => {});
+                      .then(() => api.getTaskDependencies(task.id).then(setDependencies));
                   } else {
                     setDependencies(prev => ({
                       ...prev,
@@ -362,8 +361,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                 onRemoveDependency={(_, depId) => {
                   if (task?.id) {
                     api.removeDependency(task.id, depId)
-                      .then(() => api.getTaskDependencies(task.id).then(setDependencies))
-                      .catch(() => {});
+                      .then(() => api.getTaskDependencies(task.id).then(setDependencies));
                   } else {
                     setDependencies(prev => ({
                       ...prev,

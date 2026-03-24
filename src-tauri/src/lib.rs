@@ -135,6 +135,7 @@ pub fn run() {
             commands::tasks::get_execution_waves,
             commands::tasks::get_dependency_graph,
             commands::tasks::get_pipeline_status,
+            commands::tasks::get_task_diff,
             // Stats
             commands::stats::get_project_stats,
             commands::stats::get_claude_usage,
@@ -203,6 +204,9 @@ pub fn run() {
             // Custom Commands & Skills
             commands::claude_manager::list_custom_commands,
             commands::claude_manager::list_custom_skills,
+            commands::claude_manager::save_custom_skill,
+            commands::claude_manager::delete_custom_skill,
+            commands::claude_manager::fetch_github_skills,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

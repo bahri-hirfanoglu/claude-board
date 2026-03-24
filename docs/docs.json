@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "maple",
   "name": "Claude Board",
-  "description": "Build your own AI dev squad. Run multiple Claude agents from your local machine.",
+  "description": "Build your own AI dev squad. Run multiple agents from your local machine.",
   "colors": {
     "primary": "#DA7756",
     "light": "#E8926E",
@@ -46,31 +46,64 @@
             "pages": ["concepts/board", "concepts/tasks", "concepts/agents", "concepts/review"]
           },
           {
-            "group": "Features",
-            "icon": "sparkles",
+            "group": "Orchestration",
+            "icon": "sitemap",
             "pages": [
               "features/orchestration",
               "features/dependencies",
-              "features/session-replay",
-              "features/planning-mode",
-              "features/claude-manager",
-              "features/terminal",
               "features/queue",
+              "features/planning-mode"
+            ]
+          },
+          {
+            "group": "Execution & Testing",
+            "icon": "play",
+            "pages": [
+              "features/terminal",
+              "features/split-terminal",
+              "features/session-replay",
+              "features/auto-test",
+              "features/diff-viewer"
+            ]
+          },
+          {
+            "group": "Git & Deployment",
+            "icon": "code-branch",
+            "pages": [
               "features/git-automation",
+              "features/webhooks"
+            ]
+          },
+          {
+            "group": "AI Configuration",
+            "icon": "wand-magic-sparkles",
+            "pages": [
               "features/roles",
-              "features/webhooks",
+              "features/custom-commands",
+              "features/skill-import",
+              "features/scan",
+              "features/claude-manager"
+            ]
+          },
+          {
+            "group": "Content & Templates",
+            "icon": "file-lines",
+            "pages": [
               "features/templates",
               "features/snippets",
-              "features/attachments",
+              "features/attachments"
+            ]
+          },
+          {
+            "group": "Analytics & UI",
+            "icon": "chart-bar",
+            "pages": [
               "features/analytics",
-              "features/scan",
-              "features/custom-commands",
               "features/token-counter",
               "features/task-keys",
-              "features/voice-assistant",
-              "features/status-animations",
               "features/model-filter",
-              "features/timeline"
+              "features/status-animations",
+              "features/voice-assistant"
             ]
           },
           {

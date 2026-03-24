@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import { useMemo, useRef, useState, useCallback } from 'react';
+import { LayoutGrid } from 'lucide-react';
 
 const STATUS_COLORS = {
   backlog: { fill: '#374151', stroke: '#6B7280', text: '#D1D5DB' },
@@ -7,11 +8,18 @@ const STATUS_COLORS = {
   done: { fill: '#064E3B', stroke: '#10B981', text: '#A7F3D0' },
 };
 
-function layoutDAG(tasks, edges, waves) {
+const NODE_W = 160;
+const NODE_H = 48;
+const GAP_X = 200;
+const GAP_Y_DEFAULT = 70;
+const GAP_Y_DENSE = 54;
+const OFFSET_X = 40;
+const OFFSET_Y = 40;
+
+function autoLayout(tasks, edges, waves) {
   const positions = {};
   const waveMap = {};
 
-  // Assign wave index to each task
   if (waves.length > 0) {
     waves.forEach((wave, wi) => {
       wave.forEach((t, ti) => {
@@ -20,7 +28,6 @@ function layoutDAG(tasks, edges, waves) {
     });
   }
 
-  // Also include done/testing tasks not in waves
   const assignedIds = new Set(Object.keys(waveMap).map(Number));
   const unassigned = tasks.filter(t => !assignedIds.has(t.id));
   let doneIdx = 0;
@@ -30,20 +37,12 @@ function layoutDAG(tasks, edges, waves) {
     }
   });
 
-  const NODE_W = 160;
-  const NODE_H = 48;
-  const GAP_X = 200;
-  const OFFSET_X = 40;
-  const OFFSET_Y = 40;
-
-  // Group by wave
   const waveGroups = {};
   Object.entries(waveMap).forEach(([id, { wave, index }]) => {
     if (!waveGroups[wave]) waveGroups[wave] = [];
     waveGroups[wave].push({ id: Number(id), index });
   });
 
-  // Also assign unassigned tasks (no wave, no status match) to a catch-all wave
   const allMapped = new Set(Object.keys(waveMap).map(Number));
   const orphans = tasks.filter(t => !allMapped.has(t.id));
   if (orphans.length > 0) {
@@ -51,9 +50,8 @@ function layoutDAG(tasks, edges, waves) {
     waveGroups[maxWave + 1] = orphans.map((t, i) => ({ id: t.id, index: i }));
   }
 
-  // Adaptive vertical gap based on max column height
   const maxPerWave = Math.max(...Object.values(waveGroups).map(g => g.length), 1);
-  const GAP_Y = maxPerWave > 8 ? 54 : 70;
+  const GAP_Y = maxPerWave > 8 ? GAP_Y_DENSE : GAP_Y_DEFAULT;
 
   const sortedWaves = Object.keys(waveGroups).map(Number).sort((a, b) => a - b);
   sortedWaves.forEach((waveIdx, col) => {
@@ -68,28 +66,178 @@ function layoutDAG(tasks, edges, waves) {
     });
   });
 
-  // Calculate total dimensions
-  const allPos = Object.values(positions);
-  const maxX = allPos.reduce((m, p) => Math.max(m, p.x + p.w), 0) + OFFSET_X;
-  const maxY = allPos.reduce((m, p) => Math.max(m, p.y + p.h), 0) + OFFSET_Y;
-
-  return { positions, width: Math.max(maxX, 400), height: Math.max(maxY, 200) };
+  return positions;
 }
 
-export default function DependencyGraph({ tasks, edges, waves, onTaskClick }) {
+function computeDimensions(positions) {
+  const allPos = Object.values(positions);
+  if (allPos.length === 0) return { width: 400, height: 200 };
+  const maxX = allPos.reduce((m, p) => Math.max(m, p.x + (p.w || NODE_W)), 0) + OFFSET_X;
+  const maxY = allPos.reduce((m, p) => Math.max(m, p.y + (p.h || NODE_H)), 0) + OFFSET_Y;
+  return { width: Math.max(maxX, 400), height: Math.max(maxY, 200) };
+}
+
+export default function DependencyGraph({
+  tasks, edges, waves,
+  onTaskClick, onAddDependency, onStartTask,
+  savedPositions, onPositionsChange,
+}) {
   const svgRef = useRef(null);
+  const containerRef = useRef(null);
   const [hoveredId, setHoveredId] = useState(null);
+  const [edgeDrag, setEdgeDrag] = useState(null);   // edge creation: { fromId, cursorX, cursorY, targetId }
+  const [nodeDrag, setNodeDrag] = useState(null);    // node move: { id, startX, startY, origX, origY }
+  const [localPositions, setLocalPositions] = useState(null);
+  const justDraggedRef = useRef(false);               // prevents click after drag
 
-  const taskMap = useMemo(() => {
-    const map = {};
-    tasks.forEach(t => { map[t.id] = t; });
-    return map;
-  }, [tasks]);
-
-  const { positions, width, height } = useMemo(
-    () => layoutDAG(tasks, edges, waves),
+  // Compute auto positions
+  const autoPositions = useMemo(
+    () => autoLayout(tasks, edges, waves),
     [tasks, edges, waves]
   );
+
+  // Merge: savedPositions > localPositions > autoPositions
+  const positions = useMemo(() => {
+    const base = { ...autoPositions };
+    const saved = savedPositions || {};
+    for (const task of tasks) {
+      const id = task.id;
+      if (saved[id]) {
+        base[id] = { ...base[id], x: saved[id].x, y: saved[id].y };
+      } else if (localPositions && localPositions[id]) {
+        base[id] = { ...base[id], x: localPositions[id].x, y: localPositions[id].y };
+      }
+      // Ensure w/h always set
+      if (base[id]) {
+        base[id].w = NODE_W;
+        base[id].h = NODE_H;
+      }
+    }
+    return base;
+  }, [autoPositions, savedPositions, localPositions, tasks]);
+
+  const { width, height } = useMemo(() => computeDimensions(positions), [positions]);
+
+  // Convert browser mouse coords to SVG coords
+  const toSvgCoords = useCallback((e) => {
+    const svg = svgRef.current;
+    const container = containerRef.current;
+    if (!svg || !container) return { x: 0, y: 0 };
+    const rect = svg.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left + container.scrollLeft,
+      y: e.clientY - rect.top + container.scrollTop,
+    };
+  }, []);
+
+  // Hit test
+  const hitTest = useCallback((sx, sy) => {
+    for (const task of tasks) {
+      const pos = positions[task.id];
+      if (!pos) continue;
+      if (sx >= pos.x && sx <= pos.x + pos.w && sy >= pos.y && sy <= pos.y + pos.h) {
+        return task.id;
+      }
+    }
+    return null;
+  }, [tasks, positions]);
+
+  // ── Node mouse down: decide edge-creation vs node-move ──
+  const handleNodeMouseDown = useCallback((e, taskId) => {
+    e.stopPropagation();
+    const { x, y } = toSvgCoords(e);
+
+    if (onAddDependency && e.shiftKey) {
+      // Shift+drag = create edge
+      setEdgeDrag({ fromId: taskId, cursorX: x, cursorY: y, targetId: null });
+    } else if (onPositionsChange) {
+      // Regular drag = move node
+      const pos = positions[taskId];
+      if (pos) {
+        setNodeDrag({ id: taskId, startX: x, startY: y, origX: pos.x, origY: pos.y });
+      }
+    } else if (onAddDependency) {
+      // No position persistence (e.g. planning preview) -> edge creation by default
+      setEdgeDrag({ fromId: taskId, cursorX: x, cursorY: y, targetId: null });
+    }
+  }, [onAddDependency, onPositionsChange, toSvgCoords, positions]);
+
+  const handleSvgMouseMove = useCallback((e) => {
+    if (edgeDrag) {
+      const { x, y } = toSvgCoords(e);
+      const targetId = hitTest(x, y);
+      setEdgeDrag(prev => ({ ...prev, cursorX: x, cursorY: y, targetId: targetId !== prev.fromId ? targetId : null }));
+    } else if (nodeDrag) {
+      const { x, y } = toSvgCoords(e);
+      const dx = x - nodeDrag.startX;
+      const dy = y - nodeDrag.startY;
+      const newX = Math.max(0, nodeDrag.origX + dx);
+      const newY = Math.max(0, nodeDrag.origY + dy);
+      setLocalPositions(prev => ({
+        ...(prev || {}),
+        [nodeDrag.id]: { x: newX, y: newY },
+      }));
+    }
+  }, [edgeDrag, nodeDrag, toSvgCoords, hitTest]);
+
+  const handleSvgMouseUp = useCallback(() => {
+    if (edgeDrag) {
+      if (edgeDrag.targetId && edgeDrag.targetId !== edgeDrag.fromId) {
+        onAddDependency?.(edgeDrag.targetId, edgeDrag.fromId);
+      }
+      justDraggedRef.current = true;
+      setTimeout(() => { justDraggedRef.current = false; }, 50);
+      setEdgeDrag(null);
+    } else if (nodeDrag) {
+      // Persist moved position
+      const pos = positions[nodeDrag.id];
+      if (pos && onPositionsChange) {
+        const updated = { ...(savedPositions || {}) };
+        for (const task of tasks) {
+          const p = positions[task.id];
+          if (p) updated[task.id] = { x: p.x, y: p.y };
+        }
+        // Apply the local drag position
+        if (localPositions && localPositions[nodeDrag.id]) {
+          updated[nodeDrag.id] = { x: localPositions[nodeDrag.id].x, y: localPositions[nodeDrag.id].y };
+        }
+        onPositionsChange(updated);
+      }
+      justDraggedRef.current = true;
+      setTimeout(() => { justDraggedRef.current = false; }, 50);
+      setNodeDrag(null);
+    }
+  }, [edgeDrag, nodeDrag, onAddDependency, onPositionsChange, positions, savedPositions, localPositions, tasks]);
+
+  const handleAutoLayout = useCallback(() => {
+    setLocalPositions(null);
+    if (onPositionsChange) {
+      // Save auto positions
+      const fresh = autoLayout(tasks, edges, waves);
+      const save = {};
+      for (const [id, pos] of Object.entries(fresh)) {
+        save[id] = { x: pos.x, y: pos.y };
+      }
+      onPositionsChange(save);
+    }
+  }, [tasks, edges, waves, onPositionsChange]);
+
+  // Cancel on mouse leave
+  const handleMouseLeave = useCallback(() => {
+    if (edgeDrag) setEdgeDrag(null);
+    if (nodeDrag) {
+      // Revert local drag
+      setLocalPositions(prev => {
+        if (!prev) return prev;
+        const next = { ...prev };
+        delete next[nodeDrag.id];
+        return Object.keys(next).length ? next : null;
+      });
+      setNodeDrag(null);
+    }
+  }, [edgeDrag, nodeDrag]);
+
+  const isDragging = !!(edgeDrag || nodeDrag);
 
   // Draw edge paths
   const edgePaths = useMemo(() => {
@@ -120,22 +268,83 @@ export default function DependencyGraph({ tasks, edges, waves, onTaskClick }) {
     });
   }, [edges, positions, hoveredId]);
 
+  // Temporary edge drag line
+  const dragEdgePath = useMemo(() => {
+    if (!edgeDrag) return null;
+    const src = positions[edgeDrag.fromId];
+    if (!src) return null;
+    const x1 = src.x + src.w;
+    const y1 = src.y + src.h / 2;
+    if (edgeDrag.targetId) {
+      const dst = positions[edgeDrag.targetId];
+      if (dst) {
+        const tx = dst.x;
+        const ty = dst.y + dst.h / 2;
+        const mx = (x1 + tx) / 2;
+        return (
+          <path
+            d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${ty}, ${tx} ${ty}`}
+            fill="none" stroke="#A78BFA" strokeWidth={2} strokeDasharray="6,3"
+            markerEnd="url(#arrowhead-drag)"
+          />
+        );
+      }
+    }
+    const x2 = edgeDrag.cursorX;
+    const y2 = edgeDrag.cursorY;
+    const mx = (x1 + x2) / 2;
+    return (
+      <path
+        d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`}
+        fill="none" stroke="#6B7280" strokeWidth={1.5} strokeDasharray="6,3"
+        opacity={0.6}
+      />
+    );
+  }, [edgeDrag, positions]);
+
   return (
-    <div className="overflow-auto rounded-lg border border-surface-700/30 bg-surface-900/50">
+    <div ref={containerRef} className="overflow-auto rounded-lg border border-surface-700/30 bg-surface-900/50 relative">
+      {/* Toolbar */}
+      {onPositionsChange && (
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+          <button
+            onClick={handleAutoLayout}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium bg-surface-800/80 hover:bg-surface-700 text-surface-400 hover:text-surface-200 border border-surface-700/50 backdrop-blur-sm transition-colors"
+            title="Auto-layout"
+          >
+            <LayoutGrid size={11} />
+            Auto
+          </button>
+          {onAddDependency && (
+            <span className="text-[9px] text-surface-600 px-1.5">Shift+drag = edge</span>
+          )}
+        </div>
+      )}
+
       <svg
         ref={svgRef}
         width={width}
         height={height}
         className="min-w-full"
+        style={{ cursor: nodeDrag ? 'grabbing' : edgeDrag ? 'crosshair' : undefined }}
+        onMouseMove={handleSvgMouseMove}
+        onMouseUp={handleSvgMouseUp}
+        onMouseLeave={handleMouseLeave}
       >
         <defs>
           <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
             <polygon points="0 0, 8 3, 0 6" fill="#6B7280" />
           </marker>
+          <marker id="arrowhead-drag" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#A78BFA" />
+          </marker>
         </defs>
 
         {/* Edges */}
         {edgePaths}
+
+        {/* Drag edge */}
+        {dragEdgePath}
 
         {/* Nodes */}
         {tasks.map(task => {
@@ -144,35 +353,39 @@ export default function DependencyGraph({ tasks, edges, waves, onTaskClick }) {
           const colors = STATUS_COLORS[task.status] || STATUS_COLORS.backlog;
           const isRunning = task.status === 'in_progress' || task.is_running;
           const isHovered = hoveredId === task.id;
+          const isEdgeDragTarget = edgeDrag?.targetId === task.id;
+          const isEdgeDragSource = edgeDrag?.fromId === task.id;
+          const isMoving = nodeDrag?.id === task.id;
 
           return (
             <g
               key={task.id}
               transform={`translate(${pos.x}, ${pos.y})`}
-              className="cursor-pointer"
-              onMouseEnter={() => setHoveredId(task.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              onClick={() => onTaskClick?.(task)}
-              opacity={hoveredId && !isHovered ? 0.5 : 1}
+              style={{ cursor: onPositionsChange ? (isMoving ? 'grabbing' : 'grab') : 'pointer' }}
+              onMouseEnter={() => { if (!isDragging) setHoveredId(task.id); }}
+              onMouseLeave={() => { if (!isDragging) setHoveredId(null); }}
+              onMouseDown={(e) => handleNodeMouseDown(e, task.id)}
+              onClick={() => { if (!isDragging && !justDraggedRef.current) onTaskClick?.(task); }}
+              opacity={hoveredId && !isHovered && !isDragging ? 0.5 : 1}
             >
               <rect
-                width={pos.w}
-                height={pos.h}
+                width={NODE_W}
+                height={NODE_H}
                 rx={8}
-                fill={colors.fill}
-                stroke={isHovered ? '#D97706' : colors.stroke}
-                strokeWidth={isHovered ? 2 : 1}
+                fill={isEdgeDragTarget ? '#1E1B4B' : isMoving ? '#1C1917' : colors.fill}
+                stroke={isEdgeDragTarget ? '#A78BFA' : isEdgeDragSource ? '#7C3AED' : isMoving ? '#D97706' : isHovered ? '#D97706' : colors.stroke}
+                strokeWidth={isEdgeDragTarget || isEdgeDragSource || isMoving ? 2.5 : isHovered ? 2 : 1}
               />
               {isRunning && (
                 <rect
-                  y={pos.h - 3}
-                  width={pos.w * 0.6}
+                  y={NODE_H - 3}
+                  width={NODE_W * 0.6}
                   height={3}
                   rx={1.5}
                   fill="#D97706"
                   opacity={0.8}
                 >
-                  <animate attributeName="width" values={`0;${pos.w};0`} dur="2s" repeatCount="indefinite" />
+                  <animate attributeName="width" values={`0;${NODE_W};0`} dur="2s" repeatCount="indefinite" />
                 </rect>
               )}
               <text
@@ -188,6 +401,17 @@ export default function DependencyGraph({ tasks, edges, waves, onTaskClick }) {
                 {task.task_key || `#${task.id}`}
                 {task.model && ` \u00B7 ${task.model}`}
               </text>
+              {/* Start button for backlog tasks */}
+              {onStartTask && task.status === 'backlog' && isHovered && !isDragging && (
+                <g
+                  transform={`translate(${NODE_W - 28}, 12)`}
+                  onClick={(e) => { e.stopPropagation(); onStartTask(task); }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <rect width={20} height={20} rx={4} fill="#065F46" stroke="#10B981" strokeWidth={1} />
+                  <polygon points="7,5 7,15 16,10" fill="#10B981" />
+                </g>
+              )}
             </g>
           );
         })}

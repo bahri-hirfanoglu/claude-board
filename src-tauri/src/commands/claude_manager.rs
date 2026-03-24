@@ -461,6 +461,115 @@ pub async fn list_custom_skills() -> Result<Value, String> {
     }).await.map_err(|e| e.to_string())?
 }
 
+// ─── Skill Management ───
+#[tauri::command]
+pub async fn save_custom_skill(name: String, content: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let dir = dirs_home().join(".claude").join("skills");
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let path = dir.join(format!("{}.md", name));
+        std::fs::write(&path, &content).map_err(|e| e.to_string())?;
+        Ok(())
+    }).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn delete_custom_skill(name: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let path = dirs_home().join(".claude").join("skills").join(format!("{}.md", name));
+        if path.exists() {
+            std::fs::remove_file(&path).map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    }).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn fetch_github_skills(repo_url: String, path: Option<String>) -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        // Parse GitHub URL: "user/repo", "https://github.com/user/repo", etc.
+        let repo = repo_url
+            .trim_end_matches('/')
+            .replace("https://github.com/", "")
+            .replace("http://github.com/", "");
+        // Strip /tree/branch/path suffix if present
+        let (repo_slug, tree_path) = if repo.contains("/tree/") {
+            let parts: Vec<&str> = repo.splitn(2, "/tree/").collect();
+            let sub = parts.get(1).unwrap_or(&"");
+            // Skip branch name (first segment after tree/)
+            let sub_parts: Vec<&str> = sub.splitn(2, '/').collect();
+            (parts[0].to_string(), sub_parts.get(1).map(|s| s.to_string()))
+        } else {
+            (repo.to_string(), None)
+        };
+        let api_path = path.or(tree_path).unwrap_or_default();
+        let api_url = if api_path.is_empty() {
+            format!("https://api.github.com/repos/{}/contents", repo_slug)
+        } else {
+            format!("https://api.github.com/repos/{}/contents/{}", repo_slug, api_path.trim_start_matches('/'))
+        };
+
+        // Fetch directory listing
+        let client = reqwest::blocking::Client::builder()
+            .user_agent("claude-board")
+            .timeout(std::time::Duration::from_secs(15))
+            .build()
+            .map_err(|e| e.to_string())?;
+
+        let resp = client.get(&api_url)
+            .send()
+            .map_err(|e| format!("Failed to fetch: {}", e))?;
+
+        if !resp.status().is_success() {
+            return Err(format!("GitHub API returned {}: {}", resp.status(), resp.text().unwrap_or_default()));
+        }
+
+        let body: Value = resp.json().map_err(|e| e.to_string())?;
+
+        let mut skills = Vec::new();
+        let mut dirs = Vec::new();
+
+        if let Some(entries) = body.as_array() {
+            for entry in entries {
+                let name = entry.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                let entry_type = entry.get("type").and_then(|v| v.as_str()).unwrap_or("");
+                let entry_path = entry.get("path").and_then(|v| v.as_str()).unwrap_or("");
+                let download_url = entry.get("download_url").and_then(|v| v.as_str()).unwrap_or("");
+                let size = entry.get("size").and_then(|v| v.as_u64()).unwrap_or(0);
+
+                if entry_type == "file" && name.ends_with(".md") {
+                    let skill_name = name.trim_end_matches(".md");
+                    // Fetch file content
+                    let content = if !download_url.is_empty() {
+                        client.get(download_url).send().ok()
+                            .and_then(|r| r.text().ok())
+                            .unwrap_or_default()
+                    } else { String::new() };
+
+                    skills.push(serde_json::json!({
+                        "name": skill_name,
+                        "filename": name,
+                        "path": entry_path,
+                        "content": content,
+                        "size": size,
+                    }));
+                } else if entry_type == "dir" {
+                    dirs.push(serde_json::json!({
+                        "name": name,
+                        "path": entry_path,
+                    }));
+                }
+            }
+        }
+
+        Ok(serde_json::json!({
+            "repo": repo_slug,
+            "skills": skills,
+            "directories": dirs,
+        }))
+    }).await.map_err(|e| e.to_string())?
+}
+
 fn dirs_home() -> std::path::PathBuf {
     std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))

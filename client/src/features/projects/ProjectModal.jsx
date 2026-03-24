@@ -11,6 +11,7 @@ import {
   GitBranch,
   Settings,
   Workflow,
+  FlaskConical,
 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
@@ -65,6 +66,8 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
   const [autoBranch, setAutoBranch] = useState(project?.auto_branch !== undefined ? !!project.auto_branch : true);
   const [autoPr, setAutoPr] = useState(project?.auto_pr ? true : false);
   const [prBaseBranch, setPrBaseBranch] = useState(project?.pr_base_branch || 'main');
+  const [autoTest, setAutoTest] = useState(project?.auto_test ? true : false);
+  const [testPrompt, setTestPrompt] = useState(project?.test_prompt || '');
   const [loading, setLoading] = useState(false);
   const [autoSlug, setAutoSlug] = useState(!project);
   const nameRef = useRef(null);
@@ -109,6 +112,8 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         autoBranch: !!autoBranch,
         autoPr: !!autoPr,
         prBaseBranch: prBaseBranch.trim() || 'main',
+        autoTest: !!autoTest,
+        testPrompt: testPrompt.trim(),
       });
     } catch (err) {
       console.error(err);
@@ -322,7 +327,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                     <div className="mt-2 pl-1">
                       <label className="block text-[10px] text-surface-500 mb-1">{t('projectModal.maxConcurrent')}</label>
                       <div className="flex items-center gap-1.5">
-                        {[1, 2, 3, 4, 5].map((n) => (
+                        {[1, 2, 3, 5, 10].map((n) => (
                           <button
                             key={n}
                             type="button"
@@ -336,6 +341,17 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                             {n}
                           </button>
                         ))}
+                        <input
+                          type="number"
+                          min={1}
+                          max={50}
+                          value={maxConcurrent}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value, 10);
+                            if (v >= 1 && v <= 50) setMaxConcurrent(v);
+                          }}
+                          className="w-14 h-7 rounded-lg text-xs font-medium text-center bg-surface-800 border border-surface-700 text-surface-200 focus:outline-none focus:ring-1 focus:ring-claude [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
                       </div>
                     </div>
                   )}
@@ -363,6 +379,36 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                       activeColor="violet"
                     />
                   </div>
+                </div>
+
+                {/* Auto Test */}
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5">
+                    <FlaskConical size={12} />
+                    Auto Test
+                  </label>
+                  <ToggleRow
+                    enabled={autoTest}
+                    onToggle={() => setAutoTest(!autoTest)}
+                    label={autoTest ? 'Auto-test enabled' : 'Auto-test disabled'}
+                    desc="Claude automatically verifies completed tasks by running tests and checking acceptance criteria"
+                    activeColor="emerald"
+                  />
+                  {autoTest && (
+                    <div className="mt-2 pl-1">
+                      <label className="block text-[10px] text-surface-500 mb-1">Custom test instructions (optional)</label>
+                      <textarea
+                        value={testPrompt}
+                        onChange={(e) => setTestPrompt(e.target.value)}
+                        placeholder={"e.g. Run 'npm test' and check all tests pass.\nVerify TypeScript compilation with 'npx tsc --noEmit'.\nCheck that no console.log statements remain."}
+                        rows={3}
+                        className="w-full px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 resize-none font-mono"
+                      />
+                      <p className="text-[9px] text-surface-600 mt-1">
+                        Claude will review changes, run tests, and check acceptance criteria. Add project-specific instructions here.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

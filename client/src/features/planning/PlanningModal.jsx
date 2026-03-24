@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   X, Sparkles, Cpu, CheckCircle2, AlertCircle, StopCircle,
   Clock, Zap, Terminal, ChevronDown, ChevronRight, FileCode, Hash,
-  Loader2, Search, Brain, ListChecks, Trash2, Edit3, RotateCcw,
-  Check, ArrowRight,
+  Loader2, Search, Brain, ListChecks, Trash2, RotateCcw,
+  Check, ArrowRight, GitBranch, Eye, Pencil, FolderOpen, Globe, Code,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { socket } from '../../lib/socket';
@@ -12,6 +12,7 @@ import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { MODEL_OPTIONS, EFFORT_OPTIONS, PRIORITY_LABELS } from '../../lib/constants';
+import DependencyGraph from '../board/DependencyGraph';
 
 const MODELS = MODEL_OPTIONS;
 const EFFORTS = EFFORT_OPTIONS;
@@ -31,6 +32,173 @@ const PHASES = [
 
 const PRIORITY_COLORS = ['text-surface-500', 'text-yellow-400', 'text-orange-400', 'text-red-400'];
 
+/** Compute execution waves from index-based dependency pairs for DAG layout */
+function computeWaves(proposals, deps) {
+  const n = proposals.length;
+  if (n === 0) return [];
+  // Build parent set for each task index
+  const parents = Array.from({ length: n }, () => new Set());
+  for (const [parentIdx, childIdx] of deps) {
+    if (childIdx >= 0 && childIdx < n && parentIdx >= 0 && parentIdx < n) {
+      parents[childIdx].add(parentIdx);
+    }
+  }
+  const assigned = new Set();
+  const waves = [];
+  // Iteratively find tasks whose parents are all assigned
+  for (let iter = 0; iter < n; iter++) {
+    const wave = [];
+    for (let i = 0; i < n; i++) {
+      if (assigned.has(i)) continue;
+      const allMet = [...parents[i]].every(p => assigned.has(p));
+      if (allMet) wave.push(i);
+    }
+    if (wave.length === 0) break; // remaining tasks form a cycle — skip
+    for (const id of wave) assigned.add(id);
+    waves.push(wave.map(id => ({ id })));
+  }
+  // Any unassigned (cyclic) tasks go into last wave
+  const remaining = [];
+  for (let i = 0; i < n; i++) {
+    if (!assigned.has(i)) remaining.push({ id: i });
+  }
+  if (remaining.length > 0) waves.push(remaining);
+  return waves;
+}
+
+// ─── Tool icon/color matching (same logic as LiveTerminal) ───
+const TOOL_ICONS = { Read: Eye, Write: FileCode, Edit: Pencil, Bash: Terminal, Grep: Search, Glob: FolderOpen, WebFetch: Globe, WebSearch: Globe, Agent: Zap };
+function getToolIcon(name) {
+  if (!name) return Code;
+  for (const [k, I] of Object.entries(TOOL_ICONS)) {
+    if (name.toLowerCase().includes(k.toLowerCase())) return I;
+  }
+  return Code;
+}
+const TOOL_COLORS = { Read: 'text-sky-400', Write: 'text-emerald-400', Edit: 'text-yellow-400', Bash: 'text-amber-400', Grep: 'text-cyan-400', Glob: 'text-teal-400', WebFetch: 'text-blue-400', WebSearch: 'text-blue-400', Agent: 'text-violet-400' };
+function getToolColor(name) {
+  if (!name) return 'text-purple-400';
+  for (const [k, c] of Object.entries(TOOL_COLORS)) {
+    if (name.toLowerCase().includes(k.toLowerCase())) return c;
+  }
+  return 'text-purple-400';
+}
+
+function PlanLogFeed({ logs, isActive }) {
+  const endRef = useRef(null);
+  const [expanded, setExpanded] = useState(new Set());
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logs.length]);
+
+  // Group tool + result pairs
+  const entries = useMemo(() => {
+    const out = [];
+    for (let i = 0; i < logs.length; i++) {
+      const log = logs[i];
+      if (log.type === 'tool') {
+        // Parse tool name: "Read → src/file.rs" or just "Bash"
+        const parts = log.message.split(' → ');
+        const toolName = parts[0].trim();
+        const detail = parts[1] || '';
+        // Look ahead for matching result
+        let result = null;
+        if (i + 1 < logs.length && (logs[i + 1].type === 'result' || logs[i + 1].type === 'error')) {
+          result = logs[i + 1];
+          i++; // skip next
+        }
+        out.push({ type: 'tool_group', toolName, detail, result, ts: log.ts, index: out.length });
+      } else if (log.type === 'result' || log.type === 'error') {
+        // Orphan result (no matching tool)
+        out.push({ type: 'standalone', log, index: out.length });
+      }
+    }
+    return out;
+  }, [logs]);
+
+  const toggle = (idx) => setExpanded(prev => {
+    const next = new Set(prev);
+    next.has(idx) ? next.delete(idx) : next.add(idx);
+    return next;
+  });
+
+  if (entries.length === 0 && isActive) {
+    return (
+      <div className="flex items-center gap-2 text-[11px] text-surface-600 py-3 px-2">
+        <Loader2 size={12} className="animate-spin" /> Claude is analyzing the codebase...
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-0.5">
+      {entries.map((entry) => {
+        if (entry.type === 'tool_group') {
+          const Icon = getToolIcon(entry.toolName);
+          const color = getToolColor(entry.toolName);
+          const isError = entry.result?.type === 'error';
+          const hasResult = !!entry.result;
+          const isOpen = expanded.has(entry.index);
+          const resultText = entry.result?.message?.replace(/^[✓✗]\s*/, '') || '';
+
+          let statusEl;
+          if (!hasResult) statusEl = <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />;
+          else if (isError) statusEl = <AlertCircle size={11} className="text-red-400" />;
+          else statusEl = <CheckCircle2 size={11} className="text-emerald-500/70" />;
+
+          return (
+            <div key={entry.index} className={`rounded-md border transition-colors ${
+              isError ? 'border-red-500/20 bg-red-500/5' :
+              !hasResult ? 'border-amber-500/20 bg-amber-500/5' :
+              'border-surface-700/30 bg-surface-800/30 hover:border-surface-700/60'
+            }`}>
+              <button onClick={() => toggle(entry.index)}
+                className="flex items-center gap-1.5 w-full text-left px-2.5 py-1.5 text-[11px]">
+                {statusEl}
+                <Icon size={12} className={`${color} flex-shrink-0`} />
+                <span className={`font-semibold ${color}`}>{entry.toolName}</span>
+                {entry.detail && <span className="text-surface-400 truncate text-[10px] min-w-0 flex-1">{entry.detail}</span>}
+                <span className="flex-shrink-0 ml-auto">
+                  {isOpen ? <ChevronDown size={10} className="text-surface-600" /> : <ChevronRight size={10} className="text-surface-600" />}
+                </span>
+              </button>
+              {isOpen && (
+                <div className="px-2.5 pb-2 pt-0 text-[10px] space-y-1 border-t border-surface-700/20">
+                  {entry.detail && (
+                    <div className="flex gap-1.5 mt-1">
+                      <span className="text-surface-600 w-10 flex-shrink-0">path</span>
+                      <span className="text-surface-300 font-mono break-all">{entry.detail}</span>
+                    </div>
+                  )}
+                  {resultText && (
+                    <div className="mt-1">
+                      <div className="text-[9px] text-surface-600 mb-0.5">output</div>
+                      <pre className={`rounded bg-surface-900/80 border border-surface-700/30 px-2 py-1.5 text-[10px] font-mono overflow-x-auto max-h-[120px] overflow-y-auto whitespace-pre-wrap break-words leading-relaxed ${
+                        isError ? 'text-red-400/80' : 'text-surface-400'
+                      }`}>{resultText}</pre>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        }
+        // Standalone result/error
+        const log = entry.log;
+        const isError = log.type === 'error';
+        return (
+          <div key={entry.index} className={`flex items-start gap-2 text-[11px] px-2.5 py-1 ${isError ? 'text-red-400/80' : 'text-surface-500'}`}>
+            {isError ? <AlertCircle size={10} className="text-red-400 flex-shrink-0 mt-0.5" /> : <CheckCircle2 size={10} className="text-emerald-400/60 flex-shrink-0 mt-0.5" />}
+            <span className="truncate">{log.message}</span>
+          </div>
+        );
+      })}
+      <div ref={endRef} />
+    </div>
+  );
+}
+
 function formatElapsed(ms) {
   const s = Math.floor(ms / 1000);
   const m = Math.floor(s / 60);
@@ -41,7 +209,7 @@ function formatElapsed(ms) {
 // Persist planning state across modal open/close
 const planCache = {};
 function getCache(pid) {
-  if (!planCache[pid]) planCache[pid] = { phase: 'idle', planPhase: 'starting', logs: [], analysis: '', proposals: [], stats: { elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 }, error: null, topic: '', context: '', model: 'sonnet', effort: 'medium', granularity: 'balanced' };
+  if (!planCache[pid]) planCache[pid] = { phase: 'idle', planPhase: 'starting', logs: [], analysis: '', proposals: [], dependencies: [], stats: { elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 }, error: null, topic: '', context: '', model: 'sonnet', effort: 'medium', granularity: 'balanced' };
   return planCache[pid];
 }
 
@@ -58,19 +226,20 @@ export default function PlanningModal({ projectId, onClose }) {
   const [logs, setLogs] = useState(c.logs);
   const [analysis, setAnalysis] = useState(c.analysis);
   const [proposals, setProposals] = useState(c.proposals);
+  const [dependencies, setDependencies] = useState(c.dependencies);
   const [stats, setStats] = useState(c.stats);
   const [error, setError] = useState(c.error);
   const [showLogs, setShowLogs] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [expandedTask, setExpandedTask] = useState(null);
   const [approving, setApproving] = useState(false);
-  const logsEndRef = useRef(null);
+  const [showDag, setShowDag] = useState(false);
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
 
   // Save state to cache on every change
   useEffect(() => {
-    Object.assign(getCache(projectId), { phase, planPhase, logs, analysis, proposals, stats, error, topic, context, model, effort, granularity });
+    Object.assign(getCache(projectId), { phase, planPhase, logs, analysis, proposals, dependencies, stats, error, topic, context, model, effort, granularity });
   });
 
   // Resume active session
@@ -135,6 +304,7 @@ export default function PlanningModal({ projectId, onClose }) {
       if (data.analysis) setAnalysis(data.analysis);
       if (data.proposals?.length > 0) {
         setProposals(data.proposals);
+        setDependencies(data.dependencies || []);
         setPhase('review');
         setPlanPhase('done');
       } else {
@@ -181,9 +351,6 @@ export default function PlanningModal({ projectId, onClose }) {
     }
   }, [projectId]);
 
-  useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
 
   const handleStart = async () => {
     if (!topic.trim()) return;
@@ -192,6 +359,7 @@ export default function PlanningModal({ projectId, onClose }) {
     setLogs([]);
     setAnalysis('');
     setProposals([]);
+    setDependencies([]);
     setError(null);
     setStats({ elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 });
     startTimeRef.current = Date.now();
@@ -212,13 +380,18 @@ export default function PlanningModal({ projectId, onClose }) {
 
   const handleRemoveProposal = (idx) => {
     setProposals((prev) => prev.filter((_, i) => i !== idx));
+    // Adjust dependency indices: remove edges referencing idx, shift indices above idx
+    setDependencies((prev) => prev
+      .filter(([a, b]) => a !== idx && b !== idx)
+      .map(([a, b]) => [a > idx ? a - 1 : a, b > idx ? b - 1 : b])
+    );
   };
 
   const handleApprove = async () => {
     if (proposals.length === 0) return;
     setApproving(true);
     try {
-      await api.approvePlan(projectId, proposals, model);
+      await api.approvePlan(projectId, proposals, model, dependencies.length > 0 ? dependencies : null);
       setPhase('approved');
     } catch (e) {
       setError(e.message);
@@ -230,6 +403,7 @@ export default function PlanningModal({ projectId, onClose }) {
     setPhase('idle');
     setPlanPhase('starting');
     setProposals([]);
+    setDependencies([]);
     setLogs([]);
     setAnalysis('');
     // Keep topic and context so user can modify
@@ -362,22 +536,10 @@ export default function PlanningModal({ projectId, onClose }) {
                 </div>
               )}
 
-              {/* Live log feed */}
+              {/* Live log feed — same card style as LiveTerminal */}
               <div className="bg-surface-950 border border-surface-800 rounded-lg overflow-hidden">
-                <div className="p-2 space-y-0.5 max-h-48 overflow-y-auto">
-                  {logs.length === 0 && (
-                    <div className="flex items-center gap-2 text-[11px] text-surface-600 py-2 px-1">
-                      <Loader2 size={12} className="animate-spin" /> Claude is analyzing the codebase...
-                    </div>
-                  )}
-                  {logs.map((log, i) => (
-                    <div key={i} className="flex items-start gap-2 text-[11px] font-mono py-0.5">
-                      {log.type === 'tool' && <><FileCode size={10} className="text-violet-400 flex-shrink-0 mt-0.5" /><span className="text-violet-400/80 truncate">{log.message}</span></>}
-                      {log.type === 'result' && <><CheckCircle2 size={10} className="text-emerald-400/60 flex-shrink-0 mt-0.5" /><span className="text-surface-600 truncate">{log.message}</span></>}
-                      {log.type === 'error' && <><AlertCircle size={10} className="text-red-400 flex-shrink-0 mt-0.5" /><span className="text-red-400/80 truncate">{log.message}</span></>}
-                    </div>
-                  ))}
-                  <div ref={logsEndRef} />
+                <div className="p-2 max-h-64 overflow-y-auto">
+                  <PlanLogFeed logs={logs} isActive={isActive} />
                 </div>
               </div>
 
@@ -427,14 +589,8 @@ export default function PlanningModal({ projectId, onClose }) {
                     <Terminal size={12} /> Activity Log <span className="text-surface-600">({logs.length})</span>
                   </button>
                   {showLogs && (
-                    <div className="bg-surface-950 border border-surface-800 rounded-lg p-2 max-h-32 overflow-y-auto space-y-0.5">
-                      {logs.map((log, i) => (
-                        <div key={i} className="flex items-start gap-2 text-[11px] font-mono py-0.5">
-                          {log.type === 'tool' && <><FileCode size={10} className="text-violet-400 flex-shrink-0 mt-0.5" /><span className="text-violet-400/80 truncate">{log.message}</span></>}
-                          {log.type === 'result' && <><CheckCircle2 size={10} className="text-emerald-400/60 flex-shrink-0 mt-0.5" /><span className="text-surface-600 truncate">{log.message}</span></>}
-                          {log.type === 'error' && <><AlertCircle size={10} className="text-red-400 flex-shrink-0 mt-0.5" /><span className="text-red-400/80 truncate">{log.message}</span></>}
-                        </div>
-                      ))}
+                    <div className="bg-surface-950 border border-surface-800 rounded-lg p-2 max-h-48 overflow-y-auto">
+                      <PlanLogFeed logs={logs} isActive={false} />
                     </div>
                   )}
                 </div>
@@ -487,6 +643,26 @@ export default function PlanningModal({ projectId, onClose }) {
                   })}
                 </div>
               </div>
+
+              {/* DAG Preview */}
+              {dependencies.length > 0 && (
+                <div>
+                  <button onClick={() => setShowDag(!showDag)}
+                    className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1 hover:text-surface-300">
+                    {showDag ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    <GitBranch size={12} /> Dependency Graph <span className="text-surface-600">({dependencies.length} edges)</span>
+                  </button>
+                  {showDag && (
+                    <div className="max-h-72 overflow-auto rounded-lg">
+                      <DependencyGraph
+                        tasks={proposals.map((p, i) => ({ id: i, title: p.title, status: 'backlog', task_key: `#${i + 1}`, model: null }))}
+                        edges={dependencies.map(([parentIdx, childIdx]) => ({ from: parentIdx, to: childIdx }))}
+                        waves={computeWaves(proposals, dependencies)}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

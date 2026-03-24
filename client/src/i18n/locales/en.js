@@ -114,7 +114,6 @@ export default {
   // ─── Board ───
   'board.board': 'Board',
   'board.list': 'List',
-  'board.timeline': 'Timeline',
   'board.summary': 'Summary',
   'board.clearFilter': 'Clear filter',
   'board.noTasks': 'No tasks',
@@ -150,11 +149,6 @@ export default {
   'summary.statusDist': 'Status Distribution',
   'summary.typeDist': 'Type Distribution',
   'summary.noTasks': 'No tasks in this project',
-
-  // ─── Timeline View ───
-  'timeline.day': 'Day',
-  'timeline.week': 'Week',
-  'timeline.month': 'Month',
 
   // ─── Task Modal ───
   'taskModal.newTask': 'New Task',
