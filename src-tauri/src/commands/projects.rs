@@ -96,7 +96,7 @@ pub fn delete_project(app: AppHandle, id: i64) -> Result<(), String> {
 pub fn get_project_groups() -> Vec<serde_json::Value> {
     let db = db::get_db();
     let projects = pq::get_all(&db);
-    let mut groups: std::collections::HashMap<String, Vec<serde_json::Value>> = std::collections::HashMap::new();
+    let mut groups: std::collections::BTreeMap<String, Vec<serde_json::Value>> = std::collections::BTreeMap::new();
 
     for p in &projects {
         let namespace = detect_namespace(&p.working_dir);
