@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3, Bot } from 'lucide-react';
+import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3, Bot, LayoutGrid, List, Lightbulb, Download, X, Loader2 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { api } from '../../lib/api';
 import { formatTokens, formatTimeAgo as timeAgo } from '../../lib/formatters';
@@ -107,6 +107,40 @@ function ProjectCard({ project, onSelect, t }) {
           </div>
         )}
       </div>
+    </button>
+  );
+}
+
+function ProjectListRow({ project, onSelect, t }) {
+  const total = project.total_tasks || 0;
+  const variant = project.icon || 'marble';
+  const seed = project.icon_seed || project.name;
+  return (
+    <button onClick={() => onSelect(project)}
+      className="group w-full flex items-center gap-4 px-4 py-3 rounded-lg bg-surface-800/40 border border-surface-700/30 hover:border-claude/30 hover:bg-surface-800/60 transition-all text-left">
+      <div className="flex-shrink-0 rounded-lg overflow-hidden ring-1 ring-surface-700 group-hover:ring-claude/30">
+        <Avatar size={36} name={seed} variant={variant} colors={AVATAR_COLORS} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-surface-100 group-hover:text-white truncate">{project.name}</span>
+          <span className="text-[10px] text-surface-600 font-mono">{project.slug}</span>
+        </div>
+        <p className="text-[10px] text-surface-600 font-mono truncate">{project.working_dir}</p>
+      </div>
+      {total > 0 && (
+        <div className="flex items-center gap-3 text-[10px] text-surface-500 flex-shrink-0">
+          <span>{project.done_tasks || 0}/{total} {t('dashboard.completed').toLowerCase()}</span>
+          <span>{project.active_tasks || 0} {t('dashboard.active').toLowerCase()}</span>
+          {(project.total_tokens || 0) > 0 && <span className="flex items-center gap-0.5"><Zap size={9} />{formatTokens(project.total_tokens)}</span>}
+          {(project.total_cost || 0) > 0 && <span>${project.total_cost.toFixed(2)}</span>}
+        </div>
+      )}
+      {total > 0 && (
+        <div className="w-24 flex-shrink-0">
+          <MiniStatusBar backlog={project.backlog_tasks||0} active={project.active_tasks||0} testing={project.testing_tasks||0} done={project.done_tasks||0} total={total} />
+        </div>
+      )}
     </button>
   );
 }
@@ -291,6 +325,60 @@ function ClaudeUsageCard({ t }) {
   );
 }
 
+function SuggestionBanner({ suggestions, setSuggestions, t }) {
+  const [installing, setInstalling] = useState(null);
+
+  const handleAction = async (s) => {
+    if (s.action === 'install_plugin') {
+      setInstalling(s.id);
+      try {
+        await api.installPlugin(s.actionArgs);
+        setSuggestions(prev => prev.filter(x => x.id !== s.id));
+      } catch (e) { console.error(e); }
+      setInstalling(null);
+    } else if (s.action === 'navigate') {
+      // Could navigate to claude manager tab
+      setSuggestions(prev => prev.filter(x => x.id !== s.id));
+    }
+  };
+
+  const dismiss = (id) => setSuggestions(prev => prev.filter(x => x.id !== id));
+
+  return (
+    <div className="space-y-2 mb-6">
+      <div className="flex items-center gap-1.5 mb-1">
+        <Lightbulb size={13} className="text-amber-400" />
+        <span className="text-xs font-medium text-surface-400">{t('dashboard.suggestions')}</span>
+      </div>
+      {suggestions.map(s => (
+        <div key={s.id} className="flex items-center gap-3 bg-surface-800/60 border border-surface-700/30 rounded-lg px-4 py-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${s.priority === 'high' ? 'bg-claude/15' : 'bg-surface-700/50'}`}>
+            {s.type === 'plugin' ? <Download size={14} className="text-claude" /> : <Lightbulb size={14} className="text-amber-400" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-surface-200">{s.title}</p>
+            <p className="text-[11px] text-surface-500 mt-0.5">{s.description}</p>
+          </div>
+          {s.action === 'install_plugin' && (
+            <button onClick={() => handleAction(s)} disabled={installing === s.id}
+              className="px-3 py-1.5 text-xs font-medium bg-claude hover:bg-claude-light rounded-lg disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0">
+              {installing === s.id ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+              {t('dashboard.install')}
+            </button>
+          )}
+          <button onClick={() => dismiss(s.id)} className="p-1 text-surface-600 hover:text-surface-400 flex-shrink-0">
+            <X size={14} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Cache outside component so it survives remounts
+let summaryCache = null;
+let groupsCache = null;
+
 function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
   return (
     <div className="flex items-center justify-between gap-4 mb-8">
@@ -328,8 +416,12 @@ function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
 
 export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   const { t } = useTranslation();
-  const [summary, setSummary] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState(summaryCache || []);
+  const [groups, setGroups] = useState(groupsCache || []);
+  const [suggestions, setSuggestions] = useState([]);
+  const [groupBy, setGroupBy] = useState(() => localStorage.getItem('dashboard:groupBy') === 'true');
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard:viewMode') || 'grid');
+  const [loading, setLoading] = useState(!summaryCache);
   const [dashTab, setDashTab] = useState('projects');
 
   useEffect(() => {
@@ -337,9 +429,18 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   }, [projects]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSummary = async () => {
+    if (!summaryCache) setLoading(true);
     try {
-      const data = await api.getProjectsSummary();
+      const [data, grp, sug] = await Promise.all([
+        api.getProjectsSummary(),
+        IS_TAURI ? api.getProjectGroups().catch(() => []) : Promise.resolve([]),
+        IS_TAURI ? api.getSuggestions().catch(() => []) : Promise.resolve([]),
+      ]);
+      summaryCache = data;
+      groupsCache = Array.isArray(grp) ? grp : [];
       setSummary(data);
+      setGroups(groupsCache);
+      setSuggestions(Array.isArray(sug) ? sug : []);
     } catch {
       setSummary(projects.map(p => ({ ...p, total_tasks: 0, done_tasks: 0, active_tasks: 0, backlog_tasks: 0, testing_tasks: 0, total_tokens: 0, total_cost: 0, last_activity: null })));
     } finally {
@@ -403,6 +504,11 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
         {/* Claude Usage */}
         {totalProjects > 0 && <ClaudeUsageCard t={t} />}
 
+        {/* Suggestions */}
+        {suggestions.length > 0 && (
+          <SuggestionBanner suggestions={suggestions} setSuggestions={setSuggestions} t={t} />
+        )}
+
         {/* Project Grid */}
         {loading ? (
           <div className="text-center text-surface-600 py-20 text-sm">{t('common.loading')}</div>
@@ -419,20 +525,82 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {summary.map(p => (
-              <ProjectCard key={p.id} project={p} onSelect={onSelectProject} t={t} />
-            ))}
+          <>
+            {/* Toolbar: view toggle + group toggle */}
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex bg-surface-800/50 rounded-lg p-0.5">
+                <button onClick={() => { setViewMode('grid'); localStorage.setItem('dashboard:viewMode', 'grid'); }}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-surface-700 text-surface-200' : 'text-surface-500 hover:text-surface-300'}`}>
+                  <LayoutGrid size={14} />
+                </button>
+                <button onClick={() => { setViewMode('list'); localStorage.setItem('dashboard:viewMode', 'list'); }}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-surface-700 text-surface-200' : 'text-surface-500 hover:text-surface-300'}`}>
+                  <List size={14} />
+                </button>
+              </div>
+              {groups.length > 1 && (
+                <>
+                  <div className="w-px h-5 bg-surface-700/50" />
+                  <button onClick={() => { const v = !groupBy; setGroupBy(v); localStorage.setItem('dashboard:groupBy', v); }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${groupBy ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'}`}>
+                    <FolderOpen size={12} />
+                    {t('dashboard.groupByNamespace')}
+                  </button>
+                  {groupBy && <span className="text-[10px] text-surface-600">{groups.length} {t('dashboard.groups')}</span>}
+                </>
+              )}
+            </div>
 
-            {/* Add project card */}
-            <button
-              onClick={onNewProject}
-              className="p-5 rounded-xl border-2 border-dashed border-surface-700/50 hover:border-claude/40 flex flex-col items-center justify-center gap-2 text-surface-500 hover:text-claude transition-all duration-200 min-h-[180px]"
-            >
-              <Plus size={24} />
-              <span className="text-sm font-medium">{t('dashboard.newProject')}</span>
-            </button>
-          </div>
+            {groupBy && groups.length > 1 ? (
+              /* Grouped view */
+              <div className="space-y-6">
+                {groups.map(g => {
+                  const groupProjects = summary.filter(p => g.projects.some(gp => gp.id === p.id));
+                  if (groupProjects.length === 0) return null;
+                  return (
+                    <div key={g.namespace}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-claude" />
+                        <h3 className="text-sm font-semibold text-surface-300">{g.namespace}</h3>
+                        <span className="text-[10px] bg-surface-800 px-1.5 py-0.5 rounded-full text-surface-500">{groupProjects.length}</span>
+                      </div>
+                      {viewMode === 'list' ? (
+                        <div className="space-y-1.5">
+                          {groupProjects.map(p => <ProjectListRow key={p.id} project={p} onSelect={onSelectProject} t={t} />)}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {groupProjects.map(p => <ProjectCard key={p.id} project={p} onSelect={onSelectProject} t={t} />)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                <button onClick={onNewProject}
+                  className="w-full p-4 rounded-xl border-2 border-dashed border-surface-700/50 hover:border-claude/40 flex items-center justify-center gap-2 text-surface-500 hover:text-claude transition-all">
+                  <Plus size={18} /><span className="text-sm font-medium">{t('dashboard.newProject')}</span>
+                </button>
+              </div>
+            ) : viewMode === 'list' ? (
+              /* Flat list */
+              <div className="space-y-1.5">
+                {summary.map(p => <ProjectListRow key={p.id} project={p} onSelect={onSelectProject} t={t} />)}
+                <button onClick={onNewProject}
+                  className="w-full p-3 rounded-lg border-2 border-dashed border-surface-700/50 hover:border-claude/40 flex items-center justify-center gap-2 text-surface-500 hover:text-claude transition-all">
+                  <Plus size={16} /><span className="text-sm font-medium">{t('dashboard.newProject')}</span>
+                </button>
+              </div>
+            ) : (
+              /* Flat grid */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {summary.map(p => <ProjectCard key={p.id} project={p} onSelect={onSelectProject} t={t} />)}
+                <button onClick={onNewProject}
+                  className="p-5 rounded-xl border-2 border-dashed border-surface-700/50 hover:border-claude/40 flex flex-col items-center justify-center gap-2 text-surface-500 hover:text-claude transition-all duration-200 min-h-[180px]">
+                  <Plus size={24} /><span className="text-sm font-medium">{t('dashboard.newProject')}</span>
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

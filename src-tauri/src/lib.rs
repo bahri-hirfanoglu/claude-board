@@ -109,6 +109,7 @@ pub fn run() {
             commands::projects::create_project,
             commands::projects::update_project,
             commands::projects::delete_project,
+            commands::projects::get_project_groups,
             // Tasks
             commands::tasks::get_tasks,
             commands::tasks::get_task,
@@ -187,6 +188,8 @@ pub fn run() {
             commands::claude_manager::save_hooks,
             commands::claude_manager::list_sessions,
             commands::claude_manager::get_permission_rules,
+            commands::claude_manager::scan_codebase,
+            commands::claude_manager::get_suggestions,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -373,6 +373,19 @@ export default {
   'toast.projectDeleted': 'Project deleted',
   'toast.startClaude': 'Start Claude?',
 
+  'header.scan': 'Scan',
+  'header.scanning': 'Scanning...',
+  'header.scanned': 'Done',
+  'header.scanCodebase': 'Scan codebase and update CLAUDE.md',
+  'dashboard.suggestions': 'Suggestions',
+  'dashboard.install': 'Install',
+  'header.scanOverwrite': 'Overwrite CLAUDE.md',
+  'header.scanOverwriteDesc': 'Replace existing content with fresh analysis',
+  'header.scanAppend': 'Append to CLAUDE.md',
+  'header.scanAppendDesc': 'Add analysis to the end of existing content',
+  'dashboard.groupByNamespace': 'Group by namespace',
+  'dashboard.groups': 'groups',
+
   // ─── Pipeline ───
   'board.pipeline': 'Pipeline',
   'pipeline.running': 'Running',

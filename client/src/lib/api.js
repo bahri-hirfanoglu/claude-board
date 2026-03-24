@@ -62,6 +62,7 @@ export const api = IS_TAURI
       createProject: (data) => tauriCall('create_project', data),
       updateProject: (id, data) => tauriCall('update_project', { id, ...data }),
       deleteProject: (id) => tauriCall('delete_project', { id }),
+      getProjectGroups: () => tauriCall('get_project_groups'),
 
       // Tasks
       getTasks: (projectId) => tauriCall('get_tasks', { projectId }),
@@ -168,6 +169,8 @@ export const api = IS_TAURI
       saveHooks: (hooks) => tauriCall('save_hooks', { hooks }),
       listSessions: () => tauriCall('list_sessions'),
       getPermissionRules: () => tauriCall('get_permission_rules'),
+      scanCodebase: (projectId, mode = 'overwrite') => tauriCall('scan_codebase', { projectId, mode }),
+      getSuggestions: () => tauriCall('get_suggestions'),
     }
   : {
       // ─── HTTP mode (web / Node.js server) ───

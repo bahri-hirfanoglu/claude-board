@@ -373,6 +373,19 @@ export default {
   'toast.projectDeleted': 'Proje silindi',
   'toast.startClaude': 'Claude ba\u015flat\u0131ls\u0131n m\u0131?',
 
+  'header.scan': 'Tara',
+  'header.scanning': 'Taran\u0131yor...',
+  'header.scanned': 'Tamam',
+  'header.scanCodebase': 'Kod taban\u0131n\u0131 tara ve CLAUDE.md g\u00fcncelle',
+  'dashboard.suggestions': '\u00d6neriler',
+  'dashboard.install': 'Y\u00fckle',
+  'header.scanOverwrite': 'CLAUDE.md \u00fczerine yaz',
+  'header.scanOverwriteDesc': 'Mevcut i\u00e7eri\u011fi yeni analizle de\u011fi\u015ftir',
+  'header.scanAppend': 'CLAUDE.md sonuna ekle',
+  'header.scanAppendDesc': 'Analizi mevcut i\u00e7eri\u011fin sonuna ekle',
+  'dashboard.groupByNamespace': 'Ad alan\u0131na g\u00f6re grupla',
+  'dashboard.groups': 'grup',
+
   // ─── Pipeline ───
   'board.pipeline': 'Pipeline',
   'pipeline.running': '\u00c7al\u0131\u015f\u0131yor',
