@@ -117,3 +117,47 @@ Returns all terminal log entries for the task.
 ```http
 DELETE /api/projects/:projectId/tasks/:id
 ```
+
+## Dependencies (Tauri IPC)
+
+### Add Dependency
+
+```javascript
+invoke('add_task_dependency', { taskId: 5, dependsOnId: 3 })
+```
+
+Creates a dependency edge — task 5 will wait for task 3 to complete. Returns error if it would create a cycle.
+
+### Remove Dependency
+
+```javascript
+invoke('remove_task_dependency', { taskId: 5, dependsOnId: 3 })
+```
+
+### Get Task Dependencies
+
+```javascript
+invoke('get_task_dependencies', { taskId: 5 })
+// → { parents: [3, 1], children: [8, 9] }
+```
+
+### Get Dependency Graph
+
+```javascript
+invoke('get_dependency_graph', { projectId: 1 })
+// → { tasks: [...], edges: [{from: 3, to: 5}, ...], waves: [...] }
+```
+
+### Get Execution Waves
+
+```javascript
+invoke('get_execution_waves', { projectId: 1 })
+// → [[task1, task2], [task3], [task4, task5]]
+```
+
+### Get Task Events (Session Replay)
+
+```javascript
+invoke('get_task_events', { taskId: 5, limit: 500 })
+// → [{ id, eventType, data, timestampMs }, ...]
+```

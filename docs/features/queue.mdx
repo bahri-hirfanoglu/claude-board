@@ -48,6 +48,22 @@ Tasks are picked from the backlog in this order:
 
 When auto-queue is enabled and agent slots are available, newly created tasks with `backlog` status are evaluated immediately. If the queue is empty and a slot is free, the task starts right away without manual intervention.
 
+## DAG-Aware Execution
+
+When tasks have [dependencies](/features/dependencies), the queue respects the full dependency graph:
+
+1. Only tasks with **all** parent dependencies met (status `done` or `testing`) are eligible to start
+2. When a task completes, the queue immediately checks all its children — if their other parents are also complete, they start automatically
+3. This creates a **cascade effect** through the dependency graph
+
+```
+Wave 0: [A, B] (no deps)      → both start in parallel
+Wave 1: [C] (depends on A)    → starts when A completes
+Wave 2: [D] (depends on B, C) → starts when both B and C complete
+```
+
+<Tip>Combine DAG dependencies with max concurrent agents set to 3+ for full parallel pipeline execution. View the pipeline in [Orchestration View](/features/orchestration).</Tip>
+
 ## Disabling Auto-Queue
 
 Toggle auto-queue off in project settings. Existing in-progress tasks continue running, but no new tasks will start automatically. You return to manual drag-and-drop control.

@@ -1,0 +1,77 @@
+---
+title: "Task Dependencies"
+description: "DAG-based multi-parent dependency system with cycle detection"
+icon: "diagram-project"
+---
+
+Task dependencies let you define execution order — a task won't start until all its parent tasks are complete. Claude Board supports full DAG (Directed Acyclic Graph) dependencies: a task can depend on multiple parents, and multiple tasks can depend on the same parent.
+
+## Adding Dependencies
+
+<Steps>
+  <Step title="Open task modal">
+    Click edit on an existing task, or create a new task.
+  </Step>
+  <Step title="Expand Options">
+    Click the **Options** section to reveal the dependency editor.
+  </Step>
+  <Step title="Search and add">
+    Click **Add dependency** to open the search panel. Type to filter tasks by title or task key. Click a task to add it as a parent dependency.
+  </Step>
+</Steps>
+
+## Dependency Types
+
+| Relationship | Display | Meaning |
+|-------------|---------|---------|
+| **Waits for** | Blue card with arrow | This task depends on the parent — it won't start until the parent reaches `done` or `testing` |
+| **Blocks** | Gray card | This task is a dependency of another task (read-only, shown for awareness) |
+
+## Cycle Detection
+
+Claude Board prevents circular dependencies. If adding a dependency would create a cycle (A → B → C → A), the operation is rejected with a red warning:
+
+> "Adding this dependency would create a cycle"
+
+The backend uses DFS (Depth-First Search) to trace the ancestor chain before allowing any new edge.
+
+## Dependency Patterns
+
+<Tabs>
+  <Tab title="Chain">
+    Sequential execution: A → B → C → D. Each task starts only after the previous one completes.
+  </Tab>
+  <Tab title="Fan-out">
+    One parent, multiple children: A → [B, C, D]. All children can run in parallel once A completes.
+  </Tab>
+  <Tab title="Fan-in">
+    Multiple parents, one child: [A, B, C] → D. D starts only when ALL parents are complete.
+  </Tab>
+  <Tab title="Diamond">
+    Combined pattern: A → [B, C], [B, C] → D. B and C run in parallel after A, then D starts when both finish.
+  </Tab>
+</Tabs>
+
+## Queue Integration
+
+When **auto-queue** is enabled, dependencies are enforced automatically:
+
+1. A backlog task is only eligible to start if **all** parent dependencies have status `done` or `testing`
+2. When a task completes, the queue immediately checks all its children — if their other parents are also complete, they start automatically
+3. This creates a **cascade effect**: completing one task can trigger a chain of dependent tasks
+
+<Warning>Dependencies override queue position. Even if a task has position #1, it won't start until all parents are complete.</Warning>
+
+## Planning Mode Integration
+
+When using Planning Mode, Claude can generate dependency relationships between proposed tasks. Approved plans create tasks with proper DAG structure, ready for wave-based execution.
+
+## API
+
+Dependencies are managed through the Tauri IPC API:
+
+- `addDependency(taskId, dependsOnId)` — Add a parent dependency
+- `removeDependency(taskId, dependsOnId)` — Remove a dependency
+- `getTaskDependencies(taskId)` — Get parents and children
+- `getDependencyGraph(projectId)` — Get full graph with edges and waves
+- `getExecutionWaves(projectId)` — Get wave groupings

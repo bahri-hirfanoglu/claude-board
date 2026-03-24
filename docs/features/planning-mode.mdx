@@ -96,6 +96,15 @@ Each generated task includes:
 
 Tasks are ordered by dependency — prerequisite tasks appear first. Descriptions reference actual files and patterns from your codebase when possible.
 
+## Dependency Generation
+
+Planning Mode can generate [dependency relationships](/features/dependencies) between tasks. When Claude determines that task B requires task A to be completed first, it creates a dependency edge.
+
+Approved plans create all tasks with their DAG structure intact:
+- Tasks with no dependencies land in **Wave 0** and can run immediately
+- Dependent tasks are queued and auto-start when their parents complete
+- View the full dependency graph in [Orchestration View](/features/orchestration)
+
 <Tip>Add context in the optional field to guide Claude's planning. For example: "Express.js backend, React frontend, PostgreSQL with Prisma ORM" helps Claude generate more relevant tasks.</Tip>
 
 ## API
