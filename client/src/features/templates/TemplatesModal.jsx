@@ -161,9 +161,9 @@ function TemplateForm({ template, onSave, onCancel }) {
       description: description.trim(),
       template: templateText.trim(),
       variables: JSON.stringify(variables.filter((v) => v.name.trim())),
-      task_type: taskType,
+      taskType: taskType,
       model,
-      thinking_effort: thinkingEffort,
+      thinkingEffort: thinkingEffort,
     });
   };
 

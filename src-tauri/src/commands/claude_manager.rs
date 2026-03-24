@@ -6,17 +6,24 @@ use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
+fn strip_ansi(s: &str) -> String {
+    let re = regex_lite::Regex::new(r"\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07|\x1b\[\?[0-9]*[a-zA-Z]").unwrap();
+    re.replace_all(s, "").trim().to_string()
+}
+
 fn run_claude(args: &[&str]) -> Result<String, String> {
     let mut cmd = Command::new("claude");
     cmd.args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .stdin(Stdio::null());
+        .stdin(Stdio::null())
+        .env("NO_COLOR", "1")
+        .env("TERM", "dumb");
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
     let output = cmd.output().map_err(|e| format!("Failed to run claude: {}", e))?;
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    let stdout = strip_ansi(&String::from_utf8_lossy(&output.stdout));
+    let stderr = strip_ansi(&String::from_utf8_lossy(&output.stderr));
     if output.status.success() {
         Ok(stdout)
     } else {
