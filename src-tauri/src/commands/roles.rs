@@ -21,7 +21,7 @@ pub fn create_role(
         description.as_deref().unwrap_or(""),
         prompt.as_deref().unwrap_or(""),
         color.as_deref().unwrap_or("#6B7280"));
-    let role = rq::get_by_id(&db, id).unwrap();
+    let role = rq::get_by_id(&db, id).ok_or("Role not found")?;
     app.emit("role:created", &role).ok();
     Ok(role)
 }
@@ -36,7 +36,7 @@ pub fn update_role(
         description.as_deref().unwrap_or(""),
         prompt.as_deref().unwrap_or(""),
         color.as_deref().unwrap_or("#6B7280"));
-    let role = rq::get_by_id(&db, id).unwrap();
+    let role = rq::get_by_id(&db, id).ok_or("Role not found")?;
     app.emit("role:updated", &role).ok();
     Ok(role)
 }

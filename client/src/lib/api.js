@@ -41,7 +41,6 @@ async function request(path, options = {}) {
   return res.json();
 }
 
-// ─── Tauri invoke wrapper with error handling ───
 async function tauriCall(cmd, args = {}) {
   try {
     return await invoke(cmd, args);
@@ -52,234 +51,189 @@ async function tauriCall(cmd, args = {}) {
   }
 }
 
-// ─── API: auto-switches between Tauri IPC and HTTP ───
-export const api = IS_TAURI
-  ? {
-      // Projects
-      getProjects: () => tauriCall('get_projects'),
-      getProjectsSummary: () => tauriCall('get_projects_summary'),
-      getProject: (id) => tauriCall('get_project', { id }),
-      createProject: (data) => tauriCall('create_project', data),
-      updateProject: (id, data) => tauriCall('update_project', { id, ...data }),
-      deleteProject: (id) => tauriCall('delete_project', { id }),
-      getProjectGroups: () => tauriCall('get_project_groups'),
+// ─── Unified dispatch: define each method once ───
+function call(cmd, method, path, tauriArgs = {}, httpBody) {
+  if (IS_TAURI) return tauriCall(cmd, tauriArgs);
+  const opts = { method };
+  if (httpBody !== undefined) opts.body = JSON.stringify(httpBody);
+  return request(path, opts);
+}
 
-      // Tasks
-      getTasks: (projectId) => tauriCall('get_tasks', { projectId }),
-      getTask: (id) => tauriCall('get_task', { id }),
-      createTask: (projectId, data) => tauriCall('create_task', { projectId, ...data }),
-      updateTask: (id, data) => tauriCall('update_task', { id, ...data }),
-      updateStatus: (id, status) => tauriCall('change_task_status', { id, status, mcpPort: MCP_PORT }),
-      deleteTask: (id) => tauriCall('delete_task', { id }),
-      getTaskLogs: (id, limit = 500) => tauriCall('get_task_logs', { id, limit }),
-      stopTask: (id) => tauriCall('stop_task', { id }),
-      restartTask: (id) => tauriCall('restart_task', { id, mcpPort: MCP_PORT }),
-      requestChanges: (id, feedback) => tauriCall('request_changes', { id, feedback, mcpPort: MCP_PORT }),
-      getRevisions: (id) => tauriCall('get_revisions', { id }),
-      getTaskDetail: (id) => tauriCall('get_task_detail', { id }),
-      reorderQueue: (projectId, taskIds) => tauriCall('reorder_queue', { projectId, taskIds }),
-      setTaskDependency: (id, dependsOn) => tauriCall('set_task_dependency', { id, dependsOn }),
-      getPipelineStatus: (projectId) => tauriCall('get_pipeline_status', { projectId }),
+export const api = {
+  // ─── Projects ───
+  getProjects: () =>
+    call('get_projects', 'GET', '/api/projects'),
+  getProjectsSummary: () =>
+    call('get_projects_summary', 'GET', '/api/projects/summary'),
+  getProject: (id) =>
+    call('get_project', 'GET', `/api/projects/${id}`, { id }),
+  createProject: (data) =>
+    call('create_project', 'POST', '/api/projects', data, data),
+  updateProject: (id, data) =>
+    call('update_project', 'PUT', `/api/projects/${id}`, { id, ...data }, data),
+  deleteProject: (id) =>
+    call('delete_project', 'DELETE', `/api/projects/${id}`, { id }),
 
-      // Planning
-      startPlanning: (projectId, data) => tauriCall('start_planning', { projectId, ...data }),
-      approvePlan: (projectId, tasks, model) => tauriCall('approve_plan', { projectId, tasks, model }),
-      cancelPlanning: (projectId) => tauriCall('cancel_planning', { projectId }),
-      getPlanningStatus: (projectId) => tauriCall('get_planning_status', { projectId }),
+  // ─── Tasks ───
+  getTasks: (projectId) =>
+    call('get_tasks', 'GET', `/api/projects/${projectId}/tasks`, { projectId }),
+  getTask: (id) =>
+    call('get_task', 'GET', `/api/tasks/${id}`, { id }),
+  createTask: (projectId, data) =>
+    call('create_task', 'POST', `/api/projects/${projectId}/tasks`, { projectId, ...data }, data),
+  updateTask: (id, data) =>
+    call('update_task', 'PUT', `/api/tasks/${id}`, { id, ...data }, data),
+  updateStatus: (id, status) =>
+    call('change_task_status', 'PATCH', `/api/tasks/${id}/status`, { id, status, mcpPort: MCP_PORT }, { status }),
+  deleteTask: (id) =>
+    call('delete_task', 'DELETE', `/api/tasks/${id}`, { id }),
+  getTaskLogs: (id, limit = 500) =>
+    call('get_task_logs', 'GET', `/api/tasks/${id}/logs?limit=${limit}`, { id, limit }),
+  stopTask: (id) =>
+    call('stop_task', 'POST', `/api/tasks/${id}/stop`, { id }),
+  restartTask: (id) =>
+    call('restart_task', 'POST', `/api/tasks/${id}/restart`, { id, mcpPort: MCP_PORT }),
+  requestChanges: (id, feedback) =>
+    call('request_changes', 'POST', `/api/tasks/${id}/request-changes`, { id, feedback, mcpPort: MCP_PORT }, { feedback }),
+  getRevisions: (id) =>
+    call('get_revisions', 'GET', `/api/tasks/${id}/revisions`, { id }),
+  getTaskDetail: (id) =>
+    call('get_task_detail', 'GET', `/api/tasks/${id}/detail`, { id }),
 
-      // Stats & Activity
-      getStats: (projectId) => tauriCall('get_project_stats', { projectId }),
-      getActivity: (projectId, limit = 50, offset = 0) =>
-        tauriCall('get_activity', { projectId, limit, offset }),
-      getClaudeUsage: () => tauriCall('get_claude_usage'),
+  // ─── Planning ───
+  startPlanning: (projectId, data) =>
+    call('start_planning', 'POST', `/api/projects/${projectId}/plan`, { projectId, ...data }, data),
+  cancelPlanning: (projectId) =>
+    call('cancel_planning', 'POST', `/api/projects/${projectId}/plan/cancel`, { projectId }),
+  getPlanningStatus: (projectId) =>
+    call('get_planning_status', 'GET', `/api/projects/${projectId}/plan/status`, { projectId }),
 
-      // CLAUDE.md
-      getClaudeMd: (projectId) => tauriCall('get_claude_md', { projectId }),
-      saveClaudeMd: (projectId, content) => tauriCall('save_claude_md', { projectId, content }),
+  // ─── Stats & Activity ───
+  getStats: (projectId) =>
+    call('get_project_stats', 'GET', `/api/projects/${projectId}/stats`, { projectId }),
+  getActivity: (projectId, limit = 50, offset = 0) =>
+    call('get_activity', 'GET', `/api/projects/${projectId}/activity?limit=${limit}&offset=${offset}`, { projectId, limit, offset }),
+  getClaudeUsage: () =>
+    call('get_claude_usage', 'GET', '/api/stats/claude-usage'),
 
-      // Snippets
-      getSnippets: (projectId) => tauriCall('get_snippets', { projectId }),
-      createSnippet: (projectId, data) => tauriCall('create_snippet', { projectId, ...data }),
-      updateSnippet: (id, data) => tauriCall('update_snippet', { id, ...data }),
-      deleteSnippet: (id) => tauriCall('delete_snippet', { id }),
+  // ─── CLAUDE.md ───
+  getClaudeMd: (projectId) =>
+    call('get_claude_md', 'GET', `/api/projects/${projectId}/claude-md`, { projectId }),
+  saveClaudeMd: (projectId, content) =>
+    call('save_claude_md', 'PUT', `/api/projects/${projectId}/claude-md`, { projectId, content }, { content }),
 
-      // Templates
-      getTemplates: (projectId) => tauriCall('get_templates', { projectId }),
-      createTemplate: (projectId, data) => tauriCall('create_template', { projectId, ...data }),
-      updateTemplate: (id, data) => tauriCall('update_template', { id, ...data }),
-      deleteTemplate: (id) => tauriCall('delete_template', { id }),
+  // ─── Snippets ───
+  getSnippets: (projectId) =>
+    call('get_snippets', 'GET', `/api/projects/${projectId}/snippets`, { projectId }),
+  createSnippet: (projectId, data) =>
+    call('create_snippet', 'POST', `/api/projects/${projectId}/snippets`, { projectId, ...data }, data),
+  updateSnippet: (id, data) =>
+    call('update_snippet', 'PUT', `/api/snippets/${id}`, { id, ...data }, data),
+  deleteSnippet: (id) =>
+    call('delete_snippet', 'DELETE', `/api/snippets/${id}`, { id }),
 
-      // Attachments — file upload needs special handling in Tauri
-      uploadAttachments: async (taskId, files) => {
+  // ─── Templates ───
+  getTemplates: (projectId) =>
+    call('get_templates', 'GET', `/api/projects/${projectId}/templates`, { projectId }),
+  createTemplate: (projectId, data) =>
+    call('create_template', 'POST', `/api/projects/${projectId}/templates`, { projectId, ...data }, data),
+  updateTemplate: (id, data) =>
+    call('update_template', 'PUT', `/api/templates/${id}`, { id, ...data }, data),
+  deleteTemplate: (id) =>
+    call('delete_template', 'DELETE', `/api/templates/${id}`, { id }),
+
+  // ─── Attachments ───
+  uploadAttachments: IS_TAURI
+    ? async (taskId, files) => {
         const results = [];
         for (const file of files) {
           const arrayBuffer = await file.arrayBuffer();
           const fileData = Array.from(new Uint8Array(arrayBuffer));
           const result = await tauriCall('upload_attachment', {
-            taskId,
-            fileData,
-            fileName: file.name,
+            taskId, fileData, fileName: file.name,
             mimeType: file.type || 'application/octet-stream',
           });
           results.push(result);
         }
         return results;
-      },
-      getAttachments: (taskId) => tauriCall('get_attachments', { taskId }),
-      deleteAttachment: (id) => tauriCall('delete_attachment', { id }),
-
-      // Roles
-      getRoles: (projectId) => tauriCall('get_roles', { projectId }),
-      getGlobalRoles: () => tauriCall('get_global_roles'),
-      createRole: (projectId, data) => tauriCall('create_role', { projectId, ...data }),
-      updateRole: (id, data) => tauriCall('update_role', { id, ...data }),
-      deleteRole: (id) => tauriCall('delete_role', { id }),
-
-      // Webhooks
-      getWebhooks: (projectId) => tauriCall('get_webhooks', { projectId }),
-      createWebhook: (projectId, data) => tauriCall('create_webhook', { projectId, ...data }),
-      updateWebhook: (id, data) => tauriCall('update_webhook', { id, ...data }),
-      deleteWebhook: (id) => tauriCall('delete_webhook', { id }),
-      testWebhook: (id) => tauriCall('test_webhook', { id }),
-
-      // Auth
-      getAuthStatus: () => tauriCall('get_auth_status'),
-      enableAuth: () => tauriCall('enable_auth'),
-      disableAuth: () => tauriCall('disable_auth'),
-
-      // Claude Manager
-      getAuthInfo: () => tauriCall('get_auth_info'),
-      listMcpServers: () => tauriCall('list_mcp_servers'),
-      addMcpServer: (name, commandStr, args, scope, env) =>
-        tauriCall('add_mcp_server', { name, commandStr, args, scope, env }),
-      removeMcpServer: (name, scope) => tauriCall('remove_mcp_server', { name, scope }),
-      listPlugins: () => tauriCall('list_plugins'),
-      installPlugin: (name) => tauriCall('install_plugin', { name }),
-      uninstallPlugin: (name) => tauriCall('uninstall_plugin', { name }),
-      togglePlugin: (name, enabled) => tauriCall('toggle_plugin', { name, enabled }),
-      listMarketplaces: () => tauriCall('list_marketplaces'),
-      addMarketplace: (source, scope) => tauriCall('add_marketplace', { source, scope }),
-      removeMarketplace: (name) => tauriCall('remove_marketplace', { name }),
-      getClaudeSettings: () => tauriCall('get_claude_settings'),
-      saveClaudeSettings: (settings) => tauriCall('save_claude_settings', { settings }),
-      listAgents: () => tauriCall('list_agents'),
-      getClaudeVersion: () => tauriCall('get_claude_version'),
-      updateClaudeCli: () => tauriCall('update_claude_cli'),
-      getHooks: () => tauriCall('get_hooks'),
-      saveHooks: (hooks) => tauriCall('save_hooks', { hooks }),
-      listSessions: () => tauriCall('list_sessions'),
-      getPermissionRules: () => tauriCall('get_permission_rules'),
-      scanCodebase: (projectId, mode = 'overwrite') => tauriCall('scan_codebase', { projectId, mode }),
-      saveScanResult: (projectId, content, mode = 'overwrite') => tauriCall('save_scan_result', { projectId, content, mode }),
-      getSuggestions: () => tauriCall('get_suggestions'),
-      // Custom Commands & Skills
-      listCustomCommands: () => tauriCall('list_custom_commands'),
-      listCustomSkills: () => tauriCall('list_custom_skills'),
-    }
-  : {
-      // ─── HTTP mode (web / Node.js server) ───
-      getProjects: () => request('/api/projects'),
-      getProjectsSummary: () => request('/api/projects/summary'),
-      getProject: (id) => request(`/api/projects/${id}`),
-      createProject: (data) => request('/api/projects', { method: 'POST', body: JSON.stringify(data) }),
-      updateProject: (id, data) =>
-        request(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-      deleteProject: (id) => request(`/api/projects/${id}`, { method: 'DELETE' }),
-
-      getTasks: (projectId) => request(`/api/projects/${projectId}/tasks`),
-      getTask: (id) => request(`/api/tasks/${id}`),
-      createTask: (projectId, data) =>
-        request(`/api/projects/${projectId}/tasks`, { method: 'POST', body: JSON.stringify(data) }),
-      updateTask: (id, data) =>
-        request(`/api/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-      updateStatus: (id, status) =>
-        request(`/api/tasks/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
-      deleteTask: (id) => request(`/api/tasks/${id}`, { method: 'DELETE' }),
-      getTaskLogs: (id, limit = 500) => request(`/api/tasks/${id}/logs?limit=${limit}`),
-      stopTask: (id) => request(`/api/tasks/${id}/stop`, { method: 'POST' }),
-      restartTask: (id) => request(`/api/tasks/${id}/restart`, { method: 'POST' }),
-      requestChanges: (id, feedback) =>
-        request(`/api/tasks/${id}/request-changes`, {
-          method: 'POST',
-          body: JSON.stringify({ feedback }),
-        }),
-      getRevisions: (id) => request(`/api/tasks/${id}/revisions`),
-      getTaskDetail: (id) => request(`/api/tasks/${id}/detail`),
-
-      startPlanning: (projectId, data) =>
-        request(`/api/projects/${projectId}/plan`, { method: 'POST', body: JSON.stringify(data) }),
-      cancelPlanning: (projectId) =>
-        request(`/api/projects/${projectId}/plan/cancel`, { method: 'POST' }),
-      getPlanningStatus: (projectId) => request(`/api/projects/${projectId}/plan/status`),
-
-      getStats: (projectId) => request(`/api/projects/${projectId}/stats`),
-      getActivity: (projectId, limit = 50, offset = 0) =>
-        request(`/api/projects/${projectId}/activity?limit=${limit}&offset=${offset}`),
-      getClaudeUsage: () => request('/api/stats/claude-usage'),
-
-      getClaudeMd: (projectId) => request(`/api/projects/${projectId}/claude-md`),
-      saveClaudeMd: (projectId, content) =>
-        request(`/api/projects/${projectId}/claude-md`, {
-          method: 'PUT',
-          body: JSON.stringify({ content }),
-        }),
-
-      getSnippets: (projectId) => request(`/api/projects/${projectId}/snippets`),
-      createSnippet: (projectId, data) =>
-        request(`/api/projects/${projectId}/snippets`, {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }),
-      updateSnippet: (id, data) =>
-        request(`/api/snippets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-      deleteSnippet: (id) => request(`/api/snippets/${id}`, { method: 'DELETE' }),
-
-      getTemplates: (projectId) => request(`/api/projects/${projectId}/templates`),
-      createTemplate: (projectId, data) =>
-        request(`/api/projects/${projectId}/templates`, {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }),
-      updateTemplate: (id, data) =>
-        request(`/api/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-      deleteTemplate: (id) => request(`/api/templates/${id}`, { method: 'DELETE' }),
-
-      uploadAttachments: async (taskId, files) => {
+      }
+    : async (taskId, files) => {
         const formData = new FormData();
         for (const file of files) formData.append('files', file);
         const res = await fetch(`${BASE}/api/tasks/${taskId}/attachments`, {
-          method: 'POST',
-          body: formData,
+          method: 'POST', body: formData,
         });
         if (!res.ok) throw new Error('Upload failed');
         return res.json();
       },
-      getAttachments: (taskId) => request(`/api/tasks/${taskId}/attachments`),
-      deleteAttachment: (id) => request(`/api/attachments/${id}`, { method: 'DELETE' }),
+  getAttachments: (taskId) =>
+    call('get_attachments', 'GET', `/api/tasks/${taskId}/attachments`, { taskId }),
+  deleteAttachment: (id) =>
+    call('delete_attachment', 'DELETE', `/api/attachments/${id}`, { id }),
 
-      getRoles: (projectId) => request(`/api/projects/${projectId}/roles`),
-      getGlobalRoles: () => request('/api/roles/global'),
-      createRole: (projectId, data) =>
-        request(`/api/projects/${projectId}/roles`, {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }),
-      updateRole: (id, data) =>
-        request(`/api/roles/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-      deleteRole: (id) => request(`/api/roles/${id}`, { method: 'DELETE' }),
+  // ─── Roles ───
+  getRoles: (projectId) =>
+    call('get_roles', 'GET', `/api/projects/${projectId}/roles`, { projectId }),
+  getGlobalRoles: () =>
+    call('get_global_roles', 'GET', '/api/roles/global'),
+  createRole: (projectId, data) =>
+    call('create_role', 'POST', `/api/projects/${projectId}/roles`, { projectId, ...data }, data),
+  updateRole: (id, data) =>
+    call('update_role', 'PUT', `/api/roles/${id}`, { id, ...data }, data),
+  deleteRole: (id) =>
+    call('delete_role', 'DELETE', `/api/roles/${id}`, { id }),
 
-      getWebhooks: (projectId) => request(`/api/projects/${projectId}/webhooks`),
-      createWebhook: (projectId, data) =>
-        request(`/api/projects/${projectId}/webhooks`, {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }),
-      updateWebhook: (id, data) =>
-        request(`/api/webhooks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-      deleteWebhook: (id) => request(`/api/webhooks/${id}`, { method: 'DELETE' }),
-      testWebhook: (id) => request(`/api/webhooks/${id}/test`, { method: 'POST' }),
+  // ─── Webhooks ───
+  getWebhooks: (projectId) =>
+    call('get_webhooks', 'GET', `/api/projects/${projectId}/webhooks`, { projectId }),
+  createWebhook: (projectId, data) =>
+    call('create_webhook', 'POST', `/api/projects/${projectId}/webhooks`, { projectId, ...data }, data),
+  updateWebhook: (id, data) =>
+    call('update_webhook', 'PUT', `/api/webhooks/${id}`, { id, ...data }, data),
+  deleteWebhook: (id) =>
+    call('delete_webhook', 'DELETE', `/api/webhooks/${id}`, { id }),
+  testWebhook: (id) =>
+    call('test_webhook', 'POST', `/api/webhooks/${id}/test`, { id }),
 
-      getAuthStatus: () => request('/api/auth/status'),
-      enableAuth: () => request('/api/auth/enable', { method: 'POST' }),
-      disableAuth: () => request('/api/auth/disable', { method: 'POST' }),
-    };
+  // ─── Auth ───
+  getAuthStatus: () =>
+    call('get_auth_status', 'GET', '/api/auth/status'),
+  enableAuth: () =>
+    call('enable_auth', 'POST', '/api/auth/enable'),
+  disableAuth: () =>
+    call('disable_auth', 'POST', '/api/auth/disable'),
+
+  // ─── Tauri-only: Claude Manager & extended features ───
+  ...(IS_TAURI ? {
+    getProjectGroups: () => tauriCall('get_project_groups'),
+    reorderQueue: (projectId, taskIds) => tauriCall('reorder_queue', { projectId, taskIds }),
+    setTaskDependency: (id, dependsOn) => tauriCall('set_task_dependency', { id, dependsOn }),
+    getPipelineStatus: (projectId) => tauriCall('get_pipeline_status', { projectId }),
+    approvePlan: (projectId, tasks, model) => tauriCall('approve_plan', { projectId, tasks, model }),
+    getAuthInfo: () => tauriCall('get_auth_info'),
+    listMcpServers: () => tauriCall('list_mcp_servers'),
+    addMcpServer: (name, commandStr, args, scope, env) => tauriCall('add_mcp_server', { name, commandStr, args, scope, env }),
+    removeMcpServer: (name, scope) => tauriCall('remove_mcp_server', { name, scope }),
+    listPlugins: () => tauriCall('list_plugins'),
+    installPlugin: (name) => tauriCall('install_plugin', { name }),
+    uninstallPlugin: (name) => tauriCall('uninstall_plugin', { name }),
+    togglePlugin: (name, enabled) => tauriCall('toggle_plugin', { name, enabled }),
+    listMarketplaces: () => tauriCall('list_marketplaces'),
+    addMarketplace: (source, scope) => tauriCall('add_marketplace', { source, scope }),
+    removeMarketplace: (name) => tauriCall('remove_marketplace', { name }),
+    getClaudeSettings: () => tauriCall('get_claude_settings'),
+    saveClaudeSettings: (settings) => tauriCall('save_claude_settings', { settings }),
+    listAgents: () => tauriCall('list_agents'),
+    getClaudeVersion: () => tauriCall('get_claude_version'),
+    updateClaudeCli: () => tauriCall('update_claude_cli'),
+    getHooks: () => tauriCall('get_hooks'),
+    saveHooks: (hooks) => tauriCall('save_hooks', { hooks }),
+    listSessions: () => tauriCall('list_sessions'),
+    getPermissionRules: () => tauriCall('get_permission_rules'),
+    scanCodebase: (projectId, mode = 'overwrite') => tauriCall('scan_codebase', { projectId, mode }),
+    saveScanResult: (projectId, content, mode = 'overwrite') => tauriCall('save_scan_result', { projectId, content, mode }),
+    getSuggestions: () => tauriCall('get_suggestions'),
+    listCustomCommands: () => tauriCall('list_custom_commands'),
+    listCustomSkills: () => tauriCall('list_custom_skills'),
+  } : {}),
+};

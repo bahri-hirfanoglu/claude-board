@@ -23,80 +23,17 @@ import CommandsModal from '../features/commands/CommandsModal';
 import SkillsModal from '../features/skills/SkillsModal';
 import ScanModal from '../features/scan/ScanModal';
 
-export default function AppLayout(props) {
-  const {
-    connected,
-    projects,
-    currentProject,
-    tasks,
-    filteredTasks,
-    terminal,
-    selectedTask,
-    activePanel,
-    search,
-    toasts,
-    confirm,
-    showModal,
-    editingTask,
-    showProjectModal,
-    editingProject,
-    showClaudeMd,
-    showSnippets,
-    showTemplates,
-    showWebhooks,
-    showRoles,
-    showPlanning,
-    showCommands,
-    showSkills,
-    showScan,
-    templates,
-    roles,
-    reviewTask,
-    detailTask,
-    onSearchChange,
-    onSetActivePanel,
-    onSetSelectedTask,
-    onNavigateToProject,
-    onNavigateToDashboard,
-    onStatusChange,
-    onViewLogs,
-    onCreateTask,
-    onUpdateTask,
-    onDeleteTask,
-    onOpenCreateModal,
-    onOpenEditModal,
-    onCloseTaskModal,
-    onReviewTask,
-    onApproveTask,
-    onRequestChanges,
-    onCloseReview,
-    onCreateProject,
-    onUpdateProject,
-    onDeleteProject,
-    onEditProject,
-    onNewProject,
-    onCloseProjectModal,
-    onEditClaudeMd,
-    onCloseClaudeMd,
-    onEditSnippets,
-    onCloseSnippets,
-    onEditTemplates,
-    onCloseTemplates,
-    onEditWebhooks,
-    onCloseWebhooks,
-    onEditRoles,
-    onCloseRoles,
-    onViewDetail,
-    onCloseDetail,
-    onOpenPlanning,
-    onClosePlanning,
-    onEditCommands,
-    onCloseCommands,
-    onEditSkills,
-    onCloseSkills,
-    onOpenScan,
-    onCloseScan,
-  } = props;
+export default function AppLayout({
+  connected, projects, currentProject, tasks, filteredTasks, terminal,
+  selectedTask, activePanel, search, toasts, confirm, templates, roles,
+  modals, openModal, closeModal,
+  onClosePlanning, onOpenPlanning, onCloseTemplates, onCloseRoles,
+  onSearchChange, onSetActivePanel, onSetSelectedTask,
+  onNavigateToProject, onNavigateToDashboard,
+  taskActions, projectActions,
+}) {
+  const editingTask = modals.task === true ? null : modals.task;
+  const editingProject = modals.project === true ? null : modals.project;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -106,7 +43,7 @@ export default function AppLayout(props) {
         taskCount={tasks.length}
         runningCount={tasks.filter((t) => t.is_running).length}
         tasks={tasks}
-        onNewTask={currentProject ? onOpenCreateModal : null}
+        onNewTask={currentProject ? () => openModal('task') : null}
         onToggleStats={() => onSetActivePanel((prev) => (prev === 'stats' ? null : 'stats'))}
         statsActive={activePanel === 'stats'}
         onToggleActivity={() => onSetActivePanel((prev) => (prev === 'activity' ? null : 'activity'))}
@@ -117,18 +54,18 @@ export default function AppLayout(props) {
         currentProject={currentProject}
         onSelectProject={onNavigateToProject}
         onBackToDashboard={onNavigateToDashboard}
-        onNewProject={onNewProject}
-        onEditProject={onEditProject}
-        onDeleteProject={onDeleteProject}
-        onEditClaudeMd={onEditClaudeMd}
-        onEditSnippets={onEditSnippets}
-        onEditTemplates={onEditTemplates}
+        onNewProject={() => openModal('project')}
+        onEditProject={projectActions.onEdit}
+        onDeleteProject={projectActions.onDelete}
+        onEditClaudeMd={() => openModal('claudeMd')}
+        onEditSnippets={() => openModal('snippets')}
+        onEditTemplates={() => openModal('templates')}
         onOpenPlanning={currentProject ? onOpenPlanning : null}
-        onEditWebhooks={onEditWebhooks}
-        onEditRoles={onEditRoles}
-        onEditCommands={onEditCommands}
-        onEditSkills={onEditSkills}
-        onOpenScan={currentProject ? onOpenScan : null}
+        onEditWebhooks={() => openModal('webhooks')}
+        onEditRoles={() => openModal('roles')}
+        onEditCommands={() => openModal('commands')}
+        onEditSkills={() => openModal('skills')}
+        onOpenScan={currentProject ? () => openModal('scan') : null}
       />
 
       {/* Main content */}
@@ -139,19 +76,19 @@ export default function AppLayout(props) {
             {currentProject ? (
               <Board
                 tasks={filteredTasks}
-                onStatusChange={onStatusChange}
-                onViewLogs={onViewLogs}
-                onEditTask={onOpenEditModal}
-                onDeleteTask={onDeleteTask}
-                onReviewTask={onReviewTask}
-                onViewDetail={onViewDetail}
+                onStatusChange={taskActions.onStatusChange}
+                onViewLogs={taskActions.onViewLogs}
+                onEditTask={(task) => openModal('task', task)}
+                onDeleteTask={taskActions.onDelete}
+                onReviewTask={taskActions.onReview}
+                onViewDetail={(task) => openModal('detail', task)}
               />
             ) : (
-              <Dashboard projects={projects} onSelectProject={onNavigateToProject} onNewProject={onNewProject} />
+              <Dashboard projects={projects} onSelectProject={onNavigateToProject} onNewProject={() => openModal('project')} />
             )}
           </div>
 
-          {/* Side panels — full overlay on mobile, side panel on desktop */}
+          {/* Side panels */}
           {activePanel === 'logs' && terminal.activeTab && terminal.layout === 'side' && (
             <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto h-full">
               <LiveTerminal
@@ -182,59 +119,65 @@ export default function AppLayout(props) {
       </div>
 
       {/* Modals */}
-      {showModal && currentProject && (
+      {modals.task && currentProject && (
         <TaskModal
           task={editingTask}
-          onSubmit={editingTask ? onUpdateTask : onCreateTask}
-          onClose={onCloseTaskModal}
+          onSubmit={editingTask
+            ? (data) => taskActions.onUpdate(editingTask, data)
+            : taskActions.onCreate
+          }
+          onClose={() => closeModal('task')}
           templates={templates || []}
           roles={roles || []}
         />
       )}
-      {showProjectModal && (
+      {modals.project && (
         <ProjectModal
           project={editingProject}
-          onSubmit={editingProject ? onUpdateProject : onCreateProject}
-          onClose={onCloseProjectModal}
+          onSubmit={editingProject
+            ? (data) => projectActions.onUpdate(editingProject, data)
+            : projectActions.onCreate
+          }
+          onClose={() => closeModal('project')}
         />
       )}
-      {showClaudeMd && currentProject && (
-        <ClaudeMdEditor projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseClaudeMd} />
+      {modals.claudeMd && currentProject && (
+        <ClaudeMdEditor projectId={currentProject.id} projectName={currentProject.name} onClose={() => closeModal('claudeMd')} />
       )}
-      {showSnippets && currentProject && (
-        <SnippetsModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseSnippets} />
+      {modals.snippets && currentProject && (
+        <SnippetsModal projectId={currentProject.id} projectName={currentProject.name} onClose={() => closeModal('snippets')} />
       )}
-      {showTemplates && currentProject && (
+      {modals.templates && currentProject && (
         <TemplatesModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseTemplates} />
       )}
-      {showWebhooks && currentProject && (
-        <WebhooksModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseWebhooks} />
+      {modals.webhooks && currentProject && (
+        <WebhooksModal projectId={currentProject.id} projectName={currentProject.name} onClose={() => closeModal('webhooks')} />
       )}
-      {showRoles && currentProject && (
+      {modals.roles && currentProject && (
         <RolesModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseRoles} />
       )}
-      {reviewTask && (
+      {modals.review && (
         <ReviewModal
-          task={reviewTask}
-          onApprove={onApproveTask}
-          onRequestChanges={onRequestChanges}
-          onClose={onCloseReview}
+          task={modals.review}
+          onApprove={taskActions.onApprove}
+          onRequestChanges={taskActions.onRequestChanges}
+          onClose={() => closeModal('review')}
         />
       )}
-      {detailTask && <TaskDetailModal task={detailTask} onClose={onCloseDetail} onStatusChange={onStatusChange} />}
-      {showPlanning && currentProject && (
+      {modals.detail && <TaskDetailModal task={modals.detail} onClose={() => closeModal('detail')} onStatusChange={taskActions.onStatusChange} />}
+      {modals.planning && currentProject && (
         <PlanningModal projectId={currentProject.id} onClose={onClosePlanning} />
       )}
-      {showCommands && <CommandsModal onClose={onCloseCommands} />}
-      {showSkills && <SkillsModal onClose={onCloseSkills} />}
-      {showScan && currentProject && <ScanModal projectId={currentProject.id} onClose={onCloseScan} />}
+      {modals.commands && <CommandsModal onClose={() => closeModal('commands')} />}
+      {modals.skills && <SkillsModal onClose={() => closeModal('skills')} />}
+      {modals.scan && currentProject && <ScanModal projectId={currentProject.id} onClose={() => closeModal('scan')} />}
       {confirm && <ConfirmDialog {...confirm} />}
       <Toast toasts={toasts} />
       <VoiceAssistantProvider
         tasks={tasks}
         currentProject={currentProject}
-        onCreateTask={onCreateTask}
-        onStatusChange={onStatusChange}
+        onCreateTask={taskActions.onCreate}
+        onStatusChange={taskActions.onStatusChange}
       >
         <VoiceAssistant />
       </VoiceAssistantProvider>
