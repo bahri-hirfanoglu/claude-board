@@ -219,7 +219,7 @@ fn build_claude_args(
     }
 
     if effort != "medium" {
-        args.extend(["--thinking-budget".to_string(), effort.to_string()]);
+        args.extend(["--effort".to_string(), effort.to_string()]);
     }
 
     args
