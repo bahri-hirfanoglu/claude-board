@@ -501,11 +501,11 @@ If there are issues that need fixing:
         #[cfg(target_os = "windows")]
         cmd.creation_flags(CREATE_NO_WINDOW);
 
-        let child = match cmd.spawn() {
+        let mut child = match cmd.spawn() {
             Ok(c) => c,
             Err(e) => {
                 let db = db::get_db();
-                tasks::add_log(&db, task_id, &format!("Auto-test: Failed to start Claude: {}", e), "error", None);
+                tasks::add_log(&db, task_id, &format!("Auto-test: Failed to start: {}", e), "error", None);
                 STARTING_TASKS.lock().unwrap().remove(&task_id);
                 app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "error"})).ok();
                 return;
@@ -516,95 +516,121 @@ If there are issues that need fixing:
         ACTIVE_PROCESSES.lock().unwrap().insert(task_id, pid);
         STARTING_TASKS.lock().unwrap().remove(&task_id);
 
-        // wait_with_output drains both stdout and stderr to avoid pipe deadlock
-        let output = child.wait_with_output();
-        ACTIVE_PROCESSES.lock().unwrap().remove(&task_id);
+        // Drain stderr in background (prevents pipe deadlock + shows errors in real-time)
+        if let Some(stderr) = child.stderr.take() {
+            let app_err = app.clone();
+            std::thread::spawn(move || {
+                let reader = BufReader::new(stderr);
+                for line in reader.lines().flatten() {
+                    let line = line.trim().to_string();
+                    if line.is_empty() { continue; }
+                    let db = db::get_db();
+                    if line.contains("rate limit") || line.contains("429") {
+                        tasks::add_log(&db, task_id, &format!("Auto-test: Rate limited — {}", line), "error", None);
+                        app_err.emit("task:rate_limited", &serde_json::json!({"taskId": task_id})).ok();
+                    } else if line.contains("error") || line.contains("Error") {
+                        tasks::add_log(&db, task_id, &format!("Auto-test: {}", line), "error", None);
+                    }
+                }
+            });
+        }
 
-        let db = db::get_db();
+        // Stream stdout in real-time — same pattern as main task runner
+        let mut full_text = String::new();
+        if let Some(stdout) = child.stdout.take() {
+            let reader = BufReader::new(stdout);
+            let db = db::get_db();
+            for line in reader.lines().flatten() {
+                if line.trim().is_empty() { continue; }
+                if let Ok(event) = serde_json::from_str::<serde_json::Value>(&line) {
+                    let etype = event.get("type").and_then(|v| v.as_str()).unwrap_or("");
 
-        // Log stderr for visibility (rate limits, errors, warnings)
-        if let Ok(ref out) = output {
-            let stderr_text = String::from_utf8_lossy(&out.stderr);
-            for line in stderr_text.lines() {
-                let line = line.trim();
-                if !line.is_empty() {
-                    let lt = if line.contains("rate limit") || line.contains("429") { "error" } else { "system" };
-                    tasks::add_log(&db, task_id, &format!("Auto-test stderr: {}", line), lt, None);
+                    if etype == "assistant" {
+                        if let Some(blocks) = event.pointer("/message/content").and_then(|c| c.as_array()) {
+                            for block in blocks {
+                                let btype = block.get("type").and_then(|v| v.as_str()).unwrap_or("");
+                                if btype == "text" {
+                                    if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
+                                        full_text.push_str(text);
+                                        // Log text to terminal (truncate long blocks)
+                                        let preview: String = text.chars().take(300).collect();
+                                        if !preview.trim().is_empty() {
+                                            tasks::add_log(&db, task_id, &format!("Auto-test: {}", preview.trim()), "claude", None);
+                                            app.emit("task:log", &serde_json::json!({
+                                                "taskId": task_id, "message": format!("Auto-test: {}", preview.trim()),
+                                                "logType": "claude"
+                                            })).ok();
+                                        }
+                                    }
+                                } else if btype == "tool_use" {
+                                    let tool = block.get("name").and_then(|v| v.as_str()).unwrap_or("unknown");
+                                    let input = block.get("input").cloned().unwrap_or_default();
+                                    let detail = input.get("file_path").or(input.get("command")).or(input.get("pattern"))
+                                        .and_then(|v| v.as_str()).unwrap_or("");
+                                    let msg = if detail.is_empty() { format!("Auto-test: {}", tool) } else { format!("Auto-test: {} → {}", tool, &detail[..detail.len().min(80)]) };
+                                    tasks::add_log(&db, task_id, &msg, "tool", None);
+                                    app.emit("task:log", &serde_json::json!({
+                                        "taskId": task_id, "message": &msg, "logType": "tool"
+                                    })).ok();
+                                }
+                            }
+                        }
+                    } else if etype == "user" {
+                        // Tool results
+                        if let Some(blocks) = event.pointer("/message/content").and_then(|c| c.as_array()) {
+                            for block in blocks {
+                                if block.get("type").and_then(|v| v.as_str()) == Some("tool_result") {
+                                    let is_error = block.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false);
+                                    let preview = block.get("content").and_then(|v| v.as_str())
+                                        .map(|s| s.lines().next().unwrap_or("").chars().take(100).collect::<String>())
+                                        .unwrap_or_default();
+                                    let icon = if is_error { "✗" } else { "✓" };
+                                    let msg = format!("Auto-test: {} {}", icon, preview);
+                                    let lt = if is_error { "error" } else { "tool_result" };
+                                    tasks::add_log(&db, task_id, &msg, lt, None);
+                                    app.emit("task:log", &serde_json::json!({
+                                        "taskId": task_id, "message": &msg, "logType": lt
+                                    })).ok();
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        match output {
-            Ok(out) if out.status.success() => {
-                let stdout = String::from_utf8_lossy(&out.stdout);
+        let status = child.wait().ok().and_then(|s| s.code()).unwrap_or(-1);
+        ACTIVE_PROCESSES.lock().unwrap().remove(&task_id);
 
-                // Parse streaming JSON: extract assistant text blocks
-                let mut full_text = String::new();
-                for line in stdout.lines() {
-                    if let Ok(event) = serde_json::from_str::<serde_json::Value>(line) {
-                        if event.get("type").and_then(|v| v.as_str()) == Some("assistant") {
-                            if let Some(blocks) = event.pointer("/message/content").and_then(|c| c.as_array()) {
-                                for block in blocks {
-                                    if block.get("type").and_then(|v| v.as_str()) == Some("text") {
-                                        if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
-                                            full_text.push_str(text);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        // Log tool calls for visibility
-                        if event.get("type").and_then(|v| v.as_str()) == Some("assistant") {
-                            if let Some(blocks) = event.pointer("/message/content").and_then(|c| c.as_array()) {
-                                for block in blocks {
-                                    if block.get("type").and_then(|v| v.as_str()) == Some("tool_use") {
-                                        let tool = block.get("name").and_then(|v| v.as_str()).unwrap_or("unknown");
-                                        tasks::add_log(&db, task_id, &format!("Auto-test: {}", tool), "tool", None);
-                                    }
-                                }
-                            }
-                        }
+        let db = db::get_db();
+
+        if status == 0 {
+            let verdict = extract_verdict(&full_text);
+            match verdict {
+                Some((true, summary)) => {
+                    tasks::add_log(&db, task_id, &format!("Auto-test PASSED: {}", summary), "success", None);
+                    app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test PASSED: {}", summary), "logType": "success"})).ok();
+                    tasks::update_status(&db, task_id, "done");
+                    if let Some(updated) = tasks::get_by_id(&db, task_id) {
+                        app.emit("task:updated", &updated).ok();
                     }
+                    activity::add(&db, project_id, Some(task_id), "test_passed", &format!("Auto-test passed: {}", task_title), None);
+                    crate::services::queue::on_task_completed(&db, &app, project_id, task_id);
                 }
-
-                // Try to find verdict JSON in the output
-                let verdict = extract_verdict(&full_text);
-
-                match verdict {
-                    Some((true, summary)) => {
-                        // APPROVED
-                        tasks::add_log(&db, task_id, &format!("Auto-test PASSED: {}", summary), "success", None);
-                        tasks::update_status(&db, task_id, "done");
-                        if let Some(updated) = tasks::get_by_id(&db, task_id) {
-                            app.emit("task:updated", &updated).ok();
-                        }
-                        activity::add(&db, project_id, Some(task_id), "test_passed", &format!("Auto-test passed: {}", task_title), None);
-                        crate::services::queue::on_task_completed(&db, &app, project_id, task_id);
-                    }
-                    Some((false, summary)) => {
-                        // REJECTED → request changes
-                        tasks::add_log(&db, task_id, &format!("Auto-test FAILED: {}", summary), "error", None);
-                        activity::add(&db, project_id, Some(task_id), "test_failed", &format!("Auto-test failed: {}", task_title), None);
-                        // Don't auto-restart; leave in testing for manual review
-                        app.emit("task:test_completed", &serde_json::json!({
-                            "taskId": task_id, "verdict": "reject", "summary": summary
-                        })).ok();
-                    }
-                    None => {
-                        // Could not parse verdict - leave in testing
-                        tasks::add_log(&db, task_id, "Auto-test: Could not determine verdict, leaving for manual review.", "info", None);
-                        app.emit("task:test_completed", &serde_json::json!({
-                            "taskId": task_id, "verdict": "unknown"
-                        })).ok();
-                    }
+                Some((false, summary)) => {
+                    tasks::add_log(&db, task_id, &format!("Auto-test FAILED: {}", summary), "error", None);
+                    app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test FAILED: {}", summary), "logType": "error"})).ok();
+                    activity::add(&db, project_id, Some(task_id), "test_failed", &format!("Auto-test failed: {}", task_title), None);
+                    app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary})).ok();
+                }
+                None => {
+                    tasks::add_log(&db, task_id, "Auto-test: Could not determine verdict, leaving for manual review.", "info", None);
+                    app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "unknown"})).ok();
                 }
             }
-            _ => {
-                tasks::add_log(&db, task_id, "Auto-test: Verification process failed.", "error", None);
-                app.emit("task:test_completed", &serde_json::json!({
-                    "taskId": task_id, "verdict": "error"
-                })).ok();
-            }
+        } else {
+            tasks::add_log(&db, task_id, &format!("Auto-test: Process exited with code {}.", status), "error", None);
+            app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "error"})).ok();
         }
     });
 }
