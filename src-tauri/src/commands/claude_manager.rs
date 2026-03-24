@@ -38,11 +38,13 @@ fn run_claude(args: &[&str]) -> Result<String, String> {
 #[tauri::command]
 pub fn get_auth_info() -> Result<Value, String> {
     let out = run_claude(&["auth", "status"])?;
-    // auth status outputs JSON directly
-    serde_json::from_str(&out).map_err(|_| {
-        // Fallback: return as plain text
-        serde_json::json!({"raw": out}).to_string()
-    }).or_else(|_| Ok(serde_json::json!({"raw": out})))
+    // Find JSON in output
+    if let Some(start) = out.find('{') {
+        if let Ok(val) = serde_json::from_str::<Value>(&out[start..]) {
+            return Ok(val);
+        }
+    }
+    Ok(serde_json::json!({"raw": out}))
 }
 
 // ─── MCP Servers ───
@@ -358,7 +360,10 @@ pub fn list_sessions() -> Result<Value, String> {
 #[tauri::command]
 pub fn get_permission_rules() -> Result<Value, String> {
     let out = run_claude(&["auto-mode", "config"])?;
-    serde_json::from_str(&out).map_err(|e| format!("Parse error: {}", e))
+    // Find the JSON object in the output (skip any leading non-JSON text)
+    let json_start = out.find('{').ok_or("No JSON found in output")?;
+    let json_str = &out[json_start..];
+    serde_json::from_str(json_str).map_err(|e| format!("Parse error: {} | raw: {}", e, &json_str[..json_str.len().min(100)]))
 }
 
 fn dirs_home() -> std::path::PathBuf {
