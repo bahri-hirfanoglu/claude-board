@@ -20,6 +20,11 @@ import {
   ChevronDown,
   ChevronRight,
   FileDiff,
+  FlaskConical,
+  CircleCheck,
+  CircleX,
+  CircleAlert,
+  CircleMinus,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatTokens, formatDuration } from '../../lib/formatters';
@@ -209,6 +214,62 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                 </div>
               )}
             </div>
+
+            {/* Test Report */}
+            {d.test_report && (() => {
+              try {
+                const report = typeof d.test_report === 'string' ? JSON.parse(d.test_report) : d.test_report;
+                const verdict = report.verdict;
+                const checks = report.checks || [];
+                const StatusIcon = ({ s }) => {
+                  if (s === 'pass') return <CircleCheck size={13} className="text-emerald-400" />;
+                  if (s === 'fail') return <CircleX size={13} className="text-red-400" />;
+                  if (s === 'warn') return <CircleAlert size={13} className="text-amber-400" />;
+                  return <CircleMinus size={13} className="text-surface-500" />;
+                };
+                return (
+                  <div>
+                    <h3 className="text-xs font-semibold text-surface-300 mb-2 flex items-center gap-1.5">
+                      <FlaskConical size={13} className={verdict === 'approve' ? 'text-emerald-400' : 'text-red-400'} />
+                      Test Report
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${verdict === 'approve' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
+                        {verdict === 'approve' ? 'PASSED' : 'FAILED'}
+                      </span>
+                    </h3>
+                    {report.summary && (
+                      <p className="text-xs text-surface-300 mb-2">{report.summary}</p>
+                    )}
+                    <div className="space-y-1">
+                      {checks.map((check, i) => (
+                        <div key={i} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border ${
+                          check.status === 'fail' ? 'bg-red-500/5 border-red-500/20' :
+                          check.status === 'warn' ? 'bg-amber-500/5 border-amber-500/20' :
+                          check.status === 'pass' ? 'bg-emerald-500/5 border-emerald-500/20' :
+                          'bg-surface-800/30 border-surface-700/30'
+                        }`}>
+                          <StatusIcon s={check.status} />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-medium text-surface-200">{check.name}</span>
+                            {check.detail && <p className="text-[10px] text-surface-400 mt-0.5">{check.detail}</p>}
+                          </div>
+                          <span className={`text-[9px] font-semibold uppercase ${
+                            check.status === 'pass' ? 'text-emerald-400' :
+                            check.status === 'fail' ? 'text-red-400' :
+                            check.status === 'warn' ? 'text-amber-400' : 'text-surface-500'
+                          }`}>{check.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {report.feedback && (
+                      <div className="mt-2 bg-red-500/5 border border-red-500/20 rounded-lg px-3 py-2">
+                        <p className="text-[10px] font-medium text-red-400 mb-0.5">Feedback</p>
+                        <p className="text-xs text-red-300/80 whitespace-pre-wrap">{report.feedback}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              } catch { return null; }
+            })()}
 
             {/* Git Commits */}
             {commits.length > 0 && (

@@ -37,6 +37,7 @@ pub struct Task {
     pub diff_stat: Option<String>,
     pub role_id: Option<i64>,
     pub task_key: Option<String>,
+    pub test_report: Option<String>,
     pub depends_on: Option<i64>,
     pub retry_count: Option<i64>,
     pub created_at: Option<String>,
@@ -98,6 +99,7 @@ pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
         diff_stat: row.get("diff_stat")?,
         role_id: row.get("role_id")?,
         task_key: row.get("task_key")?,
+        test_report: row.get("test_report")?,
         depends_on: row.get("depends_on")?,
         retry_count: row.get("retry_count")?,
         created_at: row.get("created_at")?,
@@ -309,6 +311,14 @@ pub fn update_git_info(db: &DbPool, id: i64, commits: &str, pr_url: Option<&str>
         "UPDATE tasks SET commits=?1,pr_url=?2,diff_stat=?3,updated_at=datetime('now','localtime') WHERE id=?4",
         params![commits, pr_url, diff_stat, id],
     ).unwrap();
+}
+
+pub fn update_test_report(db: &DbPool, id: i64, report: &str) {
+    let conn = db.lock();
+    conn.execute(
+        "UPDATE tasks SET test_report=?1,updated_at=datetime('now','localtime') WHERE id=?2",
+        params![report, id],
+    ).ok();
 }
 
 // Logs

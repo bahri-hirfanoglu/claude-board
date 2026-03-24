@@ -220,6 +220,7 @@ pub fn run_migrations(conn: &Connection) {
         ("tasks", "depends_on", "ALTER TABLE tasks ADD COLUMN depends_on INTEGER"),
         ("tasks", "retry_count", "ALTER TABLE tasks ADD COLUMN retry_count INTEGER DEFAULT 0"),
         ("projects", "max_retries", "ALTER TABLE projects ADD COLUMN max_retries INTEGER DEFAULT 0"),
+        ("tasks", "test_report", "ALTER TABLE tasks ADD COLUMN test_report TEXT"),
         ("projects", "auto_test", "ALTER TABLE projects ADD COLUMN auto_test INTEGER DEFAULT 0"),
         ("projects", "test_prompt", "ALTER TABLE projects ADD COLUMN test_prompt TEXT DEFAULT ''"),
     ];

@@ -430,51 +430,65 @@ pub fn start_test(
     // Build test verification prompt
     let diff_stat = task.diff_stat.as_deref().unwrap_or("(no diff available)");
     let test_prompt = format!(
-        r#"You are a test verification agent. A task has been completed and you must verify it works correctly.
+        r#"You are a QA verification agent. A development task has been completed and you must run a thorough verification.
 
-## Task that was completed
-**Title:** {}
-**Description:** {}
-**Type:** {}
-**Acceptance Criteria:** {}
+## Completed Task
+- **Title:** {title}
+- **Type:** {task_type}
+- **Description:** {description}
+- **Acceptance Criteria:** {criteria}
 
-## Changes made (diff stat)
+## Changes Made (diff stat)
 ```
-{}
+{diff}
 ```
 
-## Your verification instructions
-{}
+{custom}
 
-## What you must do
-1. Review the code changes made by the task
-2. Run the project's existing tests (look for test scripts in package.json, Cargo.toml, Makefile, etc.)
-3. If the task has acceptance criteria, verify each criterion is met
-4. Check for obvious bugs, missing error handling, or broken imports
-5. Run a build/compile check to ensure nothing is broken
+## Verification Steps (execute ALL in order)
 
-## Output format
-After verification, output EXACTLY one of these two JSON blocks:
+### Step 1: Build Check
+Run the project's build/compile command. Look for package.json (npm run build), Cargo.toml (cargo check), Makefile, etc. Report if build succeeds or fails.
 
-If all tests pass and the task looks correct:
+### Step 2: Test Suite
+Run the project's test suite if it exists (npm test, cargo test, pytest, etc.). Report test count, pass/fail counts.
+
+### Step 3: Code Review
+Review the changed files for:
+- Syntax errors or broken imports
+- Unhandled error cases
+- Security concerns (hardcoded secrets, SQL injection, XSS)
+- Missing null/undefined checks
+
+### Step 4: Acceptance Criteria
+If acceptance criteria is specified, verify each criterion individually. Mark each as PASS or FAIL.
+
+## REQUIRED OUTPUT FORMAT
+After all checks, you MUST output this exact JSON block as your final output:
+
 ```json
-{{"verdict": "approve", "summary": "Brief summary of what was verified"}}
-```
-
-If there are issues that need fixing:
-```json
-{{"verdict": "reject", "summary": "What failed", "feedback": "Detailed feedback about what needs to be fixed"}}
+{{
+  "verdict": "approve" or "reject",
+  "summary": "One-line overall result",
+  "checks": [
+    {{"name": "Build", "status": "pass" or "fail" or "skip", "detail": "What happened"}},
+    {{"name": "Tests", "status": "pass" or "fail" or "skip", "detail": "X passed, Y failed" or "No test suite found"}},
+    {{"name": "Code Review", "status": "pass" or "fail" or "warn", "detail": "Issues found or all clean"}},
+    {{"name": "Acceptance Criteria", "status": "pass" or "fail" or "skip", "detail": "All N criteria met" or "Criterion X failed"}}
+  ],
+  "feedback": "Detailed feedback if rejected, empty string if approved"
+}}
 ```
 "#,
-        task.title,
-        task.description.as_deref().unwrap_or(""),
-        task.task_type.as_deref().unwrap_or("feature"),
-        task.acceptance_criteria.as_deref().unwrap_or("None specified"),
-        diff_stat,
-        if custom_prompt.is_empty() {
-            "Follow the standard verification steps above.".to_string()
+        title = task.title,
+        task_type = task.task_type.as_deref().unwrap_or("feature"),
+        description = task.description.as_deref().unwrap_or("(none)"),
+        criteria = task.acceptance_criteria.as_deref().unwrap_or("None specified"),
+        diff = diff_stat,
+        custom = if custom_prompt.is_empty() {
+            String::new()
         } else {
-            format!("Additionally, follow these project-specific test instructions:\n{}", custom_prompt)
+            format!("## Project-Specific Instructions\n{}\n", custom_prompt)
         },
     );
 
@@ -605,26 +619,49 @@ If there are issues that need fixing:
         let db = db::get_db();
 
         if status == 0 {
-            let verdict = extract_verdict(&full_text);
-            match verdict {
-                Some((true, summary)) => {
-                    tasks::add_log(&db, task_id, &format!("Auto-test PASSED: {}", summary), "success", None);
-                    app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test PASSED: {}", summary), "logType": "success"})).ok();
-                    tasks::update_status(&db, task_id, "done");
-                    if let Some(updated) = tasks::get_by_id(&db, task_id) {
-                        app.emit("task:updated", &updated).ok();
+            let report = extract_test_report(&full_text);
+            match report {
+                Some(report_json) => {
+                    let verdict = report_json.get("verdict").and_then(|v| v.as_str()).unwrap_or("unknown");
+                    let summary = report_json.get("summary").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let feedback = report_json.get("feedback").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+                    // Save structured report to task
+                    tasks::update_test_report(&db, task_id, &report_json.to_string());
+
+                    // Log individual check results
+                    if let Some(checks) = report_json.get("checks").and_then(|v| v.as_array()) {
+                        for check in checks {
+                            let name = check.get("name").and_then(|v| v.as_str()).unwrap_or("Check");
+                            let check_status = check.get("status").and_then(|v| v.as_str()).unwrap_or("skip");
+                            let detail = check.get("detail").and_then(|v| v.as_str()).unwrap_or("");
+                            let icon = match check_status { "pass" => "PASS", "fail" => "FAIL", "warn" => "WARN", _ => "SKIP" };
+                            let lt = match check_status { "fail" => "error", "warn" => "info", _ => "success" };
+                            let msg = format!("Auto-test [{}] {}: {}", icon, name, detail);
+                            tasks::add_log(&db, task_id, &msg, lt, None);
+                            app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": &msg, "logType": lt})).ok();
+                        }
                     }
-                    activity::add(&db, project_id, Some(task_id), "test_passed", &format!("Auto-test passed: {}", task_title), None);
-                    crate::services::queue::on_task_completed(&db, &app, project_id, task_id);
-                }
-                Some((false, summary)) => {
-                    tasks::add_log(&db, task_id, &format!("Auto-test FAILED: {}", summary), "error", None);
-                    app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test FAILED: {}", summary), "logType": "error"})).ok();
-                    activity::add(&db, project_id, Some(task_id), "test_failed", &format!("Auto-test failed: {}", task_title), None);
-                    app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary})).ok();
+
+                    if verdict == "approve" {
+                        tasks::add_log(&db, task_id, &format!("Auto-test PASSED: {}", summary), "success", None);
+                        app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test PASSED: {}", summary), "logType": "success"})).ok();
+                        tasks::update_status(&db, task_id, "done");
+                        if let Some(updated) = tasks::get_by_id(&db, task_id) {
+                            app.emit("task:updated", &updated).ok();
+                        }
+                        activity::add(&db, project_id, Some(task_id), "test_passed", &format!("Auto-test passed: {}", task_title), None);
+                        crate::services::queue::on_task_completed(&db, &app, project_id, task_id);
+                    } else {
+                        let fail_msg = if feedback.is_empty() { summary.clone() } else { format!("{} — {}", summary, feedback) };
+                        tasks::add_log(&db, task_id, &format!("Auto-test FAILED: {}", fail_msg), "error", None);
+                        app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test FAILED: {}", fail_msg), "logType": "error"})).ok();
+                        activity::add(&db, project_id, Some(task_id), "test_failed", &format!("Auto-test failed: {}", task_title), None);
+                        app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary})).ok();
+                    }
                 }
                 None => {
-                    tasks::add_log(&db, task_id, "Auto-test: Could not determine verdict, leaving for manual review.", "info", None);
+                    tasks::add_log(&db, task_id, "Auto-test: Could not parse test report, leaving for manual review.", "info", None);
                     app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "unknown"})).ok();
                 }
             }
@@ -635,27 +672,34 @@ If there are issues that need fixing:
     });
 }
 
-fn extract_verdict(text: &str) -> Option<(bool, String)> {
-    // Look for JSON block with verdict
-    for line in text.lines().rev() {
-        let trimmed = line.trim();
-        if trimmed.starts_with('{') && trimmed.contains("verdict") {
-            if let Ok(v) = serde_json::from_str::<serde_json::Value>(trimmed) {
-                let verdict = v.get("verdict").and_then(|v| v.as_str()).unwrap_or("");
-                let summary = v.get("summary").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                return Some((verdict == "approve", summary));
+fn extract_test_report(text: &str) -> Option<serde_json::Value> {
+    // Find the last JSON block containing "verdict" — may be multi-line
+    // Strategy 1: find complete JSON object with brace matching
+    let search = text.as_bytes();
+    let mut best: Option<serde_json::Value> = None;
+    let mut i = 0;
+    while i < search.len() {
+        if search[i] == b'{' {
+            let start = i;
+            let mut depth = 0;
+            let mut j = i;
+            while j < search.len() {
+                if search[j] == b'{' { depth += 1; }
+                if search[j] == b'}' { depth -= 1; if depth == 0 { break; } }
+                j += 1;
+            }
+            if depth == 0 && j < search.len() {
+                let candidate = &text[start..=j];
+                if candidate.contains("verdict") {
+                    if let Ok(v) = serde_json::from_str::<serde_json::Value>(candidate) {
+                        if v.get("verdict").is_some() {
+                            best = Some(v);
+                        }
+                    }
+                }
             }
         }
+        i += 1;
     }
-    // Also try to find it in code blocks
-    if let Some(start) = text.rfind("{\"verdict\"") {
-        if let Some(end) = text[start..].find('}') {
-            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text[start..=start + end]) {
-                let verdict = v.get("verdict").and_then(|v| v.as_str()).unwrap_or("");
-                let summary = v.get("summary").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                return Some((verdict == "approve", summary));
-            }
-        }
-    }
-    None
+    best
 }
