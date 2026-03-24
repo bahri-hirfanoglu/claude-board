@@ -295,7 +295,7 @@ pub async fn scan_codebase(app: tauri::AppHandle, project_id: i64) -> Result<Str
 
     let summary = tauri::async_runtime::spawn_blocking(move || {
         let mut cmd = Command::new("claude");
-        cmd.args(["-p", "Analyze this codebase and write a concise summary. Include: tech stack, main directories, key patterns, entry points. Output ONLY the summary text, no conversation.", "--output-format", "text", "--max-turns", "1", "--dangerously-skip-permissions"])
+        cmd.args(["-p", "Analyze this codebase and write a concise summary. Include: tech stack, main directories, key patterns, entry points. Output ONLY the summary text, no conversation.", "--output-format", "text", "--max-turns", "10", "--dangerously-skip-permissions"])
             .current_dir(&working_dir)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
