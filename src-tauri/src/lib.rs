@@ -192,6 +192,9 @@ pub fn run() {
             commands::claude_manager::get_permission_rules,
             commands::claude_manager::scan_codebase,
             commands::claude_manager::get_suggestions,
+            // Custom Commands & Skills
+            commands::claude_manager::list_custom_commands,
+            commands::claude_manager::list_custom_skills,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

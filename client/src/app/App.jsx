@@ -37,6 +37,8 @@ function AppInner() {
   const [showPlanning, setShowPlanning] = useState(() => {
     return sessionStorage.getItem('planning:active') === 'true';
   });
+  const [showCommands, setShowCommands] = useState(false);
+  const [showSkills, setShowSkills] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [roles, setRoles] = useState([]);
   const [reviewTask, setReviewTask] = useState(null);
@@ -366,6 +368,8 @@ function AppInner() {
       showWebhooks={showWebhooks}
       showRoles={showRoles}
       showPlanning={showPlanning}
+      showCommands={showCommands}
+      showSkills={showSkills}
       templates={templates}
       roles={roles}
       reviewTask={reviewTask}
@@ -440,6 +444,10 @@ function AppInner() {
       onCloseDetail={() => setDetailTask(null)}
       onOpenPlanning={() => { sessionStorage.setItem('planning:active', 'true'); setShowPlanning(true); }}
       onClosePlanning={() => { sessionStorage.removeItem('planning:active'); setShowPlanning(false); }}
+      onEditCommands={() => setShowCommands(true)}
+      onCloseCommands={() => setShowCommands(false)}
+      onEditSkills={() => setShowSkills(true)}
+      onCloseSkills={() => setShowSkills(false)}
     />
     </StatusTransitionProvider>
   );

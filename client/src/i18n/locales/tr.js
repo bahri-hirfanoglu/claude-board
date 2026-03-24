@@ -465,6 +465,22 @@ export default {
   'cm.cancel': '\u0130ptal',
   'cm.save': 'Kaydet',
 
+  // ─── Custom Commands ───
+  'header.commands': 'Komutlar',
+  'commands.title': '\u00d6zel Komutlar',
+  'commands.empty': '\u00d6zel komut yok',
+  'commands.emptyDesc': 'Claude i\u00e7in \u00f6zel slash komutlar\u0131 olu\u015fturmak i\u00e7in ~/.claude/commands/ dizinine .md dosyalar\u0131 ekleyin.',
+  'commands.selectOne': '\u0130\u00e7eri\u011fini g\u00f6rmek i\u00e7in bir komut se\u00e7in',
+  'commands.commandCount': 'komut',
+
+  // ─── Custom Skills ───
+  'header.skills': 'Beceriler',
+  'skills.title': '\u00d6zel Beceriler',
+  'skills.empty': '\u00d6zel beceri yok',
+  'skills.emptyDesc': 'Claude i\u00e7in \u00f6zel beceriler olu\u015fturmak i\u00e7in ~/.claude/skills/ dizinine .md dosyalar\u0131 ekleyin.',
+  'skills.selectOne': '\u0130\u00e7eri\u011fini g\u00f6rmek i\u00e7in bir beceri se\u00e7in',
+  'skills.skillCount': 'beceri',
+
   // ─── Language selector ───
   'lang.en': 'English',
   'lang.tr': 'T\u00fcrk\u00e7e',

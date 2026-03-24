@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Mic,
   MicOff,
+  Coins,
 } from 'lucide-react';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import { useTranslation } from '../../i18n/I18nProvider';
@@ -46,6 +47,18 @@ const EFFORTS = [
   { value: 'medium', label: 'Medium', color: 'bg-amber-500/20 text-amber-300' },
   { value: 'high', label: 'High', color: 'bg-red-500/20 text-red-300' },
 ];
+
+// Token cost per million tokens (USD)
+const MODEL_COSTS = {
+  haiku:  { input: 0.25,  output: 1.25 },
+  sonnet: { input: 3.0,   output: 15.0 },
+  opus:   { input: 15.0,  output: 75.0 },
+};
+
+function estimateTokens(text) {
+  if (!text) return 0;
+  return Math.ceil(text.length / 4);
+}
 
 export default function TaskModal({ task, onSubmit, onClose, templates = [], roles = [] }) {
   const { t } = useTranslation();
@@ -397,6 +410,28 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                 )}
               </div>
             </div>
+
+            {/* Token Estimate */}
+            {(() => {
+              const fullText = (title + ' ' + description + ' ' + acceptanceCriteria).trim();
+              const tokens = estimateTokens(fullText);
+              if (tokens < 10) return null;
+              const cost = MODEL_COSTS[model];
+              const inputCost = (tokens / 1e6) * cost.input;
+              return (
+                <div className="flex items-center gap-3 text-[11px] text-surface-500">
+                  <span className="flex items-center gap-1">
+                    <Cpu size={10} />
+                    ~{tokens.toLocaleString()} tokens
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Coins size={10} />
+                    ~${inputCost < 0.001 ? '<0.001' : inputCost.toFixed(4)} input
+                  </span>
+                  <span className="text-surface-600">{description.length} chars</span>
+                </div>
+              );
+            })()}
 
             {/* Priority */}
             <div>
