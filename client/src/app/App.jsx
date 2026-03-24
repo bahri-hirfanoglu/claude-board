@@ -55,15 +55,16 @@ function AppInner() {
     return () => unsubs.forEach(fn => fn());
   }, []);
 
-  // Auto-open terminal when task starts running (only for newly started tasks)
-  const runningIdsRef = useRef(new Set());
+  // Auto-open terminal when task NEWLY starts running
+  const runningIdsRef = useRef(null); // null = not initialized yet
   useEffect(() => {
-    // Track currently running tasks
     runningIdsRef.current = new Set(tasks.filter(t => t.is_running).map(t => t.id));
   }, [tasks]);
 
   useEffect(() => {
     const handler = (task) => {
+      // Skip until initial task list is loaded
+      if (runningIdsRef.current === null) return;
       if (task.is_running && !runningIdsRef.current.has(task.id)) {
         runningIdsRef.current.add(task.id);
         terminal.openTab(task);

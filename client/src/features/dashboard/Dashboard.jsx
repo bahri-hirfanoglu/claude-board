@@ -160,7 +160,8 @@ function ClaudeUsageCard({ t }) {
   const [data, setData] = useState(usageCache);
 
   useEffect(() => {
-    if (usageCache) { setData(usageCache); return; }
+    // Show cache immediately, refresh in background
+    if (usageCache) setData(usageCache);
     api.getClaudeUsage().then(d => { usageCache = d; setData(d); }).catch(() => {});
   }, []);
 
