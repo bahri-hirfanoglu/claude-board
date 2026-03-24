@@ -169,6 +169,8 @@ export const api = IS_TAURI
       saveHooks: (hooks) => tauriCall('save_hooks', { hooks }),
       listSessions: () => tauriCall('list_sessions'),
       getPermissionRules: () => tauriCall('get_permission_rules'),
+      scanCodebase: (projectId) => tauriCall('scan_codebase', { projectId }),
+      getSuggestions: () => tauriCall('get_suggestions'),
     }
   : {
       // ─── HTTP mode (web / Node.js server) ───

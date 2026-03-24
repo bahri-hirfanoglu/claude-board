@@ -373,6 +373,10 @@ export default {
   'toast.projectDeleted': 'Project deleted',
   'toast.startClaude': 'Start Claude?',
 
+  'header.scan': 'Scan',
+  'header.scanning': 'Scanning...',
+  'header.scanned': 'Done',
+  'header.scanCodebase': 'Scan codebase and update CLAUDE.md',
   'dashboard.groupByNamespace': 'Group by namespace',
   'dashboard.groups': 'groups',
 

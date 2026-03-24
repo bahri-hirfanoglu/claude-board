@@ -373,6 +373,10 @@ export default {
   'toast.projectDeleted': 'Proje silindi',
   'toast.startClaude': 'Claude ba\u015flat\u0131ls\u0131n m\u0131?',
 
+  'header.scan': 'Tara',
+  'header.scanning': 'Taran\u0131yor...',
+  'header.scanned': 'Tamam',
+  'header.scanCodebase': 'Kod taban\u0131n\u0131 tara ve CLAUDE.md g\u00fcncelle',
   'dashboard.groupByNamespace': 'Ad alan\u0131na g\u00f6re grupla',
   'dashboard.groups': 'grup',
 

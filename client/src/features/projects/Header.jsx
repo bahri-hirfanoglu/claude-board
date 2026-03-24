@@ -20,11 +20,17 @@ import {
   Bell,
   Shield,
   Sparkles,
+  ScanSearch,
+  Lightbulb,
+  Loader2,
+  Zap,
 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from '../../lib/constants';
 import { formatTokens as fmtTokens } from '../../lib/formatters';
 import { useTranslation } from '../../i18n/I18nProvider';
+import { IS_TAURI } from '../../lib/tauriEvents';
+import { api } from '../../lib/api';
 
 function ProjectUsage({ tasks }) {
   const totals = useMemo(() => {
@@ -304,6 +310,7 @@ export default function Header({
             <span className="hidden sm:inline">{t('header.plan')}</span>
           </button>
         )}
+        {IS_TAURI && currentProject && <ScanButton projectId={currentProject.id} t={t} />}
         {onNewTask && (
           <button
             onClick={onNewTask}
@@ -316,5 +323,35 @@ export default function Header({
         )}
       </div>
     </header>
+  );
+}
+
+function ScanButton({ projectId, t }) {
+  const [scanning, setScanning] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const handleScan = async () => {
+    setScanning(true);
+    setDone(false);
+    try {
+      await api.scanCodebase(projectId);
+      setDone(true);
+      setTimeout(() => setDone(false), 3000);
+    } catch (e) {
+      console.error(e);
+    }
+    setScanning(false);
+  };
+
+  return (
+    <button
+      onClick={handleScan}
+      disabled={scanning}
+      className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 border border-surface-700 hover:border-blue-500/30 text-sm font-medium transition-colors flex items-center gap-1.5 flex-shrink-0 text-surface-300 hover:text-blue-400 disabled:opacity-50"
+      title={t('header.scanCodebase')}
+    >
+      {scanning ? <Loader2 size={14} className="animate-spin" /> : done ? <Zap size={14} className="text-emerald-400" /> : <ScanSearch size={14} />}
+      <span className="hidden sm:inline">{scanning ? t('header.scanning') : done ? t('header.scanned') : t('header.scan')}</span>
+    </button>
   );
 }

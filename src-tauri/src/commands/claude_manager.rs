@@ -286,6 +286,100 @@ pub async fn get_permission_rules() -> Result<Value, String> {
     extract_json(&out)
 }
 
+// ─── Scan Codebase ───
+#[tauri::command]
+pub async fn scan_codebase(app: tauri::AppHandle, project_id: i64) -> Result<String, String> {
+    let db = crate::db::get_db();
+    let project = crate::db::projects::get_by_id(&db, project_id).ok_or("Project not found")?;
+    let working_dir = project.working_dir.clone();
+
+    let summary = tauri::async_runtime::spawn_blocking(move || {
+        let mut cmd = Command::new("claude");
+        cmd.args(["-p", "Analyze this codebase and write a concise summary. Include: tech stack, main directories, key patterns, entry points. Output ONLY the summary text, no conversation.", "--output-format", "text", "--max-turns", "1", "--dangerously-skip-permissions"])
+            .current_dir(&working_dir)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .stdin(Stdio::null())
+            .env("NO_COLOR", "1");
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        let output = cmd.output().map_err(|e| format!("Failed to scan: {}", e))?;
+        let text = strip_ansi(&String::from_utf8_lossy(&output.stdout));
+        if text.is_empty() {
+            Err("Scan returned empty result".to_string())
+        } else {
+            Ok(text)
+        }
+    }).await.map_err(|e| e.to_string())??;
+
+    // Write to CLAUDE.md
+    let claude_md_path = std::path::Path::new(&project.working_dir).join("CLAUDE.md");
+    let existing = std::fs::read_to_string(&claude_md_path).unwrap_or_default();
+    let new_content = if existing.is_empty() {
+        format!("# Project Overview\n\n{}", summary)
+    } else {
+        format!("{}\n\n---\n\n# Codebase Analysis (Auto-generated)\n\n{}", existing.trim(), summary)
+    };
+    std::fs::write(&claude_md_path, &new_content).map_err(|e| e.to_string())?;
+
+    use tauri::Emitter;
+    app.emit("scan:completed", &serde_json::json!({"projectId": project_id})).ok();
+    Ok(summary)
+}
+
+// ─── Check environment suggestions ───
+#[tauri::command]
+pub async fn get_suggestions() -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let mut suggestions = Vec::new();
+
+        // Check if claude-mem plugin is installed
+        let plugins_out = run_claude_sync(vec!["plugin".into(), "list".into()]).unwrap_or_default();
+        if !plugins_out.contains("claude-mem") {
+            suggestions.push(serde_json::json!({
+                "id": "install-claude-mem",
+                "type": "plugin",
+                "title": "Install claude-mem",
+                "description": "Persistent memory across sessions - Claude remembers context between tasks",
+                "action": "install_plugin",
+                "actionArgs": "claude-mem@thedotmack",
+                "priority": "high",
+            }));
+        }
+
+        // Check if any MCP server is configured
+        let mcp_out = run_claude_sync(vec!["mcp".into(), "list".into()]).unwrap_or_default();
+        let has_connected = mcp_out.contains("Connected") || mcp_out.contains("✓");
+        if !has_connected && !mcp_out.contains(":") {
+            suggestions.push(serde_json::json!({
+                "id": "add-mcp",
+                "type": "mcp",
+                "title": "Add an MCP server",
+                "description": "MCP servers give Claude access to external tools and data sources",
+                "action": "navigate",
+                "actionArgs": "claude-manager:mcp",
+                "priority": "medium",
+            }));
+        }
+
+        // Check git config
+        let git_check = Command::new("git").args(["config", "user.name"])
+            .stdout(Stdio::piped()).stderr(Stdio::null()).output();
+        if git_check.map(|o| o.stdout.is_empty()).unwrap_or(true) {
+            suggestions.push(serde_json::json!({
+                "id": "git-config",
+                "type": "config",
+                "title": "Configure git identity",
+                "description": "Git user.name is not set - Claude's commits won't have proper attribution",
+                "action": "info",
+                "priority": "low",
+            }));
+        }
+
+        Ok(Value::Array(suggestions))
+    }).await.map_err(|e| e.to_string())?
+}
+
 fn dirs_home() -> std::path::PathBuf {
     std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))
