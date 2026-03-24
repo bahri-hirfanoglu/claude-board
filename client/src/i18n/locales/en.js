@@ -481,6 +481,26 @@ export default {
   'skills.selectOne': 'Select a skill to view its content',
   'skills.skillCount': 'skill(s)',
 
+  // ─── Scan ───
+  'scan.title': 'Scan Codebase',
+  'scan.review': 'Review',
+  'scan.saved': 'Saved',
+  'scan.idleTitle': 'Analyze your codebase',
+  'scan.idleDesc': 'Scan will analyze tech stack, directories, patterns and entry points using AI.',
+  'scan.scanning': 'Scanning codebase...',
+  'scan.scanningDesc': 'AI is analyzing your project. This may take a minute.',
+  'scan.resultPreview': 'Analysis Result',
+  'scan.writeMode': 'Write mode',
+  'scan.overwrite': 'Overwrite CLAUDE.md',
+  'scan.append': 'Append to CLAUDE.md',
+  'scan.saveToClaudeMd': 'Save to CLAUDE.md',
+  'scan.discard': 'Discard',
+  'scan.rescan': 'Scan Again',
+  'scan.retry': 'Retry',
+  'scan.failed': 'Scan failed',
+  'scan.cannotClose': 'Scan in progress — please wait',
+  'scan.startScan': 'Start Scan',
+
   // ─── Language selector ───
   'lang.en': 'English',
   'lang.tr': 'T\u00fcrk\u00e7e',

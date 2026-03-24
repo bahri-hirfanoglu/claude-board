@@ -170,6 +170,7 @@ export const api = IS_TAURI
       listSessions: () => tauriCall('list_sessions'),
       getPermissionRules: () => tauriCall('get_permission_rules'),
       scanCodebase: (projectId, mode = 'overwrite') => tauriCall('scan_codebase', { projectId, mode }),
+      saveScanResult: (projectId, content, mode = 'overwrite') => tauriCall('save_scan_result', { projectId, content, mode }),
       getSuggestions: () => tauriCall('get_suggestions'),
       // Custom Commands & Skills
       listCustomCommands: () => tauriCall('list_custom_commands'),

@@ -286,12 +286,15 @@ pub async fn get_permission_rules() -> Result<Value, String> {
     extract_json(&out)
 }
 
-// ─── Scan Codebase ───
+// ─── Scan Codebase (analyze only — does not write) ───
 #[tauri::command]
-pub async fn scan_codebase(app: tauri::AppHandle, project_id: i64, mode: Option<String>) -> Result<String, String> {
+pub async fn scan_codebase(app: tauri::AppHandle, project_id: i64, _mode: Option<String>) -> Result<String, String> {
     let db = crate::db::get_db();
     let project = crate::db::projects::get_by_id(&db, project_id).ok_or("Project not found")?;
     let working_dir = project.working_dir.clone();
+
+    use tauri::Emitter;
+    app.emit("scan:started", &serde_json::json!({"projectId": project_id})).ok();
 
     let summary = tauri::async_runtime::spawn_blocking(move || {
         let mut cmd = Command::new("claude");
@@ -312,24 +315,29 @@ pub async fn scan_codebase(app: tauri::AppHandle, project_id: i64, mode: Option<
         }
     }).await.map_err(|e| e.to_string())??;
 
-    // Write to CLAUDE.md
+    app.emit("scan:completed", &serde_json::json!({"projectId": project_id, "result": summary})).ok();
+    Ok(summary)
+}
+
+// ─── Save scan result to CLAUDE.md ───
+#[tauri::command]
+pub async fn save_scan_result(project_id: i64, content: String, mode: Option<String>) -> Result<(), String> {
+    let db = crate::db::get_db();
+    let project = crate::db::projects::get_by_id(&db, project_id).ok_or("Project not found")?;
     let write_mode = mode.unwrap_or_else(|| "overwrite".into());
     let claude_md_path = std::path::Path::new(&project.working_dir).join("CLAUDE.md");
     let new_content = if write_mode == "append" {
         let existing = std::fs::read_to_string(&claude_md_path).unwrap_or_default();
         if existing.is_empty() {
-            format!("# Project Overview\n\n{}", summary)
+            format!("# Project Overview\n\n{}", content)
         } else {
-            format!("{}\n\n---\n\n# Codebase Analysis (Auto-generated)\n\n{}", existing.trim(), summary)
+            format!("{}\n\n---\n\n# Codebase Analysis (Auto-generated)\n\n{}", existing.trim(), content)
         }
     } else {
-        format!("# Project Overview\n\n{}", summary)
+        format!("# Project Overview\n\n{}", content)
     };
     std::fs::write(&claude_md_path, &new_content).map_err(|e| e.to_string())?;
-
-    use tauri::Emitter;
-    app.emit("scan:completed", &serde_json::json!({"projectId": project_id})).ok();
-    Ok(summary)
+    Ok(())
 }
 
 // ─── Check environment suggestions ───
