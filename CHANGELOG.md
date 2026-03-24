@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.5.7] - 2026-03-24
+
+### Features
+- **Auto Test**: Automatic verification of completed tasks — runs tests, checks acceptance criteria, auto-approves on success. Configurable per-project with custom test instructions
+- **Skill Import from GitHub**: Browse, preview, and install skills from any public GitHub repository. Includes popular repo shortcuts (awesome-claude-code, etc.) with directory navigation
+- **Split Terminal**: View multiple agent outputs side by side (vertical) or stacked (horizontal). Split controls always visible in bottom terminal toolbar
+- **Diff Viewer**: Full unified diff display in task detail with syntax highlighting — green additions, red deletions, cyan hunk headers. Uses actual commit range
+- **Orchestration Edge Creation**: Drag between nodes to create dependency edges (Shift+drag). Visual feedback with dashed line and purple highlight on target
+- **Orchestration Node Dragging**: Reposition task nodes freely by dragging. Positions persist in localStorage. Auto-layout button resets to wave-based grid
+- **Orchestration Start Button**: Hover over backlog tasks to reveal a play button that starts execution directly from the graph
+- **Planning DAG Preview**: Collapsible dependency graph in planning review phase with proper wave-based column layout
+- **Planning Rich Logs**: Tool calls in planning mode now render as expandable cards with icons, status indicators, and output preview (same design as live terminal)
+
+### Improvements
+- **Enhanced Dashboard**: Summary view now shows priority distribution, model usage breakdown, input/output token split, throughput metric, average cost per task, and top-cost tasks
+- **Stats Panel Fix**: Fixed field name mismatch (snake_case vs camelCase) causing all stats to show as 0/empty. Added serde rename_all to all stats structs
+- **Custom Max Concurrent**: Project settings now support typing custom concurrency values (1-50) in addition to preset buttons
+- **View Menu Reorder**: Summary moved after Orchestration for better workflow order
+- **Skill Deletion**: Skills modal now supports deleting installed skills
+- **Tab Bar Always Visible**: Terminal bottom panel toolbar shows even with 1 tab, split buttons visible (disabled) for discoverability
+- **Documentation Reorganized**: Sidebar categorized into logical groups (Orchestration, Execution, Git, AI Config, etc.) with 4 new feature pages
+
+### Fixes
+- **Critical: Process Deadlock**: Fixed stderr pipe buffer deadlock that caused tasks to hang, especially with multiple concurrent tasks. Stderr is now drained in a background thread
+- **Stderr Visibility**: Agent warnings, rate limits, and errors from stderr are now visible in task terminal logs (previously invisible and lost)
+- **Dependency Error Handling**: Replaced silent .ok()/.unwrap() with proper Result propagation. Validation errors use correct error type
+- **Click After Drag**: Fixed task detail opening unintentionally after dragging a node in orchestration view
+- **UTF-8 Truncation**: Fixed potential panic when truncating large diffs at multi-byte character boundaries
+- **Timeline Cleanup**: Removed orphaned timeline view documentation, i18n strings, and image assets
+- **Unused Imports**: Cleaned up unused useEffect, Edit3, Timer imports
+
 ## [1.5.6] - 2026-03-24
 
 ### Features
