@@ -39,6 +39,7 @@ function AppInner() {
   });
   const [showCommands, setShowCommands] = useState(false);
   const [showSkills, setShowSkills] = useState(false);
+  const [showScan, setShowScan] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [roles, setRoles] = useState([]);
   const [reviewTask, setReviewTask] = useState(null);
@@ -370,6 +371,7 @@ function AppInner() {
       showPlanning={showPlanning}
       showCommands={showCommands}
       showSkills={showSkills}
+      showScan={showScan}
       templates={templates}
       roles={roles}
       reviewTask={reviewTask}
@@ -448,6 +450,8 @@ function AppInner() {
       onCloseCommands={() => setShowCommands(false)}
       onEditSkills={() => setShowSkills(true)}
       onCloseSkills={() => setShowSkills(false)}
+      onOpenScan={() => setShowScan(true)}
+      onCloseScan={() => setShowScan(false)}
     />
     </StatusTransitionProvider>
   );

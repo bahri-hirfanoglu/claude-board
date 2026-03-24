@@ -21,6 +21,7 @@ import VoiceAssistant from '../features/voice/VoiceAssistant';
 import PlanningModal from '../features/planning/PlanningModal';
 import CommandsModal from '../features/commands/CommandsModal';
 import SkillsModal from '../features/skills/SkillsModal';
+import ScanModal from '../features/scan/ScanModal';
 
 export default function AppLayout(props) {
   const {
@@ -47,6 +48,7 @@ export default function AppLayout(props) {
     showPlanning,
     showCommands,
     showSkills,
+    showScan,
     templates,
     roles,
     reviewTask,
@@ -92,6 +94,8 @@ export default function AppLayout(props) {
     onCloseCommands,
     onEditSkills,
     onCloseSkills,
+    onOpenScan,
+    onCloseScan,
   } = props;
 
   return (
@@ -124,6 +128,7 @@ export default function AppLayout(props) {
         onEditRoles={onEditRoles}
         onEditCommands={onEditCommands}
         onEditSkills={onEditSkills}
+        onOpenScan={currentProject ? onOpenScan : null}
       />
 
       {/* Main content */}
@@ -222,6 +227,7 @@ export default function AppLayout(props) {
       )}
       {showCommands && <CommandsModal onClose={onCloseCommands} />}
       {showSkills && <SkillsModal onClose={onCloseSkills} />}
+      {showScan && currentProject && <ScanModal projectId={currentProject.id} onClose={onCloseScan} />}
       {confirm && <ConfirmDialog {...confirm} />}
       <Toast toasts={toasts} />
       <VoiceAssistantProvider

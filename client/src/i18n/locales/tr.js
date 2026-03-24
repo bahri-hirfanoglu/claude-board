@@ -481,6 +481,26 @@ export default {
   'skills.selectOne': '\u0130\u00e7eri\u011fini g\u00f6rmek i\u00e7in bir beceri se\u00e7in',
   'skills.skillCount': 'beceri',
 
+  // ─── Scan ───
+  'scan.title': 'Kod Taban\u0131 Tara',
+  'scan.review': '\u0130nceleme',
+  'scan.saved': 'Kaydedildi',
+  'scan.idleTitle': 'Kod taban\u0131n\u0131z\u0131 analiz edin',
+  'scan.idleDesc': 'Tarama, yapay zeka kullanarak teknoloji y\u0131\u011f\u0131n\u0131, dizinleri, kal\u0131plar\u0131 ve giri\u015f noktalar\u0131n\u0131 analiz edecek.',
+  'scan.scanning': 'Kod taban\u0131 taran\u0131yor...',
+  'scan.scanningDesc': 'Yapay zeka projenizi analiz ediyor. Bu bir dakika s\u00fcrebilir.',
+  'scan.resultPreview': 'Analiz Sonucu',
+  'scan.writeMode': 'Yazma modu',
+  'scan.overwrite': 'CLAUDE.md \u00fczerine yaz',
+  'scan.append': 'CLAUDE.md sonuna ekle',
+  'scan.saveToClaudeMd': 'CLAUDE.md\u2019ye kaydet',
+  'scan.discard': 'Vazge\u00e7',
+  'scan.rescan': 'Tekrar Tara',
+  'scan.retry': 'Tekrar Dene',
+  'scan.failed': 'Tarama ba\u015far\u0131s\u0131z',
+  'scan.cannotClose': 'Tarama devam ediyor \u2014 l\u00fctfen bekleyin',
+  'scan.startScan': 'Taramay\u0131 Ba\u015flat',
+
   // ─── Language selector ───
   'lang.en': 'English',
   'lang.tr': 'T\u00fcrk\u00e7e',

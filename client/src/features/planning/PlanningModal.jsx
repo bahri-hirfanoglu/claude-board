@@ -98,10 +98,12 @@ export default function PlanningModal({ projectId, onClose }) {
     return () => { cancelled = true; };
   }, [projectId]);
 
-  // Elapsed timer
+  // Elapsed timer — restore from cached elapsed on remount
   useEffect(() => {
     if (phase === 'thinking') {
-      if (!startTimeRef.current) startTimeRef.current = Date.now();
+      if (!startTimeRef.current) {
+        startTimeRef.current = Date.now() - (stats.elapsed || 0);
+      }
       timerRef.current = setInterval(() => {
         setStats((s) => ({ ...s, elapsed: Date.now() - startTimeRef.current }));
       }, 1000);
@@ -201,6 +203,7 @@ export default function PlanningModal({ projectId, onClose }) {
     setProposals([]);
     setError(null);
     setStats({ elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 });
+    startTimeRef.current = Date.now();
     try {
       sessionStorage.setItem('planning:active', 'true');
       await api.startPlanning(projectId, { topic: topic.trim(), model, effort, granularity, context: context.trim() });
