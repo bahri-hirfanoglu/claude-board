@@ -171,6 +171,9 @@ export const api = IS_TAURI
       getPermissionRules: () => tauriCall('get_permission_rules'),
       scanCodebase: (projectId, mode = 'overwrite') => tauriCall('scan_codebase', { projectId, mode }),
       getSuggestions: () => tauriCall('get_suggestions'),
+      // Custom Commands & Skills
+      listCustomCommands: () => tauriCall('list_custom_commands'),
+      listCustomSkills: () => tauriCall('list_custom_skills'),
     }
   : {
       // ─── HTTP mode (web / Node.js server) ───

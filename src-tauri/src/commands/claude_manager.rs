@@ -368,8 +368,12 @@ pub async fn get_suggestions() -> Result<Value, String> {
         }
 
         // Check git config
-        let git_check = Command::new("git").args(["config", "user.name"])
-            .stdout(Stdio::piped()).stderr(Stdio::null()).output();
+        let mut git_cmd = Command::new("git");
+        git_cmd.args(["config", "user.name"])
+            .stdout(Stdio::piped()).stderr(Stdio::null());
+        #[cfg(target_os = "windows")]
+        git_cmd.creation_flags(CREATE_NO_WINDOW);
+        let git_check = git_cmd.output();
         if git_check.map(|o| o.stdout.is_empty()).unwrap_or(true) {
             suggestions.push(serde_json::json!({
                 "id": "git-config",
@@ -382,6 +386,70 @@ pub async fn get_suggestions() -> Result<Value, String> {
         }
 
         Ok(Value::Array(suggestions))
+    }).await.map_err(|e| e.to_string())?
+}
+
+// ─── Custom Commands ───
+#[tauri::command]
+pub async fn list_custom_commands() -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let mut items = Vec::new();
+        let dirs = [
+            dirs_home().join(".claude").join("commands"),
+        ];
+        for dir in &dirs {
+            if !dir.exists() { continue; }
+            let scope = if dir.starts_with(&dirs_home().join(".claude")) { "user" } else { "project" };
+            if let Ok(entries) = std::fs::read_dir(dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let name = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+                    let ext = path.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
+                    if ext != "md" { continue; }
+                    let content = std::fs::read_to_string(&path).unwrap_or_default();
+                    let meta = entry.metadata().ok();
+                    let size = meta.as_ref().map(|m| m.len()).unwrap_or(0);
+                    items.push(serde_json::json!({
+                        "name": name,
+                        "path": path.to_string_lossy(),
+                        "scope": scope,
+                        "content": content,
+                        "size": size,
+                    }));
+                }
+            }
+        }
+        items.sort_by(|a, b| a["name"].as_str().unwrap_or("").cmp(b["name"].as_str().unwrap_or("")));
+        Ok(Value::Array(items))
+    }).await.map_err(|e| e.to_string())?
+}
+
+// ─── Custom Skills ───
+#[tauri::command]
+pub async fn list_custom_skills() -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let mut items = Vec::new();
+        let dir = dirs_home().join(".claude").join("skills");
+        if !dir.exists() { return Ok(Value::Array(items)); }
+        if let Ok(entries) = std::fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let name = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+                let ext = path.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
+                if ext != "md" { continue; }
+                let content = std::fs::read_to_string(&path).unwrap_or_default();
+                let meta = entry.metadata().ok();
+                let size = meta.as_ref().map(|m| m.len()).unwrap_or(0);
+                items.push(serde_json::json!({
+                    "name": name,
+                    "path": path.to_string_lossy(),
+                    "content": content,
+                    "size": size,
+                }));
+            }
+        }
+        items.sort_by(|a, b| a["name"].as_str().unwrap_or("").cmp(b["name"].as_str().unwrap_or("")));
+        Ok(Value::Array(items))
     }).await.map_err(|e| e.to_string())?
 }
 

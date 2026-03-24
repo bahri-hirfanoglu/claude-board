@@ -436,28 +436,29 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   const loadSummary = async () => {
     if (!summaryCache) setLoading(true);
     try {
-      const promises = [
-        api.getProjectsSummary(),
-        IS_TAURI ? api.getProjectGroups().catch(() => []) : Promise.resolve([]),
-      ];
-      // Only load suggestions once per app session (it shells out to claude CLI)
-      if (IS_TAURI && !suggestionsLoaded) {
-        promises.push(api.getSuggestions().catch(() => []));
-      } else {
-        promises.push(Promise.resolve(suggestionsCache || []));
-      }
-      const [data, grp, sug] = await Promise.all(promises);
+      // Load only the fast DB query first — never block on CLI calls
+      const data = await api.getProjectsSummary();
       summaryCache = data;
-      groupsCache = Array.isArray(grp) ? grp : [];
-      suggestionsCache = Array.isArray(sug) ? sug : [];
-      suggestionsLoaded = true;
       setSummary(data);
-      setGroups(groupsCache);
-      setSuggestions(suggestionsCache);
     } catch {
       setSummary(projects.map(p => ({ ...p, total_tasks: 0, done_tasks: 0, active_tasks: 0, backlog_tasks: 0, testing_tasks: 0, total_tokens: 0, total_cost: 0, last_activity: null })));
     } finally {
       setLoading(false);
+    }
+
+    // Load slow CLI-based data in background (non-blocking)
+    if (IS_TAURI && !groupsCache) {
+      api.getProjectGroups().then(grp => {
+        groupsCache = Array.isArray(grp) ? grp : [];
+        setGroups(groupsCache);
+      }).catch(() => {});
+    }
+    if (IS_TAURI && !suggestionsLoaded) {
+      api.getSuggestions().then(sug => {
+        suggestionsCache = Array.isArray(sug) ? sug : [];
+        suggestionsLoaded = true;
+        setSuggestions(suggestionsCache);
+      }).catch(() => { suggestionsLoaded = true; });
     }
   };
 

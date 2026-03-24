@@ -19,6 +19,8 @@ import TerminalBottomPanel from './TerminalBottomPanel';
 import { VoiceAssistantProvider } from '../features/voice/VoiceAssistantProvider';
 import VoiceAssistant from '../features/voice/VoiceAssistant';
 import PlanningModal from '../features/planning/PlanningModal';
+import CommandsModal from '../features/commands/CommandsModal';
+import SkillsModal from '../features/skills/SkillsModal';
 
 export default function AppLayout(props) {
   const {
@@ -43,6 +45,8 @@ export default function AppLayout(props) {
     showWebhooks,
     showRoles,
     showPlanning,
+    showCommands,
+    showSkills,
     templates,
     roles,
     reviewTask,
@@ -84,6 +88,10 @@ export default function AppLayout(props) {
     onCloseDetail,
     onOpenPlanning,
     onClosePlanning,
+    onEditCommands,
+    onCloseCommands,
+    onEditSkills,
+    onCloseSkills,
   } = props;
 
   return (
@@ -114,6 +122,8 @@ export default function AppLayout(props) {
         onOpenPlanning={currentProject ? onOpenPlanning : null}
         onEditWebhooks={onEditWebhooks}
         onEditRoles={onEditRoles}
+        onEditCommands={onEditCommands}
+        onEditSkills={onEditSkills}
       />
 
       {/* Main content */}
@@ -210,6 +220,8 @@ export default function AppLayout(props) {
       {showPlanning && currentProject && (
         <PlanningModal projectId={currentProject.id} onClose={onClosePlanning} />
       )}
+      {showCommands && <CommandsModal onClose={onCloseCommands} />}
+      {showSkills && <SkillsModal onClose={onCloseSkills} />}
       {confirm && <ConfirmDialog {...confirm} />}
       <Toast toasts={toasts} />
       <VoiceAssistantProvider
