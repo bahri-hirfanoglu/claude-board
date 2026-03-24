@@ -47,20 +47,28 @@ function formatElapsed(ms) {
   return `${s}s`;
 }
 
+// Persist planning state across modal open/close
+const planCache = {};
+function getCache(pid) {
+  if (!planCache[pid]) planCache[pid] = { phase: 'idle', planPhase: 'starting', logs: [], analysis: '', proposals: [], stats: { elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 }, error: null, topic: '', context: '', model: 'sonnet', effort: 'medium', granularity: 'balanced' };
+  return planCache[pid];
+}
+
 export default function PlanningModal({ projectId, onClose }) {
   const { t } = useTranslation();
-  const [topic, setTopic] = useState('');
-  const [context, setContext] = useState('');
-  const [model, setModel] = useState('sonnet');
-  const [effort, setEffort] = useState('medium');
-  const [granularity, setGranularity] = useState('balanced');
-  const [phase, setPhase] = useState('idle'); // idle | thinking | review | approved | error
-  const [planPhase, setPlanPhase] = useState('starting');
-  const [logs, setLogs] = useState([]);
-  const [analysis, setAnalysis] = useState('');
-  const [proposals, setProposals] = useState([]);
-  const [stats, setStats] = useState({ elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 });
-  const [error, setError] = useState(null);
+  const c = getCache(projectId);
+  const [topic, setTopic] = useState(c.topic);
+  const [context, setContext] = useState(c.context);
+  const [model, setModel] = useState(c.model);
+  const [effort, setEffort] = useState(c.effort);
+  const [granularity, setGranularity] = useState(c.granularity);
+  const [phase, setPhase] = useState(c.phase);
+  const [planPhase, setPlanPhase] = useState(c.planPhase);
+  const [logs, setLogs] = useState(c.logs);
+  const [analysis, setAnalysis] = useState(c.analysis);
+  const [proposals, setProposals] = useState(c.proposals);
+  const [stats, setStats] = useState(c.stats);
+  const [error, setError] = useState(c.error);
   const [showLogs, setShowLogs] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [expandedTask, setExpandedTask] = useState(null);
@@ -68,6 +76,11 @@ export default function PlanningModal({ projectId, onClose }) {
   const logsEndRef = useRef(null);
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
+
+  // Save state to cache on every change
+  useEffect(() => {
+    Object.assign(getCache(projectId), { phase, planPhase, logs, analysis, proposals, stats, error, topic, context, model, effort, granularity });
+  });
 
   // Resume active session
   useEffect(() => {
