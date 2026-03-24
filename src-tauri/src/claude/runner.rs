@@ -14,7 +14,7 @@ use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-type ProcessMap = Arc<Mutex<HashMap<i64, u32>>>; // task_id -> PID
+type ProcessMap = Arc<Mutex<HashMap<i64, u32>>>;
 type StartingSet = Arc<Mutex<HashSet<i64>>>;
 
 static ACTIVE_PROCESSES: once_cell::sync::Lazy<ProcessMap> = once_cell::sync::Lazy::new(|| Arc::new(Mutex::new(HashMap::new())));
@@ -89,7 +89,6 @@ fn ensure_task_branch(task: &tasks::Task, working_dir: &str, project: &projects:
         }
     };
 
-    // Check git repo
     if exec("rev-parse --is-inside-work-tree").is_err() { return None; }
 
     let git_hidden = |args: &[&str], dir: &str| -> std::io::Result<std::process::Output> {
@@ -117,7 +116,7 @@ fn ensure_task_branch(task: &tasks::Task, working_dir: &str, project: &projects:
     }
 
     tasks::update_branch(db, task.id, &branch_name);
-    let _ = app; // used for logging in original, skip for brevity
+    let _ = app;
     Some(branch_name)
 }
 
@@ -156,6 +155,133 @@ fn scan_git_info(working_dir: &str, task_id: i64, db: &DbPool) {
     tasks::update_git_info(db, task_id, &commits_json, pr_url.as_deref(), diff_stat.as_deref());
 }
 
+/// Copy task attachments from uploads dir to working dir for Claude access.
+fn copy_task_attachments(task_id: i64, working_dir: &str, db: &DbPool) -> (Vec<attachments::Attachment>, std::path::PathBuf) {
+    let task_attachments = attachments::get_by_task(db, task_id);
+    let uploads_dir = db::get_data_dir().parent().map(|p| p.join("uploads")).unwrap_or_default();
+    let attach_dir = Path::new(working_dir).join(".claude-attachments");
+
+    if !task_attachments.is_empty() {
+        std::fs::create_dir_all(&attach_dir).ok();
+        for a in &task_attachments {
+            let src = uploads_dir.join(&a.filename);
+            let dest = attach_dir.join(&a.filename);
+            if src.exists() { std::fs::copy(&src, &dest).ok(); }
+        }
+    }
+
+    (task_attachments, attach_dir)
+}
+
+/// Build Claude CLI arguments from task configuration.
+fn build_claude_args(
+    prompt: &str,
+    model: &str,
+    effort: &str,
+    permission_mode: &str,
+    allowed_tools: &str,
+    mcp_server_port: u16,
+) -> Vec<String> {
+    let mut args = vec![
+        "-p".to_string(), prompt.to_string(),
+        "--output-format".to_string(), "stream-json".to_string(),
+        "--verbose".to_string(),
+        "--model".to_string(), model.to_string(),
+    ];
+
+    // MCP config
+    let mcp_server_path = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.join("mcp-server.js").to_string_lossy().to_string()))
+        .unwrap_or_default();
+
+    let mcp_config = serde_json::json!({
+        "mcpServers": {
+            "claude-board": {
+                "command": "node",
+                "args": [mcp_server_path],
+                "env": { "CLAUDE_BOARD_URL": format!("http://localhost:{}", mcp_server_port) }
+            }
+        }
+    });
+    args.extend(["--mcp-config".to_string(), mcp_config.to_string()]);
+
+    // Permission mode
+    if permission_mode == "auto-accept" {
+        args.push("--dangerously-skip-permissions".to_string());
+    } else if permission_mode == "allow-tools" {
+        let tools: Vec<&str> = allowed_tools.split(',').map(|t| t.trim()).filter(|t| !t.is_empty()).collect();
+        if tools.is_empty() {
+            args.push("--dangerously-skip-permissions".to_string());
+        } else {
+            for t in tools { args.extend(["--allowedTools".to_string(), t.to_string()]); }
+        }
+    }
+
+    if effort != "medium" {
+        args.extend(["--thinking-budget".to_string(), effort.to_string()]);
+    }
+
+    args
+}
+
+/// Handle process output, track events, and update task state on completion.
+fn handle_process_lifecycle(
+    task_id: i64,
+    mut child: std::process::Child,
+    db: &DbPool,
+    app: &AppHandle,
+    working_dir: &str,
+    project_id: i64,
+    task_title: &str,
+    attach_dir: &Path,
+) {
+    let pid = child.id();
+    ACTIVE_PROCESSES.lock().unwrap().insert(task_id, pid);
+    STARTING_TASKS.lock().unwrap().remove(&task_id);
+
+    // Read stdout (safe: we configured Stdio::piped)
+    if let Some(stdout) = child.stdout.take() {
+        let reader = BufReader::new(stdout);
+        for line in reader.lines().flatten() {
+            if line.trim().is_empty() { continue; }
+            match serde_json::from_str::<serde_json::Value>(&line) {
+                Ok(event) => super::events::handle_event(task_id, &event, db, app, &EVENT_CTX),
+                Err(_) => { tasks::add_log(db, task_id, &line, "claude", None); }
+            }
+        }
+    }
+
+    let status = child.wait().ok().and_then(|s| s.code()).unwrap_or(-1);
+
+    // Cleanup process tracking
+    ACTIVE_PROCESSES.lock().unwrap().remove(&task_id);
+    STARTING_TASKS.lock().unwrap().remove(&task_id);
+    EVENT_CTX.task_usage.lock().unwrap().remove(&task_id);
+
+    if status == 0 {
+        scan_git_info(working_dir, task_id, db);
+        tasks::add_log(db, task_id, "Claude finished successfully.", "success", None);
+        tasks::update_status(db, task_id, "testing");
+        tasks::set_completed(db, task_id);
+        if let Some(updated) = tasks::get_by_id(db, task_id) {
+            app.emit("task:updated", &updated).ok();
+        }
+        activity::add(db, project_id, Some(task_id), "task_completed", &format!("Task completed: {}", task_title), None);
+    } else {
+        tasks::add_log(db, task_id, &format!("Claude exited with code {}.", status), "error", None);
+        activity::add(db, project_id, Some(task_id), "task_failed", &format!("Task failed (exit {}): {}", status, task_title), None);
+        crate::services::queue::handle_task_failure(db, app, project_id, task_id);
+    }
+
+    // Cleanup attachments
+    if attach_dir.exists() {
+        std::fs::remove_dir_all(attach_dir).ok();
+    }
+
+    app.emit("claude:finished", &serde_json::json!({"taskId": task_id, "exitCode": status})).ok();
+}
+
 pub fn start(
     task: &tasks::Task,
     app: AppHandle,
@@ -171,18 +297,8 @@ pub fn start(
     }
     STARTING_TASKS.lock().unwrap().insert(task_id);
 
-    // Copy attachments
-    let task_attachments = attachments::get_by_task(&db, task_id);
-    let uploads_dir = db::get_data_dir().parent().map(|p| p.join("uploads")).unwrap_or_default();
-    let attach_dir = Path::new(working_dir).join(".claude-attachments");
-    if !task_attachments.is_empty() {
-        std::fs::create_dir_all(&attach_dir).ok();
-        for a in &task_attachments {
-            let src = uploads_dir.join(&a.filename);
-            let dest = attach_dir.join(&a.filename);
-            if src.exists() { std::fs::copy(&src, &dest).ok(); }
-        }
-    }
+    // Copy attachments to working dir
+    let (task_attachments, attach_dir) = copy_task_attachments(task_id, working_dir, &db);
 
     let revisions = tasks::get_revisions(&db, task_id);
     let enabled_snippets = snippets::get_enabled_by_project(&db, task.project_id);
@@ -192,6 +308,7 @@ pub fn start(
     let model = task.model.as_deref().unwrap_or("sonnet");
     let effort = task.thinking_effort.as_deref().unwrap_or("medium");
     let permission_mode = project.permission_mode.as_deref().unwrap_or("auto-accept");
+    let allowed_tools = project.allowed_tools.as_deref().unwrap_or("");
 
     // Snapshot baseline usage
     if let Some(current) = tasks::get_by_id(&db, task_id) {
@@ -217,50 +334,12 @@ pub fn start(
     tasks::add_log(&db, task_id, &format!("Model: {} | Effort: {} | Permissions: {}", model, effort, permission_mode), "info", None);
     activity::add(&db, task.project_id, Some(task_id), "claude_started", &format!("Claude started: {}", task.title), None);
 
-    let mut args = vec![
-        "-p".to_string(), prompt,
-        "--output-format".to_string(), "stream-json".to_string(),
-        "--verbose".to_string(),
-    ];
-    args.extend(["--model".to_string(), model.to_string()]);
-
-    // MCP config - resolve bundled mcp-server.js next to the executable
-    let mcp_server_path = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|d| d.join("mcp-server.js").to_string_lossy().to_string()))
-        .unwrap_or_default();
-
-    let mcp_config = serde_json::json!({
-        "mcpServers": {
-            "claude-board": {
-                "command": "node",
-                "args": [mcp_server_path],
-                "env": { "CLAUDE_BOARD_URL": format!("http://localhost:{}", mcp_server_port) }
-            }
-        }
-    });
-    args.extend(["--mcp-config".to_string(), mcp_config.to_string()]);
-
-    if permission_mode == "auto-accept" {
-        args.push("--dangerously-skip-permissions".to_string());
-    } else if permission_mode == "allow-tools" {
-        let tools: Vec<&str> = project.allowed_tools.as_deref().unwrap_or("")
-            .split(',').map(|t| t.trim()).filter(|t| !t.is_empty()).collect();
-        if tools.is_empty() {
-            args.push("--dangerously-skip-permissions".to_string());
-        } else {
-            for t in tools { args.extend(["--allowedTools".to_string(), t.to_string()]); }
-        }
-    }
-
-    if effort != "medium" {
-        args.extend(["--thinking-budget".to_string(), effort.to_string()]);
-    }
+    // Build CLI arguments
+    let args = build_claude_args(&prompt, model, effort, permission_mode, allowed_tools, mcp_server_port);
 
     let working_dir = working_dir.to_string();
     let project_id = task.project_id;
     let task_title = task.title.clone();
-    let _auto_pr = project.auto_pr.unwrap_or(0) == 1;
 
     std::thread::spawn(move || {
         let mut cmd = Command::new("claude");
@@ -271,7 +350,8 @@ pub fn start(
             .stdin(Stdio::null());
         #[cfg(target_os = "windows")]
         cmd.creation_flags(CREATE_NO_WINDOW);
-        let mut child = match cmd.spawn() {
+
+        let child = match cmd.spawn() {
             Ok(c) => c,
             Err(e) => {
                 let db = db::get_db();
@@ -282,54 +362,7 @@ pub fn start(
             }
         };
 
-        let pid = child.id();
-        ACTIVE_PROCESSES.lock().unwrap().insert(task_id, pid);
-        STARTING_TASKS.lock().unwrap().remove(&task_id);
-
-        // Read stdout
-        let stdout = child.stdout.take().unwrap();
-        let reader = BufReader::new(stdout);
         let db = db::get_db();
-
-        for line in reader.lines().flatten() {
-            if line.trim().is_empty() { continue; }
-            match serde_json::from_str::<serde_json::Value>(&line) {
-                Ok(event) => {
-                    super::events::handle_event(task_id, &event, &db, &app, &EVENT_CTX);
-                }
-                Err(_) => {
-                    tasks::add_log(&db, task_id, &line, "claude", None);
-                }
-            }
-        }
-
-        let status = child.wait().ok().and_then(|s| s.code()).unwrap_or(-1);
-
-        ACTIVE_PROCESSES.lock().unwrap().remove(&task_id);
-        STARTING_TASKS.lock().unwrap().remove(&task_id);
-        EVENT_CTX.task_usage.lock().unwrap().remove(&task_id);
-
-        if status == 0 {
-            scan_git_info(&working_dir, task_id, &db);
-            tasks::add_log(&db, task_id, "Claude finished successfully.", "success", None);
-            tasks::update_status(&db, task_id, "testing");
-            tasks::set_completed(&db, task_id);
-            if let Some(updated) = tasks::get_by_id(&db, task_id) {
-                app.emit("task:updated", &updated).ok();
-            }
-            activity::add(&db, project_id, Some(task_id), "task_completed", &format!("Task completed: {}", task_title), None);
-        } else {
-            tasks::add_log(&db, task_id, &format!("Claude exited with code {}.", status), "error", None);
-            activity::add(&db, project_id, Some(task_id), "task_failed", &format!("Task failed (exit {}): {}", status, task_title), None);
-            // Try auto-retry via queue
-            crate::services::queue::handle_task_failure(&db, &app, project_id, task_id);
-        }
-
-        // Cleanup attachments
-        if attach_dir.exists() {
-            std::fs::remove_dir_all(&attach_dir).ok();
-        }
-
-        app.emit("claude:finished", &serde_json::json!({"taskId": task_id, "exitCode": status})).ok();
+        handle_process_lifecycle(task_id, child, &db, &app, &working_dir, project_id, &task_title, &attach_dir);
     });
 }

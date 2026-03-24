@@ -13,7 +13,7 @@ pub fn create_webhook(
 ) -> Result<wq::Webhook, String> {
     let db = db::get_db();
     let id = wq::create(&db, project_id, &name, &url, platform.as_deref(), &events.unwrap_or_default());
-    let w = wq::get_by_id(&db, id).unwrap();
+    let w = wq::get_by_id(&db, id).ok_or("Webhook not found")?;
     app.emit("webhook:created", &w).ok();
     Ok(w)
 }
@@ -26,7 +26,7 @@ pub fn update_webhook(
 ) -> Result<wq::Webhook, String> {
     let db = db::get_db();
     wq::update(&db, id, &name, &url, platform.as_deref(), &events.unwrap_or_default(), enabled.unwrap_or(true));
-    let w = wq::get_by_id(&db, id).unwrap();
+    let w = wq::get_by_id(&db, id).ok_or("Webhook not found")?;
     app.emit("webhook:updated", &w).ok();
     Ok(w)
 }

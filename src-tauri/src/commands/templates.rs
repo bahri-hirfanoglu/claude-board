@@ -19,7 +19,7 @@ pub fn create_template(
         task_type.as_deref().unwrap_or("feature"),
         model.as_deref().unwrap_or("sonnet"),
         thinking_effort.as_deref().unwrap_or("medium"));
-    let t = tq::get_by_id(&db, id).unwrap();
+    let t = tq::get_by_id(&db, id).ok_or("Template not found")?;
     app.emit("template:created", &t).ok();
     Ok(t)
 }
@@ -37,7 +37,7 @@ pub fn update_template(
         task_type.as_deref().unwrap_or("feature"),
         model.as_deref().unwrap_or("sonnet"),
         thinking_effort.as_deref().unwrap_or("medium"));
-    let t = tq::get_by_id(&db, id).unwrap();
+    let t = tq::get_by_id(&db, id).ok_or("Template not found")?;
     app.emit("template:updated", &t).ok();
     Ok(t)
 }
