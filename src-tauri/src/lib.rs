@@ -207,6 +207,7 @@ pub fn run() {
             commands::claude_manager::save_custom_skill,
             commands::claude_manager::delete_custom_skill,
             commands::claude_manager::fetch_github_skills,
+            commands::claude_manager::fetch_skill_content,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -245,5 +245,6 @@ export const api = {
     saveCustomSkill: (name, content) => tauriCall('save_custom_skill', { name, content }),
     deleteCustomSkill: (name) => tauriCall('delete_custom_skill', { name }),
     fetchGithubSkills: (repoUrl, path) => tauriCall('fetch_github_skills', { repoUrl, path: path || null }),
+    fetchSkillContent: (url) => tauriCall('fetch_skill_content', { url }),
   } : {}),
 };

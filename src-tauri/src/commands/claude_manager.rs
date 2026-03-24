@@ -484,24 +484,88 @@ pub async fn delete_custom_skill(name: String) -> Result<(), String> {
     }).await.map_err(|e| e.to_string())?
 }
 
+/// Fetch skill from a raw URL (download_url from GitHub API or constructed raw URL)
+#[tauri::command]
+pub async fn fetch_skill_content(url: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let client = reqwest::blocking::Client::builder()
+            .user_agent("claude-board")
+            .timeout(std::time::Duration::from_secs(15))
+            .build()
+            .map_err(|e| e.to_string())?;
+        let resp = client.get(&url).send().map_err(|e| e.to_string())?;
+        if !resp.status().is_success() {
+            return Err(format!("Failed to fetch: {}", resp.status()));
+        }
+        resp.text().map_err(|e| e.to_string())
+    }).await.map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 pub async fn fetch_github_skills(repo_url: String, path: Option<String>) -> Result<Value, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        // Parse GitHub URL: "user/repo", "https://github.com/user/repo", etc.
         let repo = repo_url
             .trim_end_matches('/')
             .replace("https://github.com/", "")
             .replace("http://github.com/", "");
-        // Strip /tree/branch/path suffix if present
         let (repo_slug, tree_path) = if repo.contains("/tree/") {
             let parts: Vec<&str> = repo.splitn(2, "/tree/").collect();
             let sub = parts.get(1).unwrap_or(&"");
-            // Skip branch name (first segment after tree/)
             let sub_parts: Vec<&str> = sub.splitn(2, '/').collect();
             (parts[0].to_string(), sub_parts.get(1).map(|s| s.to_string()))
         } else {
             (repo.to_string(), None)
         };
+
+        let client = reqwest::blocking::Client::builder()
+            .user_agent("claude-board")
+            .timeout(std::time::Duration::from_secs(20))
+            .build()
+            .map_err(|e| e.to_string())?;
+
+        // Strategy 1: Try skills_index.json (fast catalog with metadata)
+        let index_url = format!("https://raw.githubusercontent.com/{}/main/skills_index.json", repo_slug);
+        if let Ok(resp) = client.get(&index_url).send() {
+            if resp.status().is_success() {
+                if let Ok(index) = resp.json::<Vec<Value>>() {
+                    let skills: Vec<Value> = index.iter().map(|entry| {
+                        let id = entry.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                        let name = entry.get("name").and_then(|v| v.as_str()).unwrap_or(id);
+                        let desc = entry.get("description").and_then(|v| v.as_str()).unwrap_or("");
+                        let category = entry.get("category").and_then(|v| v.as_str()).unwrap_or("other");
+                        let skill_path = entry.get("path").and_then(|v| v.as_str()).unwrap_or("");
+                        // Build download URL for SKILL.md inside the skill folder
+                        let download_url = format!(
+                            "https://raw.githubusercontent.com/{}/main/{}/SKILL.md",
+                            repo_slug, skill_path
+                        );
+                        serde_json::json!({
+                            "name": name,
+                            "description": desc,
+                            "category": category,
+                            "downloadUrl": download_url,
+                            "source": "index",
+                        })
+                    }).collect();
+
+                    // Extract unique categories
+                    let mut categories: Vec<String> = skills.iter()
+                        .filter_map(|s| s.get("category").and_then(|v| v.as_str()).map(|s| s.to_string()))
+                        .collect();
+                    categories.sort();
+                    categories.dedup();
+
+                    return Ok(serde_json::json!({
+                        "repo": repo_slug,
+                        "skills": skills,
+                        "categories": categories,
+                        "source": "index",
+                    }));
+                }
+            }
+        }
+
+        // Strategy 2: Browse directory via GitHub API
         let api_path = path.or(tree_path).unwrap_or_default();
         let api_url = if api_path.is_empty() {
             format!("https://api.github.com/repos/{}/contents", repo_slug)
@@ -509,23 +573,15 @@ pub async fn fetch_github_skills(repo_url: String, path: Option<String>) -> Resu
             format!("https://api.github.com/repos/{}/contents/{}", repo_slug, api_path.trim_start_matches('/'))
         };
 
-        // Fetch directory listing
-        let client = reqwest::blocking::Client::builder()
-            .user_agent("claude-board")
-            .timeout(std::time::Duration::from_secs(15))
-            .build()
-            .map_err(|e| e.to_string())?;
-
         let resp = client.get(&api_url)
             .send()
             .map_err(|e| format!("Failed to fetch: {}", e))?;
 
         if !resp.status().is_success() {
-            return Err(format!("GitHub API returned {}: {}", resp.status(), resp.text().unwrap_or_default()));
+            return Err(format!("GitHub API error {}", resp.status()));
         }
 
         let body: Value = resp.json().map_err(|e| e.to_string())?;
-
         let mut skills = Vec::new();
         let mut dirs = Vec::new();
 
@@ -533,30 +589,23 @@ pub async fn fetch_github_skills(repo_url: String, path: Option<String>) -> Resu
             for entry in entries {
                 let name = entry.get("name").and_then(|v| v.as_str()).unwrap_or("");
                 let entry_type = entry.get("type").and_then(|v| v.as_str()).unwrap_or("");
-                let entry_path = entry.get("path").and_then(|v| v.as_str()).unwrap_or("");
                 let download_url = entry.get("download_url").and_then(|v| v.as_str()).unwrap_or("");
                 let size = entry.get("size").and_then(|v| v.as_u64()).unwrap_or(0);
 
-                if entry_type == "file" && name.ends_with(".md") {
+                if entry_type == "file" && name.ends_with(".md") && name != "README.md" {
                     let skill_name = name.trim_end_matches(".md");
-                    // Fetch file content
-                    let content = if !download_url.is_empty() {
-                        client.get(download_url).send().ok()
-                            .and_then(|r| r.text().ok())
-                            .unwrap_or_default()
-                    } else { String::new() };
-
                     skills.push(serde_json::json!({
                         "name": skill_name,
-                        "filename": name,
-                        "path": entry_path,
-                        "content": content,
+                        "description": "",
+                        "category": "",
+                        "downloadUrl": download_url,
                         "size": size,
+                        "source": "file",
                     }));
-                } else if entry_type == "dir" {
+                } else if entry_type == "dir" && !name.starts_with('.') {
                     dirs.push(serde_json::json!({
                         "name": name,
-                        "path": entry_path,
+                        "path": entry.get("path").and_then(|v| v.as_str()).unwrap_or(""),
                     }));
                 }
             }
@@ -566,6 +615,7 @@ pub async fn fetch_github_skills(repo_url: String, path: Option<String>) -> Resu
             "repo": repo_slug,
             "skills": skills,
             "directories": dirs,
+            "source": "api",
         }))
     }).await.map_err(|e| e.to_string())?
 }
