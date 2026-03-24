@@ -56,15 +56,22 @@ function AppInner() {
   }, []);
 
   // Auto-open terminal when task NEWLY starts running
-  const runningIdsRef = useRef(null); // null = not initialized yet
+  // Suppress for first 5 seconds after mount to avoid flash on app startup
+  const runningIdsRef = useRef(new Set());
+  const suppressRef = useRef(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => { suppressRef.current = false; }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     runningIdsRef.current = new Set(tasks.filter(t => t.is_running).map(t => t.id));
   }, [tasks]);
 
   useEffect(() => {
     const handler = (task) => {
-      // Skip until initial task list is loaded
-      if (runningIdsRef.current === null) return;
+      if (suppressRef.current) return;
       if (task.is_running && !runningIdsRef.current.has(task.id)) {
         runningIdsRef.current.add(task.id);
         terminal.openTab(task);
