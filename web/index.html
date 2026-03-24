@@ -307,7 +307,7 @@
 <!-- Hero -->
 <section class="hero">
   <div class="container">
-    <div class="hero-badge"><span class="dot"></span> Open Source &mdash; v1.0.0</div>
+    <div class="hero-badge"><span class="dot"></span> Open Source &mdash; <span id="app-version">v1.5.1</span></div>
     <h1>Build your own<br><span class="accent">AI dev squad.</span></h1>
     <p class="subtitle">Run multiple Claude agents from your local machine. Create tasks, assign models, watch them code in real-time &mdash; all from a single board.</p>
     <div class="hero-buttons">
@@ -550,6 +550,12 @@
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
   }, { threshold: 0.1 });
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // Fetch latest version from GitHub
+  fetch('https://api.github.com/repos/bahri-hirfanoglu/claude-board/releases/latest')
+    .then(r => r.json())
+    .then(d => { if (d.tag_name) document.getElementById('app-version').textContent = d.tag_name; })
+    .catch(() => {});
 </script>
 
 </body>
