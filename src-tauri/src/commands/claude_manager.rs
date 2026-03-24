@@ -567,57 +567,110 @@ pub async fn fetch_github_skills(repo_url: String, path: Option<String>) -> Resu
 
         // Strategy 2: Browse directory via GitHub API
         let api_path = path.or(tree_path).unwrap_or_default();
-        let api_url = if api_path.is_empty() {
-            format!("https://api.github.com/repos/{}/contents", repo_slug)
+        // If no path given, try "skills" subdirectory first
+        let try_paths = if api_path.is_empty() {
+            vec!["skills".to_string(), String::new()]
         } else {
-            format!("https://api.github.com/repos/{}/contents/{}", repo_slug, api_path.trim_start_matches('/'))
+            vec![api_path]
         };
 
-        let resp = client.get(&api_url)
-            .send()
-            .map_err(|e| format!("Failed to fetch: {}", e))?;
+        for try_path in &try_paths {
+            let api_url = if try_path.is_empty() {
+                format!("https://api.github.com/repos/{}/contents", repo_slug)
+            } else {
+                format!("https://api.github.com/repos/{}/contents/{}", repo_slug, try_path.trim_start_matches('/'))
+            };
 
-        if !resp.status().is_success() {
-            return Err(format!("GitHub API error {}", resp.status()));
-        }
+            let resp = match client.get(&api_url).send() {
+                Ok(r) if r.status().is_success() => r,
+                _ => continue,
+            };
 
-        let body: Value = resp.json().map_err(|e| e.to_string())?;
-        let mut skills = Vec::new();
-        let mut dirs = Vec::new();
+            let body: Value = match resp.json() {
+                Ok(b) => b,
+                Err(_) => continue,
+            };
 
-        if let Some(entries) = body.as_array() {
-            for entry in entries {
-                let name = entry.get("name").and_then(|v| v.as_str()).unwrap_or("");
-                let entry_type = entry.get("type").and_then(|v| v.as_str()).unwrap_or("");
-                let download_url = entry.get("download_url").and_then(|v| v.as_str()).unwrap_or("");
-                let size = entry.get("size").and_then(|v| v.as_u64()).unwrap_or(0);
+            let mut skills = Vec::new();
 
-                if entry_type == "file" && name.ends_with(".md") && name != "README.md" {
-                    let skill_name = name.trim_end_matches(".md");
-                    skills.push(serde_json::json!({
-                        "name": skill_name,
-                        "description": "",
-                        "category": "",
-                        "downloadUrl": download_url,
-                        "size": size,
-                        "source": "file",
-                    }));
-                } else if entry_type == "dir" && !name.starts_with('.') {
-                    dirs.push(serde_json::json!({
-                        "name": name,
-                        "path": entry.get("path").and_then(|v| v.as_str()).unwrap_or(""),
+            if let Some(entries) = body.as_array() {
+                // Detect if this is a skill-folder directory (most entries are dirs)
+                let dir_count = entries.iter().filter(|e| e.get("type").and_then(|v| v.as_str()) == Some("dir")).count();
+                let file_count = entries.iter().filter(|e| {
+                    let n = e.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                    e.get("type").and_then(|v| v.as_str()) == Some("file") && n.ends_with(".md") && n != "README.md"
+                }).count();
+
+                if dir_count > file_count && dir_count > 3 {
+                    // Skill-folder pattern: each subdirectory IS a skill (contains SKILL.md)
+                    // Detect default branch
+                    let branch = detect_default_branch(&client, &repo_slug);
+                    for entry in entries {
+                        let name = entry.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                        let entry_path = entry.get("path").and_then(|v| v.as_str()).unwrap_or("");
+                        if entry.get("type").and_then(|v| v.as_str()) != Some("dir") { continue; }
+                        if name.starts_with('.') || name == "scripts" || name == "references" { continue; }
+
+                        let download_url = format!(
+                            "https://raw.githubusercontent.com/{}/{}/{}/SKILL.md",
+                            repo_slug, branch, entry_path
+                        );
+                        skills.push(serde_json::json!({
+                            "name": name,
+                            "description": "",
+                            "category": "",
+                            "downloadUrl": download_url,
+                            "source": "folder",
+                        }));
+                    }
+                } else {
+                    // Flat .md files
+                    for entry in entries {
+                        let name = entry.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                        let entry_type = entry.get("type").and_then(|v| v.as_str()).unwrap_or("");
+                        let download_url = entry.get("download_url").and_then(|v| v.as_str()).unwrap_or("");
+
+                        if entry_type == "file" && name.ends_with(".md") && name != "README.md" {
+                            let skill_name = name.trim_end_matches(".md");
+                            skills.push(serde_json::json!({
+                                "name": skill_name,
+                                "description": "",
+                                "category": "",
+                                "downloadUrl": download_url,
+                                "source": "file",
+                            }));
+                        }
+                    }
+                }
+
+                if !skills.is_empty() {
+                    skills.sort_by(|a, b| {
+                        a.get("name").and_then(|v| v.as_str()).unwrap_or("")
+                            .cmp(b.get("name").and_then(|v| v.as_str()).unwrap_or(""))
+                    });
+                    return Ok(serde_json::json!({
+                        "repo": repo_slug,
+                        "skills": skills,
+                        "categories": [],
+                        "source": "api",
                     }));
                 }
             }
         }
 
-        Ok(serde_json::json!({
-            "repo": repo_slug,
-            "skills": skills,
-            "directories": dirs,
-            "source": "api",
-        }))
+        Err("No skills found in this repository. Try a different URL or path.".into())
     }).await.map_err(|e| e.to_string())?
+}
+
+fn detect_default_branch(client: &reqwest::blocking::Client, repo: &str) -> String {
+    if let Ok(resp) = client.get(&format!("https://api.github.com/repos/{}", repo)).send() {
+        if let Ok(data) = resp.json::<serde_json::Value>() {
+            if let Some(branch) = data.get("default_branch").and_then(|v| v.as_str()) {
+                return branch.to_string();
+            }
+        }
+    }
+    "main".to_string()
 }
 
 fn dirs_home() -> std::path::PathBuf {

@@ -4,9 +4,9 @@ import { api } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
 
 const POPULAR_REPOS = [
-  { repo: 'sickn33/antigravity-awesome-skills', path: 'skills', label: 'Antigravity Awesome Skills', desc: 'Categorized skill collection with 500+ skills' },
-  { repo: 'hesreallyhim/awesome-claude-code', path: '', label: 'Awesome Claude Code', desc: 'Community-curated resources and skills' },
-  { repo: 'travisvn/awesome-claude-skills', path: '', label: 'Awesome Claude Skills', desc: 'Curated skill collection' },
+  { repo: 'sickn33/antigravity-awesome-skills', label: 'Antigravity Awesome Skills', desc: '500+ categorized skills with search & filter' },
+  { repo: 'ComposioHQ/awesome-claude-skills', label: 'Composio Skills', desc: 'Curated skill collection by ComposioHQ' },
+  { repo: 'affaan-m/everything-claude-code', label: 'Everything Claude Code', desc: 'Comprehensive skills, agents, and tools' },
 ];
 
 export default function SkillsModal({ onClose }) {
@@ -279,7 +279,7 @@ function ImportView({ installedSkills, onInstalled }) {
             {POPULAR_REPOS.map((repo) => (
               <button
                 key={repo.repo}
-                onClick={() => { setRepoUrl(repo.repo); fetchRepo(repo.repo, repo.path); }}
+                onClick={() => { setRepoUrl(repo.repo); fetchRepo(repo.repo); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-800/50 hover:bg-surface-800 border border-surface-700/30 hover:border-surface-700 text-left transition-colors group"
               >
                 <Github size={16} className="text-surface-400 flex-shrink-0" />
