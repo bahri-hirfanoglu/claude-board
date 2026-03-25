@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw, GitBranch, ArrowRight } from 'lucide-react';
+import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw, GitBranch, ArrowRight, AlertTriangle } from 'lucide-react';
 import { formatDuration, formatTokens } from '../../lib/formatters';
 import { PRIORITY_COLORS as priorityColors, PRIORITY_LABELS as priorityLabels, TYPE_COLORS as typeColors, MODEL_COLORS as modelColors, COLUMNS } from '../../lib/constants';
 import { useStatusTransition } from './StatusTransitionContext';
@@ -180,6 +180,14 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
                 </span>
               )}
               <TagList tags={task.tags} max={2} size="xs" />
+              {task.retry_count > 0 && (
+                <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                  task.retry_count > 2 ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'
+                }`}>
+                  {task.retry_count > 2 ? <AlertTriangle size={8} /> : <RotateCcw size={8} />}
+                  {task.retry_count > 2 ? t('card.failed') : `${t('card.retryCount')} ${task.retry_count}`}
+                </span>
+              )}
             </div>
             <h3 className="text-sm font-medium text-surface-100 truncate">{task.title}</h3>
             {task.description && (

@@ -237,6 +237,8 @@ pub fn run_migrations(conn: &Connection) {
         ("tasks", "awaiting_subtasks", "ALTER TABLE tasks ADD COLUMN awaiting_subtasks INTEGER DEFAULT 0"),
         // Tags
         ("tasks", "tags", "ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT '[]'"),
+        // Lifecycle summary
+        ("tasks", "lifecycle_summary", "ALTER TABLE tasks ADD COLUMN lifecycle_summary TEXT"),
     ];
 
     for (table, col, sql) in migrations {

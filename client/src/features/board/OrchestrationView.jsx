@@ -136,7 +136,7 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
                 tagFilter.length > 0 ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'
               }`}>
               <Tag size={12} />
-              Tags
+              {t('task.tags')}
               {tagFilter.length > 0 && (
                 <span className="text-[10px] bg-claude/20 px-1.5 py-px rounded-full">{tagFilter.length}</span>
               )}
@@ -147,7 +147,7 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
                 {tagFilter.length > 0 && (
                   <button onClick={() => { setTagFilter([]); setTagDropdownOpen(false); }}
                     className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-700 border-b border-surface-700/50">
-                    <X size={10} /> Clear all
+                    <X size={10} /> {t('common.clearAll')}
                   </button>
                 )}
                 {activeTags.map(tag => {

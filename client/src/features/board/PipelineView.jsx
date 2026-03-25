@@ -249,7 +249,7 @@ function PipelineCard({ task, position, draggable, onViewLogs, onViewDetail, onM
             <span className="text-[9px] text-blue-400 flex items-center gap-0.5"><Link2 size={8} />{depName}</span>
           ) : null}
           {task.retry_count > 0 && (
-            <span className="text-[9px] text-amber-400 flex items-center gap-0.5"><RotateCcw size={8} />retry {task.retry_count}</span>
+            <span className="text-[9px] text-amber-400 flex items-center gap-0.5"><RotateCcw size={8} />{t('pipeline.retryCount')} {task.retry_count}</span>
           )}
         </div>
       </div>
@@ -268,7 +268,7 @@ function PipelineCard({ task, position, draggable, onViewLogs, onViewDetail, onM
       {status === 'in_progress' && (
         <button onClick={(e) => { e.stopPropagation(); onViewLogs?.(task); }}
           className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-1 rounded bg-amber-500/10">
-          Terminal
+          {t('pipeline.terminal')}
         </button>
       )}
     </div>

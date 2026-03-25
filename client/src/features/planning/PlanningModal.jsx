@@ -389,12 +389,17 @@ export default function PlanningModal({ projectId, onClose }) {
     const onProgress = (data) => {
       if (data.projectId !== pid) return;
       setPhase('thinking');
-      if (data.type === 'text') setAnalysis((prev) => prev + data.content);
+      // Stream all content types to analysis (text, thinking)
+      if (data.content) {
+        setAnalysis((prev) => prev + data.content);
+      }
     };
 
     const onLog = (data) => {
       if (data.projectId !== pid || data.type === 'phase') return;
       setLogs((prev) => [...prev, { type: data.type, message: data.message, ts: Date.now() }]);
+      // Also update stats from tool/result logs
+      if (data.type === 'tool') setStats((prev) => ({ ...prev, toolCalls: (prev.toolCalls || 0) + 1 }));
     };
 
     const onPhase = (data) => {

@@ -119,6 +119,14 @@ pub fn start_planning(
                                         "type": "text", "content": text
                                     })).ok();
                                 }
+                            } else if block.get("type").and_then(|v| v.as_str()) == Some("thinking") {
+                                if let Some(text) = block.get("thinking").and_then(|v| v.as_str()) {
+                                    // Stream thinking content so UI doesn't feel frozen
+                                    app.emit("plan:progress", &serde_json::json!({
+                                        "projectId": project_id, "planId": &plan_id_clone,
+                                        "type": "thinking", "content": text
+                                    })).ok();
+                                }
                             } else if block.get("type").and_then(|v| v.as_str()) == Some("tool_use") {
                                 tool_calls += 1;
                                 // Phase transition: starting -> exploring
@@ -144,6 +152,43 @@ pub fn start_planning(
                         }
                     }
                 }
+                // Emit result stats (tokens, turns, cost)
+                if event.get("type").and_then(|v| v.as_str()) == Some("result") {
+                    let usage = event.get("usage").cloned().unwrap_or(serde_json::Value::Object(Default::default()));
+                    let in_tok = usage.get("input_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
+                    let out_tok = usage.get("output_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
+                    app.emit("plan:stats", &serde_json::json!({
+                        "projectId": project_id,
+                        "tokens": { "input": in_tok, "output": out_tok },
+                        "toolCalls": tool_calls,
+                        "turns": turns,
+                    })).ok();
+                }
+
+                // Emit system messages (rate limits, errors)
+                if event.get("type").and_then(|v| v.as_str()) == Some("system") {
+                    let msg = event.get("message").and_then(|v| v.as_str()).unwrap_or("");
+                    if !msg.is_empty() {
+                        app.emit("plan:log", &serde_json::json!({
+                            "projectId": project_id, "planId": &plan_id_clone,
+                            "type": "system", "message": msg
+                        })).ok();
+                    }
+                }
+
+                // Emit rate limit events
+                if event.get("type").and_then(|v| v.as_str()) == Some("rate_limit_event") {
+                    let info = event.get("rate_limit_info").cloned().unwrap_or(serde_json::Value::Object(Default::default()));
+                    let rlt = info.get("rateLimitType").and_then(|v| v.as_str()).unwrap_or("");
+                    let status = info.get("status").and_then(|v| v.as_str()).unwrap_or("");
+                    if status != "allowed" {
+                        app.emit("plan:log", &serde_json::json!({
+                            "projectId": project_id, "planId": &plan_id_clone,
+                            "type": "error", "message": format!("Rate limited ({}): {}", rlt, status)
+                        })).ok();
+                    }
+                }
+
                 // Emit tool results
                 if event.get("type").and_then(|v| v.as_str()) == Some("user") {
                     if let Some(blocks) = event.pointer("/message/content").and_then(|c| c.as_array()) {
@@ -151,7 +196,7 @@ pub fn start_planning(
                             if block.get("type").and_then(|v| v.as_str()) == Some("tool_result") {
                                 let is_error = block.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false);
                                 let preview = block.get("content").and_then(|v| v.as_str())
-                                    .map(|s| s.lines().next().unwrap_or("").chars().take(100).collect::<String>())
+                                    .map(|s| s.lines().take(5).collect::<Vec<_>>().join("\n").chars().take(300).collect::<String>())
                                     .unwrap_or_default();
                                 let icon = if is_error { "✗" } else { "✓" };
                                 app.emit("plan:log", &serde_json::json!({

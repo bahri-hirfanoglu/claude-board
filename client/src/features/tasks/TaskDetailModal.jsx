@@ -85,14 +85,16 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
   const hasTest = !!d.test_report;
   const hasAttachments = attachments.length > 0;
   const hasRevisions = revisions.length > 0;
+  const hasLifecycle = !!d.lifecycle_summary;
 
   const TABS = [
-    { id: 'overview', label: 'Overview', icon: Layers, always: true },
-    { id: 'git', label: 'Git', icon: GitCommit, show: hasGit },
-    { id: 'test', label: 'Test', icon: FlaskConical, show: hasTest },
-    { id: 'attachments', label: 'Files', icon: Paperclip, show: hasAttachments },
-    { id: 'revisions', label: 'Revisions', icon: RotateCcw, show: hasRevisions },
-    { id: 'replay', label: 'Replay', icon: Activity, always: true },
+    { id: 'overview', label: t('detail.overview'), icon: Layers, always: true },
+    { id: 'lifecycle', label: t('detail.summary'), icon: FileText, show: hasLifecycle },
+    { id: 'git', label: t('detail.git'), icon: GitCommit, show: hasGit },
+    { id: 'test', label: t('detail.test'), icon: FlaskConical, show: hasTest },
+    { id: 'attachments', label: t('detail.files'), icon: Paperclip, show: hasAttachments },
+    { id: 'revisions', label: t('detail.revisions'), icon: RotateCcw, show: hasRevisions },
+    { id: 'replay', label: t('detail.replay'), icon: Activity, always: true },
   ].filter(tab => tab.always || tab.show);
 
   return (
@@ -170,7 +172,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                   {/* Acceptance Criteria */}
                   {d.acceptance_criteria && (
                     <div className="bg-surface-800/30 rounded-lg px-4 py-3 border border-surface-700/30">
-                      <span className="text-[10px] font-semibold text-surface-500 uppercase tracking-wider">Acceptance Criteria</span>
+                      <span className="text-[10px] font-semibold text-surface-500 uppercase tracking-wider">{t('detail.acceptanceCriteria')}</span>
                       <div className="mt-1.5"><MarkdownContent content={d.acceptance_criteria} /></div>
                     </div>
                   )}
@@ -178,17 +180,17 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                   {/* Stats grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {duration && (
-                      <StatCard icon={Clock} label="Duration" value={duration} />
+                      <StatCard icon={Clock} label={t('detail.duration')} value={duration} />
                     )}
                     {totalTokens > 0 && (
-                      <StatCard icon={Cpu} label="Tokens" value={formatTokens(totalTokens)}
+                      <StatCard icon={Cpu} label={t('detail.tokens')} value={formatTokens(totalTokens)}
                         sub={`${(d.input_tokens || 0).toLocaleString()} in / ${(d.output_tokens || 0).toLocaleString()} out`} />
                     )}
                     {d.total_cost > 0 && (
-                      <StatCard icon={Coins} label="Cost" value={`$${d.total_cost.toFixed(4)}`} />
+                      <StatCard icon={Coins} label={t('detail.cost')} value={`$${d.total_cost.toFixed(4)}`} />
                     )}
                     {d.num_turns > 0 && (
-                      <StatCard icon={Activity} label="Turns" value={d.num_turns} />
+                      <StatCard icon={Activity} label={t('detail.turns')} value={d.num_turns} />
                     )}
                   </div>
 
@@ -220,7 +222,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                     <div>
                       <h3 className="text-xs font-semibold text-surface-300 mb-2 flex items-center gap-1.5">
                         <GitCommit size={13} className="text-emerald-400" />
-                        Commits ({commits.length})
+                        {t('detail.commits')} ({commits.length})
                       </h3>
                       <div className="space-y-1">
                         {commits.map((c, i) => (
@@ -244,7 +246,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                     <div>
                       <h3 className="text-xs font-semibold text-surface-300 mb-2 flex items-center gap-1.5">
                         <FileCode size={13} className="text-blue-400" />
-                        File Changes
+                        {t('detail.fileChanges')}
                       </h3>
                       <div className="bg-surface-800/40 rounded-lg px-4 py-3 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-[200px] overflow-y-auto">
                         {detail.diff_stat.split('\n').map((line, i) => {
@@ -275,7 +277,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                       }} className="flex items-center gap-1.5 text-xs font-medium text-surface-400 hover:text-surface-300 transition-colors">
                         {showFullDiff ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                         <FileDiff size={12} className="text-violet-400" />
-                        View Full Diff
+                        {t('detail.viewFullDiff')}
                         {diffLoading && <div className="w-3 h-3 rounded-full border border-surface-600 border-t-claude animate-spin ml-1" />}
                       </button>
                       {showFullDiff && fullDiff !== null && (
@@ -294,7 +296,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                                 })}
                               </pre>
                             ) : (
-                              <div className="text-center py-8 text-surface-600 text-xs">No diff available</div>
+                              <div className="text-center py-8 text-surface-600 text-xs">{t('detail.noDiff')}</div>
                             )}
                           </div>
                         </div>
@@ -304,7 +306,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
 
                   {/* No git info */}
                   {!hasGit && (
-                    <div className="text-center text-surface-600 text-xs py-8">No git commits or PRs detected for this task</div>
+                    <div className="text-center text-surface-600 text-xs py-8">{t('detail.noGitInfo')}</div>
                   )}
                 </div>
               )}
@@ -313,7 +315,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
               {activeTab === 'test' && (() => {
                 try {
                   const report = typeof d.test_report === 'string' ? JSON.parse(d.test_report) : d.test_report;
-                  if (!report) return <div className="text-center text-surface-600 text-xs py-8">No test report available</div>;
+                  if (!report) return <div className="text-center text-surface-600 text-xs py-8">{t('detail.noTestReport')}</div>;
                   const verdict = report.verdict;
                   const checks = report.checks || [];
                   const StatusIcon = ({ s }) => {
@@ -331,7 +333,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                         {verdict === 'approve' ? <CircleCheck size={20} className="text-emerald-400" /> : <CircleX size={20} className="text-red-400" />}
                         <div>
                           <div className={`text-sm font-semibold ${verdict === 'approve' ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {verdict === 'approve' ? 'All Checks Passed' : 'Verification Failed'}
+                            {verdict === 'approve' ? t('detail.allChecksPassed') : t('detail.verificationFailed')}
                           </div>
                           {report.summary && <p className="text-xs text-surface-400 mt-0.5">{report.summary}</p>}
                         </div>
@@ -366,13 +368,13 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                       {/* Feedback */}
                       {report.feedback && (
                         <div className="bg-red-500/5 border border-red-500/20 rounded-lg px-4 py-3">
-                          <p className="text-[10px] font-semibold text-red-400 mb-1">Feedback</p>
+                          <p className="text-[10px] font-semibold text-red-400 mb-1">{t('detail.feedback')}</p>
                           <p className="text-xs text-red-300/80 whitespace-pre-wrap leading-relaxed">{report.feedback}</p>
                         </div>
                       )}
                     </div>
                   );
-                } catch { return <div className="text-center text-surface-600 text-xs py-8">Could not parse test report</div>; }
+                } catch { return <div className="text-center text-surface-600 text-xs py-8">{t('detail.testParseError')}</div>; }
               })()}
 
               {/* ═══ ATTACHMENTS TAB ═══ */}
@@ -408,7 +410,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                     })}
                   </div>
                   {attachments.length === 0 && (
-                    <div className="text-center text-surface-600 text-xs py-8">No attachments</div>
+                    <div className="text-center text-surface-600 text-xs py-8">{t('detail.noAttachments')}</div>
                   )}
                 </div>
               )}
@@ -427,6 +429,19 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                   ))}
                   {revisions.length === 0 && (
                     <div className="text-center text-surface-600 text-xs py-8">No revisions</div>
+                  )}
+                </div>
+              )}
+
+              {/* ═══ LIFECYCLE SUMMARY TAB ═══ */}
+              {activeTab === 'lifecycle' && (
+                <div className="space-y-4">
+                  {d.lifecycle_summary ? (
+                    <div className="bg-surface-800/30 border border-surface-700/30 rounded-xl p-5">
+                      <MarkdownContent content={d.lifecycle_summary} />
+                    </div>
+                  ) : (
+                    <div className="text-center text-surface-600 text-xs py-8">{t('detail.noLifecycleSummary')}</div>
                   )}
                 </div>
               )}
