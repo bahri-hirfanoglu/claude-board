@@ -1,0 +1,60 @@
+{
+  "$schema": "https://wvw.dev/apps.schema.json",
+  "store": {
+    "name": "Claude Board",
+    "developer": "Bahri Hırfanoğlu",
+    "tagline": "Visual task management board for Claude Code",
+    "url": "https://github.com/bahri-hirfanoglu/claude-board",
+    "github": "https://github.com/bahri-hirfanoglu"
+  },
+  "featured": [
+    {
+      "id": "claude-board",
+      "headline": "DEVELOPER TOOLS",
+      "title": "Claude Board",
+      "subtitle": "Manage AI-powered development tasks with a Kanban-style interface"
+    }
+  ],
+  "categories": [
+    { "id": "developer-tools", "name": "Developer Tools" },
+    { "id": "productivity", "name": "Productivity" },
+    { "id": "ai", "name": "AI & Machine Learning" }
+  ],
+  "apps": [
+    {
+      "id": "claude-board",
+      "name": "Claude Board",
+      "subtitle": "Visual task management for Claude Code",
+      "description": "Manage AI-powered development tasks with a Kanban-style interface",
+      "longDescription": "Claude Board is a visual task management board designed for Claude Code. It provides a Kanban-style interface to manage AI-powered development tasks, featuring real-time terminal output and project roles with cross-project sharing. Available as both a web app and desktop application for Windows, macOS, and Linux.",
+      "icon": "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/icon.png",
+      "iconEmoji": "📋",
+      "category": ["developer-tools", "productivity", "ai"],
+      "platform": "Web / Desktop",
+      "price": "Free",
+      "github": "https://github.com/bahri-hirfanoglu/claude-board",
+      "language": "JavaScript",
+      "requirements": "Node.js 18.0.0 or later",
+      "features": [
+        "Kanban-style task management board",
+        "Real-time terminal output with live streaming",
+        "Project roles with cross-project sharing",
+        "Electron desktop app for Windows, macOS, and Linux",
+        "Socket.IO real-time updates",
+        "SQLite-based persistent storage"
+      ],
+      "screenshots": [
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/demo.gif",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/dashboard.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/board.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/task-modal.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/stats.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/activity.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/setup-wizard.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/splash-screen.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/mobile-dashboard.png",
+        "https://raw.githubusercontent.com/bahri-hirfanoglu/claude-board/main/web/screenshots/mobile-board.png"
+      ]
+    }
+  ]
+}
