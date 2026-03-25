@@ -44,6 +44,7 @@ pub struct Task {
     pub parent_task_id: Option<i64>,
     pub awaiting_subtasks: Option<i64>,
     pub tags: Option<String>,
+    pub lifecycle_summary: Option<String>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     #[serde(default)]
@@ -110,6 +111,7 @@ pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
         parent_task_id: row.get("parent_task_id").ok().flatten(),
         awaiting_subtasks: row.get("awaiting_subtasks").ok().flatten(),
         tags: row.get("tags").ok().flatten(),
+        lifecycle_summary: row.get("lifecycle_summary").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         is_running: false,
@@ -129,6 +131,11 @@ pub fn update_depends_on(db: &DbPool, task_id: i64, depends_on: Option<i64>) {
 pub fn increment_retry(db: &DbPool, task_id: i64) {
     let conn = db.lock();
     conn.execute("UPDATE tasks SET retry_count=COALESCE(retry_count,0)+1 WHERE id=?1", params![task_id]).ok();
+}
+
+pub fn reset_retry_count(db: &DbPool, task_id: i64) {
+    let conn = db.lock();
+    conn.execute("UPDATE tasks SET retry_count=0 WHERE id=?1", params![task_id]).ok();
 }
 
 pub fn set_context_summary(db: &DbPool, task_id: i64, summary: &str) {
@@ -252,6 +259,11 @@ pub fn update(
         "UPDATE tasks SET title=?1,description=?2,priority=?3,task_type=?4,acceptance_criteria=?5,model=?6,thinking_effort=?7,role_id=?8,tags=?9,updated_at=datetime('now','localtime') WHERE id=?10",
         params![title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id, tags_val, id],
     ).unwrap();
+}
+
+pub fn set_lifecycle_summary(db: &DbPool, task_id: i64, summary: &str) {
+    let conn = db.lock();
+    conn.execute("UPDATE tasks SET lifecycle_summary=?1 WHERE id=?2", params![summary, task_id]).ok();
 }
 
 pub fn set_tags(db: &DbPool, task_id: i64, tags: &str) {

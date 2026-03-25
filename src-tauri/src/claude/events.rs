@@ -159,6 +159,14 @@ fn handle_assistant(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, c
         for block in blocks {
             let block_type = block.get("type").and_then(|v| v.as_str()).unwrap_or("");
             match block_type {
+                "thinking" => {
+                    if let Some(text) = block.get("thinking").and_then(|v| v.as_str()) {
+                        if !text.trim().is_empty() {
+                            let meta = serde_json::json!({"isThinking": true});
+                            add_log(task_id, text, "claude", db, app, Some(&meta.to_string()));
+                        }
+                    }
+                }
                 "text" => {
                     if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
                         add_log(task_id, text, "claude", db, app, None);
@@ -389,6 +397,18 @@ fn handle_system(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle) {
     }
 }
 
+fn format_reset_time(resets_at: i64) -> String {
+    if resets_at <= 0 { return String::new(); }
+    let now_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64).unwrap_or(0);
+    let diff_sec = (resets_at - now_ms) / 1000;
+    if diff_sec <= 0 { return " (resetting now)".into(); }
+    if diff_sec < 60 { return format!(" (resets in {}s)", diff_sec); }
+    if diff_sec < 3600 { return format!(" (resets in {}m {}s)", diff_sec / 60, diff_sec % 60); }
+    format!(" (resets in {}h {}m)", diff_sec / 3600, (diff_sec % 3600) / 60)
+}
+
 fn handle_rate_limit(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle) {
     let info = event.get("rate_limit_info").cloned().unwrap_or(Value::Object(Default::default()));
     let rlt = info.get("rateLimitType").and_then(|v| v.as_str()).unwrap_or("");
@@ -403,21 +423,50 @@ fn handle_rate_limit(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle) 
         "", 0.0, 0, 0,
     );
 
-    app.emit("claude:limits", &serde_json::json!({
+    let limit_meta = serde_json::json!({
         "rateLimitType": rlt,
         "status": status,
         "resets_at": resets_at,
         "overageStatus": overage_status,
         "isUsingOverage": is_using_overage,
-    })).ok();
+    });
+
+    app.emit("claude:limits", &limit_meta).ok();
 
     store_event(task_id, "rate_limit", &serde_json::json!({
         "rateLimitType": rlt, "status": status, "resetsAt": resets_at,
     }), db);
 
-    if status != "allowed" {
+    // Build descriptive terminal message
+    let limit_label = match rlt {
+        "five_hour" | "5_hour" | "5h" => "5-hour usage limit",
+        "session" => "Session limit",
+        "daily" | "day" => "Daily limit",
+        "weekly" | "week" => "Weekly limit",
+        "monthly" | "month" => "Monthly limit",
+        "minute" | "per_minute" => "Per-minute rate limit",
+        "hourly" | "hour" => "Hourly rate limit",
+        _ if rlt.is_empty() => "API rate limit",
+        _ => "API rate limit",
+    };
+
+    if status == "allowed" {
+        // Limit cleared — no need to show "restored" for routine status checks
+        // Only log if we previously hit a limit (avoid noise)
+    } else {
+        // Rate limited — show clear message
         tasks::increment_rate_limit_hits(db, task_id);
-        let msg = format!("Rate limited ({})", rlt);
-        add_log(task_id, &msg, "error", db, app, None);
+        let reset_str = format_reset_time(resets_at);
+        let status_label = match status {
+            "limited" => "reached",
+            "throttled" => "throttled",
+            "exceeded" => "exceeded",
+            _ => status,
+        };
+        let overage_info = if is_using_overage { " — using overage capacity" }
+            else if overage_status == "limited" { " — overage also exhausted" }
+            else { "" };
+        let msg = format!("{} {}{}{}", limit_label, status_label, reset_str, overage_info);
+        add_log(task_id, &msg, "error", db, app, Some(&limit_meta.to_string()));
     }
 }

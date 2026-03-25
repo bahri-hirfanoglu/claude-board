@@ -99,6 +99,10 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
     if status == "in_progress" {
         if task.started_at.is_none() { tq::set_started(&db, id); }
         else { tq::set_resumed(&db, id); }
+        // Reset retry count when manually starting — allows re-running failed tasks
+        if task.retry_count.unwrap_or(0) > 0 {
+            tq::reset_retry_count(&db, id);
+        }
     }
     if status == "testing" && prev_status == "in_progress" {
         tq::pause_timer(&db, id);

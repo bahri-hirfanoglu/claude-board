@@ -114,12 +114,12 @@ function groupToolEntries(logs) {
 // ─── Turn separator ───
 function TurnSeparator({ turn, time, t }) {
   return (
-    <div className="flex items-center gap-2 my-2 select-none">
+    <div className="flex items-center gap-2 my-3 select-none">
       <div className="flex-1 border-t border-surface-700/50" />
-      <span className="text-[9px] text-surface-600 flex items-center gap-1">
-        <Hash size={8} />
+      <span className="text-[11px] text-surface-500 flex items-center gap-1.5 font-medium">
+        <Hash size={10} />
         {t('terminal.turn')} {turn}
-        {time && <span className="text-surface-700">{fmtTime(time)}</span>}
+        {time && <span className="text-surface-600 font-normal">{fmtTime(time)}</span>}
       </span>
       <div className="flex-1 border-t border-surface-700/50" />
     </div>
@@ -158,7 +158,7 @@ function ToolCard({ call, result, isExpanded, onToggle }) {
   else if (input.query) summary = input.query;
 
   return (
-    <div className={`my-0.5 rounded-md border transition-colors ${
+    <div className={`my-1 rounded-lg border transition-colors ${
       isError ? 'border-red-500/20 bg-red-500/5' :
       !hasResult ? 'border-amber-500/20 bg-amber-500/5' :
       'border-surface-700/30 bg-surface-800/30 hover:border-surface-700/60'
@@ -166,88 +166,88 @@ function ToolCard({ call, result, isExpanded, onToggle }) {
       {/* Header row */}
       <button
         onClick={onToggle}
-        className="flex items-center gap-1.5 w-full text-left px-2.5 py-1.5 text-[11px]"
+        className="flex items-center gap-2 w-full text-left px-3 py-2 text-xs"
       >
-        <span className="text-surface-600 text-[9px] w-[42px] flex-shrink-0 text-right font-mono select-none">
+        <span className="text-surface-600 text-[10px] w-[48px] flex-shrink-0 text-right font-mono select-none">
           {fmtTime(call?.created_at || result?.created_at)}
         </span>
         {statusEl}
-        <Icon size={12} className={`${color} flex-shrink-0`} />
+        <Icon size={14} className={`${color} flex-shrink-0`} />
         <span className={`font-semibold ${color}`}>{toolName}</span>
 
         {summary && (
-          <span className="text-surface-400 truncate text-[10px] min-w-0 flex-1">{summary}</span>
+          <span className="text-surface-400 truncate text-[11px] min-w-0 flex-1">{summary}</span>
         )}
 
-        <span className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
+        <span className="flex items-center gap-2 flex-shrink-0 ml-auto">
           {duration && (
-            <span className="text-[9px] text-surface-500 flex items-center gap-0.5">
-              <Timer size={8} />
+            <span className="text-[10px] text-surface-500 flex items-center gap-0.5">
+              <Timer size={9} />
               {fmtMs(duration)}
             </span>
           )}
-          {isExpanded ? <ChevronDown size={10} className="text-surface-600" /> : <ChevronRight size={10} className="text-surface-600" />}
+          {isExpanded ? <ChevronDown size={12} className="text-surface-600" /> : <ChevronRight size={12} className="text-surface-600" />}
         </span>
       </button>
 
       {/* Expanded details */}
       {isExpanded && (
-        <div className="px-2.5 pb-2 pt-0 text-[10px] space-y-1.5 border-t border-surface-700/20 mt-0">
+        <div className="px-3 pb-2.5 pt-1 text-[11px] space-y-2 border-t border-surface-700/20">
           {/* Input details */}
           {call && (
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {input.file && (
-                <div className="flex gap-1.5">
-                  <span className="text-surface-600 w-10 flex-shrink-0">path</span>
+                <div className="flex gap-2">
+                  <span className="text-surface-500 w-12 flex-shrink-0 font-medium">path</span>
                   <span className="text-surface-300 font-mono break-all">{input.file}</span>
                 </div>
               )}
               {input.command && (
-                <div className="flex gap-1.5">
-                  <span className="text-surface-600 w-10 flex-shrink-0">cmd</span>
+                <div className="flex gap-2">
+                  <span className="text-surface-500 w-12 flex-shrink-0 font-medium">cmd</span>
                   <code className="text-amber-400/80 font-mono break-all">{input.command}</code>
                 </div>
               )}
               {input.pattern && !input.file && (
-                <div className="flex gap-1.5">
-                  <span className="text-surface-600 w-10 flex-shrink-0">grep</span>
+                <div className="flex gap-2">
+                  <span className="text-surface-500 w-12 flex-shrink-0 font-medium">grep</span>
                   <code className="text-cyan-400/80 font-mono">{input.pattern}</code>
-                  {input.glob && <span className="text-surface-500">in {input.glob}</span>}
+                  {input.glob && <span className="text-surface-500 ml-1">in {input.glob}</span>}
                 </div>
               )}
               {input.editing && (
-                <div className="mt-1 rounded bg-surface-900/80 border border-surface-700/30 overflow-hidden">
-                  <div className="px-2 py-1 flex items-center gap-1 text-[9px] text-red-400/70 border-b border-surface-700/30 bg-red-500/5">
-                    <span>−</span>
+                <div className="mt-1 rounded-md bg-surface-900/80 border border-surface-700/30 overflow-hidden">
+                  <div className="px-2.5 py-1.5 flex items-center gap-1.5 text-[10px] text-red-400/70 border-b border-surface-700/30 bg-red-500/5">
+                    <span>-</span>
                     <span className="font-mono truncate">{input.oldString}</span>
                   </div>
-                  <div className="px-2 py-1 flex items-center gap-1 text-[9px] text-emerald-400/70 bg-emerald-500/5">
+                  <div className="px-2.5 py-1.5 flex items-center gap-1.5 text-[10px] text-emerald-400/70 bg-emerald-500/5">
                     <span>+</span>
                     <span className="font-mono truncate">{input.newString}</span>
                   </div>
                 </div>
               )}
               {input.contentLength && !input.editing && (
-                <div className="flex gap-1.5">
-                  <span className="text-surface-600 w-10 flex-shrink-0">size</span>
+                <div className="flex gap-2">
+                  <span className="text-surface-500 w-12 flex-shrink-0 font-medium">size</span>
                   <span className="text-surface-400">{input.contentLength.toLocaleString()} chars</span>
                 </div>
               )}
               {input.description && !summary.includes(input.description) && (
-                <div className="flex gap-1.5">
-                  <span className="text-surface-600 w-10 flex-shrink-0">desc</span>
+                <div className="flex gap-2">
+                  <span className="text-surface-500 w-12 flex-shrink-0 font-medium">desc</span>
                   <span className="text-surface-400">{input.description}</span>
                 </div>
               )}
               {input.url && (
-                <div className="flex gap-1.5">
-                  <span className="text-surface-600 w-10 flex-shrink-0">url</span>
+                <div className="flex gap-2">
+                  <span className="text-surface-500 w-12 flex-shrink-0 font-medium">url</span>
                   <span className="text-blue-400/70 font-mono break-all">{input.url}</span>
                 </div>
               )}
               {input.prompt && (
-                <div className="flex gap-1.5">
-                  <span className="text-surface-600 w-10 flex-shrink-0">task</span>
+                <div className="flex gap-2">
+                  <span className="text-surface-500 w-12 flex-shrink-0 font-medium">task</span>
                   <span className="text-violet-400/70">{input.prompt}</span>
                 </div>
               )}
@@ -256,12 +256,12 @@ function ToolCard({ call, result, isExpanded, onToggle }) {
 
           {/* Result output */}
           {resMeta.resultPreview && (
-            <div className="mt-1">
-              <div className="text-[9px] text-surface-600 mb-0.5 flex items-center gap-1">
+            <div className="mt-1.5">
+              <div className="text-[10px] text-surface-500 mb-1 flex items-center gap-1 font-medium">
                 output
-                {resMeta.resultLines > 1 && <span className="text-surface-700">({resMeta.resultLines} lines)</span>}
+                {resMeta.resultLines > 1 && <span className="text-surface-600 font-normal">({resMeta.resultLines} lines)</span>}
               </div>
-              <pre className={`rounded bg-surface-900/80 border border-surface-700/30 px-2 py-1.5 text-[10px] font-mono overflow-x-auto max-h-[120px] overflow-y-auto whitespace-pre-wrap break-words leading-relaxed ${
+              <pre className={`rounded-md bg-surface-900/80 border border-surface-700/30 px-3 py-2 text-[11px] font-mono overflow-x-auto max-h-[160px] overflow-y-auto whitespace-pre-wrap break-words leading-relaxed ${
                 isError ? 'text-red-400/80' : 'text-surface-400'
               }`}>{resMeta.resultPreview}</pre>
             </div>
@@ -285,7 +285,7 @@ function ClaudeText({ message, time }) {
         if (part.startsWith('```')) {
           const inner = part.replace(/^```\w*\n?/, '').replace(/\n?```$/, '');
           return (
-            <pre key={i} className="my-1 rounded bg-surface-900/80 border border-surface-700/30 px-2.5 py-1.5 text-[10px] font-mono text-surface-300 overflow-x-auto whitespace-pre-wrap">
+            <pre key={i} className="my-1.5 rounded-md bg-surface-900/80 border border-surface-700/30 px-3 py-2 text-[11px] font-mono text-surface-300 overflow-x-auto whitespace-pre-wrap leading-relaxed">
               {inner}
             </pre>
           );
@@ -298,8 +298,8 @@ function ClaudeText({ message, time }) {
   }, [message]);
 
   return (
-    <div className="flex items-start gap-1.5 py-1 text-[11px] text-surface-200">
-      <span className="text-surface-600 text-[9px] w-[42px] flex-shrink-0 text-right font-mono select-none mt-0.5">
+    <div className="flex items-start gap-2 py-1.5 text-[13px] text-surface-200">
+      <span className="text-surface-600 text-[10px] w-[48px] flex-shrink-0 text-right font-mono select-none mt-0.5">
         {fmtTime(time)}
       </span>
       <div className="min-w-0 flex-1 leading-relaxed">{rendered}</div>
@@ -318,7 +318,7 @@ function InlineText({ text }) {
           return <strong key={i} className="text-surface-100 font-semibold">{p.slice(2, -2)}</strong>;
         }
         if (p.startsWith('`') && p.endsWith('`')) {
-          return <code key={i} className="px-1 py-0.5 rounded bg-surface-800 text-amber-300/80 text-[10px] font-mono">{p.slice(1, -1)}</code>;
+          return <code key={i} className="px-1.5 py-0.5 rounded bg-surface-800 text-amber-300/80 text-[11px] font-mono">{p.slice(1, -1)}</code>;
         }
         return <span key={i}>{p}</span>;
       })}
@@ -334,10 +334,9 @@ function SystemLine({ log }) {
   const isResult = msg.startsWith('Result:');
 
   if (isUsage) {
-    // Parse and show a nice summary card
     return (
-      <div className="my-1.5 rounded-md bg-claude/5 border border-claude/20 px-2.5 py-1.5 text-[10px] text-claude/80 flex items-center gap-3 flex-wrap">
-        <Cpu size={10} className="flex-shrink-0" />
+      <div className="my-2 rounded-lg bg-claude/5 border border-claude/20 px-3 py-2 text-[11px] text-claude/80 flex items-center gap-3 flex-wrap">
+        <Cpu size={12} className="flex-shrink-0" />
         <span>{msg}</span>
       </div>
     );
@@ -345,24 +344,24 @@ function SystemLine({ log }) {
 
   if (isInit) {
     return (
-      <div className="flex items-center gap-1.5 py-0.5 text-[10px] text-surface-600">
-        <span className="w-[42px] flex-shrink-0" />
-        <span className="w-1 h-1 rounded-full bg-claude/50" />
+      <div className="flex items-center gap-2 py-1 text-[11px] text-surface-600">
+        <span className="w-[48px] flex-shrink-0" />
+        <span className="w-1.5 h-1.5 rounded-full bg-claude/50" />
         <span>{msg}</span>
       </div>
     );
   }
 
   return (
-    <div className={`flex items-start gap-1.5 py-0.5 text-[10px] ${
+    <div className={`flex items-start gap-2 py-1 text-[11px] ${
       log.log_type === 'error' ? 'text-red-400' :
       log.log_type === 'success' ? 'text-emerald-400' :
       'text-claude/70'
     }`}>
-      <span className="text-surface-600 text-[9px] w-[42px] flex-shrink-0 text-right font-mono select-none">
+      <span className="text-surface-600 text-[10px] w-[48px] flex-shrink-0 text-right font-mono select-none">
         {fmtTime(log.created_at)}
       </span>
-      <span className={`w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0 ${
+      <span className={`w-2 h-2 rounded-full mt-0.5 flex-shrink-0 ${
         log.log_type === 'error' ? 'bg-red-400' :
         log.log_type === 'success' ? 'bg-emerald-400' :
         'bg-claude/50'
@@ -398,17 +397,17 @@ function ActivityIndicator({ logs, isRunning }) {
     const Icon = getToolIcon(status.toolName);
     const color = getToolColor(status.toolName);
     return (
-      <div className={`flex items-center gap-1.5 text-[10px] ${color}`}>
-        <Icon size={10} className="animate-pulse" />
+      <div className={`flex items-center gap-1.5 text-xs ${color}`}>
+        <Icon size={12} className="animate-pulse" />
         <span className="font-medium">{status.toolName}</span>
-        {status.file && <span className="text-surface-500 truncate max-w-[120px]">{basename(status.file)}</span>}
+        {status.file && <span className="text-surface-500 truncate max-w-[150px]">{basename(status.file)}</span>}
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-1.5 text-[10px] text-surface-500">
-      <div className="w-1.5 h-1.5 rounded-full bg-claude animate-pulse" />
+    <div className="flex items-center gap-1.5 text-xs text-surface-500">
+      <div className="w-2 h-2 rounded-full bg-claude animate-pulse" />
       {status.phase === 'starting' ? 'Starting...' : 'Thinking...'}
     </div>
   );

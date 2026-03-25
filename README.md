@@ -5,6 +5,7 @@
 **AI-powered task management platform that orchestrates autonomous development agents.**
 
 [![Version](https://img.shields.io/github/v/release/bahri-hirfanoglu/claude-board?color=DA7756&style=flat-square&label=version)](https://github.com/bahri-hirfanoglu/claude-board/releases)
+[![Downloads](https://img.shields.io/github/downloads/bahri-hirfanoglu/claude-board/total?color=10B981&style=flat-square&label=downloads)](https://github.com/bahri-hirfanoglu/claude-board/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Tauri](https://img.shields.io/badge/tauri-v2-FFC131?style=flat-square)](https://v2.tauri.app)
 [![Rust](https://img.shields.io/badge/rust-backend-DEA584?style=flat-square)](https://www.rust-lang.org)

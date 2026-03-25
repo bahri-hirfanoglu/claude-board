@@ -211,6 +211,113 @@ fn generate_context_summary(task_id: i64, task_title: &str, db: &DbPool) {
     tasks::set_context_summary(db, task_id, &summary);
 }
 
+/// Generate a lifecycle summary describing the full journey of a task.
+/// Called when task reaches done status (after auto-test if applicable).
+fn generate_lifecycle_summary(task_id: i64, db: &DbPool) {
+    let task = match tasks::get_by_id(db, task_id) {
+        Some(t) => t,
+        None => return,
+    };
+
+    let mut parts = Vec::new();
+
+    // Duration
+    let duration_str = if let Some(ms) = task.work_duration_ms {
+        if ms > 0 {
+            let secs = ms / 1000;
+            let mins = secs / 60;
+            if mins > 60 { format!("{}h {}m", mins / 60, mins % 60) }
+            else if mins > 0 { format!("{}m {}s", mins, secs % 60) }
+            else { format!("{}s", secs) }
+        } else { "unknown duration".into() }
+    } else { "unknown duration".into() };
+
+    // Token info
+    let total_tokens = task.input_tokens.unwrap_or(0) + task.output_tokens.unwrap_or(0);
+    let cost = task.total_cost.unwrap_or(0.0);
+    let model = task.model_used.as_deref().or(task.model.as_deref()).unwrap_or("sonnet");
+    let turns = task.num_turns.unwrap_or(0);
+
+    // Commit count
+    let commit_count = task.commits.as_deref()
+        .and_then(|s| serde_json::from_str::<Vec<serde_json::Value>>(s).ok())
+        .map(|c| c.len()).unwrap_or(0);
+
+    // Retry info
+    let retry_count = task.retry_count.unwrap_or(0);
+    let revision_count = task.revision_count.unwrap_or(0);
+
+    // Test report info
+    let test_info = task.test_report.as_deref()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok());
+    let test_verdict = test_info.as_ref()
+        .and_then(|r| r.get("verdict").and_then(|v| v.as_str()));
+    let test_checks: Vec<String> = test_info.as_ref()
+        .and_then(|r| r.get("checks").and_then(|v| v.as_array()))
+        .map(|checks| {
+            checks.iter().filter_map(|c| {
+                let name = c.get("name").and_then(|v| v.as_str())?;
+                let status = c.get("status").and_then(|v| v.as_str())?;
+                Some(format!("{}: {}", name, status))
+            }).collect()
+        }).unwrap_or_default();
+
+    // Sub-tasks
+    let subtasks = tasks::get_subtasks(db, task_id);
+    let sub_done = subtasks.iter().filter(|s| s.status.as_deref() == Some("done") || s.status.as_deref() == Some("testing")).count();
+
+    // Rate limits
+    let rate_limits = task.rate_limit_hits.unwrap_or(0);
+
+    // Branch + PR
+    let branch = task.branch_name.as_deref().unwrap_or("");
+    let has_pr = task.pr_url.is_some();
+
+    // Build narrative
+    parts.push(format!(
+        "This {} task was completed using the **{}** model in **{}**, taking **{}** conversation turns and consuming **{}** tokens (${:.4}).",
+        task.task_type.as_deref().unwrap_or("feature"), model, duration_str, turns,
+        format_token_count(total_tokens), cost
+    ));
+
+    if commit_count > 0 {
+        let pr_str = if has_pr { " and a pull request was created" } else { "" };
+        parts.push(format!("The agent made **{}** commit(s) on branch `{}`{}.", commit_count, branch, pr_str));
+    }
+
+    if retry_count > 0 {
+        parts.push(format!("The task required **{}** retry attempt(s) before succeeding.", retry_count));
+    }
+
+    if revision_count > 0 {
+        parts.push(format!("It went through **{}** revision cycle(s) based on review feedback.", revision_count));
+    }
+
+    if test_verdict.is_some() {
+        let verdict_str = if test_verdict == Some("approve") { "passed" } else { "failed" };
+        let checks_str = if test_checks.is_empty() { String::new() }
+            else { format!(" Checks: {}.", test_checks.join(", ")) };
+        parts.push(format!("Auto-test verification **{}**.{}", verdict_str, checks_str));
+    }
+
+    if !subtasks.is_empty() {
+        parts.push(format!("The task spawned **{}** sub-task(s), of which **{}** completed successfully.", subtasks.len(), sub_done));
+    }
+
+    if rate_limits > 0 {
+        parts.push(format!("During execution, **{}** rate limit event(s) were encountered.", rate_limits));
+    }
+
+    let summary = parts.join(" ");
+    tasks::set_lifecycle_summary(db, task_id, &summary);
+}
+
+fn format_token_count(n: i64) -> String {
+    if n >= 1_000_000 { format!("{:.1}M", n as f64 / 1_000_000.0) }
+    else if n >= 1_000 { format!("{:.1}K", n as f64 / 1_000.0) }
+    else { format!("{}", n) }
+}
+
 /// Copy task attachments from uploads dir to working dir for Claude access.
 fn copy_task_attachments(task_id: i64, working_dir: &str, db: &DbPool) -> (Vec<attachments::Attachment>, std::path::PathBuf) {
     let task_attachments = attachments::get_by_task(db, task_id);
@@ -309,18 +416,23 @@ fn handle_process_lifecycle(
                 if line.is_empty() { continue; }
                 // Show stderr in task logs so users see rate limits, errors, warnings
                 let db = db::get_db();
-                let log_type = if line.contains("rate limit") || line.contains("Rate limit") || line.contains("429") {
-                    tasks::add_log(&db, task_id, &format!("Rate limited: {}", line), "error", None);
+                let lower = line.to_lowercase();
+                if lower.contains("rate limit") || lower.contains("429") || lower.contains("overloaded") || lower.contains("session limit") {
+                    let meta = serde_json::json!({"source": "stderr", "raw": &line});
+                    tasks::add_log(&db, task_id, &format!("Rate limit warning: {}", line), "error", Some(&meta.to_string()));
                     app_err.emit("task:rate_limited", &serde_json::json!({"taskId": task_id, "message": &line})).ok();
-                    "error"
-                } else if line.contains("error") || line.contains("Error") || line.contains("ERROR") {
+                    app_err.emit("task:log", &serde_json::json!({
+                        "taskId": task_id, "message": format!("Rate limit warning: {}", line),
+                        "logType": "error", "meta": meta,
+                    })).ok();
+                } else if lower.contains("error") || lower.contains("fatal") {
                     tasks::add_log(&db, task_id, &line, "error", None);
-                    "error"
-                } else {
+                    app_err.emit("task:log", &serde_json::json!({
+                        "taskId": task_id, "message": &line, "logType": "error",
+                    })).ok();
+                } else if !line.is_empty() {
                     tasks::add_log(&db, task_id, &line, "system", None);
-                    "system"
-                };
-                let _ = log_type; // used above
+                }
             }
         });
     }
@@ -350,6 +462,7 @@ fn handle_process_lifecycle(
 
         // Generate context summary for Agent Context Handoff
         generate_context_summary(task_id, task_title, db);
+        generate_lifecycle_summary(task_id, db);
 
         tasks::add_log(db, task_id, "Claude finished successfully.", "success", None);
 
@@ -717,6 +830,8 @@ After all checks, you MUST output this exact JSON block as your final output:
                         tasks::add_log(&db, task_id, &format!("Auto-test PASSED: {}", summary), "success", None);
                         app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test PASSED: {}", summary), "logType": "success"})).ok();
                         tasks::update_status(&db, task_id, "done");
+                        // Regenerate lifecycle summary with test results included
+                        generate_lifecycle_summary(task_id, &db);
                         if let Some(updated) = tasks::get_by_id(&db, task_id) {
                             app.emit("task:updated", &updated).ok();
                         }

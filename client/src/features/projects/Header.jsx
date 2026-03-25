@@ -136,6 +136,7 @@ export default function Header({
         <div className="relative min-w-0" ref={menuRef}>
           <button
             onClick={() => setShowProjectMenu(!showProjectMenu)}
+            data-tour="project-selector"
             className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg hover:bg-surface-800 transition-colors min-w-0 max-w-full"
           >
             <div className="rounded-lg overflow-hidden flex-shrink-0">
@@ -310,6 +311,7 @@ export default function Header({
         {onOpenPlanning && (
           <button
             onClick={onOpenPlanning}
+            data-tour="planning-btn"
             className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 border border-surface-700 hover:border-claude/30 text-sm font-medium transition-colors flex items-center gap-1.5 flex-shrink-0 text-surface-300 hover:text-claude"
             title="Planning Mode"
           >
@@ -330,6 +332,7 @@ export default function Header({
         {onNewTask && (
           <button
             onClick={onNewTask}
+            data-tour="new-task"
             className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex items-center gap-1.5 flex-shrink-0"
             title="New Task (N)"
           >

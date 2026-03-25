@@ -13,6 +13,7 @@ import { tauriListen, IS_TAURI } from '../lib/tauriEvents';
 import AppLayout from './AppLayout';
 import { StatusTransitionProvider } from '../features/board/StatusTransitionContext';
 import { I18nProvider, useTranslation } from '../i18n/I18nProvider';
+import OnboardingTour, { useOnboarding } from '../features/onboarding/OnboardingTour';
 
 function AppInner() {
   const { t } = useTranslation();
@@ -29,6 +30,9 @@ function AppInner() {
   const { modals, openModal, closeModal } = useModalState({
     planning: sessionStorage.getItem('planning:active') === 'true' || null,
   });
+
+  // Onboarding tour
+  const { showOnboarding, completeOnboarding } = useOnboarding();
 
   // UI state
   const [activePanel, setActivePanel] = useState(null);
@@ -224,6 +228,11 @@ function AppInner() {
       taskActions={taskActions}
       projectActions={projectActions}
       onOpenAppSettings={() => openModal('appSettings')}
+    />
+    <OnboardingTour
+      active={showOnboarding}
+      onComplete={completeOnboarding}
+      hasProject={!!currentProject}
     />
     </StatusTransitionProvider>
   );
