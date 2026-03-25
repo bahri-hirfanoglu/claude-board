@@ -1,61 +1,76 @@
 ---
 title: "Auto Test"
-description: "Automatic verification of completed tasks"
+description: "Automatic verification of completed tasks with rich terminal output"
 icon: "flask-conical"
 ---
 
-When a task completes, it enters **Testing** status for manual review. With Auto Test enabled, an AI agent automatically verifies the work before you see it.
+When a task completes, it enters **Testing** status. With Auto Test enabled, a verification agent automatically checks the work using the same rich terminal output as regular tasks.
 
 ## How It Works
 
 1. Task completes and enters **Testing** status
-2. A verification agent starts automatically
-3. The agent reviews code changes, runs tests, and checks acceptance criteria
+2. A verification agent (Sonnet, low effort) starts automatically
+3. The agent runs build checks, tests, code review, and acceptance criteria validation
 4. **Pass** — task moves to **Done** automatically
-5. **Fail** — task stays in **Testing** with failure details logged
+5. **Fail** — task stays in **Testing** with detailed feedback
 
 ## Enabling Auto Test
 
-Open **Project Settings > Automation** tab:
+Open **Project Settings > Automation** and toggle **Auto Test** on. Optionally add custom test instructions.
 
-1. Toggle **Auto Test** to enabled
-2. Optionally add **Custom test instructions** for project-specific checks
+## Verification Steps
+
+The agent executes these checks **sequentially** (never in parallel, to avoid cascading errors):
+
+<Steps>
+  <Step title="Build Check">
+    Runs the project's build command (npm run build, cargo check, etc.). Reports success or failure.
+  </Step>
+  <Step title="Test Suite">
+    Checks if a test suite exists, then runs it. Reports pass/fail counts. Skipped if no test suite found.
+  </Step>
+  <Step title="Code Review">
+    Reviews changed files for syntax errors, broken imports, security concerns, and missing error handling.
+  </Step>
+  <Step title="Acceptance Criteria">
+    If acceptance criteria are specified, each criterion is verified individually.
+  </Step>
+</Steps>
+
+## Rich Terminal Output
+
+Auto-test output uses the **same event system** as regular task execution. This means:
+
+- Full tool call grouping with expand/collapse
+- Input parameters and output preview for each tool call
+- Duration tracking per tool call
+- Status indicators (running, success, error)
+- Token usage and cost tracking
+
+## Test Report
+
+Results are stored as a structured JSON report on the task, viewable in the **Test** tab of the task detail modal:
+
+- **Verdict banner** — Pass (green) or Fail (red) with summary
+- **Individual check cards** — Build, Tests, Code Review, Acceptance Criteria with PASS/FAIL/SKIP status
+- **Feedback section** — Detailed feedback when rejected
+
+## Crash Recovery
+
+If the app crashes during auto-test:
+
+- Tasks in `testing` status are detected on restart
+- If auto-test is enabled, verification is **automatically re-triggered** after a 3-second startup delay
+- No manual intervention needed
 
 ## Custom Instructions
 
-Add project-specific test commands in the text area:
+Add project-specific verification commands:
 
 ```
 Run 'npm test' and verify all tests pass.
 Check TypeScript compilation with 'npx tsc --noEmit'.
 Ensure no console.log statements remain in production code.
-Verify that new API endpoints have corresponding test files.
 ```
 
-## What Gets Verified
-
-The verification agent automatically:
-
-- Reviews the git diff of changes made
-- Runs the project's existing test suite
-- Checks each acceptance criterion (if specified on the task)
-- Performs a build/compile check
-- Looks for common issues (broken imports, missing error handling)
-
-## Verdict Outcomes
-
-| Verdict | Action | Description |
-|---------|--------|-------------|
-| **Approve** | Task → Done | All checks passed |
-| **Reject** | Stays in Testing | Issues found, feedback logged |
-| **Unknown** | Stays in Testing | Could not determine result, manual review needed |
-
-## Activity Tracking
-
-All auto-test actions appear in the activity timeline:
-
-- `test_started` — Verification began
-- `test_passed` — All checks passed, task approved
-- `test_failed` — Issues found, details in task logs
-
-<Note>Auto Test uses the Sonnet model with low thinking effort for cost efficiency. Custom instructions override the default verification behavior.</Note>
+<Note>The verification agent runs commands one at a time to prevent parallel tool call cancellation errors on Windows.</Note>

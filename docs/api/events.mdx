@@ -106,4 +106,39 @@ Emitted when the Claude agent process exits.
 }
 ```
 
+## Collaboration Events
+
+### agent:file_conflict
+
+Emitted when multiple agents access the same file simultaneously (specifically on Write/Edit operations).
+
+```json
+{
+  "taskId": 5,
+  "conflictingTaskId": 8,
+  "filePath": "src/main.rs",
+  "toolName": "Edit"
+}
+```
+
+### task:test_started
+
+Emitted when auto-test verification begins.
+
+```json
+{ "taskId": 1 }
+```
+
+### task:test_completed
+
+Emitted when auto-test verification finishes.
+
+```json
+{
+  "taskId": 1,
+  "verdict": "approve",
+  "summary": "All checks passed"
+}
+```
+
 <Note>All events are emitted globally. Filter by `projectId` or `taskId` on the frontend to show only relevant updates.</Note>

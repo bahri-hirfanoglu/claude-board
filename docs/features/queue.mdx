@@ -1,69 +1,74 @@
 ---
 title: "Pipeline & Auto-Queue"
-description: "Visual pipeline with auto-queue, task dependencies, retry logic, and reorderable queue"
+description: "DAG-aware auto-queue with crash recovery, periodic polling, and smart scheduling"
 icon: "bolt"
 ---
 
-The pipeline system manages task execution with dependency tracking, automatic retries, and a visual queue you can reorder. Enable auto-queue per project and Claude Board handles the rest.
-
-<Frame><img src="/images/feature-pipeline.svg" alt="Pipeline View" /></Frame>
+The pipeline system manages task execution with dependency tracking, automatic retries, crash recovery, and continuous queue monitoring. Enable auto-queue per project and Claude Board handles the rest.
 
 ## How It Works
 
 <Steps>
   <Step title="Enable auto-queue">
-    Open project settings and toggle **Auto-Queue** on. Set the **max concurrent agents** (1–5).
+    Open project settings and toggle **Auto-Queue** on. Set the **max concurrent agents** (1-5).
   </Step>
   <Step title="Add tasks to backlog">
     Create tasks as usual. Each new backlog task is automatically considered for execution.
   </Step>
-  <Step title="Tasks start automatically">
-    When an agent slot is free, the highest-priority backlog task starts. If priorities are equal, the oldest task goes first.
-  </Step>
-  <Step title="Continuous processing">
-    As tasks finish and move to Testing or Done, the next queued task starts automatically.
+  <Step title="Continuous execution">
+    The queue continuously monitors for free slots every 15 seconds and starts ready tasks. When a task completes, dependent children start immediately.
   </Step>
 </Steps>
+
+## Crash Recovery
+
+If the application crashes or closes while tasks are running:
+
+1. **On restart**, all orphaned `in_progress` tasks are automatically reset to `backlog`
+2. Tasks in `testing` state (auto-test was running) are automatically re-tested if auto-test is enabled
+3. The auto-queue immediately re-evaluates and starts ready tasks
+4. No manual intervention required
+
+<Info>The recovery system checks actual process state, not just database status. This prevents zombie tasks from blocking queue slots.</Info>
+
+## Smart Scheduling
+
+The queue uses **real process state** for slot counting — not just database status. This means:
+
+- Zombie tasks (crashed processes) don't block slots
+- Slot calculation: `available = max_concurrent - actually_running_processes`
+- Tasks with `awaiting_subtasks` flag don't count as occupying a slot once their Claude process exits
+
+## DAG-Aware Execution
+
+When tasks have [dependencies](/features/dependencies), the queue respects the full dependency graph including conditional workflows:
+
+- **Always/On Success** — Parent must reach `done` or `testing`
+- **On Failure** — Parent must have permanently failed (retries exhausted)
+- Wave-based parallel execution within concurrency limits
+
+## Retry Logic
+
+Configure `max_retries` per project. When a task fails:
+
+1. If retries remain: task returns to backlog with incremented retry count
+2. If retries exhausted: task is marked as permanently failed
+3. **On Failure** dependent tasks are then unblocked and can start
+
+## Sub-task Awareness
+
+When a parent task has spawned sub-tasks:
+
+1. Parent's Claude process finishes but task stays in `in_progress` (awaiting)
+2. Sub-tasks are queued and executed normally
+3. When all sub-tasks complete, parent automatically moves to `testing`/`done`
+4. Auto-test and dependent cascade proceed normally
 
 ## Priority Ordering
 
 Tasks are picked from the backlog in this order:
+1. **Priority** — High (3) -> Medium (2) -> Low (1) -> None (0)
+2. **Queue position** — Manual drag-and-drop ordering
+3. **Creation time** — Older tasks first (FIFO)
 
-1. **Priority** — Urgent (3) → High (2) → Medium (1) → Low (0)
-2. **Creation time** — older tasks first (FIFO within same priority)
-
-<Tip>Set urgent priority on critical bugfixes to jump the queue ahead of feature work.</Tip>
-
-## Max Concurrent Agents
-
-| Setting | Use Case |
-|---------|----------|
-| **1** | Sequential execution. Safe for projects where tasks might touch the same files. |
-| **2–3** | Balanced. Good for projects with independent modules. |
-| **4–5** | Maximum throughput. Best when tasks target different areas of the codebase. |
-
-<Warning>Higher concurrency increases API costs and may cause git conflicts if agents edit overlapping files. Start with 1–2 and increase as needed.</Warning>
-
-## Auto-Start on Task Creation
-
-When auto-queue is enabled and agent slots are available, newly created tasks with `backlog` status are evaluated immediately. If the queue is empty and a slot is free, the task starts right away without manual intervention.
-
-## DAG-Aware Execution
-
-When tasks have [dependencies](/features/dependencies), the queue respects the full dependency graph:
-
-1. Only tasks with **all** parent dependencies met (status `done` or `testing`) are eligible to start
-2. When a task completes, the queue immediately checks all its children — if their other parents are also complete, they start automatically
-3. This creates a **cascade effect** through the dependency graph
-
-```
-Wave 0: [A, B] (no deps)      → both start in parallel
-Wave 1: [C] (depends on A)    → starts when A completes
-Wave 2: [D] (depends on B, C) → starts when both B and C complete
-```
-
-<Tip>Combine DAG dependencies with max concurrent agents set to 3+ for full parallel pipeline execution. View the pipeline in [Orchestration View](/features/orchestration).</Tip>
-
-## Disabling Auto-Queue
-
-Toggle auto-queue off in project settings. Existing in-progress tasks continue running, but no new tasks will start automatically. You return to manual drag-and-drop control.
+<Warning>Dependencies override queue position. Even if a task has position #1, it won't start until all parent dependencies are met.</Warning>

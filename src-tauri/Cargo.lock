@@ -597,7 +597,7 @@ dependencies = [
 
 [[package]]
 name = "claude-board"
-version = "1.5.7"
+version = "1.5.9"
 dependencies = [
  "axum",
  "chrono",

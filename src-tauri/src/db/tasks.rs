@@ -40,6 +40,9 @@ pub struct Task {
     pub test_report: Option<String>,
     pub depends_on: Option<i64>,
     pub retry_count: Option<i64>,
+    pub context_summary: Option<String>,
+    pub parent_task_id: Option<i64>,
+    pub awaiting_subtasks: Option<i64>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     #[serde(default)]
@@ -102,6 +105,9 @@ pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
         test_report: row.get("test_report")?,
         depends_on: row.get("depends_on")?,
         retry_count: row.get("retry_count")?,
+        context_summary: row.get("context_summary").ok().flatten(),
+        parent_task_id: row.get("parent_task_id").ok().flatten(),
+        awaiting_subtasks: row.get("awaiting_subtasks").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         is_running: false,
@@ -121,6 +127,27 @@ pub fn update_depends_on(db: &DbPool, task_id: i64, depends_on: Option<i64>) {
 pub fn increment_retry(db: &DbPool, task_id: i64) {
     let conn = db.lock();
     conn.execute("UPDATE tasks SET retry_count=COALESCE(retry_count,0)+1 WHERE id=?1", params![task_id]).ok();
+}
+
+pub fn set_context_summary(db: &DbPool, task_id: i64, summary: &str) {
+    let conn = db.lock();
+    conn.execute("UPDATE tasks SET context_summary=?1 WHERE id=?2", params![summary, task_id]).ok();
+}
+
+/// Get the last N claude text logs for a task (used for context summary generation).
+pub fn get_last_claude_logs(db: &DbPool, task_id: i64, limit: i64) -> Vec<String> {
+    let conn = db.lock();
+    let mut stmt = match conn.prepare(
+        "SELECT message FROM task_logs WHERE task_id=?1 AND log_type='claude' ORDER BY id DESC LIMIT ?2"
+    ) {
+        Ok(s) => s,
+        Err(_) => return vec![],
+    };
+    let result: Vec<String> = match stmt.query_map(params![task_id, limit], |r| r.get(0)) {
+        Ok(rows) => rows.flatten().collect(),
+        Err(_) => vec![],
+    };
+    result
 }
 
 pub fn is_dependency_met(db: &DbPool, task: &Task) -> bool {
@@ -406,4 +433,80 @@ pub fn get_running_count(db: &DbPool, project_id: i64) -> i64 {
     let mut stmt = conn.prepare("SELECT COUNT(*) FROM tasks WHERE project_id=?1 AND status='in_progress'").unwrap();
     stmt.query_row(params![project_id], |row| row.get(0))
         .unwrap_or(0)
+}
+
+/// Recover orphaned tasks on startup.
+/// - in_progress tasks → backlog (process was running, now dead)
+/// - Returns (backlog_recovered_count, testing_task_ids) so caller can re-trigger auto-test
+pub fn recover_orphaned_tasks(db: &DbPool) -> (i64, Vec<i64>) {
+    let conn = db.lock();
+
+    // Count and collect testing tasks (auto-test was mid-flight)
+    let testing_ids: Vec<i64> = {
+        let mut stmt = conn.prepare(
+            "SELECT id FROM tasks WHERE status='testing'"
+        ).unwrap();
+        stmt.query_map([], |r| r.get(0)).unwrap().flatten().collect()
+    };
+
+    // Reset in_progress → backlog
+    let in_progress_count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM tasks WHERE status='in_progress'",
+        [],
+        |r| r.get(0),
+    ).unwrap_or(0);
+
+    if in_progress_count > 0 {
+        conn.execute(
+            "UPDATE tasks SET status='backlog', last_resumed_at=NULL, updated_at=datetime('now','localtime') WHERE status='in_progress'",
+            [],
+        ).ok();
+    }
+
+    (in_progress_count, testing_ids)
+}
+
+/// Get all project IDs that have auto_queue enabled.
+pub fn get_auto_queue_project_ids(db: &DbPool) -> Vec<i64> {
+    let conn = db.lock();
+    let mut stmt = conn.prepare("SELECT id FROM projects WHERE auto_queue=1").unwrap();
+    stmt.query_map([], |r| r.get(0)).unwrap().flatten().collect()
+}
+
+// ─── Sub-task spawning ───
+
+pub fn set_awaiting_subtasks(db: &DbPool, task_id: i64, val: bool) {
+    let conn = db.lock();
+    conn.execute("UPDATE tasks SET awaiting_subtasks=?1 WHERE id=?2", params![val as i64, task_id]).ok();
+}
+
+pub fn set_parent_task_id(db: &DbPool, task_id: i64, parent_id: i64) {
+    let conn = db.lock();
+    conn.execute("UPDATE tasks SET parent_task_id=?1 WHERE id=?2", params![parent_id, task_id]).ok();
+}
+
+pub fn get_subtasks(db: &DbPool, parent_id: i64) -> Vec<Task> {
+    let conn = db.lock();
+    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE parent_task_id=?1 ORDER BY id") {
+        Ok(s) => s,
+        Err(_) => return vec![],
+    };
+    let result: Vec<Task> = match stmt.query_map(params![parent_id], |r| row_to_task(r)) {
+        Ok(rows) => rows.flatten().collect(),
+        Err(_) => vec![],
+    };
+    result
+}
+
+pub fn are_all_subtasks_done(db: &DbPool, parent_id: i64) -> bool {
+    let conn = db.lock();
+    let total: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1", params![parent_id], |r| r.get(0),
+    ).unwrap_or(0);
+    if total == 0 { return true; }
+    let done: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1 AND status IN ('done','testing')",
+        params![parent_id], |r| r.get(0),
+    ).unwrap_or(0);
+    done >= total
 }

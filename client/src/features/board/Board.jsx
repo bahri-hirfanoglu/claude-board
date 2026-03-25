@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { LayoutGrid, List, BarChart3, X, GitBranch, Workflow } from 'lucide-react';
+import { LayoutGrid, List, X, GitBranch, Workflow, TrendingUp } from 'lucide-react';
 import Column from './Column';
 import ListView from './ListView';
-import SummaryView from './SummaryView';
 import PipelineView from './PipelineView';
 import OrchestrationView from './OrchestrationView';
+import AnalyticsView from './AnalyticsView';
 import { COLUMNS, MODELS, MODEL_COLORS, MODEL_DOT_COLORS, MODEL_BG_ACTIVE } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 
@@ -13,7 +13,7 @@ const VIEWS = [
   { id: 'list', labelKey: 'board.list', icon: List },
   { id: 'pipeline', labelKey: 'board.pipeline', icon: GitBranch },
   { id: 'orchestration', labelKey: 'board.orchestration', icon: Workflow },
-  { id: 'summary', labelKey: 'board.summary', icon: BarChart3 },
+  { id: 'analytics', labelKey: 'board.analytics', icon: TrendingUp },
 ];
 
 const MODEL_DOT = MODEL_DOT_COLORS;
@@ -196,13 +196,6 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
         </div>
       )}
 
-      {/* Summary view */}
-      {viewMode === 'summary' && (
-        <div className="flex-1 overflow-hidden">
-          <SummaryView tasks={filteredTasks} />
-        </div>
-      )}
-
       {viewMode === 'pipeline' && (
         <div className="flex-1 overflow-hidden">
           <PipelineView
@@ -222,6 +215,15 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
             onViewLogs={onViewLogs}
             onStatusChange={onStatusChange}
             onViewDetail={onViewDetail}
+          />
+        </div>
+      )}
+
+      {viewMode === 'analytics' && (
+        <div className="flex-1 overflow-hidden">
+          <AnalyticsView
+            tasks={filteredTasks}
+            projectId={projectId}
           />
         </div>
       )}

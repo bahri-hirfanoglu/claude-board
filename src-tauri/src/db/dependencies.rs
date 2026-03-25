@@ -5,18 +5,20 @@ use crate::error::AppError;
 use std::collections::HashSet;
 
 /// Add a dependency edge: task_id depends on depends_on_id.
+/// condition_type: "always" (default), "on_success", "on_failure"
 /// Returns error if it would create a cycle.
-pub fn add_dependency(db: &DbPool, task_id: i64, depends_on_id: i64) -> Result<(), AppError> {
+pub fn add_dependency(db: &DbPool, task_id: i64, depends_on_id: i64, condition_type: Option<&str>) -> Result<(), AppError> {
     if task_id == depends_on_id {
         return Err(AppError::Validation("Task cannot depend on itself".into()));
     }
     if detect_cycle(db, task_id, depends_on_id) {
         return Err(AppError::Validation("Adding this dependency would create a cycle".into()));
     }
+    let ctype = condition_type.unwrap_or("always");
     let conn = db.lock();
     conn.execute(
-        "INSERT OR IGNORE INTO task_dependencies (task_id, depends_on_id) VALUES (?1, ?2)",
-        params![task_id, depends_on_id],
+        "INSERT OR IGNORE INTO task_dependencies (task_id, depends_on_id, condition_type) VALUES (?1, ?2, ?3)",
+        params![task_id, depends_on_id, ctype],
     )?;
     Ok(())
 }
@@ -70,14 +72,28 @@ pub fn get_child_ids(db: &DbPool, task_id: i64) -> Vec<i64> {
     result
 }
 
-/// Check if ALL parent dependencies of a task are met (status = done or testing).
+/// Check if ALL parent dependencies of a task are met, respecting condition_type.
+/// - "always" / "on_success": parent must be done or testing
+/// - "on_failure": parent must have failed (exhausted retries and still in backlog)
 pub fn are_all_parents_met(db: &DbPool, task_id: i64) -> bool {
     let conn = db.lock();
-    // Count parents that are NOT done/testing
+
+    // Count unmet dependencies using condition-aware logic:
+    // "always" or "on_success" → parent.status IN ('done','testing')
+    // "on_failure" → parent failed: status='backlog' AND retry_count >= project.max_retries AND retry_count > 0
+    //   (a task that was retried and is back in backlog with max retries hit = failed)
     let unmet: i64 = conn.query_row(
         "SELECT COUNT(*) FROM task_dependencies td
          JOIN tasks t ON t.id = td.depends_on_id
-         WHERE td.task_id = ?1 AND t.status NOT IN ('done', 'testing')",
+         WHERE td.task_id = ?1
+         AND NOT (
+             CASE COALESCE(td.condition_type, 'always')
+                 WHEN 'on_failure' THEN
+                     (t.status = 'backlog' AND COALESCE(t.retry_count, 0) > 0)
+                 ELSE
+                     t.status IN ('done', 'testing')
+             END
+         )",
         params![task_id],
         |r| r.get(0),
     ).unwrap_or(0);
@@ -85,6 +101,8 @@ pub fn are_all_parents_met(db: &DbPool, task_id: i64) -> bool {
 }
 
 /// Get all backlog tasks in a project that have all dependencies met (ready to run).
+/// Supports conditional dependencies: always/on_success require parent done/testing,
+/// on_failure requires parent to have exhausted retries.
 pub fn get_ready_tasks(db: &DbPool, project_id: i64) -> Vec<Task> {
     let conn = db.lock();
     let mut stmt = match conn.prepare(
@@ -93,7 +111,17 @@ pub fn get_ready_tasks(db: &DbPool, project_id: i64) -> Vec<Task> {
          AND NOT EXISTS (
              SELECT 1 FROM task_dependencies td
              JOIN tasks parent ON parent.id = td.depends_on_id
-             WHERE td.task_id = t.id AND parent.status NOT IN ('done', 'testing')
+             WHERE td.task_id = t.id
+             AND NOT (
+                 CASE COALESCE(td.condition_type, 'always')
+                     WHEN 'on_failure' THEN
+                         (parent.status = 'backlog' AND COALESCE(parent.retry_count, 0) > 0
+                          AND COALESCE(parent.retry_count, 0) >= COALESCE(
+                              (SELECT max_retries FROM projects WHERE id = parent.project_id), 0))
+                     ELSE
+                         parent.status IN ('done', 'testing')
+                 END
+             )
          )
          ORDER BY t.priority DESC, t.queue_position ASC, t.id ASC"
     ) {
@@ -189,21 +217,21 @@ pub fn get_graph_data(db: &DbPool, project_id: i64) -> serde_json::Value {
     let edges: Vec<serde_json::Value> = {
         let conn = db.lock();
         let mut stmt = match conn.prepare(
-            "SELECT td.task_id, td.depends_on_id FROM task_dependencies td
+            "SELECT td.task_id, td.depends_on_id, COALESCE(td.condition_type, 'always') FROM task_dependencies td
              JOIN tasks t ON t.id = td.task_id WHERE t.project_id = ?1"
         ) {
             Ok(s) => s,
             Err(_) => return serde_json::json!({ "tasks": all_tasks, "edges": [], "waves": [] }),
         };
-        let rows: Vec<(i64, i64)> = match stmt.query_map(params![project_id], |r| {
-            Ok((r.get(0)?, r.get(1)?))
+        let rows: Vec<(i64, i64, String)> = match stmt.query_map(params![project_id], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get::<_, String>(2).unwrap_or_else(|_| "always".into())))
         }) {
             Ok(r) => r.flatten().collect(),
             Err(_) => vec![],
         };
         drop(stmt);
-        rows.into_iter().map(|(child, parent)| {
-            serde_json::json!({ "from": parent, "to": child })
+        rows.into_iter().map(|(child, parent, ctype)| {
+            serde_json::json!({ "from": parent, "to": child, "conditionType": ctype })
         }).collect()
     };
 

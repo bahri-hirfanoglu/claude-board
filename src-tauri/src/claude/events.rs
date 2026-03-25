@@ -3,8 +3,61 @@ use tauri::{AppHandle, Emitter};
 use crate::db::{self, DbPool};
 use crate::db::tasks;
 use crate::db::stats;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
+
+// ─── File Access Tracking for Live Agent Collaboration ───
+
+/// Tracks which tasks are currently accessing which files.
+/// Key: normalized file path, Value: set of (task_id, tool_name) pairs.
+static FILE_ACCESS_MAP: once_cell::sync::Lazy<Mutex<HashMap<String, HashSet<i64>>>> =
+    once_cell::sync::Lazy::new(|| Mutex::new(HashMap::new()));
+
+/// Get a snapshot of the current file access map.
+pub fn get_file_access_map() -> HashMap<String, Vec<i64>> {
+    let map = FILE_ACCESS_MAP.lock().unwrap();
+    map.iter().map(|(k, v)| (k.clone(), v.iter().copied().collect())).collect()
+}
+
+/// Remove all file access entries for a task (called on task completion/stop).
+pub fn clear_task_file_access(task_id: i64) {
+    let mut map = FILE_ACCESS_MAP.lock().unwrap();
+    map.retain(|_, tasks| { tasks.remove(&task_id); !tasks.is_empty() });
+}
+
+fn normalize_path(path: &str) -> String {
+    path.replace('\\', "/").to_lowercase()
+}
+
+fn track_file_access(task_id: i64, tool_name: &str, input: &Value, app: &AppHandle) {
+    let file_path = input.get("file_path").or(input.get("path")).and_then(|v| v.as_str());
+    if let Some(fp) = file_path {
+        let normalized = normalize_path(fp);
+        let mut map = FILE_ACCESS_MAP.lock().unwrap();
+        let entry = map.entry(normalized.clone()).or_insert_with(HashSet::new);
+        let is_write = matches!(tool_name, "Write" | "Edit" | "NotebookEdit");
+
+        // Check for file conflict: another task is also accessing this file
+        if is_write {
+            let conflicting: Vec<i64> = entry.iter().filter(|&&id| id != task_id).copied().collect();
+            for conflict_id in &conflicting {
+                app.emit("agent:file_conflict", &serde_json::json!({
+                    "taskId": task_id,
+                    "conflictingTaskId": conflict_id,
+                    "filePath": fp,
+                    "toolName": tool_name,
+                })).ok();
+            }
+        }
+        entry.insert(task_id);
+    }
+}
+
+fn untrack_file_access(task_id: i64, tool_id: &str, ctx: &EventContext) {
+    // When a tool result comes back, we could remove the tracking
+    // but we keep the access tracked until task completion for heatmap accuracy
+    let _ = (task_id, tool_id, ctx);
+}
 
 pub struct UsageTracker {
     pub baseline: UsageBaseline,
@@ -142,6 +195,9 @@ fn handle_assistant(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, c
                     let meta = serde_json::json!({"toolName": tool_name, "toolId": tool_id, "input": input_summary});
                     add_log(task_id, &display, "tool", db, app, Some(&meta.to_string()));
                     store_event(task_id, "tool_call", &meta, db);
+
+                    // Track file access for conflict detection
+                    track_file_access(task_id, tool_name, &input, app);
 
                     if !tool_id.is_empty() {
                         ctx.active_tool_calls.lock().unwrap().insert(tool_id.to_string(), ToolCall {

@@ -1,26 +1,44 @@
 ---
 title: "Orchestration View"
-description: "Visual mission control for multi-agent parallel execution with DAG dependency graph"
+description: "Mission control for multi-agent parallel execution with DAG graph, timeline, and live observability"
 icon: "sitemap"
 ---
 
-The Orchestration View is your mission control for managing multiple Claude agents running in parallel. It displays a real-time dependency graph, live agent status cards, and pipeline progress — all in one view.
+The Orchestration View is your mission control for managing multiple Claude agents running in parallel. It provides three viewing modes: dependency graph, execution timeline, and live observability dashboard.
 
-## How It Works
+## View Modes
 
-Switch to Orchestration View from the board toolbar (the Workflow icon). The view is divided into three sections:
+Switch between modes using the toggle buttons at the top right of the orchestration view.
 
-<Steps>
-  <Step title="Dependency Graph">
-    An interactive SVG graph shows all tasks as nodes and dependencies as directed edges. Nodes are color-coded by status: gray (backlog), amber (in progress), green (done), red (failed). Running tasks pulse with an animated progress bar.
-  </Step>
-  <Step title="Live Agent Cards">
-    Each running Claude agent gets a card showing the task title, model (Haiku/Sonnet/Opus), live token counter, elapsed time, and a stop button. Click a card to open the terminal.
-  </Step>
-  <Step title="Pipeline Stats">
-    A wave progress bar shows execution groups — Wave 0 (no dependencies), Wave 1 (depends on Wave 0), etc. Aggregate stats show running count, queued count, total tokens, and cost.
-  </Step>
-</Steps>
+<Tabs>
+  <Tab title="Graph">
+    Interactive SVG dependency graph showing tasks as nodes and dependencies as directed edges. Nodes are color-coded by status: gray (backlog), amber (in progress), green (done). Running tasks pulse with an animated progress bar.
+
+    **Conditional edges** are color-coded:
+    - **Gray solid** — Always (default dependency)
+    - **Green dashed** — On Success (runs only if parent succeeds)
+    - **Red dashed** — On Failure (runs only if parent fails)
+  </Tab>
+  <Tab title="Timeline">
+    Gantt-style horizontal timeline showing when each task started, how long it ran, and wave groupings. Features include:
+    - Auto-scaling time axis (minutes/hours/days)
+    - "NOW" marker (red dashed line)
+    - Running task bars with pulse animation
+    - Hover tooltips with token/cost/model info
+    - Dependency edge overlays with conditional coloring
+  </Tab>
+  <Tab title="Live">
+    Real-time observability dashboard showing all active agents, file access patterns, and a live activity feed.
+
+    **Agent Activity Cards** — Each running agent shows: task title, model, elapsed time, tool call count, token usage, cost, and active files being accessed.
+
+    **File Heatmap** — Visual map of which files are being accessed by which agents. Conflicts (multiple agents accessing the same file) are highlighted in red.
+
+    **Live Feed** — Chronological stream of all tool calls across all agents with timestamps, tool names, and file paths. Includes a pause button.
+
+    **Stats Bar** — Total agents running, tool calls, tokens, cost, and conflict count.
+  </Tab>
+</Tabs>
 
 ## Wave Execution
 
@@ -32,22 +50,35 @@ Wave 1: [Tasks depending on Wave 0]      → start when Wave 0 completes
 Wave 2: [Tasks depending on Wave 0 + 1]  → start when deps complete
 ```
 
-Each wave is shown as a column in the dependency graph. Tasks within the same wave can run simultaneously up to the project's `max_concurrent` limit.
+## Live Agent Cards
+
+Each running Claude agent gets a card in the sidebar (Graph/Timeline modes) showing:
+
+- Task title and key
+- Model (Haiku/Sonnet/Opus) and elapsed time
+- Live token usage (input/output breakdown)
+- Real-time cost estimate
+- Last tool call with file path
+- Turn count
+- Token progress bar
+
+## File Conflict Detection
+
+When multiple agents access the same file simultaneously, Claude Board detects potential conflicts:
+
+- **Write/Edit conflicts** trigger an `agent:file_conflict` event
+- The Live view highlights conflicting files in red
+- Agent cards show conflict warnings
+
+<Tip>Set max concurrent agents to 2-3 and use task dependencies to prevent agents from editing overlapping files simultaneously.</Tip>
 
 ## Graph Interaction
 
-- **Hover** a node to highlight its direct dependency edges
+- **Hover** a node to highlight its dependency edges
 - **Click** a node to open task details
-- Non-highlighted nodes dim to 50% opacity for focus
-- Running nodes show an animated progress indicator
-
-<Tip>Set your project's **max concurrent agents** to 3+ to see the full power of wave execution. With 5 independent tasks in Wave 0, they all start simultaneously.</Tip>
+- **Shift+drag** from one node to another to create a dependency edge
+- **Drag** nodes to reposition them (positions are saved)
 
 ## Auto-Refresh
 
-The graph automatically refreshes when:
-- A task changes status (backlog → in_progress → done)
-- Dependencies are added or removed
-- A new task is created
-
-The view listens to real-time `task:updated` events for instant updates.
+The view automatically refreshes on `task:updated` events — instant updates when tasks change status, dependencies are modified, or new tasks are created.

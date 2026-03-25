@@ -66,7 +66,7 @@ server.tool(
 // ─── create_task ───
 server.tool(
   'create_task',
-  'Create a new task in a project. The task will appear on the Kanban board.',
+  'Create a new task in a project. Use parent_task_id to create sub-tasks that are linked to a parent — the parent will automatically wait for all sub-tasks to complete.',
   {
     project_id: z.number().describe('Project ID to create the task in'),
     title: z.string().describe('Task title — clear and concise'),
@@ -79,8 +79,9 @@ server.tool(
     priority: z.number().min(0).max(3).optional().default(0).describe('Priority: 0=none, 1=low, 2=medium, 3=high'),
     model: z.enum(['haiku', 'sonnet', 'opus']).optional().default('sonnet').describe('Claude model to use'),
     acceptance_criteria: z.string().optional().describe('Definition of done — what must be true when task completes'),
+    parent_task_id: z.number().optional().describe('Parent task ID — creates a sub-task linked to the parent. The parent will wait for all sub-tasks to complete before finishing.'),
   },
-  async ({ project_id, title, description, task_type, priority, model, acceptance_criteria }) => {
+  async ({ project_id, title, description, task_type, priority, model, acceptance_criteria, parent_task_id }) => {
     const task = await api(`/api/projects/${project_id}/tasks`, {
       method: 'POST',
       body: JSON.stringify({
@@ -90,13 +91,15 @@ server.tool(
         priority: priority || 0,
         model: model || 'sonnet',
         acceptance_criteria: acceptance_criteria || '',
+        parent_task_id: parent_task_id || null,
       }),
     });
+    const parentInfo = parent_task_id ? ` (sub-task of #${parent_task_id})` : '';
     return {
       content: [
         {
           type: 'text',
-          text: `Task created: ${task.task_key || '#' + task.id} — "${task.title}" (${task.task_type}, ${task.model}, priority: ${task.priority})`,
+          text: `Task created: ${task.task_key || '#' + task.id} — "${task.title}" (${task.task_type}, ${task.model}, priority: ${task.priority})${parentInfo}`,
         },
       ],
     };
