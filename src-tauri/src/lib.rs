@@ -10,6 +10,8 @@ mod services;
 mod setup;
 
 use tauri::{Emitter, Manager};
+use tauri::tray::{TrayIconBuilder, TrayIconEvent, MouseButton, MouseButtonState};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri_plugin_updater::UpdaterExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -21,6 +23,11 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--hidden"]),
+        ))
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(w) = app.get_webview_window("main") {
                 w.set_focus().ok();
@@ -36,7 +43,7 @@ pub fn run() {
                     services::http_api::start_server(port).await;
                 });
 
-                tauri::WebviewWindowBuilder::new(
+                let main_window = tauri::WebviewWindowBuilder::new(
                     app,
                     "main",
                     tauri::WebviewUrl::App("index.html".into()),
@@ -47,6 +54,68 @@ pub fn run() {
                 .center()
                 .disable_drag_drop_handler()
                 .build()?;
+
+                // ─── System Tray (best-effort, don't crash if it fails) ───
+                if let Err(e) = (|| -> Result<(), Box<dyn std::error::Error>> {
+                    let show_item = MenuItem::with_id(app, "show", "Claude Board", true, None::<&str>)?;
+                    let sep = PredefinedMenuItem::separator(app)?;
+                    let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+                    let tray_menu = Menu::with_items(app, &[&show_item, &sep, &quit_item])?;
+
+                    let mut builder = TrayIconBuilder::new()
+                        .tooltip("Claude Board")
+                        .menu(&tray_menu)
+                        .on_menu_event(|app, event| {
+                            match event.id().as_ref() {
+                                "show" => {
+                                    if let Some(w) = app.get_webview_window("main") {
+                                        w.show().ok();
+                                        w.unminimize().ok();
+                                        w.set_focus().ok();
+                                    }
+                                }
+                                "quit" => { app.exit(0); }
+                                _ => {}
+                            }
+                        })
+                        .on_tray_icon_event(|tray, event| {
+                            if let TrayIconEvent::Click {
+                                button: MouseButton::Left,
+                                button_state: MouseButtonState::Up, ..
+                            } = event {
+                                let app = tray.app_handle();
+                                if let Some(w) = app.get_webview_window("main") {
+                                    w.show().ok();
+                                    w.unminimize().ok();
+                                    w.set_focus().ok();
+                                }
+                            }
+                        });
+
+                    if let Some(icon) = app.default_window_icon() {
+                        builder = builder.icon(icon.clone());
+                    }
+
+                    builder.build(app)?;
+                    Ok(())
+                })() {
+                    log::warn!("System tray init failed: {}", e);
+                }
+
+                // ─── Minimize to Tray: intercept window close ───
+                let close_handle = app.handle().clone();
+                main_window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        let pool = db::get_db();
+                        let s = db::settings::get(&pool);
+                        if s.minimize_to_tray {
+                            api.prevent_close();
+                            if let Some(w) = close_handle.get_webview_window("main") {
+                                w.hide().ok();
+                            }
+                        }
+                    }
+                });
 
                 // Check for updates in background
                 let app_handle = app.handle().clone();
@@ -208,6 +277,9 @@ pub fn run() {
             commands::claude_manager::delete_custom_skill,
             commands::claude_manager::fetch_github_skills,
             commands::claude_manager::fetch_skill_content,
+            // Settings
+            commands::settings::get_app_settings,
+            commands::settings::update_app_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

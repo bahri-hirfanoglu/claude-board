@@ -44,6 +44,7 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
         runner::start(&updated, app.clone(), &project.working_dir, &project, mcp_port);
         activity::add(db, project_id, Some(task.id), "queue_auto_started",
             &format!("Auto-started: {}", task.title), None);
+        crate::services::notification::notify_queue_started(app, &crate::services::notification::TaskNotification::new(&task.title, task.task_key.as_deref()));
 
         let mut val = serde_json::to_value(&updated).unwrap();
         val.as_object_mut().unwrap().insert("is_running".into(), serde_json::Value::Bool(true));

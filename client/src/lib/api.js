@@ -203,6 +203,12 @@ export const api = {
   disableAuth: () =>
     call('disable_auth', 'POST', '/api/auth/disable'),
 
+  // ─── App Settings ───
+  getAppSettings: () =>
+    call('get_app_settings', 'GET', '/api/settings'),
+  updateAppSettings: (data) =>
+    call('update_app_settings', 'PUT', '/api/settings', { data }, data),
+
   // ─── Tauri-only: Claude Manager & extended features ───
   ...(IS_TAURI ? {
     getProjectGroups: () => tauriCall('get_project_groups'),

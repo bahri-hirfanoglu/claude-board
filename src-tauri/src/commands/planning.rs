@@ -94,6 +94,7 @@ pub fn start_planning(
         let mut full_text = String::new();
         let mut tool_calls = 0;
         let mut turns = 0;
+        let mut current_phase = "starting";
         let start_time = std::time::Instant::now();
 
         for line in reader.lines().flatten() {
@@ -106,6 +107,13 @@ pub fn start_planning(
                             if block.get("type").and_then(|v| v.as_str()) == Some("text") {
                                 if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
                                     full_text.push_str(text);
+                                    // Phase transition: exploring -> writing
+                                    if current_phase == "exploring" && tool_calls > 2 {
+                                        current_phase = "writing";
+                                        app.emit("plan:phase", &serde_json::json!({
+                                            "projectId": project_id, "phase": "writing"
+                                        })).ok();
+                                    }
                                     app.emit("plan:progress", &serde_json::json!({
                                         "projectId": project_id, "planId": &plan_id_clone,
                                         "type": "text", "content": text
@@ -113,6 +121,13 @@ pub fn start_planning(
                                 }
                             } else if block.get("type").and_then(|v| v.as_str()) == Some("tool_use") {
                                 tool_calls += 1;
+                                // Phase transition: starting -> exploring
+                                if current_phase == "starting" {
+                                    current_phase = "exploring";
+                                    app.emit("plan:phase", &serde_json::json!({
+                                        "projectId": project_id, "phase": "exploring"
+                                    })).ok();
+                                }
                                 let tool = block.get("name").and_then(|v| v.as_str()).unwrap_or("unknown");
                                 let input = block.get("input").cloned().unwrap_or(serde_json::Value::Object(Default::default()));
                                 let detail = input.get("file_path").or(input.get("command")).or(input.get("pattern"))
@@ -150,10 +165,23 @@ pub fn start_planning(
 
         let status = child.wait().ok().and_then(|s| s.code()).unwrap_or(-1);
         ACTIVE_PLANS.lock().unwrap().remove(&project_id);
+
+        // Phase transition: -> done
+        app.emit("plan:phase", &serde_json::json!({
+            "projectId": project_id, "phase": "done"
+        })).ok();
         let elapsed = start_time.elapsed().as_millis() as i64;
+
+        log::info!("Planning: claude exited with code {}, full_text length: {}, tool_calls: {}, turns: {}", status, full_text.len(), tool_calls, turns);
 
         // Parse tasks as PROPOSALS — don't create in DB yet
         let plan = parse_tasks_from_output(&full_text);
+        log::info!("Planning: parsed {} tasks, {} dependencies", plan.tasks.len(), plan.dependencies.len());
+        if plan.tasks.is_empty() && !full_text.is_empty() {
+            // Log last 500 chars to help debug parsing failures
+            let tail: String = full_text.chars().rev().take(500).collect::<Vec<_>>().into_iter().rev().collect();
+            log::warn!("Planning: no tasks parsed. Tail of output:\n{}", tail);
+        }
 
         app.emit("plan:completed", &serde_json::json!({
             "projectId": project_id, "planId": &plan_id_clone,
@@ -246,54 +274,77 @@ fn build_planning_prompt(topic: &str, context: &str, project: &pq::Project, gran
         _ => ("5-10", "Create a moderate number of tasks (5-10). Group related changes into single tasks."),
     };
 
-    format!(r#"You are a technical project planner. Analyze the codebase and create a structured task breakdown.
+    format!(r#"You are a senior software architect performing a codebase analysis and task planning exercise. Your goal is to produce a precise, actionable task breakdown that another AI agent (Claude) can execute autonomously, one task at a time.
 
 ## Project
-Name: {}
-Working Directory: {}
+- **Name:** {}
+- **Working Directory:** {}
 
-## Topic to Plan
+## Planning Request
 {}
 
 {}
 
-## Task Granularity: {}
+## Granularity: {}
 {}
 
-## Instructions
-1. First, explore the codebase to understand the current architecture
-2. Analyze what needs to change for the requested topic
-3. Write a brief analysis of your findings
-4. End with a JSON code block containing the task breakdown
+## Step-by-Step Process
+
+### Step 1 — Explore
+Examine the codebase structure, key files, and existing patterns. Focus on:
+- Entry points and module organization
+- Existing conventions (naming, error handling, testing patterns)
+- Files and modules that will need to change
+
+### Step 2 — Analyze
+Identify what needs to change and what risks exist:
+- Which components are affected
+- What new code or files are needed
+- Potential breaking changes or edge cases
+
+### Step 3 — Plan
+Write a brief summary of your findings, then produce the task breakdown as a JSON code block.
+
+## Task Prioritization Guidelines
+- **Priority 0 (highest):** Foundation work — schemas, core types, shared utilities that other tasks depend on
+- **Priority 1:** Primary feature implementation — the main functional changes
+- **Priority 2:** Integration and wiring — connecting components, updating routes/commands
+- **Priority 3 (lowest):** Polish — tests, documentation, error handling improvements
+
+## Parallel Execution
+Tasks without dependency relationships will be executed in parallel by separate Claude agents. Maximize parallelism by only adding a dependency when one task truly cannot start until another finishes. Independent modules, separate files, and unrelated concerns should be separate parallel tasks.
 
 ## CRITICAL: Output Format
-End your response with a JSON code block containing tasks AND their dependency relationships:
+You MUST end your response with exactly one JSON code block in this format:
 
 ```json
 {{
   "tasks": [
     {{
-      "title": "Short task title",
-      "description": "Detailed description of what to implement",
+      "title": "Short, imperative task title (e.g. Add user auth middleware)",
+      "description": "Detailed implementation instructions. Include specific file paths, function signatures, and expected behavior. This must be detailed enough for Claude to implement without further clarification.",
       "task_type": "feature|bugfix|refactor|docs|test|chore",
       "priority": 0,
-      "acceptance_criteria": "Clear definition of done"
+      "acceptance_criteria": "Concrete, verifiable definition of done (e.g. 'The /api/users endpoint returns 401 for unauthenticated requests')"
     }}
   ],
   "dependencies": [[0, 1], [0, 2], [1, 3]]
 }}
 ```
 
-The `dependencies` array contains [parentIndex, childIndex] pairs where the child task depends on the parent.
-Example: [0, 1] means task at index 1 depends on task at index 0 (task 0 must complete before task 1 starts).
-Tasks with no dependencies can run in parallel.
+### Field Reference
+- **title**: Short imperative description (under 80 chars)
+- **description**: Full implementation guide — file paths, logic, edge cases
+- **task_type**: One of `feature`, `bugfix`, `refactor`, `docs`, `test`, `chore`
+- **priority**: 0 (highest) to 3 (lowest), following the guidelines above
+- **acceptance_criteria**: Testable condition that proves the task is complete
+- **dependencies**: Array of `[parentIndex, childIndex]` pairs. `[0, 1]` means task 1 depends on task 0. Tasks with no dependency edges run in parallel.
 
-Rules:
+### Rules
 - Create {} tasks
-- Descriptions should be detailed enough for Claude to implement autonomously
-- Define dependency relationships between tasks
-- Tasks that CAN run in parallel SHOULD have no dependency between them
-- Each task should be independently executable once its dependencies are met"#,
+- Every description must be self-contained — assume the implementing agent has no context beyond the task itself and access to the codebase
+- Maximize parallel execution: only add dependency edges where strictly required
+- Each task must be independently executable once its dependencies are complete"#,
         project.name, project.working_dir, topic.trim(),
         if context.is_empty() { String::new() } else { format!("## Additional Context\n{}", context) },
         granularity.to_uppercase(), style, count
@@ -307,41 +358,103 @@ struct ParsedPlan {
 }
 
 fn parse_tasks_from_output(text: &str) -> ParsedPlan {
+    // Strategy 1: Find JSON in markdown code blocks (try all blocks, prefer ones with "tasks")
     let re = regex_lite::Regex::new(r"```(?:json)?\s*\n?([\s\S]*?)```").unwrap();
-    let mut last_block = None;
+    let mut blocks: Vec<String> = vec![];
     for cap in re.captures_iter(text) {
-        last_block = Some(cap[1].trim().to_string());
+        blocks.push(cap[1].trim().to_string());
     }
-    let block = match last_block {
-        Some(b) => b,
-        None => return ParsedPlan { tasks: vec![], dependencies: vec![] },
-    };
 
-    // Try new format: { "tasks": [...], "dependencies": [...] }
-    if let Ok(obj) = serde_json::from_str::<serde_json::Value>(&block) {
-        if let Some(tasks) = obj.get("tasks").and_then(|v| v.as_array()) {
-            let filtered: Vec<serde_json::Value> = tasks.iter()
-                .filter(|t| t.get("title").and_then(|v| v.as_str()).map(|s| !s.trim().is_empty()).unwrap_or(false))
-                .cloned()
-                .collect();
-            if !filtered.is_empty() {
-                let deps = obj.get("dependencies").and_then(|v| v.as_array()).map(|arr| {
-                    arr.iter().filter_map(|e| {
-                        let a = e.as_array()?;
-                        Some(vec![a.first()?.as_i64()?, a.get(1)?.as_i64()?])
-                    }).collect()
-                }).unwrap_or_default();
-                return ParsedPlan { tasks: filtered, dependencies: deps };
+    // Try blocks in reverse (last block is most likely the final output)
+    for block in blocks.iter().rev() {
+        if let Some(plan) = try_parse_plan(block) {
+            return plan;
+        }
+    }
+
+    // Strategy 2: Find raw JSON object with "tasks" key using brace matching (no code fences)
+    if let Some(plan) = find_json_in_text(text) {
+        return plan;
+    }
+
+    // Strategy 3: Try to parse any JSON array in the text
+    for block in blocks.iter().rev() {
+        if let Ok(arr) = serde_json::from_str::<Vec<serde_json::Value>>(block) {
+            let tasks: Vec<_> = arr.into_iter().filter(|t| {
+                t.get("title").and_then(|v| v.as_str()).map(|s| !s.trim().is_empty()).unwrap_or(false)
+            }).collect();
+            if !tasks.is_empty() {
+                return ParsedPlan { tasks, dependencies: vec![] };
             }
         }
     }
 
-    // Fallback: plain array format (backward compatible, no deps)
-    let tasks = match serde_json::from_str::<Vec<serde_json::Value>>(&block) {
-        Ok(arr) => arr.into_iter().filter(|t| {
-            t.get("title").and_then(|v| v.as_str()).map(|s| !s.trim().is_empty()).unwrap_or(false)
-        }).collect(),
-        Err(_) => vec![],
-    };
-    ParsedPlan { tasks, dependencies: vec![] }
+    ParsedPlan { tasks: vec![], dependencies: vec![] }
+}
+
+fn try_parse_plan(block: &str) -> Option<ParsedPlan> {
+    let obj = serde_json::from_str::<serde_json::Value>(block).ok()?;
+
+    // Format: { "tasks": [...], "dependencies": [...] }
+    if let Some(tasks) = obj.get("tasks").and_then(|v| v.as_array()) {
+        let filtered: Vec<serde_json::Value> = tasks.iter()
+            .filter(|t| t.get("title").and_then(|v| v.as_str()).map(|s| !s.trim().is_empty()).unwrap_or(false))
+            .cloned()
+            .collect();
+        if !filtered.is_empty() {
+            let deps = obj.get("dependencies").and_then(|v| v.as_array()).map(|arr| {
+                arr.iter().filter_map(|e| {
+                    let a = e.as_array()?;
+                    Some(vec![a.first()?.as_i64()?, a.get(1)?.as_i64()?])
+                }).collect()
+            }).unwrap_or_default();
+            return Some(ParsedPlan { tasks: filtered, dependencies: deps });
+        }
+    }
+
+    // Format: plain array of task objects
+    if let Some(arr) = obj.as_array() {
+        let tasks: Vec<_> = arr.iter()
+            .filter(|t| t.get("title").and_then(|v| v.as_str()).map(|s| !s.trim().is_empty()).unwrap_or(false))
+            .cloned()
+            .collect();
+        if !tasks.is_empty() {
+            return Some(ParsedPlan { tasks, dependencies: vec![] });
+        }
+    }
+
+    None
+}
+
+/// Scan text for a JSON object containing "tasks" using brace-depth matching.
+fn find_json_in_text(text: &str) -> Option<ParsedPlan> {
+    let bytes = text.as_bytes();
+    let mut i = 0;
+    let mut best: Option<ParsedPlan> = None;
+
+    while i < bytes.len() {
+        if bytes[i] == b'{' {
+            let start = i;
+            let mut depth = 0i32;
+            let mut j = i;
+            while j < bytes.len() {
+                if bytes[j] == b'{' { depth += 1; }
+                if bytes[j] == b'}' { depth -= 1; if depth == 0 { break; } }
+                j += 1;
+            }
+            if depth == 0 && j < bytes.len() {
+                let candidate = &text[start..=j];
+                if candidate.contains("\"tasks\"") {
+                    if let Some(plan) = try_parse_plan(candidate) {
+                        best = Some(plan);
+                    }
+                }
+                i = j + 1;
+                continue;
+            }
+        }
+        i += 1;
+    }
+
+    best
 }

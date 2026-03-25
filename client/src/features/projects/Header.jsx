@@ -24,6 +24,7 @@ import {
   Zap,
   Terminal,
   Wand2,
+  SlidersHorizontal,
 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from '../../lib/constants';
@@ -69,6 +70,7 @@ const SETTINGS_ITEMS = [
   { key: 'webhooks', icon: Bell, labelKey: 'header.webhooks', handler: 'onEditWebhooks' },
   { key: 'commands', icon: Terminal, labelKey: 'header.commands', handler: 'onEditCommands' },
   { key: 'skills', icon: Wand2, labelKey: 'header.skills', handler: 'onEditSkills' },
+  { key: 'app-settings', icon: SlidersHorizontal, labelKey: 'header.appSettings', handler: 'onOpenAppSettings' },
 ];
 
 export default function Header({
@@ -98,13 +100,14 @@ export default function Header({
   onEditSkills,
   onOpenPlanning,
   onOpenScan,
+  onOpenAppSettings,
   tasks,
 }) {
   const { t, lang, setLang } = useTranslation();
   const [showProjectMenu, setShowProjectMenu] = useState(false);
   const menuRef = useRef(null);
 
-  const handlers = { onEditProject, onEditClaudeMd, onEditSnippets, onEditTemplates, onEditRoles, onEditWebhooks, onEditCommands, onEditSkills };
+  const handlers = { onEditProject, onEditClaudeMd, onEditSnippets, onEditTemplates, onEditRoles, onEditWebhooks, onEditCommands, onEditSkills, onOpenAppSettings };
 
   useEffect(() => {
     if (!showProjectMenu) return;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3, Bot, LayoutGrid, List, Lightbulb, Download, X, Loader2 } from 'lucide-react';
+import { Plus, FolderOpen, Cpu, Coins, Clock, CheckCircle2, Activity, Layers, Zap, AlertTriangle, TrendingUp, BarChart3, Bot, LayoutGrid, List, Lightbulb, Download, X, Loader2, Settings } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { api } from '../../lib/api';
 import { formatTokens, formatTimeAgo as timeAgo } from '../../lib/formatters';
@@ -384,7 +384,7 @@ let suggestionsCache = null;
 let suggestionsLoaded = false;
 let usageCache = null;
 
-function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
+function DashHeader({ t, dashTab, setDashTab, onNewProject, onOpenSettings }) {
   return (
     <div className="flex items-center justify-between gap-4 mb-8">
       <div className="min-w-0">
@@ -408,6 +408,15 @@ function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
       <div className="flex items-center gap-3 flex-shrink-0">
         <span className="text-[10px] text-surface-600 font-mono">v{__APP_VERSION__}</span>
         <LanguageSelector />
+        {onOpenSettings && (
+          <button
+            onClick={onOpenSettings}
+            className="p-2 rounded-lg text-surface-400 hover:text-claude hover:bg-surface-800/60 transition-colors"
+            title={t('settings.title')}
+          >
+            <Settings size={16} />
+          </button>
+        )}
         {dashTab === 'projects' && (
           <button onClick={onNewProject}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex-shrink-0 whitespace-nowrap">
@@ -419,7 +428,7 @@ function DashHeader({ t, dashTab, setDashTab, onNewProject }) {
   );
 }
 
-export default function Dashboard({ projects, onSelectProject, onNewProject }) {
+export default function Dashboard({ projects, onSelectProject, onNewProject, onOpenSettings }) {
   const { t } = useTranslation();
   const [summary, setSummary] = useState(summaryCache || []);
   const [groups, setGroups] = useState(groupsCache || []);
@@ -478,7 +487,7 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
     return (
       <div className="h-full overflow-y-auto">
         <div className="max-w-5xl mx-auto px-6 py-8">
-          <DashHeader t={t} dashTab={dashTab} setDashTab={setDashTab} onNewProject={onNewProject} />
+          <DashHeader t={t} dashTab={dashTab} setDashTab={setDashTab} onNewProject={onNewProject} onOpenSettings={onOpenSettings} />
           <ClaudeManager />
         </div>
       </div>
@@ -488,7 +497,7 @@ export default function Dashboard({ projects, onSelectProject, onNewProject }) {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto px-6 py-8">
-        <DashHeader t={t} dashTab={dashTab} setDashTab={setDashTab} onNewProject={onNewProject} />
+        <DashHeader t={t} dashTab={dashTab} setDashTab={setDashTab} onNewProject={onNewProject} onOpenSettings={onOpenSettings} />
 
         {/* Global Stats */}
         {totalProjects > 0 && (
