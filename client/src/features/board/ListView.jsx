@@ -3,6 +3,7 @@ import { ChevronUp, ChevronDown, Activity, Clock, Cpu, Coins, Terminal, Pencil, 
 import { formatDuration, formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, MODEL_COLORS, COLUMNS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
+import { TagList } from './TagBadge';
 
 const STATUS_DOT = {
   backlog: 'bg-surface-400',
@@ -95,6 +96,7 @@ export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask
                     <div className="flex items-center gap-2">
                       {task.is_running && <Activity size={10} className="text-amber-400 animate-pulse flex-shrink-0" />}
                       <span className="text-surface-200 truncate">{task.title}</span>
+                      <TagList tags={task.tags} max={2} size="xs" />
                       {task.revision_count > 0 && (
                         <span className="text-[9px] font-medium px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 flex-shrink-0">
                           {t('card.rev')} {task.revision_count}

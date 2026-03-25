@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { GitBranch, CalendarRange, Radio } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { GitBranch, CalendarRange, Radio, X, Tag, ChevronDown } from 'lucide-react';
 import { api } from '../../lib/api';
 import { IS_TAURI, tauriListen } from '../../lib/tauriEvents';
 import { useTranslation } from '../../i18n/I18nProvider';
+import { getTagColor } from '../../lib/constants';
+import { parseTags } from './TagBadge';
 import PipelineStats from './PipelineStats';
 import AgentCard from './AgentCard';
 import DependencyGraph from './DependencyGraph';
@@ -29,7 +31,17 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
   const [graphData, setGraphData] = useState({ tasks: [], edges: [], waves: [] });
   const [savedPositions, setSavedPositions] = useState(() => loadPositions(projectId));
   const [viewType, setViewType] = useState('graph'); // 'graph' | 'timeline' | 'live'
+  const [tagFilter, setTagFilter] = useState([]);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const tagDropdownRef = useRef(null);
   const refreshCounter = useRef(0);
+
+  useEffect(() => {
+    if (!tagDropdownOpen) return;
+    const close = (e) => { if (tagDropdownRef.current && !tagDropdownRef.current.contains(e.target)) setTagDropdownOpen(false); };
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [tagDropdownOpen]);
 
   const loadGraph = useCallback(() => {
     if (!IS_TAURI || !projectId) return;
@@ -57,10 +69,38 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
     });
   }, [loadGraph]);
 
-  const runningTasks = tasks.filter(t => t.status === 'in_progress' || t.is_running);
+  // Tag filter
+  const { activeTags, tagCounts } = useMemo(() => {
+    const counts = {};
+    tasks.forEach(t => parseTags(t.tags).forEach(tag => { counts[tag] = (counts[tag] || 0) + 1; }));
+    return { activeTags: Object.keys(counts).sort((a, b) => counts[b] - counts[a]), tagCounts: counts };
+  }, [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    if (tagFilter.length === 0) return tasks;
+    return tasks.filter(t => {
+      const tags = parseTags(t.tags);
+      return tagFilter.some(f => tags.includes(f));
+    });
+  }, [tasks, tagFilter]);
+
+  const filteredIds = useMemo(() => new Set(filteredTasks.map(t => t.id)), [filteredTasks]);
+
+  const runningTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.is_running);
   const waves = (graphData.waves || []).map(w => {
-    return (w.taskIds || []).map(id => tasks.find(t => t.id === id)).filter(Boolean);
+    return (w.taskIds || []).map(id => filteredTasks.find(t => t.id === id)).filter(Boolean);
   });
+
+  // Filter graph edges to only show filtered tasks
+  const filteredEdges = useMemo(() => {
+    if (tagFilter.length === 0) return graphData.edges || [];
+    return (graphData.edges || []).filter(e => filteredIds.has(e.from) && filteredIds.has(e.to));
+  }, [graphData.edges, filteredIds, tagFilter]);
+
+  const filteredGraphTasks = useMemo(() => {
+    if (tagFilter.length === 0) return graphData.tasks || [];
+    return (graphData.tasks || []).filter(t => filteredIds.has(t.id));
+  }, [graphData.tasks, filteredIds, tagFilter]);
 
   const handleStop = useCallback((task) => {
     api.stopTask(task.id).catch(() => {});
@@ -83,11 +123,56 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
 
   return (
     <div className="h-full flex flex-col gap-3 p-4 overflow-auto">
-      {/* Pipeline Stats + View Toggle */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1">
-          <PipelineStats tasks={tasks} waves={waves} />
+      {/* Pipeline Stats + Tag Filter + View Toggle */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <PipelineStats tasks={filteredTasks} waves={waves} />
         </div>
+        {/* Tag filter dropdown */}
+        {activeTags.length > 0 && (
+          <div className="relative" ref={tagDropdownRef}>
+            <button onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                tagFilter.length > 0 ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'
+              }`}>
+              <Tag size={12} />
+              Tags
+              {tagFilter.length > 0 && (
+                <span className="text-[10px] bg-claude/20 px-1.5 py-px rounded-full">{tagFilter.length}</span>
+              )}
+              <ChevronDown size={10} />
+            </button>
+            {tagDropdownOpen && (
+              <div className="absolute top-full right-0 mt-1 bg-surface-800 border border-surface-700 rounded-lg py-1 shadow-xl z-20 min-w-[280px] max-h-[320px] overflow-y-auto">
+                {tagFilter.length > 0 && (
+                  <button onClick={() => { setTagFilter([]); setTagDropdownOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-700 border-b border-surface-700/50">
+                    <X size={10} /> Clear all
+                  </button>
+                )}
+                {activeTags.map(tag => {
+                  const isActive = tagFilter.includes(tag);
+                  const color = getTagColor(tag);
+                  return (
+                    <button key={tag}
+                      onClick={() => setTagFilter(prev => isActive ? prev.filter(t => t !== tag) : [...prev, tag])}
+                      className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
+                        isActive ? 'bg-surface-700/50 text-surface-200' : 'text-surface-400 hover:bg-surface-700/30'
+                      }`}>
+                      <div className={`w-3 h-3 rounded border flex items-center justify-center ${
+                        isActive ? 'bg-claude border-claude' : 'border-surface-600'
+                      }`}>
+                        {isActive && <span className="text-[8px] text-white font-bold">✓</span>}
+                      </div>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${color}`}>{tag}</span>
+                      <span className="ml-auto text-[10px] text-surface-600">{tagCounts[tag]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex items-center bg-surface-800/50 rounded-lg border border-surface-700/30 p-0.5">
           <button
             onClick={() => setViewType('graph')}
@@ -131,8 +216,8 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
             <div className="flex-1 min-w-0">
               {viewType === 'graph' ? (
                 <DependencyGraph
-                  tasks={graphData.tasks || []}
-                  edges={graphData.edges || []}
+                  tasks={filteredGraphTasks}
+                  edges={filteredEdges}
                   waves={waves}
                   onTaskClick={onViewDetail}
                   onAddDependency={handleAddDependency}
@@ -142,9 +227,9 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
                 />
               ) : (
                 <TimelineView
-                  tasks={tasks}
+                  tasks={filteredTasks}
                   waves={waves}
-                  edges={graphData.edges || []}
+                  edges={filteredEdges}
                   onTaskClick={onViewDetail}
                 />
               )}

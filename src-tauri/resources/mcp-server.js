@@ -80,8 +80,9 @@ server.tool(
     model: z.enum(['haiku', 'sonnet', 'opus']).optional().default('sonnet').describe('Claude model to use'),
     acceptance_criteria: z.string().optional().describe('Definition of done — what must be true when task completes'),
     parent_task_id: z.number().optional().describe('Parent task ID — creates a sub-task linked to the parent. The parent will wait for all sub-tasks to complete before finishing.'),
+    tags: z.array(z.string()).optional().describe('Tags/labels for the task (e.g. ["backend", "security"])'),
   },
-  async ({ project_id, title, description, task_type, priority, model, acceptance_criteria, parent_task_id }) => {
+  async ({ project_id, title, description, task_type, priority, model, acceptance_criteria, parent_task_id, tags }) => {
     const task = await api(`/api/projects/${project_id}/tasks`, {
       method: 'POST',
       body: JSON.stringify({
@@ -92,6 +93,7 @@ server.tool(
         model: model || 'sonnet',
         acceptance_criteria: acceptance_criteria || '',
         parent_task_id: parent_task_id || null,
+        tags: tags ? JSON.stringify(tags) : '[]',
       }),
     });
     const parentInfo = parent_task_id ? ` (sub-task of #${parent_task_id})` : '';

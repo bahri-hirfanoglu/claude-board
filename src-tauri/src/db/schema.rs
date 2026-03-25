@@ -235,6 +235,8 @@ pub fn run_migrations(conn: &Connection) {
         // Sub-task spawning
         ("tasks", "parent_task_id", "ALTER TABLE tasks ADD COLUMN parent_task_id INTEGER"),
         ("tasks", "awaiting_subtasks", "ALTER TABLE tasks ADD COLUMN awaiting_subtasks INTEGER DEFAULT 0"),
+        // Tags
+        ("tasks", "tags", "ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT '[]'"),
     ];
 
     for (table, col, sql) in migrations {

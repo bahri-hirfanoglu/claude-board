@@ -426,6 +426,8 @@ export default {
   'observability.fileHeatmap': 'Dosya Eri\u015fim Haritas\u0131',
   'observability.liveFeed': 'Canl\u0131 Ak\u0131\u015f',
   'observability.noActivity': 'Aktivite bekleniyor...',
+  'task.tags': 'Etiketler',
+  'task.addTag': 'Etiket ekle...',
 
   // ─── Analitik ───
   'analytics.title': 'Maliyet & Performans Analiti\u011fi',

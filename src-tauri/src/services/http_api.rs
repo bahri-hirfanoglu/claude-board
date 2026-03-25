@@ -72,6 +72,8 @@ struct CreateTaskBody {
     acceptance_criteria: Option<String>,
     model: Option<String>,
     thinking_effort: Option<String>,
+    tags: Option<String>,
+    parent_task_id: Option<i64>,
 }
 
 async fn create_task(Path(project_id): Path<i64>, Json(body): Json<CreateTaskBody>) -> impl IntoResponse {
@@ -84,7 +86,15 @@ async fn create_task(Path(project_id): Path<i64>, Json(body): Json<CreateTaskBod
         body.model.as_deref().unwrap_or("sonnet"),
         body.thinking_effort.as_deref().unwrap_or("medium"),
         None,
+        body.tags.as_deref(),
     );
+    // Link as sub-task if parent_task_id provided
+    if let Some(parent_id) = body.parent_task_id {
+        if tasks::get_by_id(&db, parent_id).is_some() {
+            tasks::set_parent_task_id(&db, id, parent_id);
+            tasks::set_awaiting_subtasks(&db, parent_id, true);
+        }
+    }
     let task = tasks::get_by_id(&db, id).unwrap();
     (StatusCode::CREATED, Json(serde_json::to_value(task).unwrap()))
 }
@@ -105,6 +115,7 @@ struct UpdateTaskBody {
     acceptance_criteria: Option<String>,
     model: Option<String>,
     thinking_effort: Option<String>,
+    tags: Option<String>,
 }
 
 async fn update_task(Path(id): Path<i64>, Json(body): Json<UpdateTaskBody>) -> impl IntoResponse {
@@ -122,6 +133,7 @@ async fn update_task(Path(id): Path<i64>, Json(body): Json<UpdateTaskBody>) -> i
         body.model.as_deref().unwrap_or(task.model.as_deref().unwrap_or("sonnet")),
         body.thinking_effort.as_deref().unwrap_or(task.thinking_effort.as_deref().unwrap_or("medium")),
         task.role_id,
+        body.tags.as_deref().or(task.tags.as_deref()),
     );
     let updated = tasks::get_by_id(&db, id).unwrap();
     Json(serde_json::to_value(updated).unwrap()).into_response()

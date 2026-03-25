@@ -9,6 +9,7 @@ import { IS_TAURI } from '../../lib/tauriEvents';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { TYPE_COLORS } from '../../lib/constants';
 import { formatTokens } from '../../lib/formatters';
+import { TagList } from './TagBadge';
 
 const STATUS_CONFIG = {
   in_progress: { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30', label: 'Running' },
@@ -233,6 +234,7 @@ function PipelineCard({ task, position, draggable, onViewLogs, onViewDetail, onM
           <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${typeColor}`}>{task.task_type}</span>
           {task.task_key && <span className="text-[9px] text-surface-600 font-mono">{task.task_key}</span>}
           <span className="text-xs text-surface-200 font-medium truncate">{task.title}</span>
+          <TagList tags={task.tags} max={2} size="xs" />
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           {task.model && <span className="text-[9px] text-surface-500">{task.model}</span>}

@@ -426,6 +426,8 @@ export default {
   'observability.fileHeatmap': 'File Access Map',
   'observability.liveFeed': 'Live Feed',
   'observability.noActivity': 'Waiting for activity...',
+  'task.tags': 'Tags',
+  'task.addTag': 'Add tag...',
 
   // ─── Analytics ───
   'analytics.title': 'Cost & Performance Analytics',
