@@ -30,34 +30,47 @@ fn row_to(row: &rusqlite::Row) -> rusqlite::Result<Template> {
 
 pub fn get_by_project(db: &DbPool, pid: i64) -> Vec<Template> {
     let conn = db.lock();
-    let mut stmt = conn.prepare("SELECT * FROM prompt_templates WHERE project_id=?1 ORDER BY id").unwrap();
-    stmt.query_map(params![pid], |r| row_to(r)).unwrap().flatten().collect()
+    let mut stmt = match conn.prepare("SELECT * FROM prompt_templates WHERE project_id=?1 ORDER BY id") {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_by_project: {}", e); return vec![]; }
+    };
+    let result = match stmt.query_map(params![pid], |r| row_to(r)) {
+        Ok(rows) => rows.flatten().collect(),
+        Err(e) => { log::error!("get_by_project: {}", e); vec![] }
+    };
+    result
 }
 
 pub fn get_by_id(db: &DbPool, id: i64) -> Option<Template> {
     let conn = db.lock();
-    let mut stmt = conn.prepare("SELECT * FROM prompt_templates WHERE id=?1").unwrap();
+    let mut stmt = match conn.prepare("SELECT * FROM prompt_templates WHERE id=?1") {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_by_id: {}", e); return None; }
+    };
     stmt.query_row(params![id], |r| row_to(r)).ok()
 }
 
 pub fn create(db: &DbPool, pid: i64, name: &str, description: Option<&str>, template: &str, variables: Option<&str>, task_type: &str, model: &str, thinking_effort: &str) -> i64 {
     let conn = db.lock();
-    conn.execute(
+    match conn.execute(
         "INSERT INTO prompt_templates (project_id,name,description,template,variables,task_type,model,thinking_effort) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
         params![pid, name, description, template, variables, task_type, model, thinking_effort],
-    ).unwrap();
+    ) {
+        Ok(_) => {},
+        Err(e) => { log::error!("create: {}", e); return 0; }
+    };
     conn.last_insert_rowid()
 }
 
 pub fn update(db: &DbPool, id: i64, name: &str, description: Option<&str>, template: &str, variables: Option<&str>, task_type: &str, model: &str, thinking_effort: &str) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE prompt_templates SET name=?1,description=?2,template=?3,variables=?4,task_type=?5,model=?6,thinking_effort=?7,updated_at=datetime('now','localtime') WHERE id=?8",
         params![name, description, template, variables, task_type, model, thinking_effort, id],
-    ).unwrap();
+    ) { log::error!("update: {}", e); }
 }
 
 pub fn delete(db: &DbPool, id: i64) {
     let conn = db.lock();
-    conn.execute("DELETE FROM prompt_templates WHERE id=?1", params![id]).unwrap();
+    if let Err(e) = conn.execute("DELETE FROM prompt_templates WHERE id=?1", params![id]) { log::error!("delete: {}", e); }
 }

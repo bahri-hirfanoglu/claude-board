@@ -34,7 +34,7 @@ pub fn create_project(
 
     let id = pq::create(&db, name.trim(), slug.trim(), working_dir.trim(),
         icon.as_deref(), icon_seed.as_deref(), permission_mode.as_deref(), allowed_tools.as_deref());
-    let project = pq::get_by_id(&db, id).unwrap();
+    let project = pq::get_by_id(&db, id).ok_or("Failed to retrieve created project")?;
     app.emit("project:created", &project).ok();
     activity::add(&db, project.id, None, "project_created", &format!("Project created: {}", project.name), None);
     Ok(project)
@@ -80,7 +80,7 @@ pub fn update_project(
             pr_base_branch.as_deref().unwrap_or(project.pr_base_branch.as_deref().unwrap_or("main")));
     }
 
-    let updated = pq::get_by_id(&db, id).unwrap();
+    let updated = pq::get_by_id(&db, id).ok_or("Failed to retrieve updated project")?;
     app.emit("project:updated", &updated).ok();
     Ok(updated)
 }

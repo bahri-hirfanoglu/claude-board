@@ -286,6 +286,11 @@ pub fn run() {
             commands::settings::get_app_settings,
             commands::settings::update_app_settings,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, event| {
+            if let tauri::RunEvent::Exit = event {
+                services::queue::request_shutdown();
+            }
+        });
 }

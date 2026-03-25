@@ -12,19 +12,19 @@ pub fn generate_api_key(db: &DbPool) -> String {
     let key = hex::encode(rand::random::<[u8; 32]>());
     let hash = hash_key(&key);
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "INSERT INTO auth_config (id, api_key_hash, enabled) VALUES (1, ?1, 1) ON CONFLICT(id) DO UPDATE SET api_key_hash=excluded.api_key_hash, enabled=1",
         params![hash],
-    ).unwrap();
+    ) { log::error!("generate_api_key: {}", e); }
     key
 }
 
 pub fn disable_auth(db: &DbPool) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "INSERT INTO auth_config (id, enabled) VALUES (1, 0) ON CONFLICT(id) DO UPDATE SET enabled=0",
         [],
-    ).unwrap();
+    ) { log::error!("disable_auth: {}", e); }
 }
 
 pub fn is_auth_enabled(db: &DbPool) -> bool {
@@ -34,7 +34,7 @@ pub fn is_auth_enabled(db: &DbPool) -> bool {
         .ok()
         .and_then(|mut s| s.query_row([], |r| Ok((r.get(0)?, r.get(1)?))).ok());
     match result {
-        Some((enabled, hash)) => enabled == 1 && hash.is_some() && !hash.unwrap().is_empty(),
+        Some((enabled, hash)) => enabled == 1 && hash.as_ref().map_or(false, |h| !h.is_empty()),
         None => false,
     }
 }

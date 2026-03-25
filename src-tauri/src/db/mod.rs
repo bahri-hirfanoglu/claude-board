@@ -55,3 +55,23 @@ pub fn get_db() -> DbPool {
 pub fn get_data_dir() -> PathBuf {
     DATA_DIR.get().expect("Data directory not set").clone()
 }
+
+/// Execute a closure within a SQLite transaction.
+/// Automatically commits on success, rolls back on error.
+pub fn with_transaction<F, T>(db: &DbPool, f: F) -> Result<T, String>
+where
+    F: FnOnce(&Connection) -> Result<T, String>,
+{
+    let conn = db.lock();
+    conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| format!("begin: {}", e))?;
+    match f(&conn) {
+        Ok(result) => {
+            conn.execute_batch("COMMIT").map_err(|e| format!("commit: {}", e))?;
+            Ok(result)
+        }
+        Err(e) => {
+            conn.execute_batch("ROLLBACK").ok();
+            Err(e)
+        }
+    }
+}

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
-use std::sync::Mutex;
+use parking_lot::Mutex;
 use once_cell::sync::Lazy;
 use tauri::{AppHandle, Emitter};
 use crate::db::{self, projects as pq, tasks as tq, activity};
@@ -22,7 +22,7 @@ pub fn start_planning(
     let db = db::get_db();
     let project = pq::get_by_id(&db, project_id).ok_or("Project not found")?;
     if topic.trim().is_empty() { return Err("Topic is required".into()); }
-    if ACTIVE_PLANS.lock().unwrap().contains_key(&project_id) {
+    if ACTIVE_PLANS.lock().contains_key(&project_id) {
         return Err("Planning already in progress".into());
     }
 
@@ -69,11 +69,14 @@ pub fn start_planning(
             }
         };
 
-        ACTIVE_PLANS.lock().unwrap().insert(project_id, child.id());
+        ACTIVE_PLANS.lock().insert(project_id, child.id());
         log::info!("Planning: claude spawned, pid={}", child.id());
 
         // Drain stderr in background to prevent buffer deadlock
-        let stderr = child.stderr.take().unwrap();
+        let stderr = match child.stderr.take() {
+            Some(s) => s,
+            None => { log::error!("Planning: no stderr pipe"); return; }
+        };
         let app_err = app.clone();
         let pid_clone = plan_id_clone.clone();
         std::thread::spawn(move || {
@@ -89,7 +92,14 @@ pub fn start_planning(
             }
         });
 
-        let stdout = child.stdout.take().unwrap();
+        let stdout = match child.stdout.take() {
+            Some(s) => s,
+            None => {
+                ACTIVE_PLANS.lock().remove(&project_id);
+                log::error!("Planning: no stdout pipe");
+                return;
+            }
+        };
         let reader = BufReader::new(stdout);
         let mut full_text = String::new();
         let mut tool_calls = 0;
@@ -212,7 +222,7 @@ pub fn start_planning(
         }
 
         let status = child.wait().ok().and_then(|s| s.code()).unwrap_or(-1);
-        ACTIVE_PLANS.lock().unwrap().remove(&project_id);
+        ACTIVE_PLANS.lock().remove(&project_id);
 
         // Phase transition: -> done
         app.emit("plan:phase", &serde_json::json!({
@@ -321,7 +331,7 @@ pub fn approve_plan(
 
 #[tauri::command]
 pub fn cancel_planning(app: AppHandle, project_id: i64) -> Result<(), String> {
-    let pid = ACTIVE_PLANS.lock().unwrap().remove(&project_id)
+    let pid = ACTIVE_PLANS.lock().remove(&project_id)
         .ok_or("No active planning session")?;
     #[cfg(target_os = "windows")]
     {
@@ -340,7 +350,7 @@ pub fn cancel_planning(app: AppHandle, project_id: i64) -> Result<(), String> {
 
 #[tauri::command]
 pub fn get_planning_status(project_id: i64) -> serde_json::Value {
-    let active = ACTIVE_PLANS.lock().unwrap().contains_key(&project_id);
+    let active = ACTIVE_PLANS.lock().contains_key(&project_id);
     serde_json::json!({"active": active})
 }
 

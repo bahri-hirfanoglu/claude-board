@@ -120,27 +120,37 @@ pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
 
 pub fn update_queue_position(db: &DbPool, task_id: i64, position: i64) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET queue_position=?1 WHERE id=?2", params![position, task_id]).ok();
+    if let Err(e) = conn.execute("UPDATE tasks SET queue_position=?1 WHERE id=?2", params![position, task_id]) {
+        log::error!("update_queue_position: {}", e);
+    }
 }
 
 pub fn update_depends_on(db: &DbPool, task_id: i64, depends_on: Option<i64>) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET depends_on=?1 WHERE id=?2", params![depends_on, task_id]).ok();
+    if let Err(e) = conn.execute("UPDATE tasks SET depends_on=?1 WHERE id=?2", params![depends_on, task_id]) {
+        log::error!("update_depends_on: {}", e);
+    }
 }
 
 pub fn increment_retry(db: &DbPool, task_id: i64) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET retry_count=COALESCE(retry_count,0)+1 WHERE id=?1", params![task_id]).ok();
+    if let Err(e) = conn.execute("UPDATE tasks SET retry_count=COALESCE(retry_count,0)+1 WHERE id=?1", params![task_id]) {
+        log::error!("increment_retry: {}", e);
+    }
 }
 
 pub fn reset_retry_count(db: &DbPool, task_id: i64) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET retry_count=0 WHERE id=?1", params![task_id]).ok();
+    if let Err(e) = conn.execute("UPDATE tasks SET retry_count=0 WHERE id=?1", params![task_id]) {
+        log::error!("reset_retry_count: {}", e);
+    }
 }
 
 pub fn set_context_summary(db: &DbPool, task_id: i64, summary: &str) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET context_summary=?1 WHERE id=?2", params![summary, task_id]).ok();
+    if let Err(e) = conn.execute("UPDATE tasks SET context_summary=?1 WHERE id=?2", params![summary, task_id]) {
+        log::error!("set_context_summary: {}", e);
+    }
 }
 
 /// Get the last N claude text logs for a task (used for context summary generation).
@@ -174,35 +184,51 @@ pub fn is_dependency_met(db: &DbPool, task: &Task) -> bool {
 
 pub fn get_by_project(db: &DbPool, project_id: i64) -> Vec<Task> {
     let conn = db.lock();
-    let mut stmt = conn
-        .prepare("SELECT * FROM tasks WHERE project_id=?1 ORDER BY status,sort_order,id")
-        .unwrap();
-    stmt.query_map(params![project_id], |row| row_to_task(row))
-        .unwrap()
-        .flatten()
-        .collect()
+    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE project_id=?1 ORDER BY status,sort_order,id") {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_by_project prepare: {}", e); return vec![]; }
+    };
+    let result: Vec<Task> = match stmt.query_map(params![project_id], |row| row_to_task(row)) {
+        Ok(rows) => rows.flatten().collect(),
+        Err(e) => { log::error!("get_by_project query: {}", e); vec![] }
+    };
+    result
 }
 
 pub fn get_by_id(db: &DbPool, id: i64) -> Option<Task> {
     let conn = db.lock();
-    let mut stmt = conn.prepare("SELECT * FROM tasks WHERE id=?1").unwrap();
-    stmt.query_row(params![id], |row| row_to_task(row))
-        .ok()
+    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE id=?1") {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_by_id prepare: {}", e); return None; }
+    };
+    stmt.query_row(params![id], |row| row_to_task(row)).ok()
 }
 
 fn generate_task_key(conn: &rusqlite::Connection, project_id: i64, task_type: &str) -> String {
-    conn.execute(
-        "UPDATE projects SET task_counter=COALESCE(task_counter,1000)+1 WHERE id=?1",
-        params![project_id],
-    ).unwrap();
+    // Atomic counter increment + read using RETURNING (SQLite 3.35+)
+    // Fallback to UPDATE+SELECT for older versions
+    let result: Option<(String, i64)> = conn
+        .query_row(
+            "UPDATE projects SET task_counter=COALESCE(task_counter,1000)+1 WHERE id=?1 RETURNING project_key, task_counter",
+            params![project_id],
+            |row| Ok((row.get::<_, String>(0).unwrap_or_else(|_| "PRJ".into()), row.get(1).unwrap_or(1001))),
+        )
+        .ok();
 
-    let (pkey, counter): (String, i64) = conn
-        .prepare("SELECT project_key, task_counter FROM projects WHERE id=?1")
-        .unwrap()
-        .query_row(params![project_id], |row| {
-            Ok((row.get::<_, String>(0).unwrap_or_else(|_| "PRJ".into()), row.get(1).unwrap_or(1001)))
-        })
-        .unwrap_or(("PRJ".into(), 1001));
+    let (pkey, counter) = result.unwrap_or_else(|| {
+        // Fallback for older SQLite: separate UPDATE + SELECT
+        if let Err(e) = conn.execute(
+            "UPDATE projects SET task_counter=COALESCE(task_counter,1000)+1 WHERE id=?1",
+            params![project_id],
+        ) {
+            log::error!("generate_task_key update: {}", e);
+        }
+        conn.prepare("SELECT project_key, task_counter FROM projects WHERE id=?1")
+            .and_then(|mut s| s.query_row(params![project_id], |row| {
+                Ok((row.get::<_, String>(0).unwrap_or_else(|_| "PRJ".into()), row.get(1).unwrap_or(1001)))
+            }))
+            .unwrap_or(("PRJ".into(), 1001))
+    });
 
     let prefix = type_prefix(task_type);
     let pk = if pkey.is_empty() { "PRJ" } else { &pkey };
@@ -219,10 +245,13 @@ pub fn create(
     let conn = db.lock();
     let task_key = generate_task_key(&conn, project_id, task_type);
     let tags_val = tags.unwrap_or("[]");
-    conn.execute(
+    if let Err(e) = conn.execute(
         "INSERT INTO tasks (project_id,title,description,priority,task_type,acceptance_criteria,model,thinking_effort,role_id,task_key,tags) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
         params![project_id, title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id, task_key, tags_val],
-    ).unwrap();
+    ) {
+        log::error!("create task: {}", e);
+        return -1;
+    }
     conn.last_insert_rowid()
 }
 
@@ -238,32 +267,33 @@ pub fn update(
     // Check if task_type changed to update key prefix
     let existing: Option<(String, String)> = conn
         .prepare("SELECT task_type, task_key FROM tasks WHERE id=?1")
-        .unwrap()
-        .query_row(params![id], |row| Ok((row.get(0)?, row.get(1)?)))
-        .ok();
+        .ok()
+        .and_then(|mut s| s.query_row(params![id], |row| Ok((row.get(0)?, row.get(1)?))).ok());
 
     if let Some((old_type, old_key)) = existing {
         if old_type != task_type && !old_key.is_empty() {
             let old_prefix = type_prefix(&old_type);
             let new_prefix = type_prefix(task_type);
             let new_key = old_key.replacen(old_prefix, new_prefix, 1);
-            conn.execute(
+            if let Err(e) = conn.execute(
                 "UPDATE tasks SET title=?1,description=?2,priority=?3,task_type=?4,acceptance_criteria=?5,model=?6,thinking_effort=?7,role_id=?8,task_key=?9,tags=?10,updated_at=datetime('now','localtime') WHERE id=?11",
                 params![title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id, new_key, tags_val, id],
-            ).unwrap();
+            ) { log::error!("update task (key): {}", e); }
             return;
         }
     }
 
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET title=?1,description=?2,priority=?3,task_type=?4,acceptance_criteria=?5,model=?6,thinking_effort=?7,role_id=?8,tags=?9,updated_at=datetime('now','localtime') WHERE id=?10",
         params![title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id, tags_val, id],
-    ).unwrap();
+    ) { log::error!("update task: {}", e); }
 }
 
 pub fn set_lifecycle_summary(db: &DbPool, task_id: i64, summary: &str) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET lifecycle_summary=?1 WHERE id=?2", params![summary, task_id]).ok();
+    if let Err(e) = conn.execute("UPDATE tasks SET lifecycle_summary=?1 WHERE id=?2", params![summary, task_id]) {
+        log::error!("set_lifecycle_summary: {}", e);
+    }
 }
 
 pub fn set_tags(db: &DbPool, task_id: i64, tags: &str) {
@@ -273,94 +303,102 @@ pub fn set_tags(db: &DbPool, task_id: i64, tags: &str) {
 
 pub fn delete(db: &DbPool, id: i64) {
     let conn = db.lock();
-    conn.execute("DELETE FROM tasks WHERE id=?1", params![id]).unwrap();
+    if let Err(e) = conn.execute("DELETE FROM tasks WHERE id=?1", params![id]) {
+        log::error!("delete task: {}", e);
+    }
 }
 
 pub fn update_status(db: &DbPool, id: i64, status: &str) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET status=?1,updated_at=datetime('now','localtime') WHERE id=?2",
         params![status, id],
-    ).unwrap();
+    ) { log::error!("update_status: {}", e); }
 }
 
 pub fn set_started(db: &DbPool, id: i64) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET started_at=datetime('now','localtime'),last_resumed_at=datetime('now','localtime'),updated_at=datetime('now','localtime') WHERE id=?1",
         params![id],
-    ).unwrap();
+    ) { log::error!("set_started: {}", e); }
 }
 
 pub fn set_resumed(db: &DbPool, id: i64) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET last_resumed_at=datetime('now','localtime'),updated_at=datetime('now','localtime') WHERE id=?1",
         params![id],
-    ).unwrap();
+    ) { log::error!("set_resumed: {}", e); }
 }
 
 pub fn pause_timer(db: &DbPool, id: i64) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET work_duration_ms=COALESCE(work_duration_ms,0)+CAST((julianday('now','localtime')-julianday(last_resumed_at))*86400000 AS INTEGER),last_resumed_at=NULL,updated_at=datetime('now','localtime') WHERE id=?1 AND last_resumed_at IS NOT NULL",
         params![id],
-    ).unwrap();
+    ) { log::error!("pause_timer: {}", e); }
 }
 
 pub fn set_completed(db: &DbPool, id: i64) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET completed_at=datetime('now','localtime'),updated_at=datetime('now','localtime') WHERE id=?1",
         params![id],
-    ).unwrap();
+    ) { log::error!("set_completed: {}", e); }
 }
 
 pub fn finalize_timer(db: &DbPool, id: i64) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET work_duration_ms=COALESCE(work_duration_ms,0)+CASE WHEN last_resumed_at IS NOT NULL THEN CAST((julianday('now','localtime')-julianday(last_resumed_at))*86400000 AS INTEGER) ELSE 0 END,last_resumed_at=NULL,completed_at=datetime('now','localtime'),updated_at=datetime('now','localtime') WHERE id=?1",
         params![id],
-    ).unwrap();
+    ) { log::error!("finalize_timer: {}", e); }
 }
 
 pub fn set_usage_live(db: &DbPool, id: i64, input: i64, output: i64, cache_read: i64, cache_creation: i64, cost: f64, model: &str) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET input_tokens=?1,output_tokens=?2,cache_read_tokens=?3,cache_creation_tokens=?4,total_cost=?5,model_used=?6,updated_at=datetime('now','localtime') WHERE id=?7",
         params![input, output, cache_read, cache_creation, cost, model, id],
-    ).unwrap();
+    ) { log::error!("set_usage_live: {}", e); }
 }
 
 pub fn update_num_turns(db: &DbPool, id: i64, turns: i64) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET num_turns=?1,updated_at=datetime('now','localtime') WHERE id=?2", params![turns, id]).unwrap();
+    if let Err(e) = conn.execute("UPDATE tasks SET num_turns=?1,updated_at=datetime('now','localtime') WHERE id=?2", params![turns, id]) {
+        log::error!("update_num_turns: {}", e);
+    }
 }
 
 pub fn increment_rate_limit_hits(db: &DbPool, id: i64) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET rate_limit_hits=COALESCE(rate_limit_hits,0)+1,updated_at=datetime('now','localtime') WHERE id=?1",
         params![id],
-    ).unwrap();
+    ) { log::error!("increment_rate_limit_hits: {}", e); }
 }
 
 pub fn update_claude_session(db: &DbPool, id: i64, session_id: &str) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET claude_session_id=?1,updated_at=datetime('now','localtime') WHERE id=?2", params![session_id, id]).unwrap();
+    if let Err(e) = conn.execute("UPDATE tasks SET claude_session_id=?1,updated_at=datetime('now','localtime') WHERE id=?2", params![session_id, id]) {
+        log::error!("update_claude_session: {}", e);
+    }
 }
 
 pub fn update_branch(db: &DbPool, id: i64, branch_name: &str) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET branch_name=?1,updated_at=datetime('now','localtime') WHERE id=?2", params![branch_name, id]).unwrap();
+    if let Err(e) = conn.execute("UPDATE tasks SET branch_name=?1,updated_at=datetime('now','localtime') WHERE id=?2", params![branch_name, id]) {
+        log::error!("update_branch: {}", e);
+    }
 }
 
 pub fn update_git_info(db: &DbPool, id: i64, commits: &str, pr_url: Option<&str>, diff_stat: Option<&str>) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET commits=?1,pr_url=?2,diff_stat=?3,updated_at=datetime('now','localtime') WHERE id=?4",
         params![commits, pr_url, diff_stat, id],
-    ).unwrap();
+    ) { log::error!("update_git_info: {}", e); }
 }
 
 pub fn update_test_report(db: &DbPool, id: i64, report: &str) {
@@ -374,10 +412,11 @@ pub fn update_test_report(db: &DbPool, id: i64, report: &str) {
 // Logs
 pub fn get_recent_logs(db: &DbPool, task_id: i64, limit: i64) -> Vec<TaskLog> {
     let conn = db.lock();
-    let mut stmt = conn
-        .prepare("SELECT * FROM task_logs WHERE task_id=?1 ORDER BY id DESC LIMIT ?2")
-        .unwrap();
-    stmt.query_map(params![task_id, limit], |row| {
+    let mut stmt = match conn.prepare("SELECT * FROM task_logs WHERE task_id=?1 ORDER BY id DESC LIMIT ?2") {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_recent_logs prepare: {}", e); return vec![]; }
+    };
+    let result: Vec<TaskLog> = match stmt.query_map(params![task_id, limit], |row| {
         let meta_str: Option<String> = row.get("meta")?;
         let meta = meta_str.and_then(|s| serde_json::from_str(&s).ok());
         Ok(TaskLog {
@@ -388,10 +427,11 @@ pub fn get_recent_logs(db: &DbPool, task_id: i64, limit: i64) -> Vec<TaskLog> {
             meta,
             created_at: row.get("created_at")?,
         })
-    })
-    .unwrap()
-    .flatten()
-    .collect()
+    }) {
+        Ok(rows) => rows.flatten().collect(),
+        Err(e) => { log::error!("get_recent_logs query: {}", e); vec![] }
+    };
+    result
 }
 
 pub fn add_log(db: &DbPool, task_id: i64, message: &str, log_type: &str, meta: Option<&str>) {
@@ -404,16 +444,19 @@ pub fn add_log(db: &DbPool, task_id: i64, message: &str, log_type: &str, meta: O
 
 pub fn clear_logs(db: &DbPool, task_id: i64) {
     let conn = db.lock();
-    conn.execute("DELETE FROM task_logs WHERE task_id=?1", params![task_id]).unwrap();
+    if let Err(e) = conn.execute("DELETE FROM task_logs WHERE task_id=?1", params![task_id]) {
+        log::error!("clear_logs: {}", e);
+    }
 }
 
 // Revisions
 pub fn get_revisions(db: &DbPool, task_id: i64) -> Vec<TaskRevision> {
     let conn = db.lock();
-    let mut stmt = conn
-        .prepare("SELECT * FROM task_revisions WHERE task_id=?1 ORDER BY revision_number ASC")
-        .unwrap();
-    stmt.query_map(params![task_id], |row| {
+    let mut stmt = match conn.prepare("SELECT * FROM task_revisions WHERE task_id=?1 ORDER BY revision_number ASC") {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_revisions prepare: {}", e); return vec![]; }
+    };
+    let result: Vec<TaskRevision> = match stmt.query_map(params![task_id], |row| {
         Ok(TaskRevision {
             id: row.get("id")?,
             task_id: row.get("task_id")?,
@@ -421,40 +464,43 @@ pub fn get_revisions(db: &DbPool, task_id: i64) -> Vec<TaskRevision> {
             feedback: row.get("feedback")?,
             created_at: row.get("created_at")?,
         })
-    })
-    .unwrap()
-    .flatten()
-    .collect()
+    }) {
+        Ok(rows) => rows.flatten().collect(),
+        Err(e) => { log::error!("get_revisions query: {}", e); vec![] }
+    };
+    result
 }
 
 pub fn add_revision(db: &DbPool, task_id: i64, revision_number: i64, feedback: &str) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "INSERT INTO task_revisions (task_id,revision_number,feedback) VALUES (?1,?2,?3)",
         params![task_id, revision_number, feedback],
-    ).unwrap();
+    ) { log::error!("add_revision: {}", e); }
 }
 
 pub fn increment_revision_count(db: &DbPool, id: i64) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE tasks SET revision_count=COALESCE(revision_count,0)+1,updated_at=datetime('now','localtime') WHERE id=?1",
         params![id],
-    ).unwrap();
+    ) { log::error!("increment_revision_count: {}", e); }
 }
 
 // Queue
 pub fn get_next_queued(db: &DbPool, project_id: i64) -> Option<Task> {
     let conn = db.lock();
-    let mut stmt = conn.prepare("SELECT * FROM tasks WHERE project_id=?1 AND status='backlog' ORDER BY priority DESC,queue_position ASC,id ASC LIMIT 1").unwrap();
-    stmt.query_row(params![project_id], |row| row_to_task(row))
-        .ok()
+    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE project_id=?1 AND status='backlog' ORDER BY priority DESC,queue_position ASC,id ASC LIMIT 1") {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_next_queued prepare: {}", e); return None; }
+    };
+    stmt.query_row(params![project_id], |row| row_to_task(row)).ok()
 }
 
 pub fn get_running_count(db: &DbPool, project_id: i64) -> i64 {
     let conn = db.lock();
-    let mut stmt = conn.prepare("SELECT COUNT(*) FROM tasks WHERE project_id=?1 AND status='in_progress'").unwrap();
-    stmt.query_row(params![project_id], |row| row.get(0))
+    conn.prepare("SELECT COUNT(*) FROM tasks WHERE project_id=?1 AND status='in_progress'")
+        .and_then(|mut s| s.query_row(params![project_id], |row| row.get(0)))
         .unwrap_or(0)
 }
 
@@ -465,18 +511,13 @@ pub fn recover_orphaned_tasks(db: &DbPool) -> (i64, Vec<i64>) {
     let conn = db.lock();
 
     // Count and collect testing tasks (auto-test was mid-flight)
-    let testing_ids: Vec<i64> = {
-        let mut stmt = conn.prepare(
-            "SELECT id FROM tasks WHERE status='testing'"
-        ).unwrap();
-        stmt.query_map([], |r| r.get(0)).unwrap().flatten().collect()
-    };
+    let testing_ids: Vec<i64> = conn.prepare("SELECT id FROM tasks WHERE status='testing'")
+        .and_then(|mut s| Ok(s.query_map([], |r| r.get(0))?.flatten().collect()))
+        .unwrap_or_default();
 
     // Reset in_progress → backlog
     let in_progress_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM tasks WHERE status='in_progress'",
-        [],
-        |r| r.get(0),
+        "SELECT COUNT(*) FROM tasks WHERE status='in_progress'", [], |r| r.get(0),
     ).unwrap_or(0);
 
     if in_progress_count > 0 {
@@ -492,20 +533,25 @@ pub fn recover_orphaned_tasks(db: &DbPool) -> (i64, Vec<i64>) {
 /// Get all project IDs that have auto_queue enabled.
 pub fn get_auto_queue_project_ids(db: &DbPool) -> Vec<i64> {
     let conn = db.lock();
-    let mut stmt = conn.prepare("SELECT id FROM projects WHERE auto_queue=1").unwrap();
-    stmt.query_map([], |r| r.get(0)).unwrap().flatten().collect()
+    conn.prepare("SELECT id FROM projects WHERE auto_queue=1")
+        .and_then(|mut s| Ok(s.query_map([], |r| r.get(0))?.flatten().collect()))
+        .unwrap_or_default()
 }
 
 // ─── Sub-task spawning ───
 
 pub fn set_awaiting_subtasks(db: &DbPool, task_id: i64, val: bool) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET awaiting_subtasks=?1 WHERE id=?2", params![val as i64, task_id]).ok();
+    if let Err(e) = conn.execute("UPDATE tasks SET awaiting_subtasks=?1 WHERE id=?2", params![val as i64, task_id]) {
+        log::error!("set_awaiting_subtasks: {}", e);
+    }
 }
 
 pub fn set_parent_task_id(db: &DbPool, task_id: i64, parent_id: i64) {
     let conn = db.lock();
-    conn.execute("UPDATE tasks SET parent_task_id=?1 WHERE id=?2", params![parent_id, task_id]).ok();
+    if let Err(e) = conn.execute("UPDATE tasks SET parent_task_id=?1 WHERE id=?2", params![parent_id, task_id]) {
+        log::error!("set_parent_task_id: {}", e);
+    }
 }
 
 pub fn get_subtasks(db: &DbPool, parent_id: i64) -> Vec<Task> {
