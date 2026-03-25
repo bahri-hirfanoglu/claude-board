@@ -234,6 +234,7 @@ fn handle_process_lifecycle(
     working_dir: &str,
     project_id: i64,
     task_title: &str,
+    task_key: Option<&str>,
     attach_dir: &Path,
 ) {
     let pid = child.id();
@@ -296,6 +297,7 @@ fn handle_process_lifecycle(
             app.emit("task:updated", &updated).ok();
         }
         activity::add(db, project_id, Some(task_id), "task_completed", &format!("Task completed: {}", task_title), None);
+        crate::services::notification::notify_task_completed(app, &crate::services::notification::TaskNotification::new(task_title, task_key));
 
         // Auto-test: if enabled, start verification instead of waiting for manual review
         let project = projects::get_by_id(db, project_id);
@@ -312,6 +314,7 @@ fn handle_process_lifecycle(
     } else {
         tasks::add_log(db, task_id, &format!("Claude exited with code {}.", status), "error", None);
         activity::add(db, project_id, Some(task_id), "task_failed", &format!("Task failed (exit {}): {}", status, task_title), None);
+        crate::services::notification::notify_task_failed(app, &crate::services::notification::TaskNotification::new(task_title, task_key), &format!("exit code {}", status));
         crate::services::queue::handle_task_failure(db, app, project_id, task_id);
     }
 
@@ -371,6 +374,7 @@ pub fn start(
         task_clone.branch_name = Some(branch);
     }
 
+    crate::services::notification::notify_task_started(&app, &crate::services::notification::TaskNotification::new(&task.title, task.task_key.as_deref()));
     tasks::add_log(&db, task_id, &format!("Starting Claude for task: {}", task.title), "system", None);
     tasks::add_log(&db, task_id, &format!("Model: {} | Effort: {} | Permissions: {}", model, effort, permission_mode), "info", None);
     activity::add(&db, task.project_id, Some(task_id), "claude_started", &format!("Claude started: {}", task.title), None);
@@ -381,6 +385,7 @@ pub fn start(
     let working_dir = working_dir.to_string();
     let project_id = task.project_id;
     let task_title = task.title.clone();
+    let task_key = task.task_key.clone();
 
     std::thread::spawn(move || {
         let mut cmd = Command::new("claude");
@@ -404,7 +409,7 @@ pub fn start(
         };
 
         let db = db::get_db();
-        handle_process_lifecycle(task_id, child, &db, &app, &working_dir, project_id, &task_title, &attach_dir);
+        handle_process_lifecycle(task_id, child, &db, &app, &working_dir, project_id, &task_title, task_key.as_deref(), &attach_dir);
     });
 }
 
@@ -504,6 +509,7 @@ After all checks, you MUST output this exact JSON block as your final output:
     let working_dir = working_dir.to_string();
     let project_id = task.project_id;
     let task_title = task.title.clone();
+    let task_key = task.task_key.clone();
 
     std::thread::spawn(move || {
         let mut cmd = Command::new("claude");
@@ -651,12 +657,14 @@ After all checks, you MUST output this exact JSON block as your final output:
                             app.emit("task:updated", &updated).ok();
                         }
                         activity::add(&db, project_id, Some(task_id), "test_passed", &format!("Auto-test passed: {}", task_title), None);
+                        crate::services::notification::notify_test_passed(&app, &crate::services::notification::TaskNotification::new(&task_title, task_key.as_deref()));
                         crate::services::queue::on_task_completed(&db, &app, project_id, task_id);
                     } else {
                         let fail_msg = if feedback.is_empty() { summary.clone() } else { format!("{} — {}", summary, feedback) };
                         tasks::add_log(&db, task_id, &format!("Auto-test FAILED: {}", fail_msg), "error", None);
                         app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test FAILED: {}", fail_msg), "logType": "error"})).ok();
                         activity::add(&db, project_id, Some(task_id), "test_failed", &format!("Auto-test failed: {}", task_title), None);
+                        crate::services::notification::notify_test_failed(&app, &crate::services::notification::TaskNotification::new(&task_title, task_key.as_deref()));
                         app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary})).ok();
                     }
                 }

@@ -177,6 +177,7 @@ pub fn request_changes(app: AppHandle, id: i64, feedback: String, mcp_port: u16)
     activity::add(&db, task.project_id, Some(id), "revision_requested",
         &format!("Revision #{}: {}", rev_num, task.title),
         Some(&serde_json::json!({"feedback": feedback.trim()}).to_string()));
+    crate::services::notification::notify_revision_requested(&app, &crate::services::notification::TaskNotification::new(&task.title, task.task_key.as_deref()));
     let mut final_task = tq::get_by_id(&db, id).unwrap();
     final_task.is_running = runner::is_running(id);
     app.emit("task:updated", &final_task).ok();

@@ -125,14 +125,15 @@ function PlanLogFeed({ logs, isActive }) {
 
   if (entries.length === 0 && isActive) {
     return (
-      <div className="flex items-center gap-2 text-[11px] text-surface-600 py-3 px-2">
-        <Loader2 size={12} className="animate-spin" /> Claude is analyzing the codebase...
+      <div className="flex items-center gap-2.5 text-[11px] text-surface-500 py-4 px-3">
+        <Loader2 size={13} className="animate-spin text-claude" />
+        <span>Claude is analyzing the codebase...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1">
       {entries.map((entry) => {
         if (entry.type === 'tool_group') {
           const Icon = getToolIcon(entry.toolName);
@@ -143,38 +144,39 @@ function PlanLogFeed({ logs, isActive }) {
           const resultText = entry.result?.message?.replace(/^[✓✗]\s*/, '') || '';
 
           let statusEl;
-          if (!hasResult) statusEl = <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />;
-          else if (isError) statusEl = <AlertCircle size={11} className="text-red-400" />;
-          else statusEl = <CheckCircle2 size={11} className="text-emerald-500/70" />;
+          if (!hasResult) statusEl = <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />;
+          else if (isError) statusEl = <AlertCircle size={11} className="text-red-400 flex-shrink-0" />;
+          else statusEl = <CheckCircle2 size={11} className="text-emerald-500/70 flex-shrink-0" />;
 
           return (
-            <div key={entry.index} className={`rounded-md border transition-colors ${
+            <div key={entry.index} className={`rounded-lg border transition-all duration-200 ${
               isError ? 'border-red-500/20 bg-red-500/5' :
-              !hasResult ? 'border-amber-500/20 bg-amber-500/5' :
-              'border-surface-700/30 bg-surface-800/30 hover:border-surface-700/60'
+              !hasResult ? 'border-amber-500/15 bg-amber-500/5' :
+              isOpen ? 'border-surface-600/40 bg-surface-800/50' :
+              'border-surface-700/20 bg-surface-800/20 hover:border-surface-700/40'
             }`}>
               <button onClick={() => toggle(entry.index)}
-                className="flex items-center gap-1.5 w-full text-left px-2.5 py-1.5 text-[11px]">
+                className="flex items-center gap-2 w-full text-left px-3 py-2 text-[11px]">
                 {statusEl}
                 <Icon size={12} className={`${color} flex-shrink-0`} />
                 <span className={`font-semibold ${color}`}>{entry.toolName}</span>
-                {entry.detail && <span className="text-surface-400 truncate text-[10px] min-w-0 flex-1">{entry.detail}</span>}
+                {entry.detail && <span className="text-surface-500 truncate text-[10px] min-w-0 flex-1 font-mono">{entry.detail}</span>}
                 <span className="flex-shrink-0 ml-auto">
-                  {isOpen ? <ChevronDown size={10} className="text-surface-600" /> : <ChevronRight size={10} className="text-surface-600" />}
+                  {isOpen ? <ChevronDown size={10} className="text-surface-500" /> : <ChevronRight size={10} className="text-surface-600" />}
                 </span>
               </button>
               {isOpen && (
-                <div className="px-2.5 pb-2 pt-0 text-[10px] space-y-1 border-t border-surface-700/20">
+                <div className="px-3 pb-2.5 pt-0 text-[10px] space-y-1.5 border-t border-surface-700/20">
                   {entry.detail && (
-                    <div className="flex gap-1.5 mt-1">
-                      <span className="text-surface-600 w-10 flex-shrink-0">path</span>
+                    <div className="flex gap-2 mt-1.5">
+                      <span className="text-surface-600 w-10 flex-shrink-0 text-[9px] uppercase tracking-wide font-medium">path</span>
                       <span className="text-surface-300 font-mono break-all">{entry.detail}</span>
                     </div>
                   )}
                   {resultText && (
                     <div className="mt-1">
-                      <div className="text-[9px] text-surface-600 mb-0.5">output</div>
-                      <pre className={`rounded bg-surface-900/80 border border-surface-700/30 px-2 py-1.5 text-[10px] font-mono overflow-x-auto max-h-[120px] overflow-y-auto whitespace-pre-wrap break-words leading-relaxed ${
+                      <div className="text-[9px] text-surface-600 mb-1 uppercase tracking-wide font-medium">output</div>
+                      <pre className={`rounded-md bg-surface-950/80 border border-surface-700/20 px-2.5 py-2 text-[10px] font-mono overflow-x-auto max-h-[120px] overflow-y-auto whitespace-pre-wrap break-words leading-relaxed ${
                         isError ? 'text-red-400/80' : 'text-surface-400'
                       }`}>{resultText}</pre>
                     </div>
@@ -188,7 +190,7 @@ function PlanLogFeed({ logs, isActive }) {
         const log = entry.log;
         const isError = log.type === 'error';
         return (
-          <div key={entry.index} className={`flex items-start gap-2 text-[11px] px-2.5 py-1 ${isError ? 'text-red-400/80' : 'text-surface-500'}`}>
+          <div key={entry.index} className={`flex items-start gap-2 text-[11px] px-3 py-1.5 ${isError ? 'text-red-400/80' : 'text-surface-500'}`}>
             {isError ? <AlertCircle size={10} className="text-red-400 flex-shrink-0 mt-0.5" /> : <CheckCircle2 size={10} className="text-emerald-400/60 flex-shrink-0 mt-0.5" />}
             <span className="truncate">{log.message}</span>
           </div>
@@ -213,6 +215,104 @@ function getCache(pid) {
   return planCache[pid];
 }
 
+// ─── Step indicator helpers ───
+const STEPS = [
+  { num: 1, labelKey: 'planning.stepDefine' },
+  { num: 2, labelKey: 'planning.stepAnalyze' },
+  { num: 3, labelKey: 'planning.stepReview' },
+  { num: 4, labelKey: 'planning.stepComplete' },
+];
+
+function getStepIndex(phase) {
+  if (phase === 'idle' || phase === 'error') return 0;
+  if (phase === 'thinking') return 1;
+  if (phase === 'review') return 2;
+  if (phase === 'approved') return 3;
+  return 0;
+}
+
+function StepIndicator({ phase, t }) {
+  const activeStep = getStepIndex(phase);
+
+  return (
+    <div className="flex items-center w-full px-6 py-4">
+      {STEPS.map((step, i) => {
+        const isComplete = i < activeStep;
+        const isCurrent = i === activeStep;
+        const isFuture = i > activeStep;
+
+        return (
+          <div key={step.num} className="flex items-center flex-1 last:flex-initial">
+            <div className="flex flex-col items-center gap-1.5">
+              <div className={`
+                w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300
+                ${isComplete
+                  ? 'bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500/30'
+                  : isCurrent
+                    ? 'bg-claude/15 text-claude ring-2 ring-claude/40 animate-[pulse_2s_ease-in-out_infinite]'
+                    : 'bg-surface-800/60 text-surface-600 ring-1 ring-surface-700/30'
+                }
+              `}>
+                {isComplete ? <Check size={14} className="text-emerald-400" /> : step.num}
+              </div>
+              <span className={`text-[10px] font-medium transition-colors duration-200 ${
+                isComplete ? 'text-emerald-400' : isCurrent ? 'text-claude' : 'text-surface-600'
+              }`}>
+                {t(step.labelKey)}
+              </span>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div className={`flex-1 h-[2px] mx-3 rounded-full transition-colors duration-300 ${
+                isComplete ? 'bg-emerald-500/40' : 'bg-surface-800'
+              }`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Sub-phase indicator for Analyze step ───
+const SUB_PHASES = [
+  { key: 'starting', label: 'Starting' },
+  { key: 'exploring', label: 'Exploring' },
+  { key: 'writing', label: 'Planning' },
+  { key: 'done', label: 'Finalizing' },
+];
+
+function SubPhaseIndicator({ planPhase }) {
+  const currentIdx = SUB_PHASES.findIndex(p => p.key === planPhase);
+
+  return (
+    <div className="flex items-center gap-2 justify-center py-2">
+      {SUB_PHASES.map((sp, i) => {
+        const isComplete = i < currentIdx;
+        const isCurrent = i === currentIdx;
+        return (
+          <div key={sp.key} className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                isComplete
+                  ? 'bg-emerald-400'
+                  : isCurrent
+                    ? 'bg-claude animate-[pulse_1.5s_ease-in-out_infinite]'
+                    : 'bg-surface-700'
+              }`} />
+              <span className={`text-[10px] font-medium transition-colors duration-200 ${
+                isComplete ? 'text-emerald-400' : isCurrent ? 'text-claude' : 'text-surface-600'
+              }`}>{sp.label}</span>
+            </div>
+            {i < SUB_PHASES.length - 1 && (
+              <div className={`w-4 h-px ${isComplete ? 'bg-emerald-500/40' : 'bg-surface-700/50'}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function PlanningModal({ projectId, onClose }) {
   const { t } = useTranslation();
   const c = getCache(projectId);
@@ -234,6 +334,7 @@ export default function PlanningModal({ projectId, onClose }) {
   const [expandedTask, setExpandedTask] = useState(null);
   const [approving, setApproving] = useState(false);
   const [showDag, setShowDag] = useState(false);
+  const [showContext, setShowContext] = useState(false);
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
 
@@ -411,12 +512,23 @@ export default function PlanningModal({ projectId, onClose }) {
 
   const isActive = phase === 'thinking';
   const totalTokens = stats.tokens.input + stats.tokens.output;
-  const currentPhaseIdx = PHASES.findIndex((p) => p.key === (phase === 'review' || phase === 'approved' ? 'done' : planPhase));
+
+  // Type breakdown for review summary
+  const typeBreakdown = useMemo(() => {
+    const counts = {};
+    for (const p of proposals) {
+      const t = p.task_type || 'chore';
+      counts[t] = (counts[t] || 0) + 1;
+    }
+    return Object.entries(counts);
+  }, [proposals]);
+
+  const depCount = dependencies.length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-surface-900 border border-surface-700 rounded-xl w-full max-w-3xl mx-4 shadow-2xl flex flex-col"
+        className="bg-surface-900 border border-surface-700/50 rounded-2xl w-full max-w-3xl mx-4 shadow-2xl flex flex-col"
         style={{ maxHeight: '90vh' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -425,134 +537,227 @@ export default function PlanningModal({ projectId, onClose }) {
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-claude" />
             <h2 className="text-sm font-semibold">{t('planning.title')}</h2>
-            {phase === 'review' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">Review</span>}
-            {phase === 'approved' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">Approved</span>}
           </div>
-
-          {phase !== 'idle' && (
-            <div className="flex items-center gap-3 text-[10px] text-surface-500 ml-auto mr-3">
-              <span className="flex items-center gap-1">
-                <Clock size={10} className={isActive ? 'text-amber-400' : ''} />
-                {formatElapsed(stats.elapsed)}
-              </span>
-              {totalTokens > 0 && <span className="flex items-center gap-1"><Zap size={10} />{formatTokens(totalTokens)}</span>}
-              {stats.toolCalls > 0 && <span className="flex items-center gap-1"><Terminal size={10} />{stats.toolCalls}</span>}
-              {stats.turns > 0 && <span className="flex items-center gap-1"><Hash size={10} />{stats.turns}</span>}
-              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
-            </div>
-          )}
-
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400">
-            <X size={18} />
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
+            <X size={16} />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0">
+        {/* Step Indicator */}
+        <StepIndicator phase={phase} t={t} />
 
-          {/* Input — idle/error */}
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4 min-h-0">
+
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {/*  STEP 1: Define Phase (idle / error)                      */}
+          {/* ═══════════════════════════════════════════════════════════ */}
           {(phase === 'idle' || phase === 'error') && (
-            <>
-              <div>
-                <label className="block text-xs font-medium text-surface-400 mb-1">{t('planning.whatToBuild')}</label>
-                <textarea value={topic} onChange={(e) => setTopic(e.target.value)}
-                  placeholder={t('planning.topicPlaceholder')} rows={3} autoFocus
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 resize-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-surface-400 mb-1">
-                  {t('planning.context')} <span className="text-surface-600 font-normal">— {t('common.optional')}</span>
-                </label>
-                <textarea value={context} onChange={(e) => setContext(e.target.value)}
-                  placeholder={t('planning.contextPlaceholder')} rows={2}
-                  className="w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 resize-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-surface-400 mb-1.5">{t('planning.taskBreakdown')}</label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {GRANULARITIES.map((g) => (
-                    <button key={g.value} onClick={() => setGranularity(g.value)}
-                      className={`px-2 py-2.5 rounded-lg text-center transition-all border ${granularity === g.value ? `${g.color} ring-1 ring-current border-current/20` : 'bg-surface-800 text-surface-500 hover:text-surface-300 border-transparent'}`}>
-                      <div className="text-xs font-semibold">{g.label}</div>
-                      <div className="text-[9px] opacity-70 mt-0.5 hidden sm:block">{g.desc}</div>
-                    </button>
-                  ))}
+            <div className="space-y-4">
+
+              {/* Error Alert */}
+              {error && (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                    <AlertCircle size={15} className="text-red-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-red-400 font-medium">{t('planning.planningFailed')}</p>
+                      <p className="text-[11px] text-red-400/70 mt-0.5">{error}</p>
+                    </div>
+                  </div>
+                  {/* Show Claude's output so user can see what went wrong */}
+                  {analysis && (
+                    <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl overflow-hidden">
+                      <button onClick={() => setShowAnalysis(!showAnalysis)}
+                        className="flex items-center gap-1.5 w-full text-left px-4 py-2.5 text-xs font-medium text-surface-400 hover:text-surface-300 transition-colors">
+                        {showAnalysis ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                        <Brain size={12} /> Claude Output
+                      </button>
+                      {showAnalysis && (
+                        <div className="px-4 pb-3 max-h-48 overflow-y-auto">
+                          <pre className="text-[11px] text-surface-500 whitespace-pre-wrap font-sans leading-relaxed">{analysis}</pre>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+              )}
+
+              {/* Topic Card */}
+              <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl p-4">
+                <label className="flex items-center gap-2 text-xs font-medium text-surface-300 mb-2.5">
+                  <Sparkles size={13} className="text-claude" />
+                  {t('planning.whatToBuild')}
+                </label>
+                <textarea
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder={t('planning.topicPlaceholder')}
+                  rows={3}
+                  autoFocus
+                  className="w-full px-3.5 py-2.5 bg-surface-900/60 border border-surface-700/40 rounded-lg text-sm text-surface-200 focus:outline-none focus:ring-1 focus:ring-claude/50 focus:border-claude/30 placeholder-surface-600 resize-none transition-all duration-200"
+                />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5"><Cpu size={11} /> {t('planning.model')}</label>
-                  <div className="grid grid-cols-3 gap-1.5">
+
+              {/* Context Toggle */}
+              <div>
+                <button
+                  onClick={() => setShowContext(!showContext)}
+                  className="flex items-center gap-1.5 text-[11px] font-medium text-surface-500 hover:text-surface-300 transition-colors"
+                >
+                  {showContext ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  {t('planning.context')}
+                  <span className="text-surface-600 font-normal">({t('common.optional')})</span>
+                </button>
+                {showContext && (
+                  <div className="mt-2 bg-surface-800/40 border border-surface-700/30 rounded-xl p-4">
+                    <textarea
+                      value={context}
+                      onChange={(e) => setContext(e.target.value)}
+                      placeholder={t('planning.contextPlaceholder')}
+                      rows={2}
+                      className="w-full px-3.5 py-2.5 bg-surface-900/60 border border-surface-700/40 rounded-lg text-xs text-surface-300 focus:outline-none focus:ring-1 focus:ring-claude/50 focus:border-claude/30 placeholder-surface-600 resize-none transition-all duration-200"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Configuration Cards — 3 columns */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+                {/* Granularity Card */}
+                <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl p-3">
+                  <label className="block text-[11px] font-medium text-surface-400 mb-2">{t('planning.taskBreakdown')}</label>
+                  <div className="space-y-1">
+                    {GRANULARITIES.map((g) => (
+                      <button
+                        key={g.value}
+                        onClick={() => setGranularity(g.value)}
+                        className={`w-full px-2.5 py-2 rounded-lg text-left transition-all duration-200 border ${
+                          granularity === g.value
+                            ? `${g.color} ring-1 ring-current/30 border-current/20`
+                            : 'bg-transparent text-surface-500 hover:text-surface-300 border-transparent hover:bg-surface-800/60'
+                        }`}
+                      >
+                        <div className="text-[11px] font-semibold">{g.label}</div>
+                        <div className="text-[9px] opacity-70 mt-0.5">{g.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Model Card */}
+                <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl p-3">
+                  <label className="flex items-center gap-1 text-[11px] font-medium text-surface-400 mb-2">
+                    <Cpu size={11} /> {t('planning.model')}
+                  </label>
+                  <div className="space-y-1">
                     {MODELS.map((m) => (
-                      <button key={m.value} onClick={() => setModel(m.value)}
-                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${model === m.value ? `${m.color} ring-1 ring-current` : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
+                      <button
+                        key={m.value}
+                        onClick={() => setModel(m.value)}
+                        className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-semibold text-left transition-all duration-200 border ${
+                          model === m.value
+                            ? `${m.color} ring-1 ring-current/30 border-current/20`
+                            : 'bg-transparent text-surface-500 hover:text-surface-300 border-transparent hover:bg-surface-800/60'
+                        }`}
+                      >
                         {m.label}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <label className="flex items-center gap-1 text-xs font-medium text-surface-400 mb-1.5"><Zap size={11} /> {t('planning.effort')}</label>
-                  <div className="grid grid-cols-3 gap-1.5">
+
+                {/* Effort Card */}
+                <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl p-3">
+                  <label className="flex items-center gap-1 text-[11px] font-medium text-surface-400 mb-2">
+                    <Zap size={11} /> {t('planning.effort')}
+                  </label>
+                  <div className="space-y-1">
                     {EFFORTS.map((e) => (
-                      <button key={e.value} onClick={() => setEffort(e.value)}
-                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${effort === e.value ? `${e.color} ring-1 ring-current` : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
+                      <button
+                        key={e.value}
+                        onClick={() => setEffort(e.value)}
+                        className={`w-full px-2.5 py-2 rounded-lg text-[11px] font-semibold text-left transition-all duration-200 border ${
+                          effort === e.value
+                            ? `${e.color} ring-1 ring-current/30 border-current/20`
+                            : 'bg-transparent text-surface-500 hover:text-surface-300 border-transparent hover:bg-surface-800/60'
+                        }`}
+                      >
                         {e.label}
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
-            </>
-          )}
-
-          {/* Phase stepper */}
-          {(isActive || phase === 'review' || phase === 'approved') && (
-            <div className="flex items-center gap-1 px-1">
-              {PHASES.map((p, i) => {
-                const isComplete = i < currentPhaseIdx;
-                const isCurrent = i === currentPhaseIdx;
-                const Icon = p.icon;
-                return (
-                  <div key={p.key} className="flex items-center gap-1 flex-1">
-                    <div className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium transition-all ${isCurrent ? `${p.color} bg-current/10` : isComplete ? 'text-surface-500' : 'text-surface-700'}`}>
-                      {isComplete ? <CheckCircle2 size={12} className="text-emerald-500" /> : isCurrent ? <Icon size={12} className={`${p.color} ${p.key !== 'done' ? 'animate-spin' : ''}`} /> : <Icon size={12} />}
-                      <span>{p.label}</span>
-                    </div>
-                    {i < PHASES.length - 1 && <div className={`flex-1 h-px ${isComplete ? 'bg-emerald-500/30' : 'bg-surface-800'}`} />}
-                  </div>
-                );
-              })}
             </div>
           )}
 
-          {/* Live activity during thinking */}
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {/*  STEP 2: Analyze Phase (thinking)                         */}
+          {/* ═══════════════════════════════════════════════════════════ */}
           {isActive && (
-            <div className="space-y-2">
+            <div className="space-y-3">
+
+              {/* Stats Bar */}
+              <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl px-4 py-2.5 flex items-center gap-4 text-[11px]">
+                <div className="flex items-center gap-1.5 text-amber-400">
+                  <Clock size={12} />
+                  <span className="font-medium">{formatElapsed(stats.elapsed)}</span>
+                </div>
+                {totalTokens > 0 && (
+                  <div className="flex items-center gap-1.5 text-surface-400">
+                    <Zap size={12} />
+                    <span>{formatTokens(totalTokens)}</span>
+                  </div>
+                )}
+                {stats.toolCalls > 0 && (
+                  <div className="flex items-center gap-1.5 text-surface-400">
+                    <Terminal size={12} />
+                    <span>{stats.toolCalls} {t('planning.tools')}</span>
+                  </div>
+                )}
+                {stats.turns > 0 && (
+                  <div className="flex items-center gap-1.5 text-surface-400">
+                    <Hash size={12} />
+                    <span>{stats.turns} {t('planning.turns')}</span>
+                  </div>
+                )}
+                <div className="ml-auto flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-[10px] text-surface-500">Active</span>
+                </div>
+              </div>
+
+              {/* Topic Reminder */}
               {topic && (
-                <div className="bg-surface-800/40 border border-surface-800 rounded-lg px-3 py-2">
-                  <p className="text-[11px] text-surface-500 font-medium">Planning</p>
-                  <p className="text-xs text-surface-300 mt-0.5 line-clamp-2">{topic}</p>
+                <div className="bg-surface-800/30 border border-surface-700/20 rounded-lg px-3.5 py-2.5">
+                  <p className="text-[10px] text-surface-600 font-medium uppercase tracking-wide">{t('planning.planning')}</p>
+                  <p className="text-xs text-surface-300 mt-1 line-clamp-2">{topic}</p>
                 </div>
               )}
 
-              {/* Live log feed — same card style as LiveTerminal */}
-              <div className="bg-surface-950 border border-surface-800 rounded-lg overflow-hidden">
-                <div className="p-2 max-h-64 overflow-y-auto">
+              {/* Sub-phase indicator */}
+              <SubPhaseIndicator planPhase={planPhase} />
+
+              {/* Live Activity Feed */}
+              <div className="bg-surface-950/80 border border-surface-800/60 rounded-xl overflow-hidden">
+                <div className="p-2.5 max-h-64 overflow-y-auto">
                   <PlanLogFeed logs={logs} isActive={isActive} />
                 </div>
               </div>
 
-              {/* Live analysis text */}
+              {/* Analysis Preview */}
               {analysis && (
                 <div>
                   <button onClick={() => setShowAnalysis(!showAnalysis)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1 hover:text-surface-300">
+                    className="flex items-center gap-1.5 text-[11px] font-medium text-surface-400 mb-1.5 hover:text-surface-300 transition-colors">
                     {showAnalysis ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                    Claude's analysis
+                    <Brain size={12} className="text-purple-400" />
+                    {t('planning.claudeOutput')}
                   </button>
                   {showAnalysis && (
-                    <div className="bg-surface-950 border border-surface-800 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl p-4 max-h-40 overflow-y-auto">
                       <pre className="text-[11px] text-surface-400 whitespace-pre-wrap font-sans leading-relaxed">{analysis}</pre>
                     </div>
                   )}
@@ -561,99 +766,162 @@ export default function PlanningModal({ projectId, onClose }) {
             </div>
           )}
 
-          {/* Review phase — proposals */}
-          {(phase === 'review' || phase === 'approved') && (
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {/*  STEP 3: Review Phase                                     */}
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {phase === 'review' && (
             <div className="space-y-3">
-              {/* Analysis collapsible */}
+
+              {/* Summary Bar */}
+              <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap text-[11px]">
+                <div className="flex items-center gap-1.5 text-surface-300 font-medium">
+                  <ListChecks size={13} className="text-amber-400" />
+                  {proposals.length} tasks
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {typeBreakdown.map(([type, count]) => (
+                    <span key={type} className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[type] || 'bg-surface-500/15 text-surface-400'}`}>
+                      {count} {type}
+                    </span>
+                  ))}
+                </div>
+                {depCount > 0 && (
+                  <div className="flex items-center gap-1 text-surface-400">
+                    <GitBranch size={11} />
+                    <span>{depCount} deps</span>
+                  </div>
+                )}
+                <div className="ml-auto flex items-center gap-1 text-surface-500">
+                  <Clock size={10} />
+                  <span>{formatElapsed(stats.elapsed)}</span>
+                </div>
+              </div>
+
+              {/* Analysis Collapsible */}
               {analysis && (
                 <div>
                   <button onClick={() => setShowAnalysis(!showAnalysis)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1 hover:text-surface-300">
+                    className="flex items-center gap-1.5 text-[11px] font-medium text-surface-400 mb-1.5 hover:text-surface-300 transition-colors">
                     {showAnalysis ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                    <Brain size={12} /> Claude's Analysis
+                    <Brain size={12} className="text-purple-400" />
+                    {t('planning.analysis')}
                   </button>
                   {showAnalysis && (
-                    <div className="bg-surface-950 border border-surface-800 rounded-lg p-3 max-h-48 overflow-y-auto">
+                    <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl p-4 max-h-48 overflow-y-auto">
                       <pre className="text-[11px] text-surface-400 whitespace-pre-wrap font-sans leading-relaxed">{analysis}</pre>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Logs collapsible */}
+              {/* Activity Log Collapsible */}
               {logs.length > 0 && (
                 <div>
                   <button onClick={() => setShowLogs(!showLogs)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1 hover:text-surface-300">
+                    className="flex items-center gap-1.5 text-[11px] font-medium text-surface-400 mb-1.5 hover:text-surface-300 transition-colors">
                     {showLogs ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                    <Terminal size={12} /> Activity Log <span className="text-surface-600">({logs.length})</span>
+                    <Terminal size={12} className="text-amber-400" />
+                    {t('planning.activityLog')}
+                    <span className="text-surface-600 font-normal">({logs.length} {t('planning.events')})</span>
                   </button>
                   {showLogs && (
-                    <div className="bg-surface-950 border border-surface-800 rounded-lg p-2 max-h-48 overflow-y-auto">
+                    <div className="bg-surface-950/80 border border-surface-800/60 rounded-xl p-2.5 max-h-48 overflow-y-auto">
                       <PlanLogFeed logs={logs} isActive={false} />
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Proposed tasks */}
+              {/* Task List */}
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2.5">
                   <label className="flex items-center gap-1.5 text-xs font-medium text-surface-300">
-                    {phase === 'approved' ? <CheckCircle2 size={13} className="text-emerald-400" /> : <ListChecks size={13} className="text-amber-400" />}
-                    {phase === 'approved' ? `${proposals.length} tasks created` : `${proposals.length} proposed tasks`}
+                    <ListChecks size={13} className="text-amber-400" />
+                    {t('planning.proposedTasks').replace('{count}', proposals.length)}
                   </label>
-                  {phase === 'review' && <span className="text-[10px] text-surface-600">Remove tasks you don't want</span>}
+                  <span className="text-[10px] text-surface-600">{t('planning.removeHint')}</span>
                 </div>
-                <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
+                <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
                   {proposals.map((task, i) => {
                     const isExpanded = expandedTask === i;
                     const typeColor = TYPE_COLORS[task.task_type] || 'bg-surface-500/15 text-surface-400';
                     return (
                       <div key={i}
-                        className={`rounded-lg border transition-all ${isExpanded ? 'bg-surface-800/60 border-surface-600' : 'bg-surface-800/30 border-surface-700/30 hover:border-surface-600/50'}`}>
-                        <div className="flex items-start gap-2.5 px-3 py-2 cursor-pointer" onClick={() => setExpandedTask(isExpanded ? null : i)}>
-                          <span className="text-[10px] text-surface-600 font-mono mt-1 w-4 text-right flex-shrink-0">{i + 1}</span>
+                        className={`rounded-xl border transition-all duration-200 ${
+                          isExpanded
+                            ? 'bg-surface-800/60 border-surface-600/50 ring-1 ring-surface-600/20'
+                            : 'bg-surface-800/30 border-surface-700/30 hover:border-surface-600/50'
+                        }`}>
+                        <div className="flex items-center gap-2.5 px-3.5 py-2.5 cursor-pointer" onClick={() => setExpandedTask(isExpanded ? null : i)}>
+                          {/* Left: number circle */}
+                          <span className="w-5 h-5 rounded-full bg-surface-700/50 flex items-center justify-center text-[10px] text-surface-500 font-mono flex-shrink-0">
+                            {i + 1}
+                          </span>
+
+                          {/* Center: badges + title */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${typeColor}`}>{task.task_type}</span>
-                              {task.priority > 0 && <span className={`text-[9px] font-medium ${PRIORITY_COLORS[task.priority]}`}>{PRIORITY_LABELS[task.priority]}</span>}
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${typeColor}`}>{task.task_type}</span>
+                              {task.priority > 0 && (
+                                <span className={`text-[10px] font-medium ${PRIORITY_COLORS[task.priority]}`}>
+                                  {PRIORITY_LABELS[task.priority]}
+                                </span>
+                              )}
                             </div>
-                            <p className="text-[12px] text-surface-200 font-medium mt-0.5 leading-snug">{task.title}</p>
-                            {isExpanded && (
-                              <div className="mt-2 space-y-2 text-[11px] text-surface-400 border-t border-surface-700/30 pt-2">
-                                {task.description && <div><span className="text-[10px] font-medium text-surface-500">Description</span><p className="mt-0.5 whitespace-pre-wrap leading-relaxed">{task.description}</p></div>}
-                                {task.acceptance_criteria && <div><span className="text-[10px] font-medium text-surface-500">Acceptance Criteria</span><p className="mt-0.5 whitespace-pre-wrap leading-relaxed">{task.acceptance_criteria}</p></div>}
+                            <p className="text-[12px] text-surface-200 font-medium mt-1 leading-snug">{task.title}</p>
+                          </div>
+
+                          {/* Right: actions */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleRemoveProposal(i); }}
+                              className="p-1.5 rounded-lg hover:bg-red-500/20 text-surface-600 hover:text-red-400 transition-colors"
+                              title="Remove this task"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                            {isExpanded
+                              ? <ChevronDown size={12} className="text-surface-500" />
+                              : <ChevronRight size={12} className="text-surface-600" />
+                            }
+                          </div>
+                        </div>
+
+                        {/* Expanded details */}
+                        {isExpanded && (
+                          <div className="px-3.5 pb-3.5 pt-0 space-y-3 border-t border-surface-700/30 mx-3 mt-0">
+                            {task.description && (
+                              <div className="mt-3">
+                                <span className="text-[10px] font-medium text-surface-500 uppercase tracking-wide">{t('planning.description')}</span>
+                                <p className="mt-1 text-[11px] text-surface-400 whitespace-pre-wrap leading-relaxed">{task.description}</p>
+                              </div>
+                            )}
+                            {task.acceptance_criteria && (
+                              <div>
+                                <span className="text-[10px] font-medium text-surface-500 uppercase tracking-wide">{t('planning.acceptanceCriteria')}</span>
+                                <p className="mt-1 text-[11px] text-surface-400 whitespace-pre-wrap leading-relaxed">{task.acceptance_criteria}</p>
                               </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
-                            {phase === 'review' && (
-                              <button onClick={(e) => { e.stopPropagation(); handleRemoveProposal(i); }}
-                                className="p-1 rounded hover:bg-red-500/20 text-surface-600 hover:text-red-400 transition-colors"
-                                title="Remove this task">
-                                <Trash2 size={12} />
-                              </button>
-                            )}
-                            {isExpanded ? <ChevronDown size={12} className="text-surface-500" /> : <ChevronRight size={12} className="text-surface-600" />}
-                          </div>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              {/* DAG Preview */}
+              {/* Dependency Graph */}
               {dependencies.length > 0 && (
                 <div>
                   <button onClick={() => setShowDag(!showDag)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1 hover:text-surface-300">
+                    className="flex items-center gap-1.5 text-[11px] font-medium text-surface-400 mb-1.5 hover:text-surface-300 transition-colors">
                     {showDag ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                    <GitBranch size={12} /> Dependency Graph <span className="text-surface-600">({dependencies.length} edges)</span>
+                    <GitBranch size={12} className="text-blue-400" />
+                    {t('planning.dependencyGraph')}
+                    <span className="text-surface-600 font-normal">({dependencies.length} {t('planning.edges')})</span>
                   </button>
                   {showDag && (
-                    <div className="max-h-72 overflow-auto rounded-lg">
+                    <div className="max-h-72 overflow-auto rounded-xl border border-surface-700/30">
                       <DependencyGraph
                         tasks={proposals.map((p, i) => ({ id: i, title: p.title, status: 'backlog', task_key: `#${i + 1}`, model: null }))}
                         edges={dependencies.map(([parentIdx, childIdx]) => ({ from: parentIdx, to: childIdx }))}
@@ -666,14 +934,20 @@ export default function PlanningModal({ projectId, onClose }) {
             </div>
           )}
 
-          {/* Error */}
-          {error && (
-            <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2.5">
-              <AlertCircle size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs text-red-400 font-medium">{t('planning.planningFailed')}</p>
-                <p className="text-[11px] text-red-400/70 mt-0.5">{error}</p>
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {/*  STEP 4: Complete Phase (approved)                        */}
+          {/* ═══════════════════════════════════════════════════════════ */}
+          {phase === 'approved' && (
+            <div className="flex flex-col items-center justify-center py-10 px-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center mb-5 ring-2 ring-emerald-500/20">
+                <CheckCircle2 size={32} className="text-emerald-400" />
               </div>
+              <h3 className="text-lg font-semibold text-surface-200 mb-2">
+                {t('planning.tasksCreated').replace('{count}', proposals.length)}
+              </h3>
+              <p className="text-xs text-surface-500 text-center max-w-sm">
+                {t('planning.allCreated')}
+              </p>
             </div>
           )}
         </div>
@@ -681,37 +955,37 @@ export default function PlanningModal({ projectId, onClose }) {
         {/* Footer */}
         <div className="flex gap-2 px-5 py-3 border-t border-surface-800 flex-shrink-0">
           {isActive ? (
-            <button onClick={handleCancel} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors">
+            <button onClick={handleCancel} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-colors">
               <StopCircle size={14} /> {t('planning.cancelBtn')}
             </button>
           ) : phase === 'review' ? (
             <>
-              <button onClick={handleRevise} className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
-                <RotateCcw size={14} /> Revise
+              <button onClick={handleRevise} className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-xl transition-colors">
+                <RotateCcw size={14} /> {t('planning.revise')}
               </button>
               <button onClick={handleApprove} disabled={proposals.length === 0 || approving}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg transition-colors">
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-xl transition-colors">
                 {approving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                {approving ? 'Creating...' : `Approve & Create ${proposals.length} Tasks`}
+                {approving ? t('planning.creating') : t('planning.approveCreate').replace('{count}', proposals.length)}
               </button>
             </>
           ) : phase === 'approved' ? (
             <>
               <button onClick={() => { setPhase('idle'); setProposals([]); setLogs([]); setAnalysis(''); }}
-                className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
-                Plan Again
+                className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-xl transition-colors">
+                {t('planning.planAgain')}
               </button>
-              <button onClick={onClose} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors">
-                <ArrowRight size={14} /> View Board
+              <button onClick={onClose} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-colors">
+                <ArrowRight size={14} /> {t('planning.doneViewBoard')}
               </button>
             </>
           ) : (
             <>
-              <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
+              <button onClick={onClose} className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-xl transition-colors">
                 {t('planning.cancelBtn')}
               </button>
               <button onClick={handleStart} disabled={!topic.trim()}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-claude hover:bg-claude-light disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors">
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-claude hover:bg-claude-light disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors">
                 <Sparkles size={14} /> {t('planning.startPlanning')}
               </button>
             </>

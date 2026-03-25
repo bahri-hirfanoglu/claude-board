@@ -137,6 +137,12 @@ pub fn create_tables(conn: &Connection) {
             FOREIGN KEY (depends_on_id) REFERENCES tasks(id) ON DELETE CASCADE,
             UNIQUE(task_id, depends_on_id)
         );
+
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL DEFAULT '',
+            updated_at DATETIME DEFAULT (datetime('now','localtime'))
+        );
         ",
     )
     .expect("Failed to create tables");

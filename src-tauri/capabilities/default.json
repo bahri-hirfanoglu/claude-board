@@ -11,6 +11,13 @@
     "shell:allow-open",
     "dialog:default",
     "fs:default",
-    "updater:default"
+    "updater:default",
+    "notification:default",
+    "notification:allow-notify",
+    "notification:allow-request-permission",
+    "notification:allow-is-permission-granted",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
   ]
 }

@@ -22,6 +22,7 @@ import PlanningModal from '../features/planning/PlanningModal';
 import CommandsModal from '../features/commands/CommandsModal';
 import SkillsModal from '../features/skills/SkillsModal';
 import ScanModal from '../features/scan/ScanModal';
+import SettingsModal from '../features/settings/SettingsModal';
 
 export default function AppLayout({
   connected, projects, currentProject, tasks, filteredTasks, terminal,
@@ -31,6 +32,7 @@ export default function AppLayout({
   onSearchChange, onSetActivePanel, onSetSelectedTask,
   onNavigateToProject, onNavigateToDashboard,
   taskActions, projectActions,
+  onOpenAppSettings,
 }) {
   const editingTask = modals.task === true ? null : modals.task;
   const editingProject = modals.project === true ? null : modals.project;
@@ -65,6 +67,7 @@ export default function AppLayout({
         onEditRoles={() => openModal('roles')}
         onEditCommands={() => openModal('commands')}
         onEditSkills={() => openModal('skills')}
+        onOpenAppSettings={onOpenAppSettings}
         onOpenScan={currentProject ? () => openModal('scan') : null}
       />
 
@@ -85,7 +88,7 @@ export default function AppLayout({
                 onViewDetail={(task) => openModal('detail', task)}
               />
             ) : (
-              <Dashboard projects={projects} onSelectProject={onNavigateToProject} onNewProject={() => openModal('project')} />
+              <Dashboard projects={projects} onSelectProject={onNavigateToProject} onNewProject={() => openModal('project')} onOpenSettings={onOpenAppSettings} />
             )}
           </div>
 
@@ -173,6 +176,7 @@ export default function AppLayout({
       {modals.commands && <CommandsModal onClose={() => closeModal('commands')} />}
       {modals.skills && <SkillsModal onClose={() => closeModal('skills')} />}
       {modals.scan && currentProject && <ScanModal projectId={currentProject.id} onClose={() => closeModal('scan')} />}
+      {modals.appSettings && <SettingsModal onClose={() => closeModal('appSettings')} />}
       {confirm && <ConfirmDialog {...confirm} />}
       <Toast toasts={toasts} />
       {/* Voice assistant temporarily disabled

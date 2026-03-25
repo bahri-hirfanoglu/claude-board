@@ -9,7 +9,7 @@ use axum::{
 };
 use tower_http::cors::CorsLayer;
 use serde::Deserialize;
-use crate::db::{self, projects, tasks, stats, activity, attachments};
+use crate::db::{self, projects, tasks, stats, activity, attachments, settings};
 
 pub async fn start_server(port: u16) {
     let app = Router::new()
@@ -30,6 +30,8 @@ pub async fn start_server(port: u16) {
         .route("/api/projects/{pid}/activity", get(project_activity))
         // Auth
         .route("/api/auth/status", get(auth_status))
+        // Settings
+        .route("/api/settings", get(get_settings).put(update_settings))
         .layer(CorsLayer::permissive());
 
     let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port))
@@ -202,4 +204,21 @@ async fn project_activity(Path(pid): Path<i64>, Query(q): Query<ActivityQuery>) 
 
 async fn auth_status() -> Json<serde_json::Value> {
     Json(serde_json::json!({"enabled": crate::db::auth::is_auth_enabled(&db::get_db())}))
+}
+
+async fn get_settings() -> Json<serde_json::Value> {
+    Json(serde_json::to_value(settings::get(&db::get_db())).unwrap())
+}
+
+async fn update_settings(Json(body): Json<serde_json::Value>) -> Json<serde_json::Value> {
+    let db = db::get_db();
+    let mut current = settings::get(&db);
+    if let Some(v) = body.get("confirm_before_delete").and_then(|v| v.as_bool()) { current.confirm_before_delete = v; }
+    if let Some(v) = body.get("default_model").and_then(|v| v.as_str()) { current.default_model = v.to_string(); }
+    if let Some(v) = body.get("default_effort").and_then(|v| v.as_str()) { current.default_effort = v.to_string(); }
+    if let Some(v) = body.get("language").and_then(|v| v.as_str()) { current.language = v.to_string(); }
+    if let Some(v) = body.get("auto_open_terminal").and_then(|v| v.as_bool()) { current.auto_open_terminal = v; }
+    if let Some(v) = body.get("sound_enabled").and_then(|v| v.as_bool()) { current.sound_enabled = v; }
+    settings::update(&db, &current);
+    Json(serde_json::to_value(current).unwrap())
 }

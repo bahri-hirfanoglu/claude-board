@@ -119,7 +119,12 @@
           {
             "group": "Desktop App",
             "icon": "desktop",
-            "pages": ["desktop/setup", "desktop/builds"]
+            "pages": [
+              "desktop/setup",
+              "desktop/builds",
+              "features/settings",
+              "features/notifications"
+            ]
           }
         ]
       },

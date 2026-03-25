@@ -223,6 +223,7 @@ function AppInner() {
       onNavigateToDashboard={navigateToDashboard}
       taskActions={taskActions}
       projectActions={projectActions}
+      onOpenAppSettings={() => openModal('appSettings')}
     />
     </StatusTransitionProvider>
   );
