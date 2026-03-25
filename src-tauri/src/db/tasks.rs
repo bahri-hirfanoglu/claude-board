@@ -43,6 +43,7 @@ pub struct Task {
     pub context_summary: Option<String>,
     pub parent_task_id: Option<i64>,
     pub awaiting_subtasks: Option<i64>,
+    pub tags: Option<String>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     #[serde(default)]
@@ -108,6 +109,7 @@ pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
         context_summary: row.get("context_summary").ok().flatten(),
         parent_task_id: row.get("parent_task_id").ok().flatten(),
         awaiting_subtasks: row.get("awaiting_subtasks").ok().flatten(),
+        tags: row.get("tags").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         is_running: false,
@@ -205,12 +207,14 @@ pub fn create(
     project_id: i64, title: &str, description: &str,
     priority: i64, task_type: &str, acceptance_criteria: &str,
     model: &str, thinking_effort: &str, role_id: Option<i64>,
+    tags: Option<&str>,
 ) -> i64 {
     let conn = db.lock();
     let task_key = generate_task_key(&conn, project_id, task_type);
+    let tags_val = tags.unwrap_or("[]");
     conn.execute(
-        "INSERT INTO tasks (project_id,title,description,priority,task_type,acceptance_criteria,model,thinking_effort,role_id,task_key) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
-        params![project_id, title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id, task_key],
+        "INSERT INTO tasks (project_id,title,description,priority,task_type,acceptance_criteria,model,thinking_effort,role_id,task_key,tags) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
+        params![project_id, title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id, task_key, tags_val],
     ).unwrap();
     conn.last_insert_rowid()
 }
@@ -220,8 +224,10 @@ pub fn update(
     title: &str, description: &str, priority: i64,
     task_type: &str, acceptance_criteria: &str,
     model: &str, thinking_effort: &str, role_id: Option<i64>,
+    tags: Option<&str>,
 ) {
     let conn = db.lock();
+    let tags_val = tags.unwrap_or("[]");
     // Check if task_type changed to update key prefix
     let existing: Option<(String, String)> = conn
         .prepare("SELECT task_type, task_key FROM tasks WHERE id=?1")
@@ -235,17 +241,22 @@ pub fn update(
             let new_prefix = type_prefix(task_type);
             let new_key = old_key.replacen(old_prefix, new_prefix, 1);
             conn.execute(
-                "UPDATE tasks SET title=?1,description=?2,priority=?3,task_type=?4,acceptance_criteria=?5,model=?6,thinking_effort=?7,role_id=?8,task_key=?9,updated_at=datetime('now','localtime') WHERE id=?10",
-                params![title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id, new_key, id],
+                "UPDATE tasks SET title=?1,description=?2,priority=?3,task_type=?4,acceptance_criteria=?5,model=?6,thinking_effort=?7,role_id=?8,task_key=?9,tags=?10,updated_at=datetime('now','localtime') WHERE id=?11",
+                params![title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id, new_key, tags_val, id],
             ).unwrap();
             return;
         }
     }
 
     conn.execute(
-        "UPDATE tasks SET title=?1,description=?2,priority=?3,task_type=?4,acceptance_criteria=?5,model=?6,thinking_effort=?7,role_id=?8,updated_at=datetime('now','localtime') WHERE id=?9",
-        params![title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id, id],
+        "UPDATE tasks SET title=?1,description=?2,priority=?3,task_type=?4,acceptance_criteria=?5,model=?6,thinking_effort=?7,role_id=?8,tags=?9,updated_at=datetime('now','localtime') WHERE id=?10",
+        params![title, description, priority, task_type, acceptance_criteria, model, thinking_effort, role_id, tags_val, id],
     ).unwrap();
+}
+
+pub fn set_tags(db: &DbPool, task_id: i64, tags: &str) {
+    let conn = db.lock();
+    conn.execute("UPDATE tasks SET tags=?1,updated_at=datetime('now','localtime') WHERE id=?2", params![tags, task_id]).ok();
 }
 
 pub fn delete(db: &DbPool, id: i64) {

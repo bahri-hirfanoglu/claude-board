@@ -26,7 +26,7 @@ pub fn create_task(
     title: String, description: Option<String>, priority: Option<i64>,
     task_type: Option<String>, acceptance_criteria: Option<String>,
     model: Option<String>, thinking_effort: Option<String>, role_id: Option<i64>,
-    parentTaskId: Option<i64>,
+    parentTaskId: Option<i64>, tags: Option<String>,
 ) -> Result<tq::Task, String> {
     let db = db::get_db();
     if pq::get_by_id(&db, project_id).is_none() { return Err("Project not found".into()); }
@@ -40,6 +40,7 @@ pub fn create_task(
         model.as_deref().unwrap_or("sonnet"),
         thinking_effort.as_deref().unwrap_or("medium"),
         role_id,
+        tags.as_deref(),
     );
 
     // Link as sub-task if parent_task_id provided
@@ -65,6 +66,7 @@ pub fn update_task(
     title: Option<String>, description: Option<String>, priority: Option<i64>,
     task_type: Option<String>, acceptance_criteria: Option<String>,
     model: Option<String>, thinking_effort: Option<String>, role_id: Option<i64>,
+    tags: Option<String>,
 ) -> Result<tq::Task, String> {
     let db = db::get_db();
     let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
@@ -77,6 +79,7 @@ pub fn update_task(
         model.as_deref().unwrap_or(task.model.as_deref().unwrap_or("sonnet")),
         thinking_effort.as_deref().unwrap_or(task.thinking_effort.as_deref().unwrap_or("medium")),
         if role_id.is_some() { role_id } else { task.role_id },
+        tags.as_deref().or(task.tags.as_deref()),
     );
     let updated = tq::get_by_id(&db, id).unwrap();
     app.emit("task:updated", &updated).ok();

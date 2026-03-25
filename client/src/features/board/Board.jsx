@@ -1,12 +1,13 @@
-import { useState, useMemo } from 'react';
-import { LayoutGrid, List, X, GitBranch, Workflow, TrendingUp } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { LayoutGrid, List, X, GitBranch, Workflow, TrendingUp, Tag, ChevronDown } from 'lucide-react';
 import Column from './Column';
 import ListView from './ListView';
 import PipelineView from './PipelineView';
 import OrchestrationView from './OrchestrationView';
 import AnalyticsView from './AnalyticsView';
-import { COLUMNS, MODELS, MODEL_COLORS, MODEL_DOT_COLORS, MODEL_BG_ACTIVE } from '../../lib/constants';
+import { COLUMNS, MODELS, MODEL_COLORS, MODEL_DOT_COLORS, MODEL_BG_ACTIVE, getTagColor } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
+import { parseTags } from './TagBadge';
 
 const VIEWS = [
   { id: 'board', labelKey: 'board.board', icon: LayoutGrid },
@@ -24,6 +25,16 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
   const [mobileTab, setMobileTab] = useState('backlog');
   const [viewMode, setViewMode] = useState('board');
   const [modelFilter, setModelFilter] = useState(null);
+  const [tagFilter, setTagFilter] = useState([]);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const tagDropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!tagDropdownOpen) return;
+    const close = (e) => { if (tagDropdownRef.current && !tagDropdownRef.current.contains(e.target)) setTagDropdownOpen(false); };
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [tagDropdownOpen]);
 
   // Models actually present in current tasks
   const { activeModels, modelCounts } = useMemo(() => {
@@ -35,10 +46,26 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
     return { activeModels: MODELS.filter(m => counts[m]), modelCounts: counts };
   }, [tasks]);
 
+  // Collect all tags across tasks
+  const { activeTags, tagCounts } = useMemo(() => {
+    const counts = {};
+    tasks.forEach(t => {
+      const tags = parseTags(t.tags);
+      tags.forEach(tag => { counts[tag] = (counts[tag] || 0) + 1; });
+    });
+    const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    return { activeTags: sorted, tagCounts: counts };
+  }, [tasks]);
+
   const filteredTasks = useMemo(() => {
-    if (!modelFilter) return tasks;
-    return tasks.filter(t => (t.model_used || t.model || 'sonnet') === modelFilter);
-  }, [tasks, modelFilter]);
+    let result = tasks;
+    if (modelFilter) result = result.filter(t => (t.model_used || t.model || 'sonnet') === modelFilter);
+    if (tagFilter.length > 0) result = result.filter(t => {
+      const tags = parseTags(t.tags);
+      return tagFilter.some(f => tags.includes(f));
+    });
+    return result;
+  }, [tasks, modelFilter, tagFilter]);
 
   const groupedTasks = useMemo(() => {
     const grouped = { backlog: [], in_progress: [], testing: [], done: [] };
@@ -96,15 +123,62 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
           );
         })}
 
-        {/* Clear filter */}
+        {/* Clear model filter */}
         {modelFilter && (
-          <button
-            onClick={() => setModelFilter(null)}
+          <button onClick={() => setModelFilter(null)}
             className="flex items-center gap-1 px-1.5 py-1.5 rounded-lg text-[10px] text-surface-500 hover:text-surface-300 hover:bg-surface-800/50 transition-colors"
-            title={t('board.clearFilter')}
-          >
+            title={t('board.clearFilter')}>
             <X size={12} />
           </button>
+        )}
+
+        {/* Tag filter dropdown */}
+        {activeTags.length > 0 && (
+          <>
+            <div className="w-px h-5 bg-surface-700/50 mx-1.5" />
+            <div className="relative" ref={tagDropdownRef}>
+              <button onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  tagFilter.length > 0 ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'
+                }`}>
+                <Tag size={12} />
+                Tags
+                {tagFilter.length > 0 && (
+                  <span className="text-[10px] bg-claude/20 px-1.5 py-px rounded-full">{tagFilter.length}</span>
+                )}
+                <ChevronDown size={10} />
+              </button>
+              {tagDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 bg-surface-800 border border-surface-700 rounded-lg py-1 shadow-xl z-20 min-w-[280px] max-h-[320px] overflow-y-auto">
+                  {tagFilter.length > 0 && (
+                    <button onClick={() => { setTagFilter([]); setTagDropdownOpen(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-700 border-b border-surface-700/50 transition-colors">
+                      <X size={10} /> Clear all
+                    </button>
+                  )}
+                  {activeTags.map(tag => {
+                    const isActive = tagFilter.includes(tag);
+                    const color = getTagColor(tag);
+                    return (
+                      <button key={tag}
+                        onClick={() => setTagFilter(prev => isActive ? prev.filter(t => t !== tag) : [...prev, tag])}
+                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
+                          isActive ? 'bg-surface-700/50 text-surface-200' : 'text-surface-400 hover:bg-surface-700/30'
+                        }`}>
+                        <div className={`w-3 h-3 rounded border flex items-center justify-center ${
+                          isActive ? 'bg-claude border-claude' : 'border-surface-600'
+                        }`}>
+                          {isActive && <span className="text-[8px] text-white font-bold">✓</span>}
+                        </div>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${color}`}>{tag}</span>
+                        <span className="ml-auto text-[10px] text-surface-600">{tagCounts[tag]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -210,7 +284,7 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
       {viewMode === 'orchestration' && (
         <div className="flex-1 overflow-hidden">
           <OrchestrationView
-            tasks={filteredTasks}
+            tasks={tasks}
             projectId={projectId}
             onViewLogs={onViewLogs}
             onStatusChange={onStatusChange}

@@ -32,6 +32,10 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
     !!(task && (task.acceptance_criteria || task.role_id || task.priority > 0)),
   );
   const [dependencies, setDependencies] = useState({ parents: [], children: [] });
+  const [tags, setTags] = useState(() => {
+    if (!task?.tags) return [];
+    try { return typeof task.tags === 'string' ? JSON.parse(task.tags) : task.tags; } catch { return []; }
+  });
   const titleRef = useRef(null);
   const typeMenuRef = useRef(null);
 
@@ -120,6 +124,7 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
         model,
         thinkingEffort,
         roleId: roleId || null,
+        tags: tags.length > 0 ? JSON.stringify(tags) : '[]',
         _files: attachedFiles.length > 0 ? attachedFiles : undefined,
         _pendingDeps: isCreating ? dependencies.parents : undefined,
       });
@@ -344,6 +349,9 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                 onAcceptanceChange={setAcceptanceCriteria}
                 attachedFiles={attachedFiles}
                 onFilesChange={setAttachedFiles}
+                tags={tags}
+                onTagsChange={setTags}
+                tagSuggestions={[...new Set(allTasks.flatMap(t => { try { return typeof t.tags === 'string' ? JSON.parse(t.tags) : (t.tags || []); } catch { return []; } }))]}
                 taskId={task?.id || 'new'}
                 allTasks={allTasks.filter(t => t.id !== task?.id)}
                 dependencies={dependencies}

@@ -6,6 +6,15 @@ use crate::db::stats;
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
+/// Safely truncate a string to at most `max` characters (not bytes).
+fn safe_truncate(s: &str, max: usize) -> &str {
+    if s.len() <= max { return s; }
+    match s.char_indices().nth(max) {
+        Some((idx, _)) => &s[..idx],
+        None => s,
+    }
+}
+
 // ─── File Access Tracking for Live Agent Collaboration ───
 
 /// Tracks which tasks are currently accessing which files.
@@ -164,7 +173,7 @@ fn handle_assistant(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, c
                     if let Some(f) = input.get("file_path").or(input.get("path")).and_then(|v| v.as_str()) {
                         display = format!("{} → {}", display, f);
                     } else if let Some(c) = input.get("command").and_then(|v| v.as_str()) {
-                        display = format!("{} → {}", display, &c[..c.len().min(120)]);
+                        display = format!("{} → {}", display, safe_truncate(c, 120));
                     } else if let Some(p) = input.get("pattern").and_then(|v| v.as_str()) {
                         display = format!("{} → {}", display, p);
                     }
@@ -187,10 +196,10 @@ fn handle_assistant(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, c
                         input_summary.insert("query".into(), serde_json::Value::String(q.to_string()));
                     }
                     if let Some(p) = input.get("prompt").and_then(|v| v.as_str()) {
-                        input_summary.insert("prompt".into(), serde_json::Value::String(p[..p.len().min(500)].to_string()));
+                        input_summary.insert("prompt".into(), serde_json::Value::String(safe_truncate(p, 500).to_string()));
                     }
                     if let Some(c) = input.get("content").and_then(|v| v.as_str()) {
-                        input_summary.insert("content".into(), serde_json::Value::String(c[..c.len().min(500)].to_string()));
+                        input_summary.insert("content".into(), serde_json::Value::String(safe_truncate(c, 500).to_string()));
                     }
                     let meta = serde_json::json!({"toolName": tool_name, "toolId": tool_id, "input": input_summary});
                     add_log(task_id, &display, "tool", db, app, Some(&meta.to_string()));
@@ -255,7 +264,7 @@ fn handle_user(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, ctx: &
                 let is_error = block.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false);
 
                 let result_preview = if let Some(s) = block.get("content").and_then(|v| v.as_str()) {
-                    s[..s.len().min(500)].to_string()
+                    safe_truncate(s, 500).to_string()
                 } else {
                     String::new()
                 };
@@ -356,7 +365,7 @@ fn handle_result(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, ctx:
     }), db);
 
     if let Some(result) = event.get("result").and_then(|v| v.as_str()) {
-        let preview = &result[..result.len().min(500)];
+        let preview = safe_truncate(&result, 500);
         add_log(task_id, &format!("Result: {}", preview), "success", db, app, None);
     }
 }

@@ -123,7 +123,7 @@ pub fn run() {
                 // Check for updates in background
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                     let updater = match app_handle.updater() {
                         Ok(u) => u,
                         Err(e) => { log::warn!("Updater init failed: {}", e); return; }

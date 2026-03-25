@@ -6,6 +6,7 @@ import {
   CircleCheck, CircleX, CircleAlert, CircleMinus, FileSearch, Layers,
 } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
+import { TagList } from '../board/TagBadge';
 import { api } from '../../lib/api';
 import { formatTokens, formatDuration } from '../../lib/formatters';
 import { COLUMNS } from '../../lib/constants';
@@ -125,6 +126,7 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
               {d.revision_count > 0 && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">Rev {d.revision_count}</span>
               )}
+              <TagList tags={d.tags} max={5} size="sm" />
             </div>
             <h2 className="text-base font-semibold text-surface-100">{d.title}</h2>
           </div>

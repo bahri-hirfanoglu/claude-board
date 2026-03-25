@@ -5,6 +5,7 @@ import { PRIORITY_COLORS as priorityColors, PRIORITY_LABELS as priorityLabels, T
 import { useStatusTransition } from './StatusTransitionContext';
 import StatusTransitionEffect from './StatusTransitionEffect';
 import { useTranslation } from '../../i18n/I18nProvider';
+import { TagList } from './TagBadge';
 
 const STATUS_OPTIONS_RAW = COLUMNS.map(c => ({ id: c.id, dot: c.bg, color: c.color }));
 
@@ -178,6 +179,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
                   {t('card.rev')} {task.revision_count}
                 </span>
               )}
+              <TagList tags={task.tags} max={2} size="xs" />
             </div>
             <h3 className="text-sm font-medium text-surface-100 truncate">{task.title}</h3>
             {task.description && (

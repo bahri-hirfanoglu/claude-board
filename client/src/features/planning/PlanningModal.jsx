@@ -12,7 +12,17 @@ import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { MODEL_OPTIONS, EFFORT_OPTIONS, PRIORITY_LABELS } from '../../lib/constants';
+import MDEditor from '@uiw/react-md-editor';
 import DependencyGraph from '../board/DependencyGraph';
+
+function MdPreview({ content }) {
+  if (!content) return null;
+  return (
+    <div data-color-mode="dark" className="md-preview-compact">
+      <MDEditor.Markdown source={content} style={{ backgroundColor: 'transparent', color: '#a8a29e', fontSize: '11px', lineHeight: '1.5' }} />
+    </div>
+  );
+}
 
 const MODELS = MODEL_OPTIONS;
 const EFFORTS = EFFORT_OPTIONS;
@@ -492,7 +502,7 @@ export default function PlanningModal({ projectId, onClose }) {
     if (proposals.length === 0) return;
     setApproving(true);
     try {
-      await api.approvePlan(projectId, proposals, model, dependencies.length > 0 ? dependencies : null);
+      await api.approvePlan(projectId, proposals, model, dependencies.length > 0 ? dependencies : null, topic || null);
       setPhase('approved');
     } catch (e) {
       setError(e.message);
@@ -575,7 +585,7 @@ export default function PlanningModal({ projectId, onClose }) {
                       </button>
                       {showAnalysis && (
                         <div className="px-4 pb-3 max-h-48 overflow-y-auto">
-                          <pre className="text-[11px] text-surface-500 whitespace-pre-wrap font-sans leading-relaxed">{analysis}</pre>
+                          <MdPreview content={analysis} />
                         </div>
                       )}
                     </div>
@@ -758,7 +768,7 @@ export default function PlanningModal({ projectId, onClose }) {
                   </button>
                   {showAnalysis && (
                     <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl p-4 max-h-40 overflow-y-auto">
-                      <pre className="text-[11px] text-surface-400 whitespace-pre-wrap font-sans leading-relaxed">{analysis}</pre>
+                      <MdPreview content={analysis} />
                     </div>
                   )}
                 </div>
@@ -808,7 +818,7 @@ export default function PlanningModal({ projectId, onClose }) {
                   </button>
                   {showAnalysis && (
                     <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl p-4 max-h-48 overflow-y-auto">
-                      <pre className="text-[11px] text-surface-400 whitespace-pre-wrap font-sans leading-relaxed">{analysis}</pre>
+                      <MdPreview content={analysis} />
                     </div>
                   )}
                 </div>
@@ -893,13 +903,13 @@ export default function PlanningModal({ projectId, onClose }) {
                             {task.description && (
                               <div className="mt-3">
                                 <span className="text-[10px] font-medium text-surface-500 uppercase tracking-wide">{t('planning.description')}</span>
-                                <p className="mt-1 text-[11px] text-surface-400 whitespace-pre-wrap leading-relaxed">{task.description}</p>
+                                <div className="mt-1"><MdPreview content={task.description} /></div>
                               </div>
                             )}
                             {task.acceptance_criteria && (
                               <div>
                                 <span className="text-[10px] font-medium text-surface-500 uppercase tracking-wide">{t('planning.acceptanceCriteria')}</span>
-                                <p className="mt-1 text-[11px] text-surface-400 whitespace-pre-wrap leading-relaxed">{task.acceptance_criteria}</p>
+                                <div className="mt-1"><MdPreview content={task.acceptance_criteria} /></div>
                               </div>
                             )}
                           </div>

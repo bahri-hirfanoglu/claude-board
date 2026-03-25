@@ -5,11 +5,12 @@ import {
 import { useTranslation } from '../../i18n/I18nProvider';
 import { MODEL_OPTIONS, EFFORT_OPTIONS } from '../../lib/constants';
 import DependencySelector from './DependencySelector';
+import TagInput from './TagInput';
 
 const MODELS = MODEL_OPTIONS;
 const EFFORTS = EFFORT_OPTIONS;
 
-export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort, onEffortChange, roleId, onRoleChange, roles, acceptanceCriteria, onAcceptanceChange, attachedFiles, onFilesChange, taskId, allTasks, dependencies, onAddDependency, onRemoveDependency }) {
+export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort, onEffortChange, roleId, onRoleChange, roles, acceptanceCriteria, onAcceptanceChange, attachedFiles, onFilesChange, taskId, allTasks, dependencies, onAddDependency, onRemoveDependency, tags, onTagsChange, tagSuggestions }) {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
 
@@ -114,6 +115,14 @@ export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort,
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Tags */}
+      {onTagsChange && (
+        <div>
+          <label className="text-[10px] font-medium text-surface-500 uppercase tracking-wider mb-1.5 block">{t('task.tags')}</label>
+          <TagInput value={tags || []} onChange={onTagsChange} suggestions={tagSuggestions || []} placeholder={t('task.addTag')} />
         </div>
       )}
 

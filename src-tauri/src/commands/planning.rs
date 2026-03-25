@@ -132,7 +132,10 @@ pub fn start_planning(
                                 let input = block.get("input").cloned().unwrap_or(serde_json::Value::Object(Default::default()));
                                 let detail = input.get("file_path").or(input.get("command")).or(input.get("pattern"))
                                     .and_then(|v| v.as_str()).unwrap_or("");
-                                let msg = if detail.is_empty() { tool.to_string() } else { format!("{} → {}", tool, &detail[..detail.len().min(80)]) };
+                                let msg = if detail.is_empty() { tool.to_string() } else {
+                                    let end = detail.char_indices().nth(80).map(|(i, _)| i).unwrap_or(detail.len());
+                                    format!("{} → {}", tool, &detail[..end])
+                                };
                                 app.emit("plan:log", &serde_json::json!({
                                     "projectId": project_id, "planId": &plan_id_clone,
                                     "type": "tool", "message": msg
@@ -196,18 +199,46 @@ pub fn start_planning(
 }
 
 /// User approved the proposed tasks — create them in DB with optional dependency edges.
+/// Auto-generates a plan tag from the topic for filtering.
 #[tauri::command]
 pub fn approve_plan(
     app: AppHandle, project_id: i64, tasks: Vec<serde_json::Value>,
     model: Option<String>,
     dependencies: Option<Vec<Vec<i64>>>,
+    topic: Option<String>,
 ) -> Result<Vec<tq::Task>, String> {
     let db = db::get_db();
     if pq::get_by_id(&db, project_id).is_none() { return Err("Project not found".into()); }
     let model = model.unwrap_or_else(|| "sonnet".into());
 
+    // Generate plan tag from topic
+    let plan_tag = topic.as_deref().map(|t| {
+        let lower = t.to_lowercase();
+        let words: Vec<&str> = lower
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|w| w.len() > 2)
+            .take(3)
+            .collect();
+        let slug = if words.is_empty() { "plan".to_string() } else { words.join("-") };
+        let slug: String = slug.chars().take(15).collect();
+        format!("plan:{}", slug.trim_end_matches('-'))
+    }).unwrap_or_else(|| "plan:unnamed".into());
+
     let mut created = Vec::new();
     for t in &tasks {
+        // Merge plan tag with any proposal-level tags
+        let mut task_tags = vec![plan_tag.clone()];
+        if let Some(extra) = t.get("tags").and_then(|v| v.as_array()) {
+            for tag in extra {
+                if let Some(s) = tag.as_str() {
+                    if !task_tags.contains(&s.to_string()) {
+                        task_tags.push(s.to_string());
+                    }
+                }
+            }
+        }
+        let tags_json = serde_json::to_string(&task_tags).unwrap_or_else(|_| "[]".into());
+
         let id = tq::create(&db, project_id,
             t.get("title").and_then(|v| v.as_str()).unwrap_or(""),
             t.get("description").and_then(|v| v.as_str()).unwrap_or(""),
@@ -215,6 +246,7 @@ pub fn approve_plan(
             t.get("task_type").and_then(|v| v.as_str()).unwrap_or("feature"),
             t.get("acceptance_criteria").and_then(|v| v.as_str()).unwrap_or(""),
             &model, "medium", None,
+            Some(&tags_json),
         );
         if let Some(task) = tq::get_by_id(&db, id) {
             app.emit("task:created", &task).ok();

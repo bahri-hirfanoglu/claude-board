@@ -71,6 +71,21 @@ export const DEFAULT_MODEL = 'sonnet';
 export const DEFAULT_EFFORT = 'medium';
 export const TOAST_TIMEOUT_MS = 3000;
 
+// ─── Tags ───
+const TAG_PALETTE = [
+  'bg-blue-500/15 text-blue-400', 'bg-emerald-500/15 text-emerald-400',
+  'bg-purple-500/15 text-purple-400', 'bg-amber-500/15 text-amber-400',
+  'bg-pink-500/15 text-pink-400', 'bg-cyan-500/15 text-cyan-400',
+  'bg-red-500/15 text-red-400', 'bg-teal-500/15 text-teal-400',
+  'bg-orange-500/15 text-orange-400', 'bg-violet-500/15 text-violet-400',
+  'bg-lime-500/15 text-lime-400', 'bg-rose-500/15 text-rose-400',
+];
+export function getTagColor(tag) {
+  let hash = 0;
+  for (const ch of tag) hash = ((hash << 5) - hash + ch.charCodeAt(0)) | 0;
+  return TAG_PALETTE[Math.abs(hash) % TAG_PALETTE.length];
+}
+
 // ─── Avatar ───
 export const AVATAR_COLORS = ['#DA7756', '#c4624a', '#e5936f', '#2a2520', '#918678'];
 export const AVATAR_VARIANTS = ['marble', 'beam', 'pixel', 'sunset', 'ring', 'bauhaus'];
