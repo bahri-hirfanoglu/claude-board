@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Activity, CheckCircle, Clock, Cpu, Coins, AlertCircle, BarChart3, Zap, TrendingUp } from 'lucide-react';
+import { Activity, CheckCircle, Clock, Cpu, Coins, AlertCircle, BarChart3, Zap, TrendingUp, FlaskConical } from 'lucide-react';
 import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, COLUMNS, MODEL_DOT_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
@@ -40,7 +40,7 @@ export default function SummaryView({ tasks }) {
     const byType = {};
     const byPriority = { 0: 0, 1: 0, 2: 0, 3: 0 };
     const byModel = {};
-    let totalTokens = 0, totalCost = 0, totalTurns = 0, running = 0;
+    let totalTokens = 0, totalCost = 0, totalTurns = 0, running = 0, testing = 0;
     let inputTokens = 0, outputTokens = 0;
 
     for (const t of tasks) {
@@ -56,7 +56,8 @@ export default function SummaryView({ tasks }) {
       totalTokens += (t.input_tokens || 0) + (t.output_tokens || 0);
       totalCost += t.total_cost || 0;
       totalTurns += t.num_turns || 0;
-      if (t.is_running) running++;
+      if (t.is_running && t.status === 'testing') testing++;
+      else if (t.is_running) running++;
     }
 
     const completed = byStatus['done'] || 0;
@@ -84,7 +85,7 @@ export default function SummaryView({ tasks }) {
     const tasksWithCost = tasks.filter(t => t.total_cost > 0);
     const avgCost = tasksWithCost.length > 0 ? totalCost / tasksWithCost.length : 0;
 
-    return { byStatus, byType, byPriority, byModel, totalTokens, inputTokens, outputTokens, totalCost, totalTurns, running, completed, total, completionRate, avgMinutes, topCost, avgCost };
+    return { byStatus, byType, byPriority, byModel, totalTokens, inputTokens, outputTokens, totalCost, totalTurns, running, testing, completed, total, completionRate, avgMinutes, topCost, avgCost };
   }, [tasks]);
 
   const formatMinutes = (m) => {
@@ -110,6 +111,9 @@ export default function SummaryView({ tasks }) {
         <StatCard icon={BarChart3} label={t('summary.totalTasks')} value={stats.total} />
         <StatCard icon={CheckCircle} label={t('summary.completed')} value={`${stats.completionRate}%`} sublabel={`${stats.completed} of ${stats.total}`} color="text-emerald-400" />
         <StatCard icon={Activity} label={t('summary.running')} value={stats.running} color={stats.running > 0 ? 'text-amber-400' : 'text-surface-200'} />
+        {stats.testing > 0 && (
+          <StatCard icon={FlaskConical} label={t('status.testing')} value={stats.testing} color="text-purple-400" />
+        )}
         <StatCard icon={Clock} label={t('summary.avgDuration')} value={formatMinutes(stats.avgMinutes)} />
       </div>
 

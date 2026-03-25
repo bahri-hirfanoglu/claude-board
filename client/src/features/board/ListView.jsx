@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, Activity, Clock, Cpu, Coins, Terminal, Pencil, Trash2, CheckCircle } from 'lucide-react';
+import { ChevronUp, ChevronDown, Activity, Clock, Cpu, Coins, Terminal, Pencil, Trash2, CheckCircle, FlaskConical } from 'lucide-react';
 import { formatDuration, formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, MODEL_COLORS, COLUMNS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
@@ -94,7 +94,8 @@ export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask
                   <td className="px-3 py-2 text-surface-600 font-mono text-[11px]">{task.task_key || `#${task.id}`}</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
-                      {task.is_running && <Activity size={10} className="text-amber-400 animate-pulse flex-shrink-0" />}
+                      {task.is_running && task.status === 'testing' && <FlaskConical size={10} className="text-purple-400 animate-pulse flex-shrink-0" />}
+                      {task.is_running && task.status !== 'testing' && <Activity size={10} className="text-amber-400 animate-pulse flex-shrink-0" />}
                       <span className="text-surface-200 truncate">{task.title}</span>
                       <TagList tags={task.tags} max={2} size="xs" />
                       {task.revision_count > 0 && (

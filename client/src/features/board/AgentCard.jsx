@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Square, Cpu, Clock, Zap, Coins, Eye, FileText, Pencil, Terminal,
-  Search, FolderOpen, Globe, Layers, Hash, ArrowRight,
+  Search, FolderOpen, Globe, Layers, Hash, ArrowRight, FlaskConical,
 } from 'lucide-react';
 import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, MODEL_COSTS } from '../../lib/constants';
@@ -47,6 +47,7 @@ function shortenPath(path) {
 export default function AgentCard({ task, onStop, onViewLogs }) {
   const model = task.model_used || task.model || 'sonnet';
   const typeColor = TYPE_COLORS[task.task_type] || TYPE_COLORS.feature;
+  const isTesting = task.status === 'testing' && task.is_running;
 
   // Live elapsed timer
   const [elapsed, setElapsed] = useState(0);
@@ -110,15 +111,23 @@ export default function AgentCard({ task, onStop, onViewLogs }) {
 
   return (
     <div
-      className="bg-surface-800/60 border border-surface-700/40 rounded-lg p-3 hover:border-claude/30 transition-colors cursor-pointer group"
+      className={`bg-surface-800/60 border rounded-lg p-3 transition-colors cursor-pointer group ${
+        isTesting ? 'border-purple-500/40 hover:border-purple-400/50' : 'border-surface-700/40 hover:border-claude/30'
+      }`}
       onClick={() => onViewLogs?.(task)}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${typeColor?.dot || 'bg-blue-400'}`} />
+            {isTesting
+              ? <FlaskConical size={11} className="text-purple-400 animate-pulse flex-shrink-0" />
+              : <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${typeColor?.dot || 'bg-blue-400'}`} />
+            }
             <span className="text-xs font-medium text-surface-200 truncate">{task.title}</span>
+            {isTesting && (
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400">Testing</span>
+            )}
           </div>
           {task.task_key && (
             <span className="text-[10px] text-surface-500 font-mono">{task.task_key}</span>
@@ -136,7 +145,9 @@ export default function AgentCard({ task, onStop, onViewLogs }) {
       {/* Token progress bar */}
       <div className="h-1 rounded-full bg-surface-700 overflow-hidden mb-2">
         <div
-          className="h-full bg-gradient-to-r from-claude to-amber-400 rounded-full transition-all duration-500"
+          className={`h-full rounded-full transition-all duration-500 ${
+            isTesting ? 'bg-gradient-to-r from-purple-500 to-purple-300' : 'bg-gradient-to-r from-claude to-amber-400'
+          }`}
           style={{ width: `${Math.max(tokenProgress, 5)}%` }}
         />
       </div>

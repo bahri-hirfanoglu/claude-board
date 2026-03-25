@@ -68,23 +68,33 @@ fn row_to_project(row: &rusqlite::Row) -> rusqlite::Result<Project> {
 
 pub fn get_all(db: &DbPool) -> Vec<Project> {
     let conn = db.lock();
-    let mut stmt = conn.prepare("SELECT * FROM projects ORDER BY name").unwrap();
-    stmt.query_map([], |row| row_to_project(row))
-        .unwrap()
-        .flatten()
-        .collect()
+    let mut stmt = match conn.prepare("SELECT * FROM projects ORDER BY name") {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_all: {}", e); return vec![]; }
+    };
+    let result = match stmt.query_map([], |row| row_to_project(row)) {
+        Ok(rows) => rows.flatten().collect(),
+        Err(e) => { log::error!("get_all: {}", e); vec![] }
+    };
+    result
 }
 
 pub fn get_by_id(db: &DbPool, id: i64) -> Option<Project> {
     let conn = db.lock();
-    let mut stmt = conn.prepare("SELECT * FROM projects WHERE id=?1").unwrap();
+    let mut stmt = match conn.prepare("SELECT * FROM projects WHERE id=?1") {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_by_id: {}", e); return None; }
+    };
     stmt.query_row(params![id], |row| row_to_project(row))
         .ok()
 }
 
 pub fn get_by_slug(db: &DbPool, slug: &str) -> Option<Project> {
     let conn = db.lock();
-    let mut stmt = conn.prepare("SELECT * FROM projects WHERE slug=?1").unwrap();
+    let mut stmt = match conn.prepare("SELECT * FROM projects WHERE slug=?1") {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_by_slug: {}", e); return None; }
+    };
     stmt.query_row(params![slug], |row| row_to_project(row))
         .ok()
 }
@@ -97,7 +107,7 @@ pub fn create(
 ) -> i64 {
     let conn = db.lock();
     let project_key = project_key_from_slug(slug);
-    conn.execute(
+    match conn.execute(
         "INSERT INTO projects (name,slug,working_dir,icon,icon_seed,permission_mode,allowed_tools,project_key) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
         params![
             name, slug, working_dir,
@@ -107,7 +117,10 @@ pub fn create(
             allowed_tools.unwrap_or(""),
             project_key,
         ],
-    ).unwrap();
+    ) {
+        Ok(_) => {},
+        Err(e) => { log::error!("create: {}", e); return 0; }
+    };
     conn.last_insert_rowid()
 }
 
@@ -118,7 +131,7 @@ pub fn update(
     permission_mode: Option<&str>, allowed_tools: Option<&str>,
 ) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE projects SET name=?1,slug=?2,working_dir=?3,icon=?4,icon_seed=?5,permission_mode=?6,allowed_tools=?7,updated_at=datetime('now','localtime') WHERE id=?8",
         params![
             name, slug, working_dir,
@@ -128,41 +141,41 @@ pub fn update(
             allowed_tools.unwrap_or(""),
             id,
         ],
-    ).unwrap();
+    ) { log::error!("update: {}", e); }
 }
 
 pub fn update_queue(db: &DbPool, id: i64, auto_queue: bool, max_concurrent: i64) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE projects SET auto_queue=?1,max_concurrent=?2,updated_at=datetime('now','localtime') WHERE id=?3",
         params![auto_queue as i64, max_concurrent, id],
-    ).unwrap();
+    ) { log::error!("update_queue: {}", e); }
 }
 
 pub fn update_git_settings(db: &DbPool, id: i64, auto_branch: bool, auto_pr: bool, pr_base_branch: &str) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE projects SET auto_branch=?1,auto_pr=?2,pr_base_branch=?3,updated_at=datetime('now','localtime') WHERE id=?4",
         params![auto_branch as i64, auto_pr as i64, pr_base_branch, id],
-    ).unwrap();
+    ) { log::error!("update_git_settings: {}", e); }
 }
 
 pub fn update_test_settings(db: &DbPool, id: i64, auto_test: bool, test_prompt: &str) {
     let conn = db.lock();
-    conn.execute(
+    if let Err(e) = conn.execute(
         "UPDATE projects SET auto_test=?1,test_prompt=?2,updated_at=datetime('now','localtime') WHERE id=?3",
         params![auto_test as i64, test_prompt, id],
-    ).unwrap();
+    ) { log::error!("update_test_settings: {}", e); }
 }
 
 pub fn delete(db: &DbPool, id: i64) {
     let conn = db.lock();
-    conn.execute("DELETE FROM projects WHERE id=?1", params![id]).unwrap();
+    if let Err(e) = conn.execute("DELETE FROM projects WHERE id=?1", params![id]) { log::error!("delete: {}", e); }
 }
 
 pub fn get_summary(db: &DbPool) -> Vec<ProjectSummary> {
     let conn = db.lock();
-    let mut stmt = conn.prepare(
+    let mut stmt = match conn.prepare(
         "SELECT p.*, COUNT(t.id) as total_tasks,
          COUNT(CASE WHEN t.status='done' THEN 1 END) as done_tasks,
          COUNT(CASE WHEN t.status='in_progress' THEN 1 END) as active_tasks,
@@ -172,9 +185,12 @@ pub fn get_summary(db: &DbPool) -> Vec<ProjectSummary> {
          SUM(COALESCE(t.total_cost,0)) as total_cost,
          MAX(t.updated_at) as last_activity
        FROM projects p LEFT JOIN tasks t ON t.project_id=p.id GROUP BY p.id ORDER BY p.name"
-    ).unwrap();
+    ) {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_summary: {}", e); return vec![]; }
+    };
 
-    stmt.query_map([], |row| {
+    let result = match stmt.query_map([], |row| {
         Ok(ProjectSummary {
             project: row_to_project(row)?,
             total_tasks: row.get("total_tasks").unwrap_or(0),
@@ -186,8 +202,9 @@ pub fn get_summary(db: &DbPool) -> Vec<ProjectSummary> {
             total_cost: row.get("total_cost").ok(),
             last_activity: row.get("last_activity").ok(),
         })
-    })
-    .unwrap()
-    .flatten()
-    .collect()
+    }) {
+        Ok(rows) => rows.flatten().collect(),
+        Err(e) => { log::error!("get_summary: {}", e); vec![] }
+    };
+    result
 }

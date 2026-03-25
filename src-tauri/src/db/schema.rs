@@ -174,10 +174,14 @@ pub fn create_tables(conn: &Connection) {
 
 fn col_exists(conn: &Connection, table: &str, col: &str) -> bool {
     let sql = format!("PRAGMA table_info({})", table);
-    let mut stmt = conn.prepare(&sql).unwrap();
-    let rows = stmt
-        .query_map([], |row| row.get::<_, String>(1))
-        .unwrap();
+    let mut stmt = match conn.prepare(&sql) {
+        Ok(s) => s,
+        Err(e) => { log::error!("col_exists prepare: {}", e); return false; }
+    };
+    let rows = match stmt.query_map([], |row| row.get::<_, String>(1)) {
+        Ok(r) => r,
+        Err(e) => { log::error!("col_exists query: {}", e); return false; }
+    };
     for name in rows.flatten() {
         if name == col {
             return true;
@@ -283,16 +287,16 @@ pub fn generate_project_key(slug: &str) -> String {
 }
 
 fn backfill_project_keys(conn: &Connection) {
-    let mut stmt = conn
-        .prepare("SELECT id, slug, project_key FROM projects")
-        .unwrap();
-    let rows: Vec<(i64, String, Option<String>)> = stmt
-        .query_map([], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
-        })
-        .unwrap()
-        .flatten()
-        .collect();
+    let mut stmt = match conn.prepare("SELECT id, slug, project_key FROM projects") {
+        Ok(s) => s,
+        Err(e) => { log::error!("backfill_project_keys prepare: {}", e); return; }
+    };
+    let rows: Vec<(i64, String, Option<String>)> = match stmt.query_map([], |row| {
+        Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+    }) {
+        Ok(r) => r.flatten().collect(),
+        Err(e) => { log::error!("backfill_project_keys query: {}", e); return; }
+    };
 
     for (id, slug, key) in rows {
         if key.as_deref().unwrap_or("").is_empty() {
@@ -315,16 +319,18 @@ pub fn get_type_prefix(task_type: &str) -> &str {
 }
 
 fn backfill_task_keys(conn: &Connection) {
-    let mut stmt = conn.prepare(
+    let mut stmt = match conn.prepare(
         "SELECT t.id, t.task_type, t.project_id, p.project_key FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.task_key IS NULL OR t.task_key='' ORDER BY t.project_id, t.id"
-    ).unwrap();
-    let rows: Vec<(i64, String, i64, String)> = stmt
-        .query_map([], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get::<_, String>(3).unwrap_or_default()))
-        })
-        .unwrap()
-        .flatten()
-        .collect();
+    ) {
+        Ok(s) => s,
+        Err(e) => { log::error!("backfill_task_keys prepare: {}", e); return; }
+    };
+    let rows: Vec<(i64, String, i64, String)> = match stmt.query_map([], |row| {
+        Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get::<_, String>(3).unwrap_or_default()))
+    }) {
+        Ok(r) => r.flatten().collect(),
+        Err(e) => { log::error!("backfill_task_keys query: {}", e); return; }
+    };
 
     if rows.is_empty() {
         return;
@@ -332,12 +338,14 @@ fn backfill_task_keys(conn: &Connection) {
 
     // Load counters
     let mut counters = std::collections::HashMap::new();
-    let mut cstmt = conn.prepare("SELECT id, task_counter FROM projects").unwrap();
-    let crow: Vec<(i64, i64)> = cstmt
-        .query_map([], |row| Ok((row.get(0)?, row.get::<_, i64>(1).unwrap_or(1000))))
-        .unwrap()
-        .flatten()
-        .collect();
+    let mut cstmt = match conn.prepare("SELECT id, task_counter FROM projects") {
+        Ok(s) => s,
+        Err(e) => { log::error!("backfill_task_keys counters: {}", e); return; }
+    };
+    let crow: Vec<(i64, i64)> = match cstmt.query_map([], |row| Ok((row.get(0)?, row.get::<_, i64>(1).unwrap_or(1000)))) {
+        Ok(r) => r.flatten().collect(),
+        Err(e) => { log::error!("backfill_task_keys counter query: {}", e); return; }
+    };
     for (pid, counter) in crow {
         counters.insert(pid, counter);
     }

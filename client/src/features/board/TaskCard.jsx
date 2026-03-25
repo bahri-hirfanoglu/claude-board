@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw, GitBranch, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw, GitBranch, ArrowRight, AlertTriangle, FlaskConical } from 'lucide-react';
 import { formatDuration, formatTokens } from '../../lib/formatters';
 import { PRIORITY_COLORS as priorityColors, PRIORITY_LABELS as priorityLabels, TYPE_COLORS as typeColors, MODEL_COLORS as modelColors, COLUMNS } from '../../lib/constants';
 import { useStatusTransition } from './StatusTransitionContext';
@@ -199,7 +199,13 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
 
         <div className="flex items-center justify-between mt-2.5">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {task.is_running && (
+            {task.is_running && task.status === 'testing' && (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
+                <FlaskConical size={10} className="animate-pulse" />
+                {t('status.testing')}
+              </span>
+            )}
+            {task.is_running && task.status !== 'testing' && (
               <span className="flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
                 <Activity size={10} className="animate-pulse" />
                 {t('status.running')}

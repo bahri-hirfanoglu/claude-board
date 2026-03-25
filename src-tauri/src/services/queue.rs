@@ -1,6 +1,19 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 use crate::db::{self, DbPool, tasks, projects, activity, dependencies};
 use crate::claude::runner;
+
+/// Shared shutdown flag — set to true when app is exiting.
+static SHUTDOWN: once_cell::sync::Lazy<Arc<AtomicBool>> =
+    once_cell::sync::Lazy::new(|| Arc::new(AtomicBool::new(false)));
+
+/// Signal all background queue threads to stop.
+pub fn request_shutdown() {
+    SHUTDOWN.store(true, Ordering::SeqCst);
+    runner::cleanup_all();
+    log::info!("Queue shutdown requested — background threads will exit");
+}
 
 /// Recover orphaned tasks and kick-start auto-queue on app startup.
 /// Must be called once after db::init_db() in the setup hook.
@@ -42,18 +55,29 @@ pub fn startup_recovery(app: &AppHandle) {
         start_next_queued(&db, app, *pid);
     }
 
-    // 4. Start periodic queue poll (every 15 seconds)
+    // 4. Start periodic queue poll (every 15 seconds, shutdown-aware)
     let app_handle = app.clone();
-    std::thread::spawn(move || {
-        loop {
-            std::thread::sleep(std::time::Duration::from_secs(15));
-            let db = db::get_db();
-            let pids = tasks::get_auto_queue_project_ids(&db);
-            for pid in pids {
-                start_next_queued(&db, &app_handle, pid);
+    let shutdown = SHUTDOWN.clone();
+    std::thread::Builder::new()
+        .name("queue-poll".into())
+        .spawn(move || {
+            log::info!("Queue poll thread started");
+            while !shutdown.load(Ordering::SeqCst) {
+                // Sleep in small increments to respond to shutdown quickly
+                for _ in 0..15 {
+                    if shutdown.load(Ordering::SeqCst) { return; }
+                    std::thread::sleep(std::time::Duration::from_secs(1));
+                }
+                let db = db::get_db();
+                let pids = tasks::get_auto_queue_project_ids(&db);
+                for pid in pids {
+                    if shutdown.load(Ordering::SeqCst) { return; }
+                    start_next_queued(&db, &app_handle, pid);
+                }
             }
-        }
-    });
+            log::info!("Queue poll thread stopped");
+        })
+        .ok();
 }
 
 /// Try to start the next queued task(s) respecting concurrency and DAG dependencies.
@@ -98,15 +122,21 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
             tasks::set_resumed(db, task.id);
         }
 
-        let updated = tasks::get_by_id(db, task.id).unwrap();
+        let updated = match tasks::get_by_id(db, task.id) {
+            Some(t) => t,
+            None => { log::error!("start_next_queued: task {} not found after status update", task.id); continue; }
+        };
         runner::start(&updated, app.clone(), &project.working_dir, &project, mcp_port);
         activity::add(db, project_id, Some(task.id), "queue_auto_started",
             &format!("Auto-started: {}", task.title), None);
         crate::services::notification::notify_queue_started(app, &crate::services::notification::TaskNotification::new(&task.title, task.task_key.as_deref()));
 
-        let mut val = serde_json::to_value(&updated).unwrap();
-        val.as_object_mut().unwrap().insert("is_running".into(), serde_json::Value::Bool(true));
-        app.emit("task:updated", &val).ok();
+        if let Ok(mut val) = serde_json::to_value(&updated) {
+            if let Some(obj) = val.as_object_mut() {
+                obj.insert("is_running".into(), serde_json::Value::Bool(true));
+            }
+            app.emit("task:updated", &val).ok();
+        }
         started += 1;
     }
 }
@@ -114,24 +144,38 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
 /// Called when a task completes — cascades to start newly unblocked dependents
 /// and checks if parent task's sub-tasks are all done.
 pub fn on_task_completed(db: &DbPool, app: &AppHandle, project_id: i64, task_id: i64) {
-    // Check if this task is a sub-task — if so, check if parent can complete
+    // Check if this task is a sub-task — if so, atomically check if parent can complete
     if let Some(task) = tasks::get_by_id(db, task_id) {
         if let Some(parent_id) = task.parent_task_id {
-            if tasks::are_all_subtasks_done(db, parent_id) {
-                // All sub-tasks done — complete the parent
+            // Use transaction to prevent double parent completion from concurrent subtask completions
+            let result = db::with_transaction(db, |conn| {
+                let total: i64 = conn.query_row(
+                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1", rusqlite::params![parent_id], |r| r.get(0),
+                ).unwrap_or(0);
+                let done: i64 = conn.query_row(
+                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1 AND status IN ('done','testing')",
+                    rusqlite::params![parent_id], |r| r.get(0),
+                ).unwrap_or(0);
+                if total == 0 || done < total { return Ok(false); }
+
+                let awaiting: i64 = conn.query_row(
+                    "SELECT COALESCE(awaiting_subtasks, 0) FROM tasks WHERE id=?1",
+                    rusqlite::params![parent_id], |r| r.get(0),
+                ).unwrap_or(0);
+                if awaiting != 1 { return Ok(false); }
+
+                conn.execute("UPDATE tasks SET awaiting_subtasks=0, status='testing', completed_at=datetime('now','localtime'), updated_at=datetime('now','localtime') WHERE id=?1",
+                    rusqlite::params![parent_id]).map_err(|e| e.to_string())?;
+                Ok(true)
+            });
+
+            if result.unwrap_or(false) {
                 if let Some(parent) = tasks::get_by_id(db, parent_id) {
-                    if parent.awaiting_subtasks.unwrap_or(0) == 1 {
-                        tasks::set_awaiting_subtasks(db, parent_id, false);
-                        tasks::update_status(db, parent_id, "testing");
-                        tasks::set_completed(db, parent_id);
-                        activity::add(db, project_id, Some(parent_id), "subtasks_completed",
-                            &format!("All sub-tasks completed for: {}", parent.title), None);
-                        if let Some(updated) = tasks::get_by_id(db, parent_id) {
-                            app.emit("task:updated", &updated).ok();
-                        }
-                        log::info!("Parent task {} completed — all sub-tasks done", parent_id);
-                    }
+                    activity::add(db, project_id, Some(parent_id), "subtasks_completed",
+                        &format!("All sub-tasks completed for: {}", parent.title), None);
+                    app.emit("task:updated", &parent).ok();
                 }
+                log::info!("Parent task {} completed — all sub-tasks done", parent_id);
             }
         }
     }

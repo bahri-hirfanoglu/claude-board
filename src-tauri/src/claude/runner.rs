@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
 use tauri::{AppHandle, Emitter};
 use crate::db::{self, DbPool};
 use crate::db::{tasks, snippets, attachments, roles, projects, activity};
@@ -14,27 +14,45 @@ use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-type ProcessMap = Arc<Mutex<HashMap<i64, u32>>>;
-type StartingSet = Arc<Mutex<HashSet<i64>>>;
+type ProcessMap = Mutex<HashMap<i64, u32>>;
+type StartingSet = Mutex<HashSet<i64>>;
 
-static ACTIVE_PROCESSES: once_cell::sync::Lazy<ProcessMap> = once_cell::sync::Lazy::new(|| Arc::new(Mutex::new(HashMap::new())));
-static STARTING_TASKS: once_cell::sync::Lazy<StartingSet> = once_cell::sync::Lazy::new(|| Arc::new(Mutex::new(HashSet::new())));
+static ACTIVE_PROCESSES: once_cell::sync::Lazy<ProcessMap> = once_cell::sync::Lazy::new(|| Mutex::new(HashMap::new()));
+static STARTING_TASKS: once_cell::sync::Lazy<StartingSet> = once_cell::sync::Lazy::new(|| Mutex::new(HashSet::new()));
 static EVENT_CTX: once_cell::sync::Lazy<EventContext> = once_cell::sync::Lazy::new(EventContext::new);
 
 pub fn is_running(task_id: i64) -> bool {
-    ACTIVE_PROCESSES.lock().unwrap().contains_key(&task_id)
+    ACTIVE_PROCESSES.lock().contains_key(&task_id)
+}
+
+/// Fetch task and set is_running field, then emit task:updated event.
+fn emit_task_updated(db: &DbPool, app: &AppHandle, task_id: i64) {
+    if let Some(mut task) = tasks::get_by_id(db, task_id) {
+        task.is_running = is_running(task_id);
+        app.emit("task:updated", &task).ok();
+    }
 }
 
 pub fn stop(task_id: i64, db: &DbPool, app: &AppHandle) {
-    if let Some(pid) = ACTIVE_PROCESSES.lock().unwrap().remove(&task_id) {
+    if let Some(pid) = ACTIVE_PROCESSES.lock().remove(&task_id) {
         kill_process(pid);
-        STARTING_TASKS.lock().unwrap().remove(&task_id);
-        EVENT_CTX.task_usage.lock().unwrap().remove(&task_id);
+        STARTING_TASKS.lock().remove(&task_id);
+        EVENT_CTX.task_usage.lock().remove(&task_id);
+        EVENT_CTX.active_tool_calls.lock().retain(|_, tc| tc.task_id != task_id);
+        super::events::clear_task_file_access(task_id);
         tasks::add_log(db, task_id, "Claude process stopped by user.", "system", None);
         app.emit("task:log", &serde_json::json!({
             "taskId": task_id, "message": "Claude process stopped by user.", "logType": "system"
         })).ok();
     }
+}
+
+/// Cleanup all process tracking state. Called on app shutdown.
+pub fn cleanup_all() {
+    ACTIVE_PROCESSES.lock().clear();
+    STARTING_TASKS.lock().clear();
+    EVENT_CTX.task_usage.lock().clear();
+    EVENT_CTX.active_tool_calls.lock().clear();
 }
 
 fn kill_process(pid: u32) {
@@ -99,11 +117,12 @@ fn ensure_task_branch(task: &tasks::Task, working_dir: &str, project: &projects:
         c.output()
     };
 
-    if is_revision && task.branch_name.is_some() {
-        let bn = task.branch_name.as_deref().unwrap();
-        if let Ok(current) = exec("branch --show-current") {
-            if current != bn {
-                let _ = git_hidden(&["checkout", bn], working_dir);
+    if is_revision {
+        if let Some(bn) = task.branch_name.as_deref() {
+            if let Ok(current) = exec("branch --show-current") {
+                if current != bn {
+                    let _ = git_hidden(&["checkout", bn], working_dir);
+                }
             }
         }
     } else {
@@ -401,8 +420,8 @@ fn handle_process_lifecycle(
     attach_dir: &Path,
 ) {
     let pid = child.id();
-    ACTIVE_PROCESSES.lock().unwrap().insert(task_id, pid);
-    STARTING_TASKS.lock().unwrap().remove(&task_id);
+    ACTIVE_PROCESSES.lock().insert(task_id, pid);
+    STARTING_TASKS.lock().remove(&task_id);
 
     // CRITICAL: Drain stderr in background thread to prevent pipe buffer deadlock.
     // On Windows, the pipe buffer is ~64KB. If stderr fills and nobody reads it,
@@ -452,9 +471,10 @@ fn handle_process_lifecycle(
     let status = child.wait().ok().and_then(|s| s.code()).unwrap_or(-1);
 
     // Cleanup process tracking
-    ACTIVE_PROCESSES.lock().unwrap().remove(&task_id);
-    STARTING_TASKS.lock().unwrap().remove(&task_id);
-    EVENT_CTX.task_usage.lock().unwrap().remove(&task_id);
+    ACTIVE_PROCESSES.lock().remove(&task_id);
+    STARTING_TASKS.lock().remove(&task_id);
+    EVENT_CTX.task_usage.lock().remove(&task_id);
+    EVENT_CTX.active_tool_calls.lock().retain(|_, tc| tc.task_id != task_id);
     super::events::clear_task_file_access(task_id);
 
     if status == 0 {
@@ -477,16 +497,12 @@ fn handle_process_lifecycle(
                 &format!("Awaiting {} sub-task(s) to complete...", subtasks.len()), "system", None);
             activity::add(db, project_id, Some(task_id), "awaiting_subtasks",
                 &format!("Awaiting sub-tasks: {}", task_title), None);
-            if let Some(updated) = tasks::get_by_id(db, task_id) {
-                app.emit("task:updated", &updated).ok();
-            }
+            emit_task_updated(db, app, task_id);
         } else {
             // Normal completion — no pending sub-tasks
             tasks::update_status(db, task_id, "testing");
             tasks::set_completed(db, task_id);
-            if let Some(updated) = tasks::get_by_id(db, task_id) {
-                app.emit("task:updated", &updated).ok();
-            }
+            emit_task_updated(db, app, task_id);
             activity::add(db, project_id, Some(task_id), "task_completed", &format!("Task completed: {}", task_title), None);
             crate::services::notification::notify_task_completed(app, &crate::services::notification::TaskNotification::new(task_title, task_key));
 
@@ -528,10 +544,15 @@ pub fn start(
     let task_id = task.id;
     let db = db::get_db();
 
-    if is_running(task_id) || STARTING_TASKS.lock().unwrap().contains(&task_id) {
-        return;
+    // Atomic check-and-insert: single lock scope prevents TOCTOU race
+    {
+        let active = ACTIVE_PROCESSES.lock();
+        let mut starting = STARTING_TASKS.lock();
+        if active.contains_key(&task_id) || starting.contains(&task_id) {
+            return;
+        }
+        starting.insert(task_id);
     }
-    STARTING_TASKS.lock().unwrap().insert(task_id);
 
     // Copy attachments to working dir
     let (task_attachments, attach_dir) = copy_task_attachments(task_id, working_dir, &db);
@@ -545,8 +566,7 @@ pub fn start(
         let parent_ids = crate::db::dependencies::get_parent_ids(&db, task.id);
         parent_ids.iter()
             .filter_map(|pid| tasks::get_by_id(&db, *pid))
-            .filter(|p| p.context_summary.is_some())
-            .map(|p| (p.title.clone(), p.context_summary.unwrap()))
+            .filter_map(|p| p.context_summary.as_ref().map(|s| (p.title.clone(), s.clone())))
             .collect()
     };
 
@@ -558,7 +578,7 @@ pub fn start(
 
     // Snapshot baseline usage
     if let Some(current) = tasks::get_by_id(&db, task_id) {
-        EVENT_CTX.task_usage.lock().unwrap().insert(task_id, UsageTracker {
+        EVENT_CTX.task_usage.lock().insert(task_id, UsageTracker {
             baseline: UsageBaseline {
                 input: current.input_tokens.unwrap_or(0),
                 output: current.output_tokens.unwrap_or(0),
@@ -604,7 +624,8 @@ pub fn start(
             Err(e) => {
                 let db = db::get_db();
                 tasks::add_log(&db, task_id, &format!("Failed to start Claude: {}", e), "error", None);
-                STARTING_TASKS.lock().unwrap().remove(&task_id);
+                STARTING_TASKS.lock().remove(&task_id);
+                EVENT_CTX.task_usage.lock().remove(&task_id);
                 app.emit("claude:finished", &serde_json::json!({"taskId": task_id, "exitCode": -1})).ok();
                 return;
             }
@@ -627,10 +648,15 @@ pub fn start_test(
     let task_id = task.id;
     let db = db::get_db();
 
-    if is_running(task_id) || STARTING_TASKS.lock().unwrap().contains(&task_id) {
-        return;
+    // Atomic check-and-insert: single lock scope prevents TOCTOU race
+    {
+        let active = ACTIVE_PROCESSES.lock();
+        let mut starting = STARTING_TASKS.lock();
+        if active.contains_key(&task_id) || starting.contains(&task_id) {
+            return;
+        }
+        starting.insert(task_id);
     }
-    STARTING_TASKS.lock().unwrap().insert(task_id);
 
     let custom_prompt = project.test_prompt.as_deref().unwrap_or("").to_string();
 
@@ -737,15 +763,15 @@ After all checks, you MUST output this exact JSON block as your final output:
             Err(e) => {
                 let db = db::get_db();
                 tasks::add_log(&db, task_id, &format!("Auto-test: Failed to start: {}", e), "error", None);
-                STARTING_TASKS.lock().unwrap().remove(&task_id);
+                STARTING_TASKS.lock().remove(&task_id);
                 app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "error"})).ok();
                 return;
             }
         };
 
         let pid = child.id();
-        ACTIVE_PROCESSES.lock().unwrap().insert(task_id, pid);
-        STARTING_TASKS.lock().unwrap().remove(&task_id);
+        ACTIVE_PROCESSES.lock().insert(task_id, pid);
+        STARTING_TASKS.lock().remove(&task_id);
 
         // Drain stderr in background (prevents pipe deadlock + shows errors in real-time)
         if let Some(stderr) = child.stderr.take() {
@@ -797,7 +823,9 @@ After all checks, you MUST output this exact JSON block as your final output:
         }
 
         let status = child.wait().ok().and_then(|s| s.code()).unwrap_or(-1);
-        ACTIVE_PROCESSES.lock().unwrap().remove(&task_id);
+        ACTIVE_PROCESSES.lock().remove(&task_id);
+        STARTING_TASKS.lock().remove(&task_id);
+        EVENT_CTX.active_tool_calls.lock().retain(|_, tc| tc.task_id != task_id);
 
         let db = db::get_db();
 
@@ -832,9 +860,7 @@ After all checks, you MUST output this exact JSON block as your final output:
                         tasks::update_status(&db, task_id, "done");
                         // Regenerate lifecycle summary with test results included
                         generate_lifecycle_summary(task_id, &db);
-                        if let Some(updated) = tasks::get_by_id(&db, task_id) {
-                            app.emit("task:updated", &updated).ok();
-                        }
+                        emit_task_updated(&db, &app, task_id);
                         activity::add(&db, project_id, Some(task_id), "test_passed", &format!("Auto-test passed: {}", task_title), None);
                         crate::services::notification::notify_test_passed(&app, &crate::services::notification::TaskNotification::new(&task_title, task_key.as_deref()));
                         crate::services::queue::on_task_completed(&db, &app, project_id, task_id);

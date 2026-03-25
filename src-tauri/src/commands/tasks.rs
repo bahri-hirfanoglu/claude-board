@@ -53,7 +53,7 @@ pub fn create_task(
         }
     }
 
-    let task = tq::get_by_id(&db, id).unwrap();
+    let task = tq::get_by_id(&db, id).ok_or("Failed to retrieve created task")?;
     app.emit("task:created", &task).ok();
     activity::add(&db, project_id, Some(task.id), "task_created", &format!("Task created: {}", title.trim()), None);
     queue::start_next_queued(&db, &app, project_id);
@@ -81,7 +81,8 @@ pub fn update_task(
         if role_id.is_some() { role_id } else { task.role_id },
         tags.as_deref().or(task.tags.as_deref()),
     );
-    let updated = tq::get_by_id(&db, id).unwrap();
+    let mut updated = tq::get_by_id(&db, id).ok_or("Failed to retrieve updated task")?;
+    updated.is_running = runner::is_running(id);
     app.emit("task:updated", &updated).ok();
     Ok(updated)
 }
@@ -112,10 +113,10 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
         activity::add(&db, task.project_id, Some(id), "task_approved", &format!("Task approved: {}", task.title), None);
     }
 
-    let updated = tq::get_by_id(&db, id).unwrap();
+    let updated = tq::get_by_id(&db, id).ok_or("Task not found after status update")?;
 
     if status == "in_progress" && prev_status != "in_progress" {
-        let project = pq::get_by_id(&db, task.project_id).unwrap();
+        let project = pq::get_by_id(&db, task.project_id).ok_or("Project not found")?;
         runner::start(&updated, app.clone(), &project.working_dir, &project, mcp_port);
         activity::add(&db, task.project_id, Some(id), "task_started", &format!("Task started: {}", task.title), None);
     }
@@ -126,7 +127,7 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
         queue::start_next_queued(&db, &app, task.project_id);
     }
 
-    let mut final_task = tq::get_by_id(&db, id).unwrap();
+    let mut final_task = tq::get_by_id(&db, id).ok_or("Task not found")?;
     final_task.is_running = runner::is_running(id);
     app.emit("task:updated", &final_task).ok();
     Ok(final_task)
@@ -172,12 +173,15 @@ pub fn restart_task(app: AppHandle, id: i64, mcp_port: u16) -> Result<tq::Task, 
     runner::stop(id, &db, &app);
     tq::clear_logs(&db, id);
     tq::update_status(&db, id, "in_progress");
-    let updated = tq::get_by_id(&db, id).unwrap();
-    let project = pq::get_by_id(&db, task.project_id).unwrap();
+    let updated = tq::get_by_id(&db, id).ok_or("Task not found after restart")?;
+    let project = pq::get_by_id(&db, task.project_id).ok_or("Project not found")?;
     runner::start(&updated, app.clone(), &project.working_dir, &project, mcp_port);
-    let mut val = serde_json::to_value(&updated).unwrap();
-    val.as_object_mut().unwrap().insert("is_running".into(), serde_json::Value::Bool(true));
-    app.emit("task:updated", &val).ok();
+    if let Ok(mut val) = serde_json::to_value(&updated) {
+        if let Some(obj) = val.as_object_mut() {
+            obj.insert("is_running".into(), serde_json::Value::Bool(true));
+        }
+        app.emit("task:updated", &val).ok();
+    }
     Ok(updated)
 }
 
@@ -188,17 +192,17 @@ pub fn request_changes(app: AppHandle, id: i64, feedback: String, mcp_port: u16)
     if feedback.trim().is_empty() { return Err("Feedback is required".into()); }
 
     tq::increment_revision_count(&db, id);
-    let rev_num = tq::get_by_id(&db, id).unwrap().revision_count.unwrap_or(1);
+    let rev_num = tq::get_by_id(&db, id).map(|t| t.revision_count.unwrap_or(1)).unwrap_or(1);
     tq::add_revision(&db, id, rev_num, feedback.trim());
     tq::update_status(&db, id, "in_progress");
-    let updated = tq::get_by_id(&db, id).unwrap();
-    let project = pq::get_by_id(&db, task.project_id).unwrap();
+    let updated = tq::get_by_id(&db, id).ok_or("Task not found")?;
+    let project = pq::get_by_id(&db, task.project_id).ok_or("Project not found")?;
     runner::start(&updated, app.clone(), &project.working_dir, &project, mcp_port);
     activity::add(&db, task.project_id, Some(id), "revision_requested",
         &format!("Revision #{}: {}", rev_num, task.title),
         Some(&serde_json::json!({"feedback": feedback.trim()}).to_string()));
     crate::services::notification::notify_revision_requested(&app, &crate::services::notification::TaskNotification::new(&task.title, task.task_key.as_deref()));
-    let mut final_task = tq::get_by_id(&db, id).unwrap();
+    let mut final_task = tq::get_by_id(&db, id).ok_or("Task not found")?;
     final_task.is_running = runner::is_running(id);
     app.emit("task:updated", &final_task).ok();
     Ok(final_task)
@@ -215,11 +219,14 @@ pub fn get_task_events(taskId: i64, limit: Option<i64>) -> Vec<serde_json::Value
     let db = db::get_db();
     let conn = db.lock();
     let lim = limit.unwrap_or(500);
-    let mut stmt = conn.prepare(
+    let mut stmt = match conn.prepare(
         "SELECT id, event_type, event_data, timestamp_ms FROM task_events
          WHERE task_id=?1 ORDER BY timestamp_ms ASC LIMIT ?2"
-    ).unwrap();
-    stmt.query_map(rusqlite::params![taskId, lim], |r| {
+    ) {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_task_events prepare: {}", e); return vec![]; }
+    };
+    let result: Vec<serde_json::Value> = match stmt.query_map(rusqlite::params![taskId, lim], |r| {
         let data_str: String = r.get(2)?;
         let data: serde_json::Value = serde_json::from_str(&data_str).unwrap_or(serde_json::json!({}));
         Ok(serde_json::json!({
@@ -228,7 +235,11 @@ pub fn get_task_events(taskId: i64, limit: Option<i64>) -> Vec<serde_json::Value
             "data": data,
             "timestampMs": r.get::<_, i64>(3)?,
         }))
-    }).unwrap().flatten().collect()
+    }) {
+        Ok(rows) => rows.flatten().collect(),
+        Err(e) => { log::error!("get_task_events query: {}", e); vec![] }
+    };
+    result
 }
 
 #[tauri::command]
@@ -241,12 +252,13 @@ pub fn get_task_detail(id: i64) -> Result<serde_json::Value, String> {
         .and_then(|c| serde_json::from_str(c).ok())
         .unwrap_or(serde_json::json!([]));
 
-    let mut val = serde_json::to_value(&task).unwrap();
-    let obj = val.as_object_mut().unwrap();
-    obj.insert("commits".into(), commits);
-    obj.insert("revisions".into(), serde_json::to_value(revisions).unwrap());
-    obj.insert("attachments".into(), serde_json::to_value(task_attachments).unwrap());
-    obj.insert("is_running".into(), serde_json::Value::Bool(runner::is_running(id)));
+    let mut val = serde_json::to_value(&task).map_err(|e| e.to_string())?;
+    if let Some(obj) = val.as_object_mut() {
+        obj.insert("commits".into(), commits);
+        obj.insert("revisions".into(), serde_json::to_value(revisions).unwrap_or_default());
+        obj.insert("attachments".into(), serde_json::to_value(task_attachments).unwrap_or_default());
+        obj.insert("is_running".into(), serde_json::Value::Bool(runner::is_running(id)));
+    }
     Ok(val)
 }
 
@@ -434,11 +446,10 @@ pub fn get_agent_activity(project_id: i64) -> serde_json::Value {
         .map(|t| {
             // Get recent tool calls from logs
             let conn = db.lock();
-            let recent_tools: Vec<serde_json::Value> = {
-                let mut stmt = conn.prepare(
-                    "SELECT message, meta, created_at FROM task_logs WHERE task_id=?1 AND log_type='tool' ORDER BY id DESC LIMIT 20"
-                ).unwrap();
-                let result: Vec<serde_json::Value> = stmt.query_map(rusqlite::params![t.id], |r| {
+            let recent_tools: Vec<serde_json::Value> = conn.prepare(
+                "SELECT message, meta, created_at FROM task_logs WHERE task_id=?1 AND log_type='tool' ORDER BY id DESC LIMIT 20"
+            ).ok().map(|mut stmt| {
+                stmt.query_map(rusqlite::params![t.id], |r| {
                     let msg: String = r.get(0)?;
                     let meta: Option<String> = r.get(1)?;
                     let created: Option<String> = r.get(2)?;
@@ -448,9 +459,8 @@ pub fn get_agent_activity(project_id: i64) -> serde_json::Value {
                         "meta": meta_val,
                         "created_at": created,
                     }))
-                }).unwrap().flatten().collect();
-                result
-            };
+                }).ok().map(|rows| rows.flatten().collect()).unwrap_or_default()
+            }).unwrap_or_default();
             let tool_count: i64 = conn.query_row(
                 "SELECT COUNT(*) FROM task_logs WHERE task_id=?1 AND log_type='tool'",
                 rusqlite::params![t.id], |r| r.get(0),

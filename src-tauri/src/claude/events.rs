@@ -4,7 +4,7 @@ use crate::db::{self, DbPool};
 use crate::db::tasks;
 use crate::db::stats;
 use std::collections::{HashMap, HashSet};
-use std::sync::Mutex;
+use parking_lot::Mutex;
 
 /// Safely truncate a string to at most `max` characters (not bytes).
 fn safe_truncate(s: &str, max: usize) -> &str {
@@ -24,13 +24,13 @@ static FILE_ACCESS_MAP: once_cell::sync::Lazy<Mutex<HashMap<String, HashSet<i64>
 
 /// Get a snapshot of the current file access map.
 pub fn get_file_access_map() -> HashMap<String, Vec<i64>> {
-    let map = FILE_ACCESS_MAP.lock().unwrap();
+    let map = FILE_ACCESS_MAP.lock();
     map.iter().map(|(k, v)| (k.clone(), v.iter().copied().collect())).collect()
 }
 
 /// Remove all file access entries for a task (called on task completion/stop).
 pub fn clear_task_file_access(task_id: i64) {
-    let mut map = FILE_ACCESS_MAP.lock().unwrap();
+    let mut map = FILE_ACCESS_MAP.lock();
     map.retain(|_, tasks| { tasks.remove(&task_id); !tasks.is_empty() });
 }
 
@@ -42,7 +42,7 @@ fn track_file_access(task_id: i64, tool_name: &str, input: &Value, app: &AppHand
     let file_path = input.get("file_path").or(input.get("path")).and_then(|v| v.as_str());
     if let Some(fp) = file_path {
         let normalized = normalize_path(fp);
-        let mut map = FILE_ACCESS_MAP.lock().unwrap();
+        let mut map = FILE_ACCESS_MAP.lock();
         let entry = map.entry(normalized.clone()).or_insert_with(HashSet::new);
         let is_write = matches!(tool_name, "Write" | "Edit" | "NotebookEdit");
 
@@ -217,7 +217,7 @@ fn handle_assistant(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, c
                     track_file_access(task_id, tool_name, &input, app);
 
                     if !tool_id.is_empty() {
-                        ctx.active_tool_calls.lock().unwrap().insert(tool_id.to_string(), ToolCall {
+                        ctx.active_tool_calls.lock().insert(tool_id.to_string(), ToolCall {
                             task_id,
                             tool_name: tool_name.to_string(),
                             start_time: std::time::Instant::now(),
@@ -231,7 +231,7 @@ fn handle_assistant(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, c
 
     // Usage tracking
     if let Some(usage) = event.pointer("/message/usage") {
-        let mut trackers = ctx.task_usage.lock().unwrap();
+        let mut trackers = ctx.task_usage.lock();
         if let Some(tracker) = trackers.get_mut(&task_id) {
             tracker.session.input += usage.get("input_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
             tracker.session.output += usage.get("output_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
@@ -266,7 +266,7 @@ fn handle_user(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, ctx: &
         for block in blocks {
             if block.get("type").and_then(|v| v.as_str()) == Some("tool_result") {
                 let tool_id = block.get("tool_use_id").and_then(|v| v.as_str()).unwrap_or("");
-                let tracked = ctx.active_tool_calls.lock().unwrap().remove(tool_id);
+                let tracked = ctx.active_tool_calls.lock().remove(tool_id);
                 let duration = tracked.as_ref().map(|t| t.start_time.elapsed().as_millis() as i64);
                 let tool_name = tracked.as_ref().map(|t| t.tool_name.as_str()).unwrap_or("unknown");
                 let is_error = block.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false);
@@ -314,7 +314,7 @@ fn handle_result(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, ctx:
     let model_used = event.get("model").and_then(|v| v.as_str()).unwrap_or("");
     let session_id = event.get("session_id").and_then(|v| v.as_str()).unwrap_or("");
 
-    let trackers = ctx.task_usage.lock().unwrap();
+    let trackers = ctx.task_usage.lock();
     let base = trackers.get(&task_id).map(|t| &t.baseline);
     let bi = base.map(|b| b.input).unwrap_or(0);
     let bo = base.map(|b| b.output).unwrap_or(0);
@@ -342,7 +342,8 @@ fn handle_result(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, ctx:
         );
         add_log(task_id, &msg, "system", db, app, None);
 
-        if let Some(updated) = tasks::get_by_id(db, task_id) {
+        if let Some(mut updated) = tasks::get_by_id(db, task_id) {
+            updated.is_running = true; // this is called during active process execution
             app.emit("task:updated", &updated).ok();
             app.emit("task:usage", &serde_json::json!({
                 "taskId": task_id,

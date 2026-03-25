@@ -45,11 +45,12 @@ pub fn get(db: &DbPool) -> AppSettings {
         Ok(s) => s,
         Err(_) => return AppSettings::default(),
     };
-    let rows: Vec<(String, String)> = stmt
+    let rows: Vec<(String, String)> = match stmt
         .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
-        .unwrap()
-        .flatten()
-        .collect();
+    {
+        Ok(r) => r.flatten().collect(),
+        Err(e) => { log::error!("get: {}", e); return AppSettings::default(); }
+    };
 
     let mut settings = AppSettings::default();
     for (key, value) in rows {

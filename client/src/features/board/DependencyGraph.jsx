@@ -20,6 +20,16 @@ function autoLayout(tasks, edges, waves) {
   const positions = {};
   const waveMap = {};
 
+  // Build edge lookup to find connected tasks
+  const edgeSet = new Set();
+  const taskParents = {};
+  (edges || []).forEach(e => {
+    edgeSet.add(e.from);
+    edgeSet.add(e.to);
+    if (!taskParents[e.to]) taskParents[e.to] = [];
+    taskParents[e.to].push(e.from);
+  });
+
   if (waves.length > 0) {
     waves.forEach((wave, wi) => {
       wave.forEach((t, ti) => {
@@ -28,19 +38,28 @@ function autoLayout(tasks, edges, waves) {
     });
   }
 
+  // For unassigned tasks (done/testing/orphans), place them in the correct wave
+  // based on their dependency relationships, not in a separate column
   const assignedIds = new Set(Object.keys(waveMap).map(Number));
   const unassigned = tasks.filter(t => !assignedIds.has(t.id));
-  let doneIdx = 0;
+
+  // Find max wave of parents for each unassigned task to place it after its dependencies
+  const maxWaveFromMap = waves.length > 0 ? waves.length - 1 : 0;
   unassigned.forEach(t => {
-    if (t.status === 'done' || t.status === 'testing') {
-      waveMap[t.id] = { wave: -1, index: doneIdx++ };
-    }
+    const parents = taskParents[t.id] || [];
+    let bestWave = 0;
+    parents.forEach(pid => {
+      if (waveMap[pid]) bestWave = Math.max(bestWave, waveMap[pid].wave + 1);
+    });
+    // If task has no parents in waveMap, place after last wave
+    if (parents.length === 0 && maxWaveFromMap > 0) bestWave = maxWaveFromMap + 1;
+    waveMap[t.id] = { wave: bestWave, index: 0 }; // index will be recalculated below
   });
 
   const waveGroups = {};
-  Object.entries(waveMap).forEach(([id, { wave, index }]) => {
+  Object.entries(waveMap).forEach(([id, { wave }]) => {
     if (!waveGroups[wave]) waveGroups[wave] = [];
-    waveGroups[wave].push({ id: Number(id), index });
+    waveGroups[wave].push({ id: Number(id), index: waveGroups[wave].length });
   });
 
   const allMapped = new Set(Object.keys(waveMap).map(Number));
@@ -378,7 +397,8 @@ export default function DependencyGraph({
           const pos = positions[task.id];
           if (!pos) return null;
           const colors = STATUS_COLORS[task.status] || STATUS_COLORS.backlog;
-          const isRunning = task.status === 'in_progress' || task.is_running;
+          const isRunning = task.is_running || task.status === 'in_progress';
+          const isTesting = task.is_running && task.status === 'testing';
           const isHovered = hoveredId === task.id;
           const isEdgeDragTarget = edgeDrag?.targetId === task.id;
           const isEdgeDragSource = edgeDrag?.fromId === task.id;
@@ -409,7 +429,7 @@ export default function DependencyGraph({
                   width={NODE_W * 0.6}
                   height={3}
                   rx={1.5}
-                  fill="#D97706"
+                  fill={isTesting ? '#A855F7' : '#D97706'}
                   opacity={0.8}
                 >
                   <animate attributeName="width" values={`0;${NODE_W};0`} dur="2s" repeatCount="indefinite" />

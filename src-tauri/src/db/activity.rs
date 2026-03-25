@@ -24,10 +24,13 @@ pub fn add(db: &DbPool, project_id: i64, task_id: Option<i64>, event_type: &str,
 
 pub fn get_by_project(db: &DbPool, project_id: i64, limit: i64, offset: i64) -> Vec<ActivityEntry> {
     let conn = db.lock();
-    let mut stmt = conn.prepare(
+    let mut stmt = match conn.prepare(
         "SELECT a.*, t.title as task_title FROM activity_log a LEFT JOIN tasks t ON a.task_id=t.id WHERE a.project_id=?1 ORDER BY a.id DESC LIMIT ?2 OFFSET ?3"
-    ).unwrap();
-    stmt.query_map(params![project_id, limit, offset], |row| {
+    ) {
+        Ok(s) => s,
+        Err(e) => { log::error!("get_by_project: {}", e); return vec![]; }
+    };
+    let result = match stmt.query_map(params![project_id, limit, offset], |row| {
         let meta_str: String = row.get::<_, String>("metadata").unwrap_or_else(|_| "{}".into());
         let metadata = serde_json::from_str(&meta_str).unwrap_or(serde_json::Value::Object(Default::default()));
         Ok(ActivityEntry {
@@ -40,5 +43,9 @@ pub fn get_by_project(db: &DbPool, project_id: i64, limit: i64, offset: i64) -> 
             task_title: row.get("task_title").ok(),
             created_at: row.get("created_at")?,
         })
-    }).unwrap().flatten().collect()
+    }) {
+        Ok(rows) => rows.flatten().collect(),
+        Err(e) => { log::error!("get_by_project: {}", e); vec![] }
+    };
+    result
 }
