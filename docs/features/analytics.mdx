@@ -1,72 +1,52 @@
 ---
 title: "Analytics"
-description: "Track task stats, Claude usage, and costs"
+description: "Cost tracking, performance metrics, model comparison, and efficiency dashboard"
 icon: "chart-mixed"
 ---
 
-The analytics panel gives you a comprehensive view of project activity, task throughput, and Claude API usage.
+The Analytics view provides comprehensive cost tracking, model comparison, efficiency metrics, and a sortable task performance table. Access it from the board toolbar (TrendingUp icon).
 
-<Frame><img src="/images/feature-analytics.svg" alt="Usage Analytics" /></Frame>
+## Cost Summary
 
-## Stats Panel
-
-Access analytics from the project dashboard. The panel shows real-time statistics across several dimensions.
-
-### Status Breakdown
-
-A visual chart showing how many tasks are in each status:
-
-- **Backlog** — queued
-- **In Progress** — actively running
-- **Testing** — awaiting review
-- **Done** — completed
-
-### Type Distribution
-
-See the mix of task types across your project: feature, bugfix, refactor, docs, test, and chore. Helps identify what kind of work dominates.
-
-### Priority Distribution
-
-Breakdown of tasks by priority level (low, medium, high, urgent). Useful for spotting if your backlog is overloaded with urgent items.
-
-## Duration Stats
-
-Track how long tasks take from start to completion:
+Four stat cards at the top show:
 
 | Metric | Description |
 |--------|-------------|
-| **Average duration** | Mean time from In Progress to Done |
-| **Median duration** | Middle value, less affected by outliers |
-| **Fastest / Slowest** | Range of task durations |
+| **Total Cost** | Cumulative API cost across all tasks |
+| **Total Tokens** | Input + output tokens with breakdown |
+| **Avg Cost/Task** | Average cost per task with usage |
+| **Avg Tokens/Task** | Average token consumption |
 
-<Tip>Use duration stats to calibrate your task sizing. If tasks consistently take too long, break them into smaller pieces.</Tip>
+## Model Comparison
 
-## Completion Timeline
+A bar chart comparing models by cost and token usage:
 
-A time-series chart showing tasks completed per day or week. Track your team's throughput over time and spot trends.
+- Each model (Haiku, Sonnet, Opus) shows task count, total tokens, and total cost
+- Color-coded by model: green (Haiku), blue (Sonnet), purple (Opus)
+- Helps identify which model is most cost-effective for your workload
 
-## Claude Usage Dashboard
+## Cost Trend
 
-### Model Breakdown
+Daily cost chart showing spending over time. Hover for exact values per day (cost, tokens, task count).
 
-See which models are used most across your tasks:
+## Efficiency Metrics
 
-| Model | Typical Use |
-|-------|-------------|
-| **Opus** | Complex features, multi-file changes |
-| **Sonnet** | Everyday development tasks |
-| **Haiku** | Quick fixes, docs, simple edits |
+Four efficiency cards:
 
-### Cost Tracking
+| Metric | Description |
+|--------|-------------|
+| **Throughput** | Tasks completed per hour of work time |
+| **Success Rate** | Percentage of tasks reaching done/testing vs total |
+| **Cache Rate** | Prompt cache hit percentage (higher = cheaper) |
+| **Avg Turns** | Average conversation turns per task |
 
-Track cumulative API costs with breakdowns by:
+## Task Performance Table
 
-- **Per task** — see which tasks consumed the most tokens
-- **Per model** — compare cost efficiency across models
-- **Over time** — daily/weekly cost trends
+A sortable table of all tasks with usage data:
 
-<Info>Cost estimates are based on published Claude API pricing and may not reflect custom enterprise agreements.</Info>
+- **Sort by**: Cost (default), Tokens, or Duration — click column headers
+- **Columns**: Task key, title, model, duration, tokens, cost
+- **Top 3 most expensive** tasks are highlighted with a warning icon
+- Paginated to 20 rows
 
-### Token Usage
-
-Aggregate statistics on input and output tokens, cache utilization rates, and per-task averages. Accessible via the dashboard or the [Stats API](/api/stats).
+<Tip>Sort by cost descending to identify expensive tasks. Consider using a cheaper model (Haiku) for simple tasks like docs or chores.</Tip>

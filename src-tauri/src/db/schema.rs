@@ -229,6 +229,12 @@ pub fn run_migrations(conn: &Connection) {
         ("tasks", "test_report", "ALTER TABLE tasks ADD COLUMN test_report TEXT"),
         ("projects", "auto_test", "ALTER TABLE projects ADD COLUMN auto_test INTEGER DEFAULT 0"),
         ("projects", "test_prompt", "ALTER TABLE projects ADD COLUMN test_prompt TEXT DEFAULT ''"),
+        // Orchestration: context handoff & conditional workflows
+        ("tasks", "context_summary", "ALTER TABLE tasks ADD COLUMN context_summary TEXT"),
+        ("task_dependencies", "condition_type", "ALTER TABLE task_dependencies ADD COLUMN condition_type TEXT DEFAULT 'always'"),
+        // Sub-task spawning
+        ("tasks", "parent_task_id", "ALTER TABLE tasks ADD COLUMN parent_task_id INTEGER"),
+        ("tasks", "awaiting_subtasks", "ALTER TABLE tasks ADD COLUMN awaiting_subtasks INTEGER DEFAULT 0"),
     ];
 
     for (table, col, sql) in migrations {

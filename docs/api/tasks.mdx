@@ -1,6 +1,6 @@
 ---
 title: "Tasks API"
-description: "CRUD, status changes, and agent control for tasks"
+description: "CRUD, status changes, agent control, dependencies, and observability"
 icon: "list-check"
 ---
 
@@ -42,7 +42,8 @@ Content-Type: application/json
   "type": "feature",
   "priority": 2,
   "model": "sonnet",
-  "thinkingEffort": "medium"
+  "thinkingEffort": "medium",
+  "parentTaskId": null
 }
 ```
 
@@ -54,6 +55,9 @@ Content-Type: application/json
 | `priority` | No | `1` | 0 (low) to 3 (urgent) |
 | `model` | No | `sonnet` | `opus`, `sonnet`, `haiku` |
 | `thinkingEffort` | No | `medium` | `low`, `medium`, `high` |
+| `parentTaskId` | No | `null` | Parent task ID for sub-task linking |
+
+<Info>When `parentTaskId` is set, the new task becomes a sub-task. The parent automatically enters "awaiting sub-tasks" mode and completes when all sub-tasks finish.</Info>
 
 ## Update Task
 
@@ -81,15 +85,11 @@ Moving to `in_progress` spawns a Claude agent. Moving to `done` stops any runnin
 POST /api/projects/:projectId/tasks/:id/stop
 ```
 
-Stops the running Claude agent without changing the task status.
-
 ## Restart Agent
 
 ```http
 POST /api/projects/:projectId/tasks/:id/restart
 ```
-
-Kills the current agent and starts a fresh session.
 
 ## Request Changes
 
@@ -102,15 +102,11 @@ Content-Type: application/json
 { "feedback": "Add input validation to the login endpoint" }
 ```
 
-Moves the task back to `in_progress` with feedback appended to the prompt.
-
 ## Get Logs
 
 ```http
 GET /api/projects/:projectId/tasks/:id/logs
 ```
-
-Returns all terminal log entries for the task.
 
 ## Delete Task
 
@@ -118,15 +114,21 @@ Returns all terminal log entries for the task.
 DELETE /api/projects/:projectId/tasks/:id
 ```
 
+---
+
 ## Dependencies (Tauri IPC)
 
 ### Add Dependency
 
 ```javascript
-invoke('add_task_dependency', { taskId: 5, dependsOnId: 3 })
+invoke('add_task_dependency', {
+  taskId: 5,
+  dependsOnId: 3,
+  conditionType: 'always' // 'always' | 'on_success' | 'on_failure'
+})
 ```
 
-Creates a dependency edge — task 5 will wait for task 3 to complete. Returns error if it would create a cycle.
+Creates a dependency edge with an optional condition type. Returns error if it would create a cycle.
 
 ### Remove Dependency
 
@@ -145,7 +147,7 @@ invoke('get_task_dependencies', { taskId: 5 })
 
 ```javascript
 invoke('get_dependency_graph', { projectId: 1 })
-// → { tasks: [...], edges: [{from: 3, to: 5}, ...], waves: [...] }
+// → { tasks: [...], edges: [{from: 3, to: 5, conditionType: "always"}, ...], waves: [...] }
 ```
 
 ### Get Execution Waves
@@ -155,9 +157,52 @@ invoke('get_execution_waves', { projectId: 1 })
 // → [[task1, task2], [task3], [task4, task5]]
 ```
 
-### Get Task Events (Session Replay)
+---
+
+## Observability (Tauri IPC)
+
+### Get Agent Activity
 
 ```javascript
-invoke('get_task_events', { taskId: 5, limit: 500 })
-// → [{ id, eventType, data, timestampMs }, ...]
+invoke('get_agent_activity', { projectId: 1 })
 ```
+
+Returns real-time data about all running agents:
+
+```json
+{
+  "agents": [
+    {
+      "taskId": 5,
+      "taskKey": "FTR-PRJ-1005",
+      "title": "Add authentication",
+      "model": "sonnet",
+      "elapsedSec": 120,
+      "inputTokens": 50000,
+      "outputTokens": 12000,
+      "totalCost": 0.33,
+      "toolCallCount": 45,
+      "recentTools": [...],
+      "activeFiles": ["src/auth.rs", "src/main.rs"],
+      "isRunning": true,
+      "awaitingSubtasks": false
+    }
+  ],
+  "fileMap": {
+    "src/auth.rs": [5],
+    "src/main.rs": [5, 8]
+  },
+  "conflicts": [
+    { "filePath": "src/main.rs", "taskIds": [5, 8] }
+  ]
+}
+```
+
+### Get Active File Map
+
+```javascript
+invoke('get_active_file_map')
+// → { "src/auth.rs": [5], "src/main.rs": [5, 8] }
+```
+
+Returns a map of file paths to task IDs currently accessing them.

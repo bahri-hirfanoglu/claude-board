@@ -155,6 +155,62 @@ fn scan_git_info(working_dir: &str, task_id: i64, db: &DbPool) {
     tasks::update_git_info(db, task_id, &commits_json, pr_url.as_deref(), diff_stat.as_deref());
 }
 
+/// Generate a context summary from task completion data for Agent Context Handoff.
+/// This summary is injected into dependent task prompts so they understand what was done.
+fn generate_context_summary(task_id: i64, task_title: &str, db: &DbPool) {
+    let task = match tasks::get_by_id(db, task_id) {
+        Some(t) => t,
+        None => return,
+    };
+
+    let mut parts = Vec::new();
+    parts.push(format!("## Completed: {}", task_title));
+
+    // Changes made (diff stat)
+    if let Some(ref diff) = task.diff_stat {
+        if !diff.is_empty() {
+            parts.push("### Changes Made".into());
+            // Limit diff_stat to first 10 lines
+            let limited: String = diff.lines().take(10).collect::<Vec<_>>().join("\n");
+            parts.push(limited);
+        }
+    }
+
+    // Key commits
+    if let Some(ref commits_json) = task.commits {
+        if let Ok(commits) = serde_json::from_str::<Vec<serde_json::Value>>(commits_json) {
+            if !commits.is_empty() {
+                parts.push("### Key Commits".into());
+                for c in commits.iter().take(5) {
+                    let short = c.get("short").and_then(|v| v.as_str()).unwrap_or("");
+                    let msg = c.get("message").and_then(|v| v.as_str()).unwrap_or("");
+                    if !short.is_empty() {
+                        parts.push(format!("- {} {}", short, msg));
+                    }
+                }
+            }
+        }
+    }
+
+    // Summary from last claude logs
+    let logs = tasks::get_last_claude_logs(db, task_id, 5);
+    if !logs.is_empty() {
+        parts.push("### Summary".into());
+        let combined: String = logs.into_iter().rev().collect::<Vec<_>>().join(" ");
+        // Limit to 500 chars (safe UTF-8 boundary)
+        let trimmed: String = combined.chars().take(500).collect();
+        parts.push(trimmed);
+    }
+
+    // Branch info
+    if let Some(ref branch) = task.branch_name {
+        parts.push(format!("\n**Branch:** `{}`", branch));
+    }
+
+    let summary = parts.join("\n");
+    tasks::set_context_summary(db, task_id, &summary);
+}
+
 /// Copy task attachments from uploads dir to working dir for Claude access.
 fn copy_task_attachments(task_id: i64, working_dir: &str, db: &DbPool) -> (Vec<attachments::Attachment>, std::path::PathBuf) {
     let task_attachments = attachments::get_by_task(db, task_id);
@@ -287,25 +343,48 @@ fn handle_process_lifecycle(
     ACTIVE_PROCESSES.lock().unwrap().remove(&task_id);
     STARTING_TASKS.lock().unwrap().remove(&task_id);
     EVENT_CTX.task_usage.lock().unwrap().remove(&task_id);
+    super::events::clear_task_file_access(task_id);
 
     if status == 0 {
         scan_git_info(working_dir, task_id, db);
-        tasks::add_log(db, task_id, "Claude finished successfully.", "success", None);
-        tasks::update_status(db, task_id, "testing");
-        tasks::set_completed(db, task_id);
-        if let Some(updated) = tasks::get_by_id(db, task_id) {
-            app.emit("task:updated", &updated).ok();
-        }
-        activity::add(db, project_id, Some(task_id), "task_completed", &format!("Task completed: {}", task_title), None);
-        crate::services::notification::notify_task_completed(app, &crate::services::notification::TaskNotification::new(task_title, task_key));
 
-        // Auto-test: if enabled, start verification instead of waiting for manual review
-        let project = projects::get_by_id(db, project_id);
-        let should_auto_test = project.as_ref().map_or(false, |p| p.auto_test.unwrap_or(0) == 1);
-        if should_auto_test {
-            if let (Some(task), Some(proj)) = (tasks::get_by_id(db, task_id), project) {
-                let mcp_port: u16 = 4000;
-                start_test(&task, app.clone(), working_dir, &proj, mcp_port);
+        // Generate context summary for Agent Context Handoff
+        generate_context_summary(task_id, task_title, db);
+
+        tasks::add_log(db, task_id, "Claude finished successfully.", "success", None);
+
+        // Check if this task spawned sub-tasks that haven't completed yet
+        let subtasks = tasks::get_subtasks(db, task_id);
+        let has_pending_subtasks = !subtasks.is_empty() && !tasks::are_all_subtasks_done(db, task_id);
+
+        if has_pending_subtasks {
+            // Sub-tasks still running — keep task in_progress but mark as awaiting
+            tasks::set_awaiting_subtasks(db, task_id, true);
+            tasks::add_log(db, task_id,
+                &format!("Awaiting {} sub-task(s) to complete...", subtasks.len()), "system", None);
+            activity::add(db, project_id, Some(task_id), "awaiting_subtasks",
+                &format!("Awaiting sub-tasks: {}", task_title), None);
+            if let Some(updated) = tasks::get_by_id(db, task_id) {
+                app.emit("task:updated", &updated).ok();
+            }
+        } else {
+            // Normal completion — no pending sub-tasks
+            tasks::update_status(db, task_id, "testing");
+            tasks::set_completed(db, task_id);
+            if let Some(updated) = tasks::get_by_id(db, task_id) {
+                app.emit("task:updated", &updated).ok();
+            }
+            activity::add(db, project_id, Some(task_id), "task_completed", &format!("Task completed: {}", task_title), None);
+            crate::services::notification::notify_task_completed(app, &crate::services::notification::TaskNotification::new(task_title, task_key));
+
+            // Auto-test: if enabled, start verification
+            let project = projects::get_by_id(db, project_id);
+            let should_auto_test = project.as_ref().map_or(false, |p| p.auto_test.unwrap_or(0) == 1);
+            if should_auto_test {
+                if let (Some(task), Some(proj)) = (tasks::get_by_id(db, task_id), project) {
+                    let mcp_port: u16 = 4000;
+                    start_test(&task, app.clone(), working_dir, &proj, mcp_port);
+                }
             }
         }
 
@@ -348,7 +427,17 @@ pub fn start(
     let enabled_snippets = snippets::get_enabled_by_project(&db, task.project_id);
     let role = task.role_id.and_then(|rid| roles::get_by_id(&db, rid));
 
-    let prompt = build_prompt(task, &revisions, &enabled_snippets, &task_attachments, role.as_ref(), task.project_id);
+    // Collect context from completed parent tasks (Agent Context Handoff)
+    let parent_contexts: Vec<(String, String)> = {
+        let parent_ids = crate::db::dependencies::get_parent_ids(&db, task.id);
+        parent_ids.iter()
+            .filter_map(|pid| tasks::get_by_id(&db, *pid))
+            .filter(|p| p.context_summary.is_some())
+            .map(|p| (p.title.clone(), p.context_summary.unwrap()))
+            .collect()
+    };
+
+    let prompt = build_prompt(task, &revisions, &enabled_snippets, &task_attachments, role.as_ref(), task.project_id, &parent_contexts);
     let model = task.model.as_deref().unwrap_or("sonnet");
     let effort = task.thinking_effort.as_deref().unwrap_or("medium");
     let permission_mode = project.permission_mode.as_deref().unwrap_or("auto-accept");
@@ -450,13 +539,22 @@ pub fn start_test(
 
 {custom}
 
-## Verification Steps (execute ALL in order)
+## CRITICAL: Tool Call Rules
+- **NEVER run multiple Bash commands in parallel.** Always run them ONE AT A TIME, sequentially.
+  If you run parallel tool calls and one fails, ALL sibling calls get cancelled — this corrupts verification.
+- For discovery commands that may legitimately fail (checking if files/directories exist, looking for test suites),
+  always append `|| true` or `; echo "done"` so they return exit code 0.
+  Example: `ls src/__tests__ 2>/dev/null || echo "no tests dir"` instead of bare `ls src/__tests__`
+- Do NOT use `find` on Windows — use `ls` or `dir` patterns with `|| true` fallback.
+- Run each verification step fully before moving to the next.
+
+## Verification Steps (execute ALL in order, ONE command at a time)
 
 ### Step 1: Build Check
 Run the project's build/compile command. Look for package.json (npm run build), Cargo.toml (cargo check), Makefile, etc. Report if build succeeds or fails.
 
 ### Step 2: Test Suite
-Run the project's test suite if it exists (npm test, cargo test, pytest, etc.). Report test count, pass/fail counts.
+First check if a test suite exists (look at package.json scripts, Cargo.toml, pytest.ini etc.). Only run tests if a test command is configured. Report test count, pass/fail counts. If no test suite exists, mark as "skip".
 
 ### Step 3: Code Review
 Review the changed files for:
@@ -555,65 +653,31 @@ After all checks, you MUST output this exact JSON block as your final output:
             });
         }
 
-        // Stream stdout in real-time — same pattern as main task runner
+        // Stream stdout via the same event handler as normal tasks
+        // This gives full tool call grouping, expand/collapse, and rich meta in LiveTerminal
         let mut full_text = String::new();
         if let Some(stdout) = child.stdout.take() {
             let reader = BufReader::new(stdout);
             let db = db::get_db();
             for line in reader.lines().flatten() {
                 if line.trim().is_empty() { continue; }
-                if let Ok(event) = serde_json::from_str::<serde_json::Value>(&line) {
-                    let etype = event.get("type").and_then(|v| v.as_str()).unwrap_or("");
-
-                    if etype == "assistant" {
+                match serde_json::from_str::<serde_json::Value>(&line) {
+                    Ok(event) => {
+                        // Collect text for report extraction
                         if let Some(blocks) = event.pointer("/message/content").and_then(|c| c.as_array()) {
                             for block in blocks {
-                                let btype = block.get("type").and_then(|v| v.as_str()).unwrap_or("");
-                                if btype == "text" {
+                                if block.get("type").and_then(|v| v.as_str()) == Some("text") {
                                     if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
                                         full_text.push_str(text);
-                                        // Log text to terminal (truncate long blocks)
-                                        let preview: String = text.chars().take(300).collect();
-                                        if !preview.trim().is_empty() {
-                                            tasks::add_log(&db, task_id, &format!("Auto-test: {}", preview.trim()), "claude", None);
-                                            app.emit("task:log", &serde_json::json!({
-                                                "taskId": task_id, "message": format!("Auto-test: {}", preview.trim()),
-                                                "logType": "claude"
-                                            })).ok();
-                                        }
                                     }
-                                } else if btype == "tool_use" {
-                                    let tool = block.get("name").and_then(|v| v.as_str()).unwrap_or("unknown");
-                                    let input = block.get("input").cloned().unwrap_or_default();
-                                    let detail = input.get("file_path").or(input.get("command")).or(input.get("pattern"))
-                                        .and_then(|v| v.as_str()).unwrap_or("");
-                                    let msg = if detail.is_empty() { format!("Auto-test: {}", tool) } else { format!("Auto-test: {} → {}", tool, &detail[..detail.len().min(80)]) };
-                                    tasks::add_log(&db, task_id, &msg, "tool", None);
-                                    app.emit("task:log", &serde_json::json!({
-                                        "taskId": task_id, "message": &msg, "logType": "tool"
-                                    })).ok();
                                 }
                             }
                         }
-                    } else if etype == "user" {
-                        // Tool results
-                        if let Some(blocks) = event.pointer("/message/content").and_then(|c| c.as_array()) {
-                            for block in blocks {
-                                if block.get("type").and_then(|v| v.as_str()) == Some("tool_result") {
-                                    let is_error = block.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false);
-                                    let preview = block.get("content").and_then(|v| v.as_str())
-                                        .map(|s| s.lines().next().unwrap_or("").chars().take(100).collect::<String>())
-                                        .unwrap_or_default();
-                                    let icon = if is_error { "✗" } else { "✓" };
-                                    let msg = format!("Auto-test: {} {}", icon, preview);
-                                    let lt = if is_error { "error" } else { "tool_result" };
-                                    tasks::add_log(&db, task_id, &msg, lt, None);
-                                    app.emit("task:log", &serde_json::json!({
-                                        "taskId": task_id, "message": &msg, "logType": lt
-                                    })).ok();
-                                }
-                            }
-                        }
+                        // Route through the standard event handler for rich terminal output
+                        super::events::handle_event(task_id, &event, &db, &app, &EVENT_CTX);
+                    }
+                    Err(_) => {
+                        tasks::add_log(&db, task_id, &line, "claude", None);
                     }
                 }
             }

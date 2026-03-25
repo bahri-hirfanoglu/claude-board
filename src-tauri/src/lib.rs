@@ -38,6 +38,9 @@ pub fn run() {
                 migration::migrate_from_electron(std::path::Path::new(&cfg.data_dir));
                 db::init_db(&cfg.data_dir);
 
+                // Recover orphaned tasks and start auto-queue
+                services::queue::startup_recovery(app.handle());
+
                 let port = cfg.port;
                 tauri::async_runtime::spawn(async move {
                     services::http_api::start_server(port).await;
@@ -205,6 +208,8 @@ pub fn run() {
             commands::tasks::get_dependency_graph,
             commands::tasks::get_pipeline_status,
             commands::tasks::get_task_diff,
+            commands::tasks::get_active_file_map,
+            commands::tasks::get_agent_activity,
             // Stats
             commands::stats::get_project_stats,
             commands::stats::get_claude_usage,

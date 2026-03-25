@@ -20,11 +20,13 @@ pub fn get_task(id: i64) -> Result<tq::Task, String> {
 }
 
 #[tauri::command]
+#[allow(non_snake_case)]
 pub fn create_task(
     app: AppHandle, project_id: i64,
     title: String, description: Option<String>, priority: Option<i64>,
     task_type: Option<String>, acceptance_criteria: Option<String>,
     model: Option<String>, thinking_effort: Option<String>, role_id: Option<i64>,
+    parentTaskId: Option<i64>,
 ) -> Result<tq::Task, String> {
     let db = db::get_db();
     if pq::get_by_id(&db, project_id).is_none() { return Err("Project not found".into()); }
@@ -39,6 +41,17 @@ pub fn create_task(
         thinking_effort.as_deref().unwrap_or("medium"),
         role_id,
     );
+
+    // Link as sub-task if parent_task_id provided
+    if let Some(parent_id) = parentTaskId {
+        if tq::get_by_id(&db, parent_id).is_some() {
+            tq::set_parent_task_id(&db, id, parent_id);
+            tq::set_awaiting_subtasks(&db, parent_id, true);
+            activity::add(&db, project_id, Some(id), "subtask_created",
+                &format!("Sub-task created under #{}: {}", parent_id, title.trim()), None);
+        }
+    }
+
     let task = tq::get_by_id(&db, id).unwrap();
     app.emit("task:created", &task).ok();
     activity::add(&db, project_id, Some(task.id), "task_created", &format!("Task created: {}", title.trim()), None);
@@ -258,11 +271,11 @@ pub fn set_task_dependency(app: AppHandle, id: i64, depends_on: Option<i64>) -> 
 
 #[tauri::command]
 #[allow(non_snake_case)]
-pub fn add_task_dependency(app: AppHandle, taskId: i64, dependsOnId: i64) -> Result<serde_json::Value, String> {
+pub fn add_task_dependency(app: AppHandle, taskId: i64, dependsOnId: i64, conditionType: Option<String>) -> Result<serde_json::Value, String> {
     let db = db::get_db();
     tq::get_by_id(&db, taskId).ok_or("Task not found")?;
     tq::get_by_id(&db, dependsOnId).ok_or("Parent task not found")?;
-    db::dependencies::add_dependency(&db, taskId, dependsOnId).map_err(|e| e.to_string())?;
+    db::dependencies::add_dependency(&db, taskId, dependsOnId, conditionType.as_deref()).map_err(|e| e.to_string())?;
     let updated = tq::get_by_id(&db, taskId).ok_or("Task not found")?;
     app.emit("task:updated", &updated).ok();
     Ok(serde_json::json!({
@@ -393,4 +406,92 @@ pub fn get_task_diff(taskId: i64) -> Result<serde_json::Value, String> {
     };
 
     Ok(serde_json::json!({ "diff": diff }))
+}
+
+// ─── Observability & Collaboration Commands ───
+
+#[tauri::command]
+pub fn get_active_file_map() -> serde_json::Value {
+    let map = crate::claude::events::get_file_access_map();
+    serde_json::to_value(map).unwrap_or(serde_json::json!({}))
+}
+
+#[tauri::command]
+pub fn get_agent_activity(project_id: i64) -> serde_json::Value {
+    let db = db::get_db();
+    let tasks = tq::get_by_project(&db, project_id);
+    let file_map = crate::claude::events::get_file_access_map();
+
+    let agents: Vec<serde_json::Value> = tasks.iter()
+        .filter(|t| t.status.as_deref() == Some("in_progress") || runner::is_running(t.id))
+        .map(|t| {
+            // Get recent tool calls from logs
+            let conn = db.lock();
+            let recent_tools: Vec<serde_json::Value> = {
+                let mut stmt = conn.prepare(
+                    "SELECT message, meta, created_at FROM task_logs WHERE task_id=?1 AND log_type='tool' ORDER BY id DESC LIMIT 20"
+                ).unwrap();
+                let result: Vec<serde_json::Value> = stmt.query_map(rusqlite::params![t.id], |r| {
+                    let msg: String = r.get(0)?;
+                    let meta: Option<String> = r.get(1)?;
+                    let created: Option<String> = r.get(2)?;
+                    let meta_val = meta.and_then(|m| serde_json::from_str::<serde_json::Value>(&m).ok());
+                    Ok(serde_json::json!({
+                        "message": msg,
+                        "meta": meta_val,
+                        "created_at": created,
+                    }))
+                }).unwrap().flatten().collect();
+                result
+            };
+            let tool_count: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM task_logs WHERE task_id=?1 AND log_type='tool'",
+                rusqlite::params![t.id], |r| r.get(0),
+            ).unwrap_or(0);
+            drop(conn);
+
+            // Files this agent is accessing
+            let agent_files: Vec<String> = file_map.iter()
+                .filter(|(_, task_ids)| task_ids.contains(&t.id))
+                .map(|(path, _)| path.clone())
+                .collect();
+
+            let elapsed: i64 = t.started_at.as_ref().and_then(|s| {
+                chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S").ok()
+                    .map(|d| (chrono::Local::now().naive_local() - d).num_seconds())
+            }).unwrap_or(0);
+
+            serde_json::json!({
+                "taskId": t.id,
+                "taskKey": t.task_key,
+                "title": t.title,
+                "model": t.model_used.as_ref().or(t.model.as_ref()),
+                "startedAt": t.started_at,
+                "elapsedSec": elapsed,
+                "inputTokens": t.input_tokens.unwrap_or(0),
+                "outputTokens": t.output_tokens.unwrap_or(0),
+                "totalCost": t.total_cost.unwrap_or(0.0),
+                "toolCallCount": tool_count,
+                "recentTools": recent_tools,
+                "activeFiles": agent_files,
+                "isRunning": runner::is_running(t.id),
+                "awaitingSubtasks": t.awaiting_subtasks.unwrap_or(0) == 1,
+            })
+        })
+        .collect();
+
+    // Detect conflicts
+    let conflicts: Vec<serde_json::Value> = file_map.iter()
+        .filter(|(_, task_ids)| task_ids.len() > 1)
+        .map(|(path, task_ids)| serde_json::json!({
+            "filePath": path,
+            "taskIds": task_ids,
+        }))
+        .collect();
+
+    serde_json::json!({
+        "agents": agents,
+        "fileMap": file_map,
+        "conflicts": conflicts,
+    })
 }

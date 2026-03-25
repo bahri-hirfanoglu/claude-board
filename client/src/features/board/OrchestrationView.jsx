@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { GitBranch, CalendarRange, Radio } from 'lucide-react';
 import { api } from '../../lib/api';
 import { IS_TAURI, tauriListen } from '../../lib/tauriEvents';
+import { useTranslation } from '../../i18n/I18nProvider';
 import PipelineStats from './PipelineStats';
 import AgentCard from './AgentCard';
 import DependencyGraph from './DependencyGraph';
+import TimelineView from './TimelineView';
+import ObservabilityPanel from './ObservabilityPanel';
 
 const STORAGE_KEY = 'claude-board:dag-positions:';
 
@@ -21,8 +25,10 @@ function savePositions(projectId, positions) {
 }
 
 export default function OrchestrationView({ tasks, projectId, onViewLogs, onStatusChange, onViewDetail }) {
+  const { t } = useTranslation();
   const [graphData, setGraphData] = useState({ tasks: [], edges: [], waves: [] });
   const [savedPositions, setSavedPositions] = useState(() => loadPositions(projectId));
+  const [viewType, setViewType] = useState('graph'); // 'graph' | 'timeline' | 'live'
   const refreshCounter = useRef(0);
 
   const loadGraph = useCallback(() => {
@@ -77,39 +83,90 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
 
   return (
     <div className="h-full flex flex-col gap-3 p-4 overflow-auto">
-      {/* Pipeline Stats */}
-      <PipelineStats tasks={tasks} waves={waves} />
+      {/* Pipeline Stats + View Toggle */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <PipelineStats tasks={tasks} waves={waves} />
+        </div>
+        <div className="flex items-center bg-surface-800/50 rounded-lg border border-surface-700/30 p-0.5">
+          <button
+            onClick={() => setViewType('graph')}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              viewType === 'graph' ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300'
+            }`}
+          >
+            <GitBranch size={12} />
+            {t('orchestration.graph')}
+          </button>
+          <button
+            onClick={() => setViewType('timeline')}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              viewType === 'timeline' ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300'
+            }`}
+          >
+            <CalendarRange size={12} />
+            {t('orchestration.timeline')}
+          </button>
+          <button
+            onClick={() => setViewType('live')}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              viewType === 'live' ? 'bg-emerald-500/15 text-emerald-400' : 'text-surface-500 hover:text-surface-300'
+            }`}
+          >
+            <Radio size={12} />
+            {t('orchestration.live')}
+          </button>
+        </div>
+      </div>
 
       <div className="flex-1 flex gap-3 min-h-0">
-        {/* DAG Graph */}
-        <div className="flex-1 min-w-0">
-          <DependencyGraph
-            tasks={graphData.tasks || []}
-            edges={graphData.edges || []}
-            waves={waves}
-            onTaskClick={onViewDetail}
-            onAddDependency={handleAddDependency}
-            onStartTask={handleStartTask}
-            savedPositions={savedPositions}
-            onPositionsChange={handlePositionsChange}
-          />
-        </div>
-
-        {/* Live Agent Cards */}
-        {runningTasks.length > 0 && (
-          <div className="w-64 flex-shrink-0 space-y-2 overflow-y-auto">
-            <div className="text-[11px] font-medium text-surface-400 uppercase tracking-wider px-1">
-              Live Agents ({runningTasks.length})
-            </div>
-            {runningTasks.map(task => (
-              <AgentCard
-                key={task.id}
-                task={task}
-                onStop={handleStop}
-                onViewLogs={onViewLogs}
-              />
-            ))}
+        {viewType === 'live' ? (
+          /* Live Observability Panel — full width */
+          <div className="flex-1 min-w-0">
+            <ObservabilityPanel projectId={projectId} />
           </div>
+        ) : (
+          <>
+            {/* DAG Graph or Timeline */}
+            <div className="flex-1 min-w-0">
+              {viewType === 'graph' ? (
+                <DependencyGraph
+                  tasks={graphData.tasks || []}
+                  edges={graphData.edges || []}
+                  waves={waves}
+                  onTaskClick={onViewDetail}
+                  onAddDependency={handleAddDependency}
+                  onStartTask={handleStartTask}
+                  savedPositions={savedPositions}
+                  onPositionsChange={handlePositionsChange}
+                />
+              ) : (
+                <TimelineView
+                  tasks={tasks}
+                  waves={waves}
+                  edges={graphData.edges || []}
+                  onTaskClick={onViewDetail}
+                />
+              )}
+            </div>
+
+            {/* Live Agent Cards */}
+            {runningTasks.length > 0 && (
+              <div className="w-72 flex-shrink-0 space-y-2 overflow-y-auto">
+                <div className="text-[11px] font-medium text-surface-400 uppercase tracking-wider px-1">
+                  {t('orchestration.liveAgents')} ({runningTasks.length})
+                </div>
+                {runningTasks.map(task => (
+                  <AgentCard
+                    key={task.id}
+                    task={task}
+                    onStop={handleStop}
+                    onViewLogs={onViewLogs}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

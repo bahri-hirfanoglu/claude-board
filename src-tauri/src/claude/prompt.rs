@@ -10,6 +10,7 @@ pub fn build_prompt(
     attachments: &[Attachment],
     role: Option<&Role>,
     project_id: i64,
+    parent_contexts: &[(String, String)],
 ) -> String {
     let mut parts = Vec::new();
     let is_revision = !revisions.is_empty();
@@ -59,6 +60,17 @@ pub fn build_prompt(
         parts.push(format!("- Commit your revision changes with a clear message referencing revision #{}.", revision_num));
     }
 
+    // Context from completed parent dependencies
+    if !parent_contexts.is_empty() {
+        parts.push("\n## Context from Completed Dependencies".into());
+        parts.push("The following tasks were completed before this one. Their changes are already in the codebase:".into());
+        for (title, summary) in parent_contexts {
+            parts.push(format!("\n### {}", title));
+            parts.push(summary.clone());
+        }
+        parts.push(String::new());
+    }
+
     if !snippets.is_empty() {
         parts.push("\n## Project Context".into());
         for s in snippets {
@@ -84,7 +96,7 @@ pub fn build_prompt(
     parts.push("\n## Claude Board Integration".into());
     parts.push("You have access to Claude Board MCP tools. Use them to manage tasks on the project board:".into());
     parts.push(format!("- **list_tasks** — See all tasks in this project (project_id: {})", project_id));
-    parts.push("- **create_task** — Create new sub-tasks if this task requires breaking down into smaller pieces".into());
+    parts.push(format!("- **create_task** — Create sub-tasks if this task needs to be broken down. Pass parent_task_id: {} to link them — the parent will automatically wait for all sub-tasks to complete.", task.id));
     parts.push("- **change_task_status** — Move tasks between statuses".into());
     parts.push("- **get_task_detail** — Get full details of any task".into());
     parts.push("- **list_task_summary** — Get a grouped summary of all tasks".into());

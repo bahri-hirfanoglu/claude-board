@@ -154,3 +154,38 @@
 [data-color-mode="dark"] .w-md-editor-preview {
   border-left: 1px solid #3d372e !important;
 }
+
+/* Compact markdown preview in task detail */
+.md-preview-compact .wmde-markdown {
+  background-color: transparent !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+.md-preview-compact .wmde-markdown h1,
+.md-preview-compact .wmde-markdown h2,
+.md-preview-compact .wmde-markdown h3 {
+  font-size: 13px !important;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-top: 8px !important;
+  margin-bottom: 4px !important;
+  color: #d6cfc4 !important;
+}
+.md-preview-compact .wmde-markdown p {
+  margin-bottom: 6px !important;
+}
+.md-preview-compact .wmde-markdown pre {
+  font-size: 11px !important;
+  padding: 8px !important;
+  margin: 6px 0 !important;
+  border-radius: 6px !important;
+}
+.md-preview-compact .wmde-markdown ul,
+.md-preview-compact .wmde-markdown ol {
+  padding-left: 18px !important;
+  margin-bottom: 6px !important;
+}
+.md-preview-compact .wmde-markdown li {
+  font-size: 12px !important;
+  margin-bottom: 2px !important;
+}

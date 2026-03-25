@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/schemas/refs/heads/master/tauri-v2-conf/json-schema.json",
   "productName": "Claude Board",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "identifier": "com.claudeboard.desktop",
   "build": {
     "frontendDist": "../client/dist",

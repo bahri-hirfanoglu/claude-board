@@ -239,9 +239,17 @@ export default function DependencyGraph({
 
   const isDragging = !!(edgeDrag || nodeDrag);
 
-  // Draw edge paths
+  // Draw edge paths with conditional styling
   const edgePaths = useMemo(() => {
-    return edges.map(({ from, to }, i) => {
+    const EDGE_STYLES = {
+      always:     { color: '#4B5563', dash: 'none' },
+      on_success: { color: '#10B981', dash: '6,3' },
+      on_failure: { color: '#EF4444', dash: '6,3' },
+    };
+
+    return edges.map((edge, i) => {
+      const { from, to } = edge;
+      const conditionType = edge.conditionType || 'always';
       const src = positions[from];
       const dst = positions[to];
       if (!src || !dst) return null;
@@ -253,17 +261,30 @@ export default function DependencyGraph({
       const mx = (x1 + x2) / 2;
 
       const isHighlighted = hoveredId === from || hoveredId === to;
+      const style = EDGE_STYLES[conditionType] || EDGE_STYLES.always;
 
       return (
-        <path
-          key={i}
-          d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`}
-          fill="none"
-          stroke={isHighlighted ? '#D97706' : '#4B5563'}
-          strokeWidth={isHighlighted ? 2 : 1.5}
-          markerEnd="url(#arrowhead)"
-          opacity={hoveredId && !isHighlighted ? 0.2 : 0.8}
-        />
+        <g key={i}>
+          <path
+            d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`}
+            fill="none"
+            stroke={isHighlighted ? '#D97706' : style.color}
+            strokeWidth={isHighlighted ? 2 : 1.5}
+            strokeDasharray={conditionType === 'always' ? 'none' : style.dash}
+            markerEnd={`url(#arrowhead${conditionType !== 'always' ? '-' + conditionType : ''})`}
+            opacity={hoveredId && !isHighlighted ? 0.2 : 0.8}
+          />
+          {/* Condition label on edge midpoint */}
+          {conditionType !== 'always' && (
+            <text
+              x={mx} y={(y1 + y2) / 2 - 6}
+              textAnchor="middle" fill={style.color}
+              fontSize={8} fontWeight={600} opacity={0.8}
+            >
+              {conditionType === 'on_success' ? 'SUCCESS' : 'FAILURE'}
+            </text>
+          )}
+        </g>
       );
     });
   }, [edges, positions, hoveredId]);
@@ -337,6 +358,12 @@ export default function DependencyGraph({
           </marker>
           <marker id="arrowhead-drag" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
             <polygon points="0 0, 8 3, 0 6" fill="#A78BFA" />
+          </marker>
+          <marker id="arrowhead-on_success" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#10B981" />
+          </marker>
+          <marker id="arrowhead-on_failure" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#EF4444" />
           </marker>
         </defs>
 

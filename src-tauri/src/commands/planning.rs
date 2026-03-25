@@ -231,7 +231,7 @@ pub fn approve_plan(
                 if parent_idx < created.len() && child_idx < created.len() {
                     let parent_id = created[parent_idx].id;
                     let child_id = created[child_idx].id;
-                    db::dependencies::add_dependency(&db, child_id, parent_id).ok();
+                    db::dependencies::add_dependency(&db, child_id, parent_id, None).ok();
                 }
             }
         }
