@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="web/icon.png" width="128" height="128" alt="Claude Board">
+</p>
+
 <div align="center">
 
 # Claude Board
