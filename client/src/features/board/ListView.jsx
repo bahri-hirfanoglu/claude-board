@@ -10,6 +10,7 @@ const STATUS_DOT = {
   in_progress: 'bg-amber-400',
   testing: 'bg-claude',
   done: 'bg-emerald-400',
+  failed: 'bg-red-400',
 };
 export default function ListView({ tasks, onStatusChange, onViewLogs, onEditTask, onDeleteTask, onReviewTask, onViewDetail }) {
   const { t } = useTranslation();

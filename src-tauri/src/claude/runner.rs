@@ -5,7 +5,7 @@ use std::process::{Command, Stdio};
 use parking_lot::Mutex;
 use tauri::{AppHandle, Emitter};
 use crate::db::{self, DbPool};
-use crate::db::{tasks, snippets, attachments, roles, projects, activity};
+use crate::db::{tasks, snippets, attachments, roles, projects, activity, templates};
 use super::events::{EventContext, UsageTracker, UsageBaseline, UsageSession};
 use super::prompt::build_prompt;
 
@@ -224,6 +224,95 @@ fn scan_git_info(working_dir: &str, task_id: i64, db: &DbPool) {
 
     let commits_json = serde_json::to_string(&commits).unwrap_or_else(|_| "[]".into());
     tasks::update_git_info(db, task_id, &commits_json, pr_url.as_deref(), diff_stat.as_deref());
+}
+
+/// Delete feature branch (local + remote) after task completion.
+/// Skips if auto_pr is enabled (branch needed for open PR).
+/// Only acts if task has a branch and branch is not the base branch.
+pub fn cleanup_task_branch(task: &tasks::Task, working_dir: &str, project: &projects::Project) {
+    if project.auto_branch.unwrap_or(1) == 0 { return; }
+    // Don't delete branch if auto_pr is on — PR may still be open
+    if project.auto_pr.unwrap_or(0) == 1 { return; }
+    let branch = match task.branch_name.as_deref() {
+        Some(b) if !b.is_empty() => b,
+        _ => return,
+    };
+    let base = project.pr_base_branch.as_deref().unwrap_or("main");
+    if branch == base { return; }
+
+    let git = |args: &[&str]| {
+        let mut cmd = Command::new("git");
+        cmd.args(args).current_dir(working_dir)
+            .stdout(Stdio::null()).stderr(Stdio::null());
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        cmd.output().ok();
+    };
+
+    // Switch to base branch before deleting
+    git(&["checkout", base]);
+    // Delete local branch
+    git(&["branch", "-D", branch]);
+    // Delete remote branch (best-effort)
+    git(&["push", "origin", "--delete", branch]);
+    log::info!("Cleaned up branch {} for task {}", branch, task.id);
+}
+
+/// Auto-create a PR for the task's branch if auto_pr is enabled and no PR exists yet.
+fn auto_create_pr(task: &tasks::Task, working_dir: &str, project: &projects::Project, db: &DbPool, app: &AppHandle) {
+    if project.auto_pr.unwrap_or(0) == 0 { return; }
+    let branch = match task.branch_name.as_deref() {
+        Some(b) if !b.is_empty() => b,
+        _ => return,
+    };
+    let base = project.pr_base_branch.as_deref().unwrap_or("main");
+    if branch == base { return; }
+
+    // Check if PR already exists
+    if task.pr_url.is_some() { return; }
+
+    let exec = |args: &[&str]| -> Option<String> {
+        let mut cmd = Command::new("gh");
+        cmd.args(args).current_dir(working_dir)
+            .stdout(Stdio::piped()).stderr(Stdio::piped());
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        cmd.output().ok()
+            .filter(|o| o.status.success())
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+    };
+
+    // Push branch first
+    let mut push_cmd = Command::new("git");
+    push_cmd.args(["push", "-u", "origin", branch])
+        .current_dir(working_dir)
+        .stdout(Stdio::null()).stderr(Stdio::null());
+    #[cfg(target_os = "windows")]
+    push_cmd.creation_flags(CREATE_NO_WINDOW);
+    push_cmd.output().ok();
+
+    // Create PR
+    let title = format!("{}: {}", task.task_type.as_deref().unwrap_or("feat"), task.title);
+    let body = format!(
+        "## {}\n\n{}\n\n**Task Key:** {}\n**Type:** {}\n**Model:** {}",
+        task.title,
+        task.description.as_deref().unwrap_or(""),
+        task.task_key.as_deref().unwrap_or(""),
+        task.task_type.as_deref().unwrap_or("feature"),
+        task.model_used.as_deref().or(task.model.as_deref()).unwrap_or("sonnet"),
+    );
+
+    if let Some(url) = exec(&["pr", "create", "--title", &title, "--body", &body, "--base", base, "--head", branch]) {
+        if url.starts_with("http") {
+            tasks::update_git_info(db, task.id, task.commits.as_deref().unwrap_or("[]"), Some(&url), task.diff_stat.as_deref());
+            tasks::add_log(db, task.id, &format!("Auto-PR created: {}", url), "success", None);
+            app.emit("task:log", &serde_json::json!({"taskId": task.id, "message": format!("Auto-PR created: {}", url), "logType": "success"})).ok();
+            log::info!("Auto-PR created for task {}: {}", task.id, url);
+        }
+    } else {
+        tasks::add_log(db, task.id, "Auto-PR: Failed to create PR (gh CLI may not be authenticated)", "info", None);
+        log::warn!("Auto-PR failed for task {}", task.id);
+    }
 }
 
 /// Generate a context summary from task completion data for Agent Context Handoff.
@@ -536,6 +625,11 @@ fn handle_process_lifecycle(
     if status == 0 {
         scan_git_info(working_dir, task_id, db);
 
+        // Auto-create PR if enabled
+        if let (Some(task_snap), Some(proj)) = (tasks::get_by_id(db, task_id), projects::get_by_id(db, project_id)) {
+            auto_create_pr(&task_snap, working_dir, &proj, db, app);
+        }
+
         // Generate context summary for Agent Context Handoff
         generate_context_summary(task_id, task_title, db);
         generate_lifecycle_summary(task_id, db);
@@ -630,7 +724,10 @@ pub fn start(
             .collect()
     };
 
-    let prompt = build_prompt(task, &revisions, &enabled_snippets, &task_attachments, role.as_ref(), task.project_id, &parent_contexts);
+    // Load matching prompt template for this task type
+    let template = templates::find_for_task(&db, task.project_id, task.task_type.as_deref().unwrap_or("feature"));
+
+    let prompt = build_prompt(task, &revisions, &enabled_snippets, &task_attachments, role.as_ref(), task.project_id, &parent_contexts, template.as_ref());
     let model = task.model.as_deref().unwrap_or("sonnet");
     let effort = task.thinking_effort.as_deref().unwrap_or("medium");
     let permission_mode = project.permission_mode.as_deref().unwrap_or("auto-accept");
@@ -931,6 +1028,10 @@ After all checks, you MUST output this exact JSON block as your final output:
                         crate::services::notification::notify_test_passed(&app, &crate::services::notification::TaskNotification::new(&task_title, task_key.as_deref()));
                         crate::services::webhook::fire(project_id, "test_passed", &format!("Auto-test passed: {}", task_title),
                             serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title, "summary": summary}));
+                        // Cleanup feature branch after approval
+                        if let (Some(done_task), Some(proj)) = (tasks::get_by_id(&db, task_id), projects::get_by_id(&db, project_id)) {
+                            cleanup_task_branch(&done_task, &working_dir, &proj);
+                        }
                         crate::services::queue::on_task_completed(&db, &app, project_id, task_id);
                     } else {
                         let fail_msg = if feedback.is_empty() { summary.clone() } else { format!("{} — {}", summary, feedback) };
@@ -940,7 +1041,35 @@ After all checks, you MUST output this exact JSON block as your final output:
                         crate::services::notification::notify_test_failed(&app, &crate::services::notification::TaskNotification::new(&task_title, task_key.as_deref()));
                         crate::services::webhook::fire(project_id, "test_failed", &format!("Auto-test failed: {}", task_title),
                             serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title, "summary": summary, "feedback": feedback}));
-                        app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary})).ok();
+
+                        // Auto-revision: create revision record and restart task with test feedback
+                        // Cap at 3 auto-revisions to prevent infinite loop
+                        let current_rev = tasks::get_by_id(&db, task_id).map(|t| t.revision_count.unwrap_or(0)).unwrap_or(0);
+                        const MAX_AUTO_REVISIONS: i64 = 3;
+
+                        if current_rev < MAX_AUTO_REVISIONS {
+                            let revision_feedback = if feedback.is_empty() { fail_msg.clone() } else { feedback.clone() };
+                            tasks::increment_revision_count(&db, task_id);
+                            let rev_num = current_rev + 1;
+                            tasks::add_revision(&db, task_id, rev_num, &format!("Auto-test feedback:\n{}", revision_feedback));
+                            tasks::update_status(&db, task_id, "in_progress");
+                            activity::add(&db, project_id, Some(task_id), "auto_revision",
+                                &format!("Auto-revision #{} from test failure: {}", rev_num, task_title), None);
+                            tasks::add_log(&db, task_id, &format!("Auto-revision #{}/{}: Restarting with test feedback...", rev_num, MAX_AUTO_REVISIONS), "system", None);
+
+                            // Restart the task with revision context
+                            if let (Some(updated_task), Some(proj)) = (tasks::get_by_id(&db, task_id), projects::get_by_id(&db, project_id)) {
+                                let mcp_port: u16 = 4000;
+                                start(&updated_task, app.clone(), &working_dir, &proj, mcp_port);
+                            }
+                            emit_task_updated(&db, &app, task_id);
+                            app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary, "autoRevision": rev_num})).ok();
+                        } else {
+                            // Max auto-revisions reached — leave in testing for manual review
+                            tasks::add_log(&db, task_id, &format!("Auto-revision limit ({}) reached. Leaving for manual review.", MAX_AUTO_REVISIONS), "error", None);
+                            app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary, "maxRevisionsReached": true})).ok();
+                            emit_task_updated(&db, &app, task_id);
+                        }
                     }
                 }
                 None => {

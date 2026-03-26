@@ -170,6 +170,14 @@ pub fn update_test_settings(db: &DbPool, id: i64, auto_test: bool, test_prompt: 
     ) { log::error!("update_test_settings: {}", e); }
 }
 
+pub fn update_max_retries(db: &DbPool, id: i64, max_retries: i64) {
+    let conn = db.lock();
+    if let Err(e) = conn.execute(
+        "UPDATE projects SET max_retries=?1,updated_at=datetime('now','localtime') WHERE id=?2",
+        params![max_retries, id],
+    ) { log::error!("update_max_retries: {}", e); }
+}
+
 pub fn update_timeout(db: &DbPool, id: i64, timeout_minutes: i64) {
     let conn = db.lock();
     if let Err(e) = conn.execute(

@@ -50,6 +50,7 @@ pub fn update_project(
     auto_branch: Option<bool>, auto_pr: Option<bool>, pr_base_branch: Option<String>,
     auto_test: Option<bool>, test_prompt: Option<String>,
     task_timeout_minutes: Option<i64>,
+    max_retries: Option<i64>,
 ) -> Result<pq::Project, String> {
     let db = db::get_db();
     let project = pq::get_by_id(&db, id).ok_or("Project not found")?;
@@ -76,6 +77,9 @@ pub fn update_project(
     }
     if let Some(timeout) = task_timeout_minutes {
         pq::update_timeout(&db, id, timeout);
+    }
+    if let Some(retries) = max_retries {
+        pq::update_max_retries(&db, id, retries);
     }
     if auto_branch.is_some() || auto_pr.is_some() || pr_base_branch.is_some() {
         pq::update_git_settings(&db, id,

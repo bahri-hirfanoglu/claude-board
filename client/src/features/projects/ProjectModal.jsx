@@ -13,6 +13,7 @@ import {
   Workflow,
   FlaskConical,
   Timer,
+  RotateCcw,
 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
@@ -70,6 +71,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
   const [autoTest, setAutoTest] = useState(project?.auto_test ? true : false);
   const [testPrompt, setTestPrompt] = useState(project?.test_prompt || '');
   const [taskTimeoutMinutes, setTaskTimeoutMinutes] = useState(project?.task_timeout_minutes || 0);
+  const [maxRetries, setMaxRetries] = useState(project?.max_retries || 0);
   const [loading, setLoading] = useState(false);
   const [autoSlug, setAutoSlug] = useState(!project);
   const nameRef = useRef(null);
@@ -117,6 +119,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         autoTest: !!autoTest,
         testPrompt: testPrompt.trim(),
         task_timeout_minutes: taskTimeoutMinutes || 0,
+        max_retries: maxRetries || 0,
       });
     } catch (err) {
       console.error(err);
@@ -434,6 +437,29 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                   </div>
                   <p className="text-[9px] text-surface-600 mt-1">
                     Auto-kill tasks that exceed this duration. Timed-out tasks follow the retry policy.
+                  </p>
+                </div>
+
+                {/* Max Retries */}
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5">
+                    <RotateCcw size={12} />
+                    Max Retries
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={maxRetries || ''}
+                      onChange={(e) => setMaxRetries(parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                      className="w-24 px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs text-surface-200 focus:outline-none focus:ring-1 focus:ring-claude"
+                    />
+                    <span className="text-[10px] text-surface-500">times (0 = default 2)</span>
+                  </div>
+                  <p className="text-[9px] text-surface-600 mt-1">
+                    How many times to auto-retry failed tasks before marking as permanently failed.
                   </p>
                 </div>
               </div>

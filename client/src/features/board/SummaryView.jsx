@@ -114,6 +114,9 @@ export default function SummaryView({ tasks }) {
         {stats.testing > 0 && (
           <StatCard icon={FlaskConical} label={t('status.testing')} value={stats.testing} color="text-purple-400" />
         )}
+        {(stats.byStatus['failed'] || 0) > 0 && (
+          <StatCard icon={AlertCircle} label={t('status.failed')} value={stats.byStatus['failed']} color="text-red-400" />
+        )}
         <StatCard icon={Clock} label={t('summary.avgDuration')} value={formatMinutes(stats.avgMinutes)} />
       </div>
 
