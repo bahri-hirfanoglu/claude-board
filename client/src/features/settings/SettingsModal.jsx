@@ -1,5 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Settings, Bell, Info, Monitor, BellRing, BellOff, Volume2, VolumeX, Power, Minimize2, Trash2, Brain, Gauge, Terminal, Globe } from 'lucide-react';
+import {
+  X,
+  Settings,
+  Bell,
+  Info,
+  Monitor,
+  BellRing,
+  BellOff,
+  Volume2,
+  VolumeX,
+  Power,
+  Minimize2,
+  Trash2,
+  Brain,
+  Gauge,
+  Terminal,
+  Globe,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { IS_TAURI } from '../../lib/tauriEvents';
@@ -59,11 +76,7 @@ function GeneralTab({ settings, onChange, t }) {
   return (
     <div className="divide-y divide-surface-700/30">
       {IS_TAURI && (
-        <SettingRow
-          icon={Power}
-          label={t('settings.launchAtStartup')}
-          description={t('settings.launchAtStartupDesc')}
-        >
+        <SettingRow icon={Power} label={t('settings.launchAtStartup')} description={t('settings.launchAtStartupDesc')}>
           <Toggle enabled={settings.launch_at_startup} onChange={(v) => onChange('launch_at_startup', v)} />
         </SettingRow>
       )}
@@ -94,43 +107,35 @@ function GeneralTab({ settings, onChange, t }) {
         <Toggle enabled={settings.auto_open_terminal} onChange={(v) => onChange('auto_open_terminal', v)} />
       </SettingRow>
 
-      <SettingRow
-        icon={Brain}
-        label={t('settings.defaultModel')}
-        description={t('settings.defaultModelDesc')}
-      >
+      <SettingRow icon={Brain} label={t('settings.defaultModel')} description={t('settings.defaultModelDesc')}>
         <select
           value={settings.default_model}
           onChange={(e) => onChange('default_model', e.target.value)}
           className="bg-surface-700 border border-surface-600 rounded-lg px-3 py-1.5 text-xs text-surface-200 focus:outline-none focus:ring-1 focus:ring-claude"
         >
           {MODELS.map((m) => (
-            <option key={m.value} value={m.value}>{m.label}</option>
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
           ))}
         </select>
       </SettingRow>
 
-      <SettingRow
-        icon={Gauge}
-        label={t('settings.defaultEffort')}
-        description={t('settings.defaultEffortDesc')}
-      >
+      <SettingRow icon={Gauge} label={t('settings.defaultEffort')} description={t('settings.defaultEffortDesc')}>
         <select
           value={settings.default_effort}
           onChange={(e) => onChange('default_effort', e.target.value)}
           className="bg-surface-700 border border-surface-600 rounded-lg px-3 py-1.5 text-xs text-surface-200 focus:outline-none focus:ring-1 focus:ring-claude"
         >
           {EFFORTS.map((e) => (
-            <option key={e.value} value={e.value}>{t(e.labelKey)}</option>
+            <option key={e.value} value={e.value}>
+              {t(e.labelKey)}
+            </option>
           ))}
         </select>
       </SettingRow>
 
-      <SettingRow
-        icon={Globe}
-        label={t('settings.language')}
-        description={t('settings.languageDesc')}
-      >
+      <SettingRow icon={Globe} label={t('settings.language')} description={t('settings.languageDesc')}>
         <select
           value={settings.language}
           onChange={(e) => onChange('language', e.target.value)}
@@ -145,11 +150,36 @@ function GeneralTab({ settings, onChange, t }) {
 }
 
 const NOTIFICATION_ITEMS = [
-  { key: 'notify_task_completed', icon: BellRing, labelKey: 'settings.notifyTaskCompleted', descKey: 'settings.notifyTaskCompletedDesc' },
-  { key: 'notify_task_failed', icon: BellOff, labelKey: 'settings.notifyTaskFailed', descKey: 'settings.notifyTaskFailedDesc' },
-  { key: 'notify_task_started', icon: Bell, labelKey: 'settings.notifyTaskStarted', descKey: 'settings.notifyTaskStartedDesc' },
-  { key: 'notify_revision_requested', icon: Bell, labelKey: 'settings.notifyRevisionRequested', descKey: 'settings.notifyRevisionRequestedDesc' },
-  { key: 'notify_queue_started', icon: Bell, labelKey: 'settings.notifyQueueStarted', descKey: 'settings.notifyQueueStartedDesc' },
+  {
+    key: 'notify_task_completed',
+    icon: BellRing,
+    labelKey: 'settings.notifyTaskCompleted',
+    descKey: 'settings.notifyTaskCompletedDesc',
+  },
+  {
+    key: 'notify_task_failed',
+    icon: BellOff,
+    labelKey: 'settings.notifyTaskFailed',
+    descKey: 'settings.notifyTaskFailedDesc',
+  },
+  {
+    key: 'notify_task_started',
+    icon: Bell,
+    labelKey: 'settings.notifyTaskStarted',
+    descKey: 'settings.notifyTaskStartedDesc',
+  },
+  {
+    key: 'notify_revision_requested',
+    icon: Bell,
+    labelKey: 'settings.notifyRevisionRequested',
+    descKey: 'settings.notifyRevisionRequestedDesc',
+  },
+  {
+    key: 'notify_queue_started',
+    icon: Bell,
+    labelKey: 'settings.notifyQueueStarted',
+    descKey: 'settings.notifyQueueStartedDesc',
+  },
 ];
 
 function NotificationsTab({ settings, onChange, t }) {
@@ -166,12 +196,7 @@ function NotificationsTab({ settings, onChange, t }) {
         {NOTIFICATION_ITEMS.map((item) => {
           const Icon = item.icon;
           return (
-            <SettingRow
-              key={item.key}
-              icon={Icon}
-              label={t(item.labelKey)}
-              description={t(item.descKey)}
-            >
+            <SettingRow key={item.key} icon={Icon} label={t(item.labelKey)} description={t(item.descKey)}>
               <Toggle enabled={settings[item.key]} onChange={(v) => onChange(item.key, v)} />
             </SettingRow>
           );
@@ -196,9 +221,7 @@ function AboutTab({ t }) {
         <span className="text-claude text-3xl">&#10022;</span>
         <div>
           <h3 className="text-base font-semibold text-surface-100">Claude Board</h3>
-          <p className="text-xs text-surface-500 mt-0.5">
-            {t('settings.aboutTagline')}
-          </p>
+          <p className="text-xs text-surface-500 mt-0.5">{t('settings.aboutTagline')}</p>
         </div>
         <span className="ml-auto text-xs text-surface-600 font-mono bg-surface-700/50 px-2 py-1 rounded">
           v{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '?.?.?'}
@@ -214,22 +237,16 @@ function AboutTab({ t }) {
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-surface-500">{t('settings.platform')}</span>
-          <span className="text-surface-300 font-mono">
-            {navigator.platform || 'unknown'}
-          </span>
+          <span className="text-surface-300 font-mono">{navigator.platform || 'unknown'}</span>
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-surface-500">{t('settings.runtime')}</span>
-          <span className="text-surface-300 font-mono">
-            {IS_TAURI ? 'Tauri Desktop' : 'Web'}
-          </span>
+          <span className="text-surface-300 font-mono">{IS_TAURI ? 'Tauri Desktop' : 'Web'}</span>
         </div>
       </div>
 
       <div className="pt-3 border-t border-surface-700/30">
-        <p className="text-[11px] text-surface-600 text-center">
-          {t('settings.madeBy')}
-        </p>
+        <p className="text-[11px] text-surface-600 text-center">{t('settings.madeBy')}</p>
       </div>
     </div>
   );
@@ -273,25 +290,28 @@ export default function SettingsModal({ onClose }) {
     }
   };
 
-  const handleChange = useCallback(async (key, value) => {
-    const updated = { ...settings, [key]: value };
-    setSettings(updated);
+  const handleChange = useCallback(
+    async (key, value) => {
+      const updated = { ...settings, [key]: value };
+      setSettings(updated);
 
-    // Sync language change
-    if (key === 'language') {
-      setLang(value);
-      localStorage.setItem('lang', value);
-    }
+      // Sync language change
+      if (key === 'language') {
+        setLang(value);
+        localStorage.setItem('lang', value);
+      }
 
-    setSaving(true);
-    try {
-      await api.updateAppSettings({ [key]: value });
-    } catch (e) {
-      console.error('Failed to save setting:', e);
-    } finally {
-      setSaving(false);
-    }
-  }, [settings, setLang]);
+      setSaving(true);
+      try {
+        await api.updateAppSettings({ [key]: value });
+      } catch (e) {
+        console.error('Failed to save setting:', e);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [settings, setLang],
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
@@ -340,9 +360,7 @@ export default function SettingsModal({ onClose }) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-surface-500 text-sm">
-              {t('common.loading')}
-            </div>
+            <div className="flex items-center justify-center py-12 text-surface-500 text-sm">{t('common.loading')}</div>
           ) : (
             <>
               {tab === 'general' && <GeneralTab settings={settings} onChange={handleChange} t={t} />}

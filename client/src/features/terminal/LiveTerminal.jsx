@@ -1,8 +1,20 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-  X, Square, RotateCcw, ArrowDown, Pause, Play, Trash2,
-  Search, Cpu, Coins, Activity, Maximize2, Minimize2,
-  Code, CheckCircle2,
+  X,
+  Square,
+  RotateCcw,
+  ArrowDown,
+  Pause,
+  Play,
+  Trash2,
+  Search,
+  Cpu,
+  Coins,
+  Activity,
+  Maximize2,
+  Minimize2,
+  Code,
+  CheckCircle2,
 } from 'lucide-react';
 import { socket } from '../../lib/socket';
 import { tauriListen, IS_TAURI } from '../../lib/tauriEvents';
@@ -36,9 +48,12 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
 
   // ─── Data loading ───
   useEffect(() => {
-    api.getTaskLogs(task.id).then(data => {
-      setLogs(data.map(l => ({ ...l, meta: l.meta || null })));
-    }).catch(() => {});
+    api
+      .getTaskLogs(task.id)
+      .then((data) => {
+        setLogs(data.map((l) => ({ ...l, meta: l.meta || null })));
+      })
+      .catch(() => {});
   }, [task.id]);
 
   useEffect(() => {
@@ -53,7 +68,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
       if (paused) {
         pausedLogsRef.current.push(entry);
       } else {
-        setLogs(prev => prev.length > 2000 ? [...prev.slice(-1500), entry] : [...prev, entry]);
+        setLogs((prev) => (prev.length > 2000 ? [...prev.slice(-1500), entry] : [...prev, entry]));
       }
     };
     if (IS_TAURI) {
@@ -66,7 +81,10 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
 
   const resumeLogs = useCallback(() => {
     setPaused(false);
-    setLogs(prev => { const merged = [...prev, ...pausedLogsRef.current]; return merged.length > 2000 ? merged.slice(-1500) : merged; });
+    setLogs((prev) => {
+      const merged = [...prev, ...pausedLogsRef.current];
+      return merged.length > 2000 ? merged.slice(-1500) : merged;
+    });
     pausedLogsRef.current = [];
   }, []);
 
@@ -82,11 +100,20 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
     setAutoScroll(scrollHeight - scrollTop - clientHeight < 40);
   };
 
-  const handleStop = async () => { try { await api.stopTask(task.id); } catch {} };
-  const handleRestart = async () => { try { setLogs([]); await api.restartTask(task.id); } catch {} };
+  const handleStop = async () => {
+    try {
+      await api.stopTask(task.id);
+    } catch {}
+  };
+  const handleRestart = async () => {
+    try {
+      setLogs([]);
+      await api.restartTask(task.id);
+    } catch {}
+  };
 
   const toggleToolExpand = useCallback((index) => {
-    setExpandedTools(prev => {
+    setExpandedTools((prev) => {
       const next = new Set(prev);
       next.has(index) ? next.delete(index) : next.add(index);
       return next;
@@ -94,10 +121,12 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
   }, []);
 
   const toggleExpandAll = useCallback(() => {
-    setExpandAll(prev => {
+    setExpandAll((prev) => {
       if (!prev) {
         const idxs = new Set();
-        logs.forEach((l, i) => { if (l.log_type === 'tool' && l.meta) idxs.add(i); });
+        logs.forEach((l, i) => {
+          if (l.log_type === 'tool' && l.meta) idxs.add(i);
+        });
         setExpandedTools(idxs);
       } else {
         setExpandedTools(new Set());
@@ -114,7 +143,10 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
         setShowSearch(true);
         setTimeout(() => searchInputRef.current?.focus(), 50);
       }
-      if (e.key === 'Escape' && showSearch) { setShowSearch(false); setSearchQuery(''); }
+      if (e.key === 'Escape' && showSearch) {
+        setShowSearch(false);
+        setSearchQuery('');
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -123,14 +155,14 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
   // ─── Filtering ───
   const filteredLogs = useMemo(() => {
     let r = logs;
-    if (filter === 'claude') r = r.filter(l => l.log_type === 'claude');
-    else if (filter === 'tools') r = r.filter(l => l.log_type === 'tool' || l.log_type === 'tool_result');
-    else if (filter === 'system') r = r.filter(l => l.log_type === 'system' || l.log_type === 'info');
-    else if (filter === 'errors') r = r.filter(l => l.log_type === 'error');
+    if (filter === 'claude') r = r.filter((l) => l.log_type === 'claude');
+    else if (filter === 'tools') r = r.filter((l) => l.log_type === 'tool' || l.log_type === 'tool_result');
+    else if (filter === 'system') r = r.filter((l) => l.log_type === 'system' || l.log_type === 'info');
+    else if (filter === 'errors') r = r.filter((l) => l.log_type === 'error');
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      r = r.filter(l => l.message.toLowerCase().includes(q));
+      r = r.filter((l) => l.message.toLowerCase().includes(q));
     }
     return r;
   }, [logs, filter, searchQuery]);
@@ -140,9 +172,9 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
 
   // ─── Stats ───
   const stats = useMemo(() => {
-    const tools = logs.filter(l => l.log_type === 'tool' && !l.meta?.isResult).length;
-    const errors = logs.filter(l => l.log_type === 'error').length;
-    const turns = logs.filter(l => l.log_type === 'claude').length;
+    const tools = logs.filter((l) => l.log_type === 'tool' && !l.meta?.isResult).length;
+    const errors = logs.filter((l) => l.log_type === 'error').length;
+    const turns = logs.filter((l) => l.log_type === 'claude').length;
     return { tools, errors, turns };
   }, [logs]);
 
@@ -167,14 +199,16 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-xs font-semibold truncate text-surface-100">{task.title}</h3>
-            <span className="text-[9px] text-surface-600 font-mono flex-shrink-0">{task.task_key || `#${task.id}`}</span>
+            <span className="text-[9px] text-surface-600 font-mono flex-shrink-0">
+              {task.task_key || `#${task.id}`}
+            </span>
             {task.is_running && (
               <span className="flex items-center gap-1 text-[9px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
                 <Activity size={9} className="animate-pulse" />
                 <span className="hidden sm:inline">Running</span>
               </span>
             )}
-            {!task.is_running && logs.some(l => l.log_type === 'success') && (
+            {!task.is_running && logs.some((l) => l.log_type === 'success') && (
               <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
                 <CheckCircle2 size={9} />
                 <span className="hidden sm:inline">Done</span>
@@ -185,39 +219,94 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
             <ActivityIndicator logs={logs} isRunning={task.is_running} />
             {/* Inline stats on mobile */}
             <div className="flex items-center gap-1.5 text-[10px] text-surface-500 sm:hidden">
-              <ElapsedTime startedAt={task.started_at} isRunning={task.is_running} workDurationMs={task.work_duration_ms || 0} lastResumedAt={task.last_resumed_at} />
-              {totalTokens > 0 && <span className="flex items-center gap-0.5"><Cpu size={9} />{fmtTokens(totalTokens)}</span>}
+              <ElapsedTime
+                startedAt={task.started_at}
+                isRunning={task.is_running}
+                workDurationMs={task.work_duration_ms || 0}
+                lastResumedAt={task.last_resumed_at}
+              />
+              {totalTokens > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <Cpu size={9} />
+                  {fmtTokens(totalTokens)}
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         {/* Live stats bar - desktop only */}
         <div className="hidden sm:flex items-center gap-2.5 text-[10px] text-surface-500 flex-shrink-0">
-          <ElapsedTime startedAt={task.started_at} isRunning={task.is_running} workDurationMs={task.work_duration_ms || 0} lastResumedAt={task.last_resumed_at} />
-          {totalTokens > 0 && <span className="flex items-center gap-0.5"><Cpu size={9} />{fmtTokens(totalTokens)}</span>}
-          {task.total_cost > 0 && <span className="flex items-center gap-0.5"><Coins size={9} />${task.total_cost.toFixed(4)}</span>}
-          {stats.tools > 0 && <span className={`flex items-center gap-0.5 text-purple-400/60`}><Code size={9} />{stats.tools}</span>}
+          <ElapsedTime
+            startedAt={task.started_at}
+            isRunning={task.is_running}
+            workDurationMs={task.work_duration_ms || 0}
+            lastResumedAt={task.last_resumed_at}
+          />
+          {totalTokens > 0 && (
+            <span className="flex items-center gap-0.5">
+              <Cpu size={9} />
+              {fmtTokens(totalTokens)}
+            </span>
+          )}
+          {task.total_cost > 0 && (
+            <span className="flex items-center gap-0.5">
+              <Coins size={9} />${task.total_cost.toFixed(4)}
+            </span>
+          )}
+          {stats.tools > 0 && (
+            <span className={`flex items-center gap-0.5 text-purple-400/60`}>
+              <Code size={9} />
+              {stats.tools}
+            </span>
+          )}
           {stats.errors > 0 && <span className="text-red-400/70">{stats.errors} err</span>}
         </div>
 
         {/* Controls */}
         <div className="flex items-center gap-0.5 flex-shrink-0">
           <button
-            onClick={() => { setShowSearch(s => !s); if (!showSearch) setTimeout(() => searchInputRef.current?.focus(), 50); }}
+            onClick={() => {
+              setShowSearch((s) => !s);
+              if (!showSearch) setTimeout(() => searchInputRef.current?.focus(), 50);
+            }}
             className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-surface-700 text-claude' : 'text-surface-500 hover:text-surface-200 hover:bg-surface-800'}`}
             title="Search (Ctrl+F)"
-          ><Search size={12} /></button>
+          >
+            <Search size={12} />
+          </button>
           {onToggleLayout && (
-            <button onClick={onToggleLayout} className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-500 hover:text-surface-200 transition-colors"
-              title={isBottom ? 'Side panel' : 'Bottom panel'}>
+            <button
+              onClick={onToggleLayout}
+              className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-500 hover:text-surface-200 transition-colors"
+              title={isBottom ? 'Side panel' : 'Bottom panel'}
+            >
               {isBottom ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
             </button>
           )}
           {task.is_running && (
-            <button onClick={handleStop} className="p-1.5 rounded-lg hover:bg-red-500/20 text-surface-500 hover:text-red-400 transition-colors" title="Stop"><Square size={12} /></button>
+            <button
+              onClick={handleStop}
+              className="p-1.5 rounded-lg hover:bg-red-500/20 text-surface-500 hover:text-red-400 transition-colors"
+              title="Stop"
+            >
+              <Square size={12} />
+            </button>
           )}
-          <button onClick={handleRestart} className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-500 hover:text-amber-400 transition-colors" title="Restart"><RotateCcw size={12} /></button>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-500 transition-colors" title="Close"><X size={12} /></button>
+          <button
+            onClick={handleRestart}
+            className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-500 hover:text-amber-400 transition-colors"
+            title="Restart"
+          >
+            <RotateCcw size={12} />
+          </button>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-500 transition-colors"
+            title="Close"
+          >
+            <X size={12} />
+          </button>
         </div>
       </div>
 
@@ -225,43 +314,74 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
       {showSearch && (
         <div className="flex items-center gap-2 px-3 py-1.5 border-b border-surface-800 bg-surface-800/50">
           <Search size={11} className="text-surface-500" />
-          <input ref={searchInputRef} type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search logs..." className="flex-1 bg-transparent text-xs text-surface-200 placeholder-surface-600 outline-none" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search logs..."
+            className="flex-1 bg-transparent text-xs text-surface-200 placeholder-surface-600 outline-none"
+          />
           {searchQuery && <span className="text-[10px] text-surface-500">{filteredLogs.length} matches</span>}
-          <button onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="text-surface-500 hover:text-surface-300"><X size={11} /></button>
+          <button
+            onClick={() => {
+              setShowSearch(false);
+              setSearchQuery('');
+            }}
+            className="text-surface-500 hover:text-surface-300"
+          >
+            <X size={11} />
+          </button>
         </div>
       )}
 
       {/* ═══ Filters ═══ */}
       <div className="flex items-center gap-1 px-3 py-1.5 border-b border-surface-800">
-        {FILTERS.map(f => (
-          <button key={f.id} onClick={() => setFilter(f.id)}
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
             className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
               filter === f.id ? 'bg-surface-700 text-surface-200' : 'text-surface-500 hover:text-surface-300'
-            }`}>
+            }`}
+          >
             {f.label}
             {f.count && <span className={`${f.alert ? 'text-red-400' : 'text-surface-600'}`}>{f.count}</span>}
           </button>
         ))}
         <div className="flex-1" />
-        <button onClick={toggleExpandAll}
+        <button
+          onClick={toggleExpandAll}
           className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${expandAll ? 'text-purple-400 bg-purple-500/10' : 'text-surface-500 hover:text-surface-300'}`}
-          title={expandAll ? 'Collapse all' : 'Expand all'}>
+          title={expandAll ? 'Collapse all' : 'Expand all'}
+        >
           {expandAll ? 'Collapse' : 'Expand'}
         </button>
-        <button onClick={() => paused ? resumeLogs() : setPaused(true)}
+        <button
+          onClick={() => (paused ? resumeLogs() : setPaused(true))}
           className={`p-1 rounded transition-colors ${paused ? 'text-amber-400 bg-amber-500/10' : 'text-surface-500 hover:text-surface-300'}`}
-          title={paused ? `Resume (${pausedLogsRef.current.length})` : 'Pause'}>
+          title={paused ? `Resume (${pausedLogsRef.current.length})` : 'Pause'}
+        >
           {paused ? <Play size={10} /> : <Pause size={10} />}
         </button>
-        {paused && pausedLogsRef.current.length > 0 && <span className="text-[10px] text-amber-400">{pausedLogsRef.current.length}</span>}
-        <button onClick={() => setLogs([])} className="p-1 rounded text-surface-500 hover:text-surface-300 transition-colors" title="Clear"><Trash2 size={10} /></button>
+        {paused && pausedLogsRef.current.length > 0 && (
+          <span className="text-[10px] text-amber-400">{pausedLogsRef.current.length}</span>
+        )}
+        <button
+          onClick={() => setLogs([])}
+          className="p-1 rounded text-surface-500 hover:text-surface-300 transition-colors"
+          title="Clear"
+        >
+          <Trash2 size={10} />
+        </button>
       </div>
 
       {/* ═══ Content ═══ */}
-      <div ref={containerRef} onScroll={handleScroll}
-        className="flex-1 min-h-0 overflow-y-auto px-3 py-2 text-xs leading-relaxed">
-
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="flex-1 min-h-0 overflow-y-auto px-3 py-2 text-xs leading-relaxed"
+      >
         {groupedEntries.length === 0 ? (
           <div className="text-center text-surface-600 py-12">
             {task.is_running ? (
@@ -271,7 +391,9 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
                 </div>
                 <span className="text-surface-500">Waiting for Claude...</span>
               </div>
-            ) : <span>No output yet</span>}
+            ) : (
+              <span>No output yet</span>
+            )}
           </div>
         ) : (
           groupedEntries.map((entry, i) => {
@@ -304,8 +426,12 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
       {/* ═══ Scroll button ═══ */}
       {!autoScroll && (
         <button
-          onClick={() => { setAutoScroll(true); containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' }); }}
-          className="absolute bottom-4 right-4 p-2 rounded-full bg-claude shadow-lg hover:bg-claude-light transition-colors z-10">
+          onClick={() => {
+            setAutoScroll(true);
+            containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' });
+          }}
+          className="absolute bottom-4 right-4 p-2 rounded-full bg-claude shadow-lg hover:bg-claude-light transition-colors z-10"
+        >
           <ArrowDown size={14} />
         </button>
       )}

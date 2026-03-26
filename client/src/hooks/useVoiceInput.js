@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-const SpeechRecognition = typeof window !== 'undefined'
-  ? window.SpeechRecognition || window.webkitSpeechRecognition
-  : null;
+const SpeechRecognition =
+  typeof window !== 'undefined' ? window.SpeechRecognition || window.webkitSpeechRecognition : null;
 
 export function useVoiceInput({ lang = 'en-US', continuous = false, onResult, onEnd } = {}) {
   const [isListening, setIsListening] = useState(false);
@@ -13,8 +12,12 @@ export function useVoiceInput({ lang = 'en-US', continuous = false, onResult, on
   // Keep latest callbacks in refs to avoid stale closures
   const onResultRef = useRef(onResult);
   const onEndRef = useRef(onEnd);
-  useEffect(() => { onResultRef.current = onResult; }, [onResult]);
-  useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
+  useEffect(() => {
+    onResultRef.current = onResult;
+  }, [onResult]);
+  useEffect(() => {
+    onEndRef.current = onEnd;
+  }, [onEnd]);
 
   const stop = useCallback(() => {
     manualStopRef.current = true;
@@ -30,7 +33,9 @@ export function useVoiceInput({ lang = 'en-US', continuous = false, onResult, on
 
     // Stop any existing session
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
+      try {
+        recognitionRef.current.stop();
+      } catch {}
     }
 
     const recognition = new SpeechRecognition();
@@ -82,7 +87,9 @@ export function useVoiceInput({ lang = 'en-US', continuous = false, onResult, on
       // Auto-restart if continuous and not manually stopped
       if (continuous && !manualStopRef.current) {
         setTimeout(() => {
-          try { recognition.start(); } catch {}
+          try {
+            recognition.start();
+          } catch {}
         }, 100);
       }
     };
@@ -107,7 +114,9 @@ export function useVoiceInput({ lang = 'en-US', continuous = false, onResult, on
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
+        try {
+          recognitionRef.current.stop();
+        } catch {}
       }
     };
   }, []);

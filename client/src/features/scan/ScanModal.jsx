@@ -1,7 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  X, ScanSearch, Clock, Loader2, CheckCircle2, AlertCircle,
-  Save, Trash2, FileText, Plus, RefreshCw,
+  X,
+  ScanSearch,
+  Clock,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Save,
+  Trash2,
+  FileText,
+  Plus,
+  RefreshCw,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { tauriListen } from '../../lib/tauriEvents';
@@ -61,7 +70,7 @@ export default function ScanModal({ projectId, onClose }) {
         }
       }),
     ];
-    return () => unsubs.forEach(fn => fn());
+    return () => unsubs.forEach((fn) => fn());
   }, [projectId]);
 
   const handleStart = async () => {
@@ -108,7 +117,10 @@ export default function ScanModal({ projectId, onClose }) {
   const isScanning = phase === 'scanning';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={isScanning ? undefined : onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={isScanning ? undefined : onClose}
+    >
       <div
         className="bg-surface-900 border border-surface-700 rounded-xl w-full max-w-2xl mx-4 shadow-2xl flex flex-col"
         style={{ maxHeight: '85vh' }}
@@ -119,8 +131,16 @@ export default function ScanModal({ projectId, onClose }) {
           <div className="flex items-center gap-2">
             <ScanSearch size={16} className="text-blue-400" />
             <h2 className="text-sm font-semibold">{t('scan.title')}</h2>
-            {phase === 'preview' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">{t('scan.review')}</span>}
-            {phase === 'saved' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">{t('scan.saved')}</span>}
+            {phase === 'preview' && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">
+                {t('scan.review')}
+              </span>
+            )}
+            {phase === 'saved' && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">
+                {t('scan.saved')}
+              </span>
+            )}
           </div>
           {phase !== 'idle' && (
             <div className="flex items-center gap-3 text-[10px] text-surface-500 ml-auto mr-3">
@@ -131,7 +151,11 @@ export default function ScanModal({ projectId, onClose }) {
               {isScanning && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />}
             </div>
           )}
-          <button onClick={onClose} disabled={isScanning} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 disabled:opacity-30">
+          <button
+            onClick={onClose}
+            disabled={isScanning}
+            className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 disabled:opacity-30"
+          >
             <X size={18} />
           </button>
         </div>
@@ -180,13 +204,17 @@ export default function ScanModal({ projectId, onClose }) {
                 <div>
                   <label className="text-xs font-medium text-surface-400 mb-1.5 block">{t('scan.writeMode')}</label>
                   <div className="flex gap-2">
-                    <button onClick={() => setMode('overwrite')}
-                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${mode === 'overwrite' ? 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/30' : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
+                    <button
+                      onClick={() => setMode('overwrite')}
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${mode === 'overwrite' ? 'bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/30' : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}
+                    >
                       <FileText size={12} />
                       {t('scan.overwrite')}
                     </button>
-                    <button onClick={() => setMode('append')}
-                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${mode === 'append' ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30' : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}>
+                    <button
+                      onClick={() => setMode('append')}
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${mode === 'append' ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30' : 'bg-surface-800 text-surface-500 hover:text-surface-300'}`}
+                    >
                       <Plus size={12} />
                       {t('scan.append')}
                     </button>
@@ -212,28 +240,36 @@ export default function ScanModal({ projectId, onClose }) {
         <div className="flex gap-2 px-5 py-3 border-t border-surface-800 flex-shrink-0">
           {phase === 'idle' && (
             <>
-              <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleStart}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors">
+              <button
+                onClick={handleStart}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
+              >
                 <ScanSearch size={14} /> {t('scan.startScan')}
               </button>
             </>
           )}
           {isScanning && (
-            <div className="flex-1 text-center text-xs text-surface-500 py-2">
-              {t('scan.cannotClose')}
-            </div>
+            <div className="flex-1 text-center text-xs text-surface-500 py-2">{t('scan.cannotClose')}</div>
           )}
           {phase === 'preview' && (
             <>
-              <button onClick={handleDiscard}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors">
+              <button
+                onClick={handleDiscard}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
+              >
                 <Trash2 size={14} /> {t('scan.discard')}
               </button>
-              <button onClick={handleSave} disabled={saving}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg transition-colors">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg transition-colors"
+              >
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                 {saving ? t('common.saving') : t('scan.saveToClaudeMd')}
               </button>
@@ -241,23 +277,32 @@ export default function ScanModal({ projectId, onClose }) {
           )}
           {phase === 'saved' && (
             <>
-              <button onClick={handleRescan}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
+              <button
+                onClick={handleRescan}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors"
+              >
                 <RefreshCw size={14} /> {t('scan.rescan')}
               </button>
-              <button onClick={onClose}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors">
+              <button
+                onClick={onClose}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors"
+              >
                 <CheckCircle2 size={14} /> {t('common.close')}
               </button>
             </>
           )}
           {phase === 'error' && (
             <>
-              <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors">
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-lg transition-colors"
+              >
                 {t('common.close')}
               </button>
-              <button onClick={handleStart}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors">
+              <button
+                onClick={handleStart}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors"
+              >
                 <RefreshCw size={14} /> {t('scan.retry')}
               </button>
             </>

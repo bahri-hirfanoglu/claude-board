@@ -1,6 +1,4 @@
-import {
-  Sparkles, Cpu, AlertCircle, Zap, ChevronDown, ChevronRight, Brain,
-} from 'lucide-react';
+import { Sparkles, Cpu, AlertCircle, Zap, ChevronDown, ChevronRight, Brain } from 'lucide-react';
 import { GRANULARITIES } from './planningConstants';
 import { MODEL_OPTIONS, EFFORT_OPTIONS } from '../../lib/constants';
 import MDEditor from '@uiw/react-md-editor';
@@ -9,7 +7,10 @@ function MdPreview({ content }) {
   if (!content) return null;
   return (
     <div data-color-mode="dark" className="md-preview-compact">
-      <MDEditor.Markdown source={content} style={{ backgroundColor: 'transparent', color: '#a8a29e', fontSize: '11px', lineHeight: '1.5' }} />
+      <MDEditor.Markdown
+        source={content}
+        style={{ backgroundColor: 'transparent', color: '#a8a29e', fontSize: '11px', lineHeight: '1.5' }}
+      />
     </div>
   );
 }
@@ -18,17 +19,26 @@ const MODELS = MODEL_OPTIONS;
 const EFFORTS = EFFORT_OPTIONS;
 
 export function PlanPhaseDefine({
-  topic, setTopic, context, setContext,
-  model, setModel, effort, setEffort,
-  granularity, setGranularity,
-  error, analysis,
-  showAnalysis, setShowAnalysis,
-  showContext, setShowContext,
+  topic,
+  setTopic,
+  context,
+  setContext,
+  model,
+  setModel,
+  effort,
+  setEffort,
+  granularity,
+  setGranularity,
+  error,
+  analysis,
+  showAnalysis,
+  setShowAnalysis,
+  showContext,
+  setShowContext,
   t,
 }) {
   return (
     <div className="space-y-4">
-
       {/* Error Alert */}
       {error && (
         <div className="space-y-3">
@@ -42,8 +52,10 @@ export function PlanPhaseDefine({
           {/* Show Claude's output so user can see what went wrong */}
           {analysis && (
             <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl overflow-hidden">
-              <button onClick={() => setShowAnalysis(!showAnalysis)}
-                className="flex items-center gap-1.5 w-full text-left px-4 py-2.5 text-xs font-medium text-surface-400 hover:text-surface-300 transition-colors">
+              <button
+                onClick={() => setShowAnalysis(!showAnalysis)}
+                className="flex items-center gap-1.5 w-full text-left px-4 py-2.5 text-xs font-medium text-surface-400 hover:text-surface-300 transition-colors"
+              >
                 {showAnalysis ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 <Brain size={12} /> Claude Output
               </button>
@@ -98,7 +110,6 @@ export function PlanPhaseDefine({
 
       {/* Configuration Cards — 3 columns */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-
         {/* Granularity Card */}
         <div className="bg-surface-800/40 border border-surface-700/30 rounded-xl p-3">
           <label className="block text-[11px] font-medium text-surface-400 mb-2">{t('planning.taskBreakdown')}</label>

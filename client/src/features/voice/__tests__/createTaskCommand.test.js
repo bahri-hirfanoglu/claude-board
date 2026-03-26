@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { getAllCommands } from '../commands/commandRegistry';
 import '../commands/index';
 
-const createCmd = getAllCommands().find(c => c.id === 'create_task');
+const createCmd = getAllCommands().find((c) => c.id === 'create_task');
 
 function ctx(overrides = {}) {
   return {
@@ -60,10 +60,13 @@ describe('createTaskCommand', () => {
   });
 
   it('extracts priority and shows confirm', () => {
-    const result = createCmd.execute('high', ctx({
-      flow: 'create:priority',
-      draft: { title: 'Test', task_type: 'bugfix' },
-    }));
+    const result = createCmd.execute(
+      'high',
+      ctx({
+        flow: 'create:priority',
+        draft: { title: 'Test', task_type: 'bugfix' },
+      }),
+    );
     expect(result.flow).toBe('create:confirm');
     expect(result.draft.priority).toBe(3);
     expect(result.message).toContain('Test');
@@ -72,30 +75,38 @@ describe('createTaskCommand', () => {
   it('creates task on confirm', () => {
     const onCreateTask = vi.fn();
     const draft = { title: 'Fix it', description: 'desc', task_type: 'bugfix', priority: 2 };
-    const result = createCmd.execute('yes', ctx({
-      flow: 'create:confirm',
-      draft,
-      intent: { id: 'confirm', text: 'yes' },
-    }));
+    const result = createCmd.execute(
+      'yes',
+      ctx({
+        flow: 'create:confirm',
+        draft,
+        intent: { id: 'confirm', text: 'yes' },
+      }),
+    );
     expect(result.flow).toBe('idle');
     expect(result.message).toContain('Fix it');
     expect(result.action).toBeDefined();
 
     result.action({ onCreateTask });
-    expect(onCreateTask).toHaveBeenCalledWith(expect.objectContaining({
-      title: 'Fix it',
-      description: 'desc',
-      task_type: 'bugfix',
-      priority: 2,
-    }));
+    expect(onCreateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Fix it',
+        description: 'desc',
+        task_type: 'bugfix',
+        priority: 2,
+      }),
+    );
   });
 
   it('cancels on deny', () => {
-    const result = createCmd.execute('no', ctx({
-      flow: 'create:confirm',
-      draft: { title: 'X' },
-      intent: { id: 'deny', text: 'no' },
-    }));
+    const result = createCmd.execute(
+      'no',
+      ctx({
+        flow: 'create:confirm',
+        draft: { title: 'X' },
+        intent: { id: 'deny', text: 'no' },
+      }),
+    );
     expect(result.flow).toBe('idle');
   });
 

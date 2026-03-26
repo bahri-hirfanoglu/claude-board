@@ -13,7 +13,7 @@ export function StatusTransitionProvider({ children }) {
   const timeoutsRef = useRef({});
 
   const recordTransition = useCallback((taskId, fromStatus, toStatus) => {
-    setTransitions(prev => ({
+    setTransitions((prev) => ({
       ...prev,
       [taskId]: { from: fromStatus, to: toStatus, timestamp: Date.now() },
     }));
@@ -22,7 +22,7 @@ export function StatusTransitionProvider({ children }) {
       clearTimeout(timeoutsRef.current[taskId]);
     }
     timeoutsRef.current[taskId] = setTimeout(() => {
-      setTransitions(prev => {
+      setTransitions((prev) => {
         const next = { ...prev };
         delete next[taskId];
         return next;
@@ -34,12 +34,17 @@ export function StatusTransitionProvider({ children }) {
   // Register the record function for external use
   useEffect(() => {
     _recordFn = recordTransition;
-    return () => { _recordFn = null; };
+    return () => {
+      _recordFn = null;
+    };
   }, [recordTransition]);
 
-  const getTransition = useCallback((taskId) => {
-    return transitions[taskId] || null;
-  }, [transitions]);
+  const getTransition = useCallback(
+    (taskId) => {
+      return transitions[taskId] || null;
+    },
+    [transitions],
+  );
 
   return (
     <StatusTransitionContext.Provider value={{ recordTransition, getTransition }}>

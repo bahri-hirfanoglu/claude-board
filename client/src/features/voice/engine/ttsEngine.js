@@ -42,7 +42,10 @@ function ensureVoices() {
   if (_voicesReady) return Promise.resolve();
   return new Promise((resolve) => {
     refreshVoices();
-    if (_voicesReady) { resolve(); return; }
+    if (_voicesReady) {
+      resolve();
+      return;
+    }
     let attempts = 0;
     const check = setInterval(() => {
       refreshVoices();
@@ -94,7 +97,7 @@ function findVoice(targetLang) {
   if (keywords) {
     for (const v of _voices) {
       const name = (v.name || '').toLowerCase();
-      if (keywords.some(kw => name.includes(kw))) {
+      if (keywords.some((kw) => name.includes(kw))) {
         return v;
       }
     }
@@ -133,12 +136,21 @@ export async function speak(text, lang = 'en-US') {
     }
 
     let keepAlive;
-    utterance.onend = () => { clearInterval(keepAlive); resolve(); };
-    utterance.onerror = () => { clearInterval(keepAlive); resolve(); };
+    utterance.onend = () => {
+      clearInterval(keepAlive);
+      resolve();
+    };
+    utterance.onerror = () => {
+      clearInterval(keepAlive);
+      resolve();
+    };
 
     synth.speak(utterance);
     keepAlive = setInterval(() => {
-      if (!synth.speaking) { clearInterval(keepAlive); return; }
+      if (!synth.speaking) {
+        clearInterval(keepAlive);
+        return;
+      }
       synth.pause();
       synth.resume();
     }, 10000);
@@ -156,6 +168,6 @@ export function isTtsSupported() {
 /** Debug: log all available voices to console */
 export function debugVoices() {
   refreshVoices();
-  console.table(_voices.map(v => ({ name: v.name, lang: v.lang, local: v.localService, default: v.default })));
+  console.table(_voices.map((v) => ({ name: v.name, lang: v.lang, local: v.localService, default: v.default })));
   return _voices.length;
 }

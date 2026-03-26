@@ -1,6 +1,4 @@
-import {
-  CircleCheck, CircleX, CircleAlert, CircleMinus,
-} from 'lucide-react';
+import { CircleCheck, CircleX, CircleAlert, CircleMinus } from 'lucide-react';
 import { parseTestReport, getCheckStatusColors, getCheckCardBorder } from './taskDetailHelpers';
 import { useTranslation } from '../../i18n/I18nProvider';
 
@@ -23,10 +21,16 @@ export function TaskTestTab({ d }) {
     return (
       <div className="space-y-4">
         {/* Verdict banner */}
-        <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${
-          verdict === 'approve' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'
-        }`}>
-          {verdict === 'approve' ? <CircleCheck size={20} className="text-emerald-400" /> : <CircleX size={20} className="text-red-400" />}
+        <div
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${
+            verdict === 'approve' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'
+          }`}
+        >
+          {verdict === 'approve' ? (
+            <CircleCheck size={20} className="text-emerald-400" />
+          ) : (
+            <CircleX size={20} className="text-red-400" />
+          )}
           <div>
             <div className={`text-sm font-semibold ${verdict === 'approve' ? 'text-emerald-400' : 'text-red-400'}`}>
               {verdict === 'approve' ? t('detail.allChecksPassed') : t('detail.verificationFailed')}
@@ -38,12 +42,19 @@ export function TaskTestTab({ d }) {
         {/* Check cards */}
         <div className="space-y-2">
           {checks.map((check, i) => (
-            <div key={i} className={`flex items-start gap-3 px-4 py-3 rounded-lg border ${getCheckCardBorder(check.status)}`}>
+            <div
+              key={i}
+              className={`flex items-start gap-3 px-4 py-3 rounded-lg border ${getCheckCardBorder(check.status)}`}
+            >
               <StatusIcon s={check.status} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-surface-200">{check.name}</span>
-                  <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${getCheckStatusColors(check.status)}`}>{check.status}</span>
+                  <span
+                    className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${getCheckStatusColors(check.status)}`}
+                  >
+                    {check.status}
+                  </span>
                 </div>
                 {check.detail && <p className="text-[11px] text-surface-400 mt-1 leading-relaxed">{check.detail}</p>}
               </div>

@@ -12,9 +12,15 @@ class MockSpeechRecognition {
     this.onerror = null;
     this.onend = null;
   }
-  start() { this.onstart?.(); }
-  stop() { this.onend?.(); }
-  abort() { this.onend?.(); }
+  start() {
+    this.onstart?.();
+  }
+  stop() {
+    this.onend?.();
+  }
+  abort() {
+    this.onend?.();
+  }
 }
 
 window.SpeechRecognition = MockSpeechRecognition;
@@ -65,8 +71,16 @@ window.AudioContext = class {
       gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
     };
   }
-  get destination() { return {}; }
-  get currentTime() { return 0; }
-  resume() { return Promise.resolve(); }
-  close() { return Promise.resolve(); }
+  get destination() {
+    return {};
+  }
+  get currentTime() {
+    return 0;
+  }
+  resume() {
+    return Promise.resolve();
+  }
+  close() {
+    return Promise.resolve();
+  }
 };

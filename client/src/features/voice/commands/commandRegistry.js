@@ -35,7 +35,7 @@ const _flowOwners = new Map();
  * @param {VoiceCommand} command
  */
 export function registerCommand(command) {
-  if (_commands.some(c => c.id === command.id)) return; // idempotent
+  if (_commands.some((c) => c.id === command.id)) return; // idempotent
 
   // Validate flow state uniqueness
   for (const state of command.flowStates || []) {
@@ -60,13 +60,13 @@ export function resolveCommand(intent, currentFlow) {
   if (currentFlow !== 'idle') {
     const ownerId = _flowOwners.get(currentFlow);
     if (ownerId) {
-      return _commands.find(c => c.id === ownerId) || null;
+      return _commands.find((c) => c.id === ownerId) || null;
     }
   }
 
   // Otherwise match by intent id
   if (intent?.id && intent.id !== 'freetext') {
-    return _commands.find(c => c.id === intent.id) || null;
+    return _commands.find((c) => c.id === intent.id) || null;
   }
 
   return null;

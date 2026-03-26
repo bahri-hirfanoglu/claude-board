@@ -1,7 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Activity, Eye, FileText, Pencil, Terminal, Search, FolderOpen, Zap,
-  Cpu, Clock, Coins, AlertTriangle, Radio, Pause, Play, Hash,
+  Activity,
+  Eye,
+  FileText,
+  Pencil,
+  Terminal,
+  Search,
+  FolderOpen,
+  Zap,
+  Cpu,
+  Clock,
+  Coins,
+  AlertTriangle,
+  Radio,
+  Pause,
+  Play,
+  Hash,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { IS_TAURI, tauriListen } from '../../lib/tauriEvents';
@@ -9,12 +23,21 @@ import { formatTokens } from '../../lib/formatters';
 import { useTranslation } from '../../i18n/I18nProvider';
 
 const TOOL_ICONS = {
-  Read: Eye, Write: FileText, Edit: Pencil, Bash: Terminal,
-  Grep: Search, Glob: FolderOpen, Agent: Zap,
+  Read: Eye,
+  Write: FileText,
+  Edit: Pencil,
+  Bash: Terminal,
+  Grep: Search,
+  Glob: FolderOpen,
+  Agent: Zap,
 };
 const TOOL_COLORS = {
-  Read: 'text-sky-400', Write: 'text-emerald-400', Edit: 'text-yellow-400',
-  Bash: 'text-amber-400', Grep: 'text-cyan-400', Glob: 'text-teal-400',
+  Read: 'text-sky-400',
+  Write: 'text-emerald-400',
+  Edit: 'text-yellow-400',
+  Bash: 'text-amber-400',
+  Grep: 'text-cyan-400',
+  Glob: 'text-teal-400',
 };
 
 function formatElapsed(sec) {
@@ -43,7 +66,10 @@ export default function ObservabilityPanel({ projectId }) {
   // Poll agent activity
   const loadActivity = useCallback(() => {
     if (!IS_TAURI || !projectId) return;
-    api.getAgentActivity?.(projectId)?.then(setData).catch(() => {});
+    api
+      .getAgentActivity?.(projectId)
+      ?.then(setData)
+      .catch(() => {});
   }, [projectId]);
 
   useEffect(() => {
@@ -68,21 +94,28 @@ export default function ObservabilityPanel({ projectId }) {
         isResult: !!meta.isResult,
         isError: !!meta.isError,
         message: payload.message,
-        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        time: new Date().toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        }),
       };
       feedRef.current = [...feedRef.current.slice(-99), entry];
       setFeed([...feedRef.current]);
     });
   }, []);
 
-  useEffect(() => { pausedRef.current = paused; }, [paused]);
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   // Listen for file conflicts
   const [conflicts, setConflicts] = useState([]);
   useEffect(() => {
     if (!IS_TAURI) return;
     return tauriListen('agent:file_conflict', (payload) => {
-      setConflicts(prev => [...prev.slice(-19), { ...payload, time: Date.now() }]);
+      setConflicts((prev) => [...prev.slice(-19), { ...payload, time: Date.now() }]);
     });
   }, []);
 
@@ -149,7 +182,7 @@ export default function ObservabilityPanel({ projectId }) {
               {t('observability.activeAgents')}
             </div>
             <div className="space-y-2">
-              {agents.map(agent => {
+              {agents.map((agent) => {
                 const Icon = TOOL_ICONS[agent.recentTools?.[0]?.meta?.toolName] || Activity;
                 return (
                   <div key={agent.taskId} className="bg-surface-800/50 border border-surface-700/30 rounded-lg p-3">
@@ -157,27 +190,47 @@ export default function ObservabilityPanel({ projectId }) {
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
                         <span className="text-xs font-medium text-surface-200 truncate">{agent.title}</span>
-                        {agent.taskKey && <span className="text-[9px] text-surface-600 font-mono flex-shrink-0">{agent.taskKey}</span>}
+                        {agent.taskKey && (
+                          <span className="text-[9px] text-surface-600 font-mono flex-shrink-0">{agent.taskKey}</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-[10px] text-surface-500 flex-shrink-0">
-                        <span><Cpu size={9} className="inline" /> {agent.model}</span>
-                        <span><Clock size={9} className="inline" /> {formatElapsed(agent.elapsedSec)}</span>
+                        <span>
+                          <Cpu size={9} className="inline" /> {agent.model}
+                        </span>
+                        <span>
+                          <Clock size={9} className="inline" /> {formatElapsed(agent.elapsedSec)}
+                        </span>
                       </div>
                     </div>
                     {/* Stats row */}
                     <div className="flex items-center gap-3 text-[10px] text-surface-500 mb-2">
-                      <span><Hash size={9} className="inline" /> {agent.toolCallCount} tools</span>
-                      <span><Zap size={9} className="inline" /> {formatTokens((agent.inputTokens || 0) + (agent.outputTokens || 0))}</span>
-                      {agent.totalCost > 0 && <span><Coins size={9} className="inline" /> ${agent.totalCost.toFixed(3)}</span>}
+                      <span>
+                        <Hash size={9} className="inline" /> {agent.toolCallCount} tools
+                      </span>
+                      <span>
+                        <Zap size={9} className="inline" />{' '}
+                        {formatTokens((agent.inputTokens || 0) + (agent.outputTokens || 0))}
+                      </span>
+                      {agent.totalCost > 0 && (
+                        <span>
+                          <Coins size={9} className="inline" /> ${agent.totalCost.toFixed(3)}
+                        </span>
+                      )}
                       {agent.awaitingSubtasks && (
-                        <span className="text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-medium">Awaiting sub-tasks</span>
+                        <span className="text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-medium">
+                          Awaiting sub-tasks
+                        </span>
                       )}
                     </div>
                     {/* Active files */}
                     {agent.activeFiles?.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {agent.activeFiles.slice(0, 6).map((f, i) => (
-                          <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-surface-700/50 text-surface-400 font-mono">
+                          <span
+                            key={i}
+                            className="text-[9px] px-1.5 py-0.5 rounded bg-surface-700/50 text-surface-400 font-mono"
+                          >
                             {shortenPath(f)}
                           </span>
                         ))}
@@ -202,14 +255,20 @@ export default function ObservabilityPanel({ projectId }) {
                 {activeFiles.map(([path, taskIds]) => {
                   const isConflict = taskIds.length > 1;
                   return (
-                    <div key={path} className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] ${
-                      isConflict ? 'bg-red-500/10 border border-red-500/20' : 'bg-surface-800/30'
-                    }`}>
+                    <div
+                      key={path}
+                      className={`flex items-center gap-2 px-2 py-1 rounded text-[10px] ${
+                        isConflict ? 'bg-red-500/10 border border-red-500/20' : 'bg-surface-800/30'
+                      }`}
+                    >
                       <span className="text-surface-400 font-mono truncate flex-1">{shortenPath(path)}</span>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        {taskIds.map(id => (
-                          <span key={id} className={`w-2 h-2 rounded-full ${isConflict ? 'bg-red-400' : 'bg-emerald-400'}`}
-                            title={`Task #${id}`} />
+                        {taskIds.map((id) => (
+                          <span
+                            key={id}
+                            className={`w-2 h-2 rounded-full ${isConflict ? 'bg-red-400' : 'bg-emerald-400'}`}
+                            title={`Task #${id}`}
+                          />
                         ))}
                       </div>
                       {isConflict && <AlertTriangle size={10} className="text-red-400 flex-shrink-0" />}
@@ -227,8 +286,10 @@ export default function ObservabilityPanel({ projectId }) {
             <span className="text-[11px] font-medium text-surface-400 uppercase tracking-wider">
               {t('observability.liveFeed')}
             </span>
-            <button onClick={() => setPaused(!paused)}
-              className="p-1 rounded hover:bg-surface-800 text-surface-500 transition-colors">
+            <button
+              onClick={() => setPaused(!paused)}
+              className="p-1 rounded hover:bg-surface-800 text-surface-500 transition-colors"
+            >
               {paused ? <Play size={11} /> : <Pause size={11} />}
             </button>
           </div>
@@ -236,7 +297,7 @@ export default function ObservabilityPanel({ projectId }) {
             {feed.length === 0 && (
               <div className="text-center text-surface-600 text-[10px] py-8">{t('observability.noActivity')}</div>
             )}
-            {feed.map(entry => {
+            {feed.map((entry) => {
               if (entry.isResult) return null; // Only show tool calls, not results
               const ToolIcon = TOOL_ICONS[entry.toolName] || Activity;
               const color = TOOL_COLORS[entry.toolName] || 'text-surface-400';

@@ -45,14 +45,29 @@ function AppInner() {
 
   // ─── Task handlers ───
   const taskActions = useTaskHandlers({
-    tasks, setTasks, addToast, t, setConfirm, terminal,
-    setSelectedTask, setActivePanel, openModal, closeModal, currentProject,
+    tasks,
+    setTasks,
+    addToast,
+    t,
+    setConfirm,
+    terminal,
+    setSelectedTask,
+    setActivePanel,
+    openModal,
+    closeModal,
+    currentProject,
   });
 
   // ─── Project handlers ───
   const projectActions = useProjectHandlers({
-    currentProject, navigateToProject, navigateToDashboard,
-    addToast, t, setConfirm, openModal, closeModal,
+    currentProject,
+    navigateToProject,
+    navigateToDashboard,
+    addToast,
+    t,
+    setConfirm,
+    openModal,
+    closeModal,
   });
 
   // ─── Special modal closers (with side effects) ───
@@ -69,13 +84,19 @@ function AppInner() {
   const handleCloseTemplates = useCallback(() => {
     closeModal('templates');
     if (currentProject)
-      api.getTemplates(currentProject.id).then(setTemplates).catch(() => {});
+      api
+        .getTemplates(currentProject.id)
+        .then(setTemplates)
+        .catch(() => {});
   }, [closeModal, currentProject]);
 
   const handleCloseRoles = useCallback(() => {
     closeModal('roles');
     if (currentProject)
-      api.getRoles(currentProject.id).then(setRoles).catch(() => {});
+      api
+        .getRoles(currentProject.id)
+        .then(setRoles)
+        .catch(() => {});
   }, [closeModal, currentProject]);
 
   // Listen for app updates
@@ -85,7 +106,7 @@ function AppInner() {
       tauriListen('update:available', (data) => setUpdateInfo(data)),
       tauriListen('update:ready', (data) => setUpdateInfo({ ...data, status: 'ready' })),
     ];
-    return () => unsubs.forEach(fn => fn());
+    return () => unsubs.forEach((fn) => fn());
   }, []);
 
   // Auto-open terminal when task NEWLY starts running
@@ -93,12 +114,14 @@ function AppInner() {
   const suppressRef = useRef(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => { suppressRef.current = false; }, 5000);
+    const timer = setTimeout(() => {
+      suppressRef.current = false;
+    }, 5000);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    runningIdsRef.current = new Set(tasks.filter(t => t.is_running).map(t => t.id));
+    runningIdsRef.current = new Set(tasks.filter((t) => t.is_running).map((t) => t.id));
   }, [tasks]);
 
   useEffect(() => {
@@ -135,8 +158,14 @@ function AppInner() {
       setRoles([]);
       return;
     }
-    api.getTemplates(currentProject.id).then(setTemplates).catch(() => setTemplates([]));
-    api.getRoles(currentProject.id).then(setRoles).catch(() => setRoles([]));
+    api
+      .getTemplates(currentProject.id)
+      .then(setTemplates)
+      .catch(() => setTemplates([]));
+    api
+      .getRoles(currentProject.id)
+      .then(setRoles)
+      .catch(() => setRoles([]));
   }, [currentProject]);
 
   // Keyboard shortcuts
@@ -184,56 +213,61 @@ function AppInner() {
 
   return (
     <StatusTransitionProvider>
-    {updateInfo && (
-      <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-2 bg-claude text-white text-xs font-medium">
-        {updateInfo.status === 'ready' ? (
-          <>
-            <span>v{updateInfo.version} is ready. Restart to update.</span>
-            <button onClick={() => { window.__TAURI_INTERNALS__?.invoke('plugin:process|restart').catch(() => window.location.reload()); }} className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded text-xs">Restart Now</button>
-          </>
-        ) : updateInfo.status === 'downloading' ? (
-          <span>Downloading v{updateInfo.version}...</span>
-        ) : (
-          <span>v{updateInfo.version} available</span>
-        )}
-        <button onClick={() => setUpdateInfo(null)} className="ml-auto text-white/60 hover:text-white">&#x2715;</button>
-      </div>
-    )}
-    <AppLayout
-      connected={connected}
-      projects={projects}
-      currentProject={currentProject}
-      tasks={tasks}
-      filteredTasks={filteredTasks}
-      terminal={terminal}
-      selectedTask={selectedTask}
-      activePanel={activePanel}
-      search={search}
-      toasts={toasts}
-      confirm={confirm}
-      templates={templates}
-      roles={roles}
-      modals={modals}
-      openModal={openModal}
-      closeModal={closeModal}
-      onClosePlanning={handleClosePlanning}
-      onOpenPlanning={handleOpenPlanning}
-      onCloseTemplates={handleCloseTemplates}
-      onCloseRoles={handleCloseRoles}
-      onSearchChange={setSearch}
-      onSetActivePanel={setActivePanel}
-      onSetSelectedTask={setSelectedTask}
-      onNavigateToProject={navigateToProject}
-      onNavigateToDashboard={navigateToDashboard}
-      taskActions={taskActions}
-      projectActions={projectActions}
-      onOpenAppSettings={() => openModal('appSettings')}
-    />
-    <OnboardingTour
-      active={showOnboarding}
-      onComplete={completeOnboarding}
-      hasProject={!!currentProject}
-    />
+      {updateInfo && (
+        <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-3 px-4 py-2 bg-claude text-white text-xs font-medium">
+          {updateInfo.status === 'ready' ? (
+            <>
+              <span>v{updateInfo.version} is ready. Restart to update.</span>
+              <button
+                onClick={() => {
+                  window.__TAURI_INTERNALS__?.invoke('plugin:process|restart').catch(() => window.location.reload());
+                }}
+                className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded text-xs"
+              >
+                Restart Now
+              </button>
+            </>
+          ) : updateInfo.status === 'downloading' ? (
+            <span>Downloading v{updateInfo.version}...</span>
+          ) : (
+            <span>v{updateInfo.version} available</span>
+          )}
+          <button onClick={() => setUpdateInfo(null)} className="ml-auto text-white/60 hover:text-white">
+            &#x2715;
+          </button>
+        </div>
+      )}
+      <AppLayout
+        connected={connected}
+        projects={projects}
+        currentProject={currentProject}
+        tasks={tasks}
+        filteredTasks={filteredTasks}
+        terminal={terminal}
+        selectedTask={selectedTask}
+        activePanel={activePanel}
+        search={search}
+        toasts={toasts}
+        confirm={confirm}
+        templates={templates}
+        roles={roles}
+        modals={modals}
+        openModal={openModal}
+        closeModal={closeModal}
+        onClosePlanning={handleClosePlanning}
+        onOpenPlanning={handleOpenPlanning}
+        onCloseTemplates={handleCloseTemplates}
+        onCloseRoles={handleCloseRoles}
+        onSearchChange={setSearch}
+        onSetActivePanel={setActivePanel}
+        onSetSelectedTask={setSelectedTask}
+        onNavigateToProject={navigateToProject}
+        onNavigateToDashboard={navigateToDashboard}
+        taskActions={taskActions}
+        projectActions={projectActions}
+        onOpenAppSettings={() => openModal('appSettings')}
+      />
+      <OnboardingTour active={showOnboarding} onComplete={completeOnboarding} hasProject={!!currentProject} />
     </StatusTransitionProvider>
   );
 }

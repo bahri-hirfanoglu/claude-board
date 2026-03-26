@@ -34,7 +34,11 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
   const [dependencies, setDependencies] = useState({ parents: [], children: [] });
   const [tags, setTags] = useState(() => {
     if (!task?.tags) return [];
-    try { return typeof task.tags === 'string' ? JSON.parse(task.tags) : task.tags; } catch { return []; }
+    try {
+      return typeof task.tags === 'string' ? JSON.parse(task.tags) : task.tags;
+    } catch {
+      return [];
+    }
   });
   const titleRef = useRef(null);
   const typeMenuRef = useRef(null);
@@ -44,20 +48,21 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
   // Load dependencies when editing existing task
   useEffect(() => {
     if (!task?.id || !IS_TAURI) return;
-    api.getTaskDependencies(task.id)
-      .then(deps => setDependencies(deps))
+    api
+      .getTaskDependencies(task.id)
+      .then((deps) => setDependencies(deps))
       .catch(() => setDependencies({ parents: [], children: [] }));
   }, [task?.id]);
 
   // Voice input
   const titleVoice = useVoiceInput({
     lang: 'en-US',
-    onResult: useCallback((text) => setTitle(prev => prev ? prev + ' ' + text : text), []),
+    onResult: useCallback((text) => setTitle((prev) => (prev ? prev + ' ' + text : text)), []),
   });
   const descVoice = useVoiceInput({
     lang: 'en-US',
     continuous: true,
-    onResult: useCallback((text) => setDescription(prev => prev ? prev + ' ' + text : text), []),
+    onResult: useCallback((text) => setDescription((prev) => (prev ? prev + ' ' + text : text)), []),
   });
 
   // Options summary for collapsed state
@@ -74,14 +79,18 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
     return parts;
   }, [model, thinkingEffort, roleId, roles, attachedFiles, acceptanceCriteria]);
 
-  useEffect(() => { titleRef.current?.focus(); }, []);
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
 
   // Template-generated description
   const generatedDescription = useMemo(() => {
     if (!selectedTemplate?.template) return '';
     let text = selectedTemplate.template;
     let vars = [];
-    try { vars = JSON.parse(selectedTemplate.variables || '[]'); } catch {}
+    try {
+      vars = JSON.parse(selectedTemplate.variables || '[]');
+    } catch {}
     for (const v of vars) {
       if (v.name) {
         const regex = new RegExp(`\\{\\{${v.name}\\}\\}`, 'g');
@@ -145,7 +154,9 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
         <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-surface-800 flex-shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-claude" />
-            <h2 className="text-sm sm:text-base font-medium">{task ? t('taskModal.editTask') : t('taskModal.newTask')}</h2>
+            <h2 className="text-sm sm:text-base font-medium">
+              {task ? t('taskModal.editTask') : t('taskModal.newTask')}
+            </h2>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
             <X size={18} />
@@ -161,9 +172,12 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                 templates={templates}
                 selectedTemplate={selectedTemplate}
                 onSelect={handleSelectTemplate}
-                onClear={() => { setSelectedTemplate(null); setTemplateVars({}); }}
+                onClear={() => {
+                  setSelectedTemplate(null);
+                  setTemplateVars({});
+                }}
                 templateVars={templateVars}
-                onVarChange={(name, value) => setTemplateVars(prev => ({ ...prev, [name]: value }))}
+                onVarChange={(name, value) => setTemplateVars((prev) => ({ ...prev, [name]: value }))}
                 generatedDescription={generatedDescription}
               />
             )}
@@ -290,7 +304,12 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
             </div>
 
             {/* Token Estimate */}
-            <TokenEstimate title={title} description={description} acceptanceCriteria={acceptanceCriteria} model={model} />
+            <TokenEstimate
+              title={title}
+              description={description}
+              acceptanceCriteria={acceptanceCriteria}
+              model={model}
+            />
 
             {/* Priority */}
             <div>
@@ -351,16 +370,27 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                 onFilesChange={setAttachedFiles}
                 tags={tags}
                 onTagsChange={setTags}
-                tagSuggestions={[...new Set(allTasks.flatMap(t => { try { return typeof t.tags === 'string' ? JSON.parse(t.tags) : (t.tags || []); } catch { return []; } }))]}
+                tagSuggestions={[
+                  ...new Set(
+                    allTasks.flatMap((t) => {
+                      try {
+                        return typeof t.tags === 'string' ? JSON.parse(t.tags) : t.tags || [];
+                      } catch {
+                        return [];
+                      }
+                    }),
+                  ),
+                ]}
                 taskId={task?.id || 'new'}
-                allTasks={allTasks.filter(t => t.id !== task?.id)}
+                allTasks={allTasks.filter((t) => t.id !== task?.id)}
                 dependencies={dependencies}
                 onAddDependency={(_, depId) => {
                   if (task?.id) {
-                    api.addDependency(task.id, depId)
+                    api
+                      .addDependency(task.id, depId)
                       .then(() => api.getTaskDependencies(task.id).then(setDependencies));
                   } else {
-                    setDependencies(prev => ({
+                    setDependencies((prev) => ({
                       ...prev,
                       parents: [...prev.parents, depId],
                     }));
@@ -368,12 +398,13 @@ export default function TaskModal({ task, onSubmit, onClose, templates = [], rol
                 }}
                 onRemoveDependency={(_, depId) => {
                   if (task?.id) {
-                    api.removeDependency(task.id, depId)
+                    api
+                      .removeDependency(task.id, depId)
                       .then(() => api.getTaskDependencies(task.id).then(setDependencies));
                   } else {
-                    setDependencies(prev => ({
+                    setDependencies((prev) => ({
                       ...prev,
-                      parents: prev.parents.filter(id => id !== depId),
+                      parents: prev.parents.filter((id) => id !== depId),
                     }));
                   }
                 }}

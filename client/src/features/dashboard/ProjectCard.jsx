@@ -44,18 +44,24 @@ export function ProjectCard({ project, onSelect, t }) {
       <div className="flex items-center gap-3 mt-3 flex-wrap">
         <div className="flex items-center gap-1 text-[10px] text-surface-500">
           <Layers size={10} />
-          <span>{total} {t('common.tasks')}</span>
+          <span>
+            {total} {t('common.tasks')}
+          </span>
         </div>
         {(project.done_tasks || 0) > 0 && (
           <div className="flex items-center gap-1 text-[10px] text-emerald-500">
             <CheckCircle2 size={10} />
-            <span>{project.done_tasks} {t('dashboard.done')}</span>
+            <span>
+              {project.done_tasks} {t('dashboard.done')}
+            </span>
           </div>
         )}
         {(project.active_tasks || 0) > 0 && (
           <div className="flex items-center gap-1 text-[10px] text-amber-400">
             <Activity size={10} className="animate-pulse" />
-            <span>{project.active_tasks} {t('dashboard.active').toLowerCase()}</span>
+            <span>
+              {project.active_tasks} {t('dashboard.active').toLowerCase()}
+            </span>
           </div>
         )}
       </div>
@@ -64,7 +70,9 @@ export function ProjectCard({ project, onSelect, t }) {
         {tokens && (
           <div className="flex items-center gap-1 text-[10px] text-surface-500">
             <Cpu size={10} />
-            <span>{tokens} {t('common.tokens')}</span>
+            <span>
+              {tokens} {t('common.tokens')}
+            </span>
           </div>
         )}
         {(project.total_cost || 0) > 0 && (

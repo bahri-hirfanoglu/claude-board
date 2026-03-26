@@ -5,7 +5,17 @@ import CommandHints from './CommandHints';
 import { VOICE_LANGUAGES } from '../VoiceAssistantProvider';
 import { t } from '../i18n/t';
 
-export default function ChatPanel({ state, dispatch, voice, processInput, flowLabel, getAnalyser, commands, voiceLang, changeLang }) {
+export default function ChatPanel({
+  state,
+  dispatch,
+  voice,
+  processInput,
+  flowLabel,
+  getAnalyser,
+  commands,
+  voiceLang,
+  changeLang,
+}) {
   const [textInput, setTextInput] = useState('');
   const [langOpen, setLangOpen] = useState(false);
   const chatEndRef = useRef(null);
@@ -25,7 +35,9 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
   // Close language dropdown on outside click
   useEffect(() => {
     if (!langOpen) return;
-    const handler = (e) => { if (!langRef.current?.contains(e.target)) setLangOpen(false); };
+    const handler = (e) => {
+      if (!langRef.current?.contains(e.target)) setLangOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [langOpen]);
@@ -68,18 +80,19 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
             title="Change language"
           >
             <Globe size={12} />
-            <span>{VOICE_LANGUAGES.find(l => l.code === voiceLang)?.label.slice(0, 3) ?? 'EN'}</span>
+            <span>{VOICE_LANGUAGES.find((l) => l.code === voiceLang)?.label.slice(0, 3) ?? 'EN'}</span>
           </button>
           {langOpen && (
             <div className="absolute right-0 top-full mt-1 w-40 max-h-52 overflow-y-auto bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-[60] py-1">
               {VOICE_LANGUAGES.map((l) => (
                 <button
                   key={l.code}
-                  onClick={() => { changeLang(l.code); setLangOpen(false); }}
+                  onClick={() => {
+                    changeLang(l.code);
+                    setLangOpen(false);
+                  }}
                   className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
-                    l.code === voiceLang
-                      ? 'text-claude bg-claude/10'
-                      : 'text-surface-300 hover:bg-surface-700'
+                    l.code === voiceLang ? 'text-claude bg-claude/10' : 'text-surface-300 hover:bg-surface-700'
                   }`}
                 >
                   {l.label}
@@ -116,11 +129,13 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 min-h-0">
         {state.messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-[13px] leading-relaxed whitespace-pre-line ${
-              msg.role === 'user'
-                ? 'bg-claude/20 text-surface-100 rounded-br-md'
-                : 'bg-surface-800 text-surface-300 rounded-bl-md'
-            }`}>
+            <div
+              className={`max-w-[85%] px-3 py-2 rounded-2xl text-[13px] leading-relaxed whitespace-pre-line ${
+                msg.role === 'user'
+                  ? 'bg-claude/20 text-surface-100 rounded-br-md'
+                  : 'bg-surface-800 text-surface-300 rounded-bl-md'
+              }`}
+            >
               {msg.text}
             </div>
           </div>
@@ -164,7 +179,7 @@ export default function ChatPanel({ state, dispatch, voice, processInput, flowLa
               voice.isListening
                 ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30 animate-pulse'
                 : 'bg-surface-800 text-surface-400 hover:text-claude hover:bg-surface-700'
-            } ${(!voice.isSupported || state.isSpeaking) ? 'opacity-30 cursor-not-allowed' : ''}`}
+            } ${!voice.isSupported || state.isSpeaking ? 'opacity-30 cursor-not-allowed' : ''}`}
             title={voice.isListening ? 'Stop listening (Alt+V)' : 'Voice command (Alt+V)'}
           >
             {voice.isListening ? <MicOff size={16} /> : <Mic size={16} />}

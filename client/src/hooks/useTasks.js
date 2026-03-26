@@ -9,19 +9,25 @@ export function useTasks(currentProject, addToast) {
 
   // Load tasks when project changes
   useEffect(() => {
-    if (!currentProject) { setTasks([]); return; }
-    api.getTasks(currentProject.id).then(setTasks).catch(err => {
-      console.error('Failed to load tasks:', err);
-      addToast?.('Failed to load tasks', 'error');
-    });
+    if (!currentProject) {
+      setTasks([]);
+      return;
+    }
+    api
+      .getTasks(currentProject.id)
+      .then(setTasks)
+      .catch((err) => {
+        console.error('Failed to load tasks:', err);
+        addToast?.('Failed to load tasks', 'error');
+      });
   }, [currentProject, addToast]);
 
   // Real-time events
   useEffect(() => {
     const onCreate = (task) => {
       if (currentProject && task.project_id === currentProject.id) {
-        setTasks(prev => {
-          if (prev.some(t => t.id === task.id)) return prev;
+        setTasks((prev) => {
+          if (prev.some((t) => t.id === task.id)) return prev;
           return [...prev, task];
         });
       }
@@ -29,7 +35,7 @@ export function useTasks(currentProject, addToast) {
     const onUpdate = (task) => {
       // Skip socket updates for tasks with in-flight API calls to prevent race conditions
       if (pendingUpdates.has(task.id)) return;
-      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...task } : t));
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, ...task } : t)));
     };
     const onUsage = (usage) => {
       const patch = {};
@@ -38,10 +44,10 @@ export function useTasks(currentProject, addToast) {
       if (usage.cache_read_tokens !== undefined) patch.cache_read_tokens = usage.cache_read_tokens;
       if (usage.cache_creation_tokens !== undefined) patch.cache_creation_tokens = usage.cache_creation_tokens;
       if (usage.total_cost != null) patch.total_cost = usage.total_cost;
-      setTasks(prev => prev.map(t => t.id === usage.taskId ? { ...t, ...patch } : t));
+      setTasks((prev) => prev.map((t) => (t.id === usage.taskId ? { ...t, ...patch } : t)));
     };
     const onDelete = ({ id }) => {
-      setTasks(prev => prev.filter(t => t.id !== id));
+      setTasks((prev) => prev.filter((t) => t.id !== id));
     };
 
     if (IS_TAURI) {
@@ -51,7 +57,7 @@ export function useTasks(currentProject, addToast) {
         tauriListen('task:usage', onUsage),
         tauriListen('task:deleted', onDelete),
       ];
-      return () => unsubs.forEach(fn => fn());
+      return () => unsubs.forEach((fn) => fn());
     } else {
       socket.on('task:created', onCreate);
       socket.on('task:updated', onUpdate);

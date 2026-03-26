@@ -14,8 +14,12 @@ export default function TerminalBottomPanel({ terminal, selectedTask, onSetSelec
           e.preventDefault();
           const startY = e.clientY;
           const startH = terminal.bottomHeight;
-          const onMove = (ev) => terminal.setBottomHeight(Math.max(150, Math.min(window.innerHeight - 200, startH + (startY - ev.clientY))));
-          const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+          const onMove = (ev) =>
+            terminal.setBottomHeight(Math.max(150, Math.min(window.innerHeight - 200, startH + (startY - ev.clientY))));
+          const onUp = () => {
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+          };
           window.addEventListener('mousemove', onMove);
           window.addEventListener('mouseup', onUp);
         }}
@@ -25,7 +29,7 @@ export default function TerminalBottomPanel({ terminal, selectedTask, onSetSelec
       <div className="flex items-center bg-surface-950 border-b border-surface-700 flex-shrink-0 px-1">
         {/* Tabs */}
         <div className="flex-1 flex items-center overflow-x-auto gap-0.5 py-0.5">
-          {terminal.tabs.map(tab => (
+          {terminal.tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => {
@@ -47,7 +51,10 @@ export default function TerminalBottomPanel({ terminal, selectedTask, onSetSelec
               {tab.is_running && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />}
               <span className="truncate">{tab.title}</span>
               <span
-                onClick={(e) => { e.stopPropagation(); terminal.closeTab(tab.id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  terminal.closeTab(tab.id);
+                }}
                 className="ml-1 hover:text-red-400 text-surface-600 flex-shrink-0"
               >
                 ×
@@ -100,7 +107,15 @@ export default function TerminalBottomPanel({ terminal, selectedTask, onSetSelec
       {/* ═══ Terminal content ═══ */}
       <div className={`flex-1 min-h-0 flex ${terminal.splitMode === 'horizontal' ? 'flex-col' : 'flex-row'}`}>
         {/* Primary pane */}
-        <div className={isSplit ? (terminal.splitMode === 'horizontal' ? 'flex-1 min-h-0 border-b border-surface-700/50' : 'flex-1 min-w-0 border-r border-surface-700/50') : 'flex-1 min-h-0'}>
+        <div
+          className={
+            isSplit
+              ? terminal.splitMode === 'horizontal'
+                ? 'flex-1 min-h-0 border-b border-surface-700/50'
+                : 'flex-1 min-w-0 border-r border-surface-700/50'
+              : 'flex-1 min-h-0'
+          }
+        >
           <LiveTerminal
             key={terminal.activeTabId}
             task={terminal.activeTab || selectedTask}
@@ -117,7 +132,10 @@ export default function TerminalBottomPanel({ terminal, selectedTask, onSetSelec
               key={`split-${terminal.splitTabId}`}
               task={terminal.splitTab}
               layout="bottom"
-              onClose={() => { terminal.setSplitTabId(null); terminal.setSplitMode(null); }}
+              onClose={() => {
+                terminal.setSplitTabId(null);
+                terminal.setSplitMode(null);
+              }}
               onToggleLayout={() => terminal.setLayout('side')}
             />
           </div>

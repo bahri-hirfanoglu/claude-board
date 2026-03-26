@@ -107,7 +107,17 @@ export default function Header({
   const [showProjectMenu, setShowProjectMenu] = useState(false);
   const menuRef = useRef(null);
 
-  const handlers = { onEditProject, onEditClaudeMd, onEditSnippets, onEditTemplates, onEditRoles, onEditWebhooks, onEditCommands, onEditSkills, onOpenAppSettings };
+  const handlers = {
+    onEditProject,
+    onEditClaudeMd,
+    onEditSnippets,
+    onEditTemplates,
+    onEditRoles,
+    onEditWebhooks,
+    onEditCommands,
+    onEditSkills,
+    onOpenAppSettings,
+  };
 
   useEffect(() => {
     if (!showProjectMenu) return;
@@ -284,7 +294,9 @@ export default function Header({
           <ProjectUsage tasks={tasks} />
         </div>
 
-        <span className="hidden sm:inline text-xs text-surface-500 whitespace-nowrap">{taskCount} {t('common.tasks')}</span>
+        <span className="hidden sm:inline text-xs text-surface-500 whitespace-nowrap">
+          {taskCount} {t('common.tasks')}
+        </span>
 
         <button
           onClick={onToggleActivity}
@@ -344,4 +356,3 @@ export default function Header({
     </header>
   );
 }
-

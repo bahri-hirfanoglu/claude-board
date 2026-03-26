@@ -138,7 +138,9 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-surface-800 flex-shrink-0">
           <div className="flex items-center gap-2">
             <FolderOpen size={16} className="text-claude" />
-            <h2 className="text-sm sm:text-base font-medium">{project ? t('projectModal.editProject') : t('projectModal.newProject')}</h2>
+            <h2 className="text-sm sm:text-base font-medium">
+              {project ? t('projectModal.editProject') : t('projectModal.newProject')}
+            </h2>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
             <X size={18} />
@@ -180,7 +182,9 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <label className="block text-xs font-medium text-surface-400 mb-1">{t('projectModal.projectName')}</label>
+                    <label className="block text-xs font-medium text-surface-400 mb-1">
+                      {t('projectModal.projectName')}
+                    </label>
                     <input
                       ref={nameRef}
                       value={name}
@@ -237,7 +241,9 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-surface-400 mb-1">{t('projectModal.baseBranch')}</label>
+                    <label className="block text-xs font-medium text-surface-400 mb-1">
+                      {t('projectModal.baseBranch')}
+                    </label>
                     <input
                       value={prBaseBranch}
                       onChange={(e) => setPrBaseBranch(e.target.value)}
@@ -248,7 +254,9 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-surface-400 mb-1">{t('projectModal.workingDir')}</label>
+                  <label className="block text-xs font-medium text-surface-400 mb-1">
+                    {t('projectModal.workingDir')}
+                  </label>
                   <input
                     value={workingDir}
                     onChange={(e) => setWorkingDir(e.target.value)}
@@ -331,7 +339,9 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                   />
                   {autoQueue && (
                     <div className="mt-2 pl-1">
-                      <label className="block text-[10px] text-surface-500 mb-1">{t('projectModal.maxConcurrent')}</label>
+                      <label className="block text-[10px] text-surface-500 mb-1">
+                        {t('projectModal.maxConcurrent')}
+                      </label>
                       <div className="flex items-center gap-1.5">
                         {[1, 2, 3, 5, 10].map((n) => (
                           <button
@@ -402,16 +412,21 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                   />
                   {autoTest && (
                     <div className="mt-2 pl-1">
-                      <label className="block text-[10px] text-surface-500 mb-1">Custom test instructions (optional)</label>
+                      <label className="block text-[10px] text-surface-500 mb-1">
+                        Custom test instructions (optional)
+                      </label>
                       <textarea
                         value={testPrompt}
                         onChange={(e) => setTestPrompt(e.target.value)}
-                        placeholder={"e.g. Run 'npm test' and check all tests pass.\nVerify TypeScript compilation with 'npx tsc --noEmit'.\nCheck that no console.log statements remain."}
+                        placeholder={
+                          "e.g. Run 'npm test' and check all tests pass.\nVerify TypeScript compilation with 'npx tsc --noEmit'.\nCheck that no console.log statements remain."
+                        }
                         rows={3}
                         className="w-full px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 resize-none font-mono"
                       />
                       <p className="text-[9px] text-surface-600 mt-1">
-                        Claude will review changes, run tests, and check acceptance criteria. Add project-specific instructions here.
+                        Claude will review changes, run tests, and check acceptance criteria. Add project-specific
+                        instructions here.
                       </p>
                     </div>
                   )}

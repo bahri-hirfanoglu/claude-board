@@ -49,7 +49,11 @@ export const MODEL_OPTIONS = [
 
 export const MODEL_COLORS = { haiku: 'text-green-400', sonnet: 'text-blue-400', opus: 'text-purple-400' };
 export const MODEL_DOT_COLORS = { haiku: '#4ade80', sonnet: '#60a5fa', opus: '#c084fc' };
-export const MODEL_BG_ACTIVE = { haiku: 'bg-green-500/15 ring-green-500/30', sonnet: 'bg-blue-500/15 ring-blue-500/30', opus: 'bg-purple-500/15 ring-purple-500/30' };
+export const MODEL_BG_ACTIVE = {
+  haiku: 'bg-green-500/15 ring-green-500/30',
+  sonnet: 'bg-blue-500/15 ring-blue-500/30',
+  opus: 'bg-purple-500/15 ring-purple-500/30',
+};
 
 // ─── Effort levels ───
 export const EFFORT_LEVELS = ['low', 'medium', 'high'];
@@ -62,9 +66,9 @@ export const EFFORT_OPTIONS = [
 
 // ─── Token costs (USD per million tokens) ───
 export const MODEL_COSTS = {
-  haiku:  { input: 0.25,  output: 1.25 },
-  sonnet: { input: 3.0,   output: 15.0 },
-  opus:   { input: 15.0,  output: 75.0 },
+  haiku: { input: 0.25, output: 1.25 },
+  sonnet: { input: 3.0, output: 15.0 },
+  opus: { input: 15.0, output: 75.0 },
 };
 
 // ─── Defaults ───
@@ -74,12 +78,18 @@ export const TOAST_TIMEOUT_MS = 3000;
 
 // ─── Tags ───
 const TAG_PALETTE = [
-  'bg-blue-500/15 text-blue-400', 'bg-emerald-500/15 text-emerald-400',
-  'bg-purple-500/15 text-purple-400', 'bg-amber-500/15 text-amber-400',
-  'bg-pink-500/15 text-pink-400', 'bg-cyan-500/15 text-cyan-400',
-  'bg-red-500/15 text-red-400', 'bg-teal-500/15 text-teal-400',
-  'bg-orange-500/15 text-orange-400', 'bg-violet-500/15 text-violet-400',
-  'bg-lime-500/15 text-lime-400', 'bg-rose-500/15 text-rose-400',
+  'bg-blue-500/15 text-blue-400',
+  'bg-emerald-500/15 text-emerald-400',
+  'bg-purple-500/15 text-purple-400',
+  'bg-amber-500/15 text-amber-400',
+  'bg-pink-500/15 text-pink-400',
+  'bg-cyan-500/15 text-cyan-400',
+  'bg-red-500/15 text-red-400',
+  'bg-teal-500/15 text-teal-400',
+  'bg-orange-500/15 text-orange-400',
+  'bg-violet-500/15 text-violet-400',
+  'bg-lime-500/15 text-lime-400',
+  'bg-rose-500/15 text-rose-400',
 ];
 export function getTagColor(tag) {
   let hash = 0;

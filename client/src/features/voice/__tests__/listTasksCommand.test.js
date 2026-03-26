@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { getAllCommands } from '../commands/commandRegistry';
 import '../commands/index';
 
-const listCmd = getAllCommands().find(c => c.id === 'list_tasks');
+const listCmd = getAllCommands().find((c) => c.id === 'list_tasks');
 
 describe('listTasksCommand', () => {
   it('reports no tasks', () => {

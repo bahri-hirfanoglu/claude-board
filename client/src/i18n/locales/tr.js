@@ -61,7 +61,8 @@ export default {
   'dashboard.tagline': 'Projelerinizi ve yapay zeka destekli g\u00f6revlerinizi y\u00f6netin',
   'dashboard.newProject': 'Yeni Proje',
   'dashboard.noProjects': 'Hen\u00fcz proje yok',
-  'dashboard.noProjectsDesc': 'Claude ile g\u00f6rev y\u00f6netimine ba\u015flamak i\u00e7in ilk projenizi olu\u015fturun',
+  'dashboard.noProjectsDesc':
+    'Claude ile g\u00f6rev y\u00f6netimine ba\u015flamak i\u00e7in ilk projenizi olu\u015fturun',
   'dashboard.createFirst': '\u0130lk Projenizi Olu\u015fturun',
   'dashboard.projects': 'Projeler',
   'dashboard.totalTasks': 'Toplam G\u00f6rev',
@@ -74,7 +75,8 @@ export default {
 
   // ─── Claude Usage ───
   'usage.title': 'Claude Kullan\u0131m\u0131',
-  'usage.noData': 'Hen\u00fcz Claude kullan\u0131m verisi yok. Token istatistiklerini g\u00f6rmek i\u00e7in bir g\u00f6rev ba\u015flat\u0131n.',
+  'usage.noData':
+    'Hen\u00fcz Claude kullan\u0131m verisi yok. Token istatistiklerini g\u00f6rmek i\u00e7in bir g\u00f6rev ba\u015flat\u0131n.',
   'usage.totalTokens': 'Toplam Token',
   'usage.totalCost': 'Toplam Maliyet',
   'usage.turns': 'Tur',
@@ -195,15 +197,18 @@ export default {
   'projectModal.permDefault': 'Varsay\u0131lan',
   'projectModal.permAutoAcceptDesc': 'Tam \u00f6zerklik \u2014 t\u00fcm ara\u00e7lara izin verilir',
   'projectModal.permAllowedToolsDesc': 'Yaln\u0131zca belirtilen ara\u00e7lara izin verilir',
-  'projectModal.permDefaultDesc': 'Claude\'un yerle\u015fik izinleri',
-  'projectModal.permWarning': 'Claude --no-input bayra\u011f\u0131yla \u00e7al\u0131\u015f\u0131r. Yap\u0131land\u0131rman\u0131z\u0131n t\u00fcm izin istemlerini kar\u015f\u0131lad\u0131\u011f\u0131ndan emin olun.',
+  'projectModal.permDefaultDesc': "Claude'un yerle\u015fik izinleri",
+  'projectModal.permWarning':
+    'Claude --no-input bayra\u011f\u0131yla \u00e7al\u0131\u015f\u0131r. Yap\u0131land\u0131rman\u0131z\u0131n t\u00fcm izin istemlerini kar\u015f\u0131lad\u0131\u011f\u0131ndan emin olun.',
   'projectModal.allowedToolsPlaceholder': 'Bash, Read, Write, Edit, Glob, Grep',
-  'projectModal.availableTools': 'Mevcut: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch, NotebookEdit',
+  'projectModal.availableTools':
+    'Mevcut: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch, NotebookEdit',
   'projectModal.taskQueue': 'G\u00f6rev Kuyru\u011fu',
   'projectModal.gitWorkflow': 'Git \u0130\u015f Ak\u0131\u015f\u0131',
   'projectModal.autoQueueEnabled': 'Otomatik Kuyruk Etkin',
   'projectModal.autoQueueDisabled': 'Otomatik Kuyruk Devre D\u0131\u015f\u0131',
-  'projectModal.autoQueueDesc': '\u00c7al\u0131\u015fan g\u00f6rev bitti\u011finde beklemedeki g\u00f6revleri otomatik ba\u015flat',
+  'projectModal.autoQueueDesc':
+    '\u00c7al\u0131\u015fan g\u00f6rev bitti\u011finde beklemedeki g\u00f6revleri otomatik ba\u015flat',
   'projectModal.maxConcurrent': 'Maks. E\u015f Zamanl\u0131',
   'projectModal.autoBranch': 'Otomatik Dal',
   'projectModal.autoBranchDesc': 'Her g\u00f6rev i\u00e7in \u00f6zellik dal\u0131 olu\u015ftur',
@@ -217,10 +222,11 @@ export default {
   'review.reviewPrompt': 'Tamamlanan \u00e7al\u0131\u015fmay\u0131 inceleyin ve karar verin:',
   'review.approve': 'Onayla ve Tamamla',
   'review.requestChanges': 'De\u011fi\u015fiklik \u0130ste',
-  'review.sendBack': 'Claude\'a Geri G\u00f6nder',
+  'review.sendBack': "Claude'a Geri G\u00f6nder",
   'review.sending': 'G\u00f6nderiliyor...',
   'review.feedbackLabel': 'Ne de\u011fi\u015fmeli? (Revizyon #{num})',
-  'review.feedbackPlaceholder': 'Neyin d\u00fczeltilmesi veya iyile\u015ftirilmesi gerekti\u011fini a\u00e7\u0131klay\u0131n. Spesifik olun \u2014 Claude bu geri bildirimi kullanarak \u00e7al\u0131\u015fmay\u0131 revize edecek...',
+  'review.feedbackPlaceholder':
+    'Neyin d\u00fczeltilmesi veya iyile\u015ftirilmesi gerekti\u011fini a\u00e7\u0131klay\u0131n. Spesifik olun \u2014 Claude bu geri bildirimi kullanarak \u00e7al\u0131\u015fmay\u0131 revize edecek...',
 
   // ─── Stats Panel ───
   'stats.title': 'Proje \u0130statistikleri',
@@ -255,7 +261,8 @@ export default {
   // ─── Planning ───
   'planning.title': 'Planlama Modu',
   'planning.whatToBuild': 'Ne in\u015fa etmek istiyorsunuz?',
-  'planning.topicPlaceholder': '\u00d6rn. OAuth2, JWT token, rol tabanl\u0131 eri\u015fim kontrol\u00fc ve \u015fifre s\u0131f\u0131rlama ak\u0131\u015f\u0131yla bir kimlik do\u011frulama sistemi olu\u015ftur',
+  'planning.topicPlaceholder':
+    '\u00d6rn. OAuth2, JWT token, rol tabanl\u0131 eri\u015fim kontrol\u00fc ve \u015fifre s\u0131f\u0131rlama ak\u0131\u015f\u0131yla bir kimlik do\u011frulama sistemi olu\u015ftur',
   'planning.context': 'Ek ba\u011flam',
   'planning.contextPlaceholder': '\u00d6rn. Express.js backend, React frontend, Prisma ORM ile PostgreSQL',
   'planning.taskBreakdown': 'G\u00f6rev par\u00e7alama',
@@ -281,7 +288,8 @@ export default {
   'planning.description': 'A\u00e7\u0131klama',
   'planning.acceptanceCriteria': 'Kabul Kriterleri',
   'planning.planningFailed': 'Planlama ba\u015far\u0131s\u0131z',
-  'planning.noTasks': 'Claude yap\u0131land\u0131r\u0131lm\u0131\u015f g\u00f6revler olu\u015fturamad\u0131. Yeniden ifade etmeyi veya daha fazla ba\u011flam eklemeyi deneyin.',
+  'planning.noTasks':
+    'Claude yap\u0131land\u0131r\u0131lm\u0131\u015f g\u00f6revler olu\u015fturamad\u0131. Yeniden ifade etmeyi veya daha fazla ba\u011flam eklemeyi deneyin.',
   'planning.cancelBtn': '\u0130ptal',
   'planning.startPlanning': 'Planlamaya Ba\u015fla',
   'planning.planAgain': 'Tekrar Planla',
@@ -299,16 +307,18 @@ export default {
   'planning.analysis': 'Analiz',
   'planning.activityLog': 'Etkinlik G\u00fcnl\u00fc\u011f\u00fc',
   'planning.edges': 'ba\u011flant\u0131',
-  'planning.allCreated': 'T\u00fcm g\u00f6revler olu\u015fturuldu ve backlog\u2019unuza eklendi. Art\u0131k atayabilir ve \u00e7al\u0131\u015fmaya ba\u015flayabilirsiniz.',
+  'planning.allCreated':
+    'T\u00fcm g\u00f6revler olu\u015fturuldu ve backlog\u2019unuza eklendi. Art\u0131k atayabilir ve \u00e7al\u0131\u015fmaya ba\u015flayabilirsiniz.',
 
   // ─── Snippets ───
   'snippets.title': 'Ba\u011flam Snippets',
   'snippets.formTitle': 'Ba\u015fl\u0131k',
   'snippets.titlePlaceholder': '\u00d6rn. Teknoloji Kurallar\u0131',
   'snippets.content': '\u0130\u00e7erik',
-  'snippets.contentPlaceholder': '\u00d6rn. Stillendirme i\u00e7in her zaman Tailwind kullan. Testler i\u00e7in Vitest kullan.',
+  'snippets.contentPlaceholder':
+    '\u00d6rn. Stillendirme i\u00e7in her zaman Tailwind kullan. Testler i\u00e7in Vitest kullan.',
   'snippets.noSnippets': 'Hen\u00fcz snippet yok',
-  'snippets.noSnippetsDesc': 'Claude\'un prompt\'una enjekte edilecek ba\u011flam snippet\'leri ekleyin',
+  'snippets.noSnippetsDesc': "Claude'un prompt'una enjekte edilecek ba\u011flam snippet'leri ekleyin",
   'snippets.addSnippet': 'Snippet Ekle',
 
   // ─── Templates ───
@@ -330,7 +340,7 @@ export default {
   'roles.description': 'A\u00e7\u0131klama',
   'roles.descPlaceholder': '\u00d6rn. Node.js, veritabanlar\u0131 ve API tasar\u0131m\u0131nda deneyimli',
   'roles.prompt': 'Prompt Talimatlar\u0131',
-  'roles.promptSub': 'Claude\'un prompt\'una enjekte edilir',
+  'roles.promptSub': "Claude'un prompt'una enjekte edilir",
   'roles.promptPlaceholder': 'Sen k\u0131demli bir backend geli\u015ftiricisin...',
   'roles.color': 'Renk',
   'roles.globalRole': 'T\u00fcm projelerde payla\u015f\u0131l\u0131r',
@@ -407,7 +417,8 @@ export default {
   'pipeline.queued': 'S\u0131rada',
   'pipeline.completed': 'Tamamlanan',
   'pipeline.queue': 'S\u0131ra',
-  'pipeline.emptyQueue': 'S\u0131rada g\u00f6rev yok. G\u00f6rev olu\u015fturun ve proje ayarlar\u0131ndan otomatik s\u0131ray\u0131 etkinle\u015ftirin.',
+  'pipeline.emptyQueue':
+    'S\u0131rada g\u00f6rev yok. G\u00f6rev olu\u015fturun ve proje ayarlar\u0131ndan otomatik s\u0131ray\u0131 etkinle\u015ftirin.',
   'pipeline.avgTime': 'Ort. s\u00fcre',
 
   // ─── Orkestrasyon ───
@@ -421,7 +432,8 @@ export default {
   'dependency.onFailure': 'Ba\u015far\u0131s\u0131z Olursa',
   'context.fromDependencies': 'Ba\u011f\u0131ml\u0131l\u0131klardan ba\u011flam',
   'orchestration.live': 'Canl\u0131',
-  'observability.noAgents': '\u00c7al\u0131\u015fan agent yok. Canl\u0131 aktivite i\u00e7in g\u00f6rev ba\u015flat\u0131n.',
+  'observability.noAgents':
+    '\u00c7al\u0131\u015fan agent yok. Canl\u0131 aktivite i\u00e7in g\u00f6rev ba\u015flat\u0131n.',
   'observability.agents': 'Agentlar',
   'observability.toolCalls': 'Ara\u00e7 \u00c7a\u011fr\u0131lar\u0131',
   'observability.activeAgents': 'Aktif Agentlar',
@@ -432,20 +444,27 @@ export default {
   'task.addTag': 'Etiket ekle...',
 
   // ─── Tanitim Turu ───
-  'onboarding.welcomeTitle': 'Claude Board\'a Ho\u015f Geldiniz!',
-  'onboarding.welcomeDesc': 'Claude Board, birden fazla AI agent\u0131 kodtaban\u0131n\u0131z \u00fczerinde paralel \u00e7al\u0131\u015ft\u0131rman\u0131z\u0131 sa\u011flar. Temel \u00f6zellikleri k\u0131saca tan\u0131yal\u0131m.',
+  'onboarding.welcomeTitle': "Claude Board'a Ho\u015f Geldiniz!",
+  'onboarding.welcomeDesc':
+    'Claude Board, birden fazla AI agent\u0131 kodtaban\u0131n\u0131z \u00fczerinde paralel \u00e7al\u0131\u015ft\u0131rman\u0131z\u0131 sa\u011flar. Temel \u00f6zellikleri k\u0131saca tan\u0131yal\u0131m.',
   'onboarding.createProjectTitle': 'Proje Se\u00e7ici',
-  'onboarding.createProjectDesc': 'Projeler aras\u0131nda ge\u00e7i\u015f yapmak veya yeni proje olu\u015fturmak i\u00e7in buraya t\u0131klay\u0131n. Her proje yerel bir kod dizinine ba\u011flan\u0131r.',
+  'onboarding.createProjectDesc':
+    'Projeler aras\u0131nda ge\u00e7i\u015f yapmak veya yeni proje olu\u015fturmak i\u00e7in buraya t\u0131klay\u0131n. Her proje yerel bir kod dizinine ba\u011flan\u0131r.',
   'onboarding.newTaskTitle': 'G\u00f6rev Olu\u015ftur',
-  'onboarding.newTaskDesc': 'Yeni g\u00f6rev olu\u015fturmak i\u00e7in buraya t\u0131klay\u0131n (veya N tu\u015funa bas\u0131n). \u00d6zellik ekleme, hata d\u00fczeltme, refakt\u00f6r, test yazma ve daha fazlas\u0131.',
+  'onboarding.newTaskDesc':
+    'Yeni g\u00f6rev olu\u015fturmak i\u00e7in buraya t\u0131klay\u0131n (veya N tu\u015funa bas\u0131n). \u00d6zellik ekleme, hata d\u00fczeltme, refakt\u00f6r, test yazma ve daha fazlas\u0131.',
   'onboarding.boardViewsTitle': '\u00c7oklu G\u00f6r\u00fcn\u00fcm',
-  'onboarding.boardViewsDesc': 'G\u00f6r\u00fcn\u00fcmler: Board (Kanban), Liste (tablo), Pipeline (kuyruk), Orkestrasyon (ba\u011f\u0131ml\u0131l\u0131k grafi\u011fi + zaman \u00e7izelgesi + canl\u0131 agentlar), Analitik (maliyet ve performans).',
+  'onboarding.boardViewsDesc':
+    'G\u00f6r\u00fcn\u00fcmler: Board (Kanban), Liste (tablo), Pipeline (kuyruk), Orkestrasyon (ba\u011f\u0131ml\u0131l\u0131k grafi\u011fi + zaman \u00e7izelgesi + canl\u0131 agentlar), Analitik (maliyet ve performans).',
   'onboarding.planningTitle': 'AI Planlama Modu',
-  'onboarding.planningDesc': 'Claude\'un kodtaban\u0131n\u0131z\u0131 analiz edip karma\u015f\u0131k hedefleri ba\u011f\u0131ml\u0131l\u0131kl\u0131 g\u00f6rev setlerine b\u00f6lmesini sa\u011flay\u0131n. Plan\u0131 onayla ve g\u00f6revler otomatik olu\u015fsun.',
+  'onboarding.planningDesc':
+    "Claude'un kodtaban\u0131n\u0131z\u0131 analiz edip karma\u015f\u0131k hedefleri ba\u011f\u0131ml\u0131l\u0131kl\u0131 g\u00f6rev setlerine b\u00f6lmesini sa\u011flay\u0131n. Plan\u0131 onayla ve g\u00f6revler otomatik olu\u015fsun.",
   'onboarding.settingsTitle': 'Proje Ayarlar\u0131',
-  'onboarding.settingsDesc': 'Ayarlara eri\u015fmek i\u00e7in proje ad\u0131na t\u0131klay\u0131n: otomatik kuyruk, e\u015f zamanl\u0131 agent say\u0131s\u0131, otomatik test, izinler, ba\u011flam par\u00e7ac\u0131klar\u0131 ve daha fazlas\u0131.',
+  'onboarding.settingsDesc':
+    'Ayarlara eri\u015fmek i\u00e7in proje ad\u0131na t\u0131klay\u0131n: otomatik kuyruk, e\u015f zamanl\u0131 agent say\u0131s\u0131, otomatik test, izinler, ba\u011flam par\u00e7ac\u0131klar\u0131 ve daha fazlas\u0131.',
   'onboarding.doneTitle': 'Haz\u0131rs\u0131n\u0131z!',
-  'onboarding.doneDesc': 'Bir proje olu\u015fturun, g\u00f6revler ekleyin ve Claude agentlar\u0131n\u0131n i\u015fi halletmesini izleyin. Tam otonom \u00e7al\u0131\u015fma i\u00e7in proje ayarlar\u0131ndan otomatik kuyru\u011fu etkinle\u015ftirin.',
+  'onboarding.doneDesc':
+    'Bir proje olu\u015fturun, g\u00f6revler ekleyin ve Claude agentlar\u0131n\u0131n i\u015fi halletmesini izleyin. Tam otonom \u00e7al\u0131\u015fma i\u00e7in proje ayarlar\u0131ndan otomatik kuyru\u011fu etkinle\u015ftirin.',
   'onboarding.skip': 'Turu atla',
   'onboarding.back': 'Geri',
   'onboarding.next': '\u0130leri',
@@ -484,9 +503,9 @@ export default {
   'detail.started': 'Ba\u015flad\u0131',
   'detail.completed': 'Tamamland\u0131',
   'detail.rateLimitHits': 'h\u0131z limiti',
-  'detail.commits': 'Commit\'ler',
+  'detail.commits': "Commit'ler",
   'detail.fileChanges': 'Dosya De\u011fi\u015fiklikleri',
-  'detail.viewFullDiff': 'T\u00fcm Diff\'i G\u00f6r',
+  'detail.viewFullDiff': "T\u00fcm Diff'i G\u00f6r",
   'detail.noDiff': 'Diff bulunamad\u0131',
   'detail.noGitInfo': 'Bu g\u00f6rev i\u00e7in git commit veya PR bulunamad\u0131',
   'detail.noTestReport': 'Test raporu yok',
@@ -496,7 +515,8 @@ export default {
   'detail.testParseError': 'Test raporu okunamad\u0131',
   'detail.noAttachments': 'Ek dosya yok',
   'detail.noRevisions': 'Revizyon yok',
-  'detail.noLifecycleSummary': 'Ya\u015fam d\u00f6ng\u00fcs\u00fc \u00f6zeti hen\u00fcz olu\u015fmad\u0131. G\u00f6rev tamamland\u0131\u011f\u0131nda olu\u015fur.',
+  'detail.noLifecycleSummary':
+    'Ya\u015fam d\u00f6ng\u00fcs\u00fc \u00f6zeti hen\u00fcz olu\u015fmad\u0131. G\u00f6rev tamamland\u0131\u011f\u0131nda olu\u015fur.',
   'detail.revCount': 'Rev',
   'detail.failed': 'Ba\u015far\u0131s\u0131z',
   'detail.retryCount': 'Deneme',
@@ -541,9 +561,9 @@ export default {
   // ─── G\u00f6rev Modal ───
   'taskModal.options': 'Se\u00e7enekler',
   'taskModal.prompt': 'Komut',
-  'taskModal.sentToClaude': '— Claude\'a g\u00f6nderilir',
+  'taskModal.sentToClaude': "— Claude'a g\u00f6nderilir",
   'taskModal.titlePlaceholder': 'G\u00f6rev ba\u015fl\u0131\u011f\u0131...',
-  'taskModal.descriptionPlaceholder': 'Claude\'un ne yapmas\u0131n\u0131 istedi\u011finizi a\u00e7\u0131klay\u0131n...',
+  'taskModal.descriptionPlaceholder': "Claude'un ne yapmas\u0131n\u0131 istedi\u011finizi a\u00e7\u0131klay\u0131n...",
   'taskModal.listening': 'Dinleniyor...',
   'taskModal.startSpeaking': 'Konu\u015fmaya ba\u015flay\u0131n...',
   'taskModal.stopRecording': 'Kayd\u0131 durdur',
@@ -589,7 +609,8 @@ export default {
   'planning.phasePlanning': 'Planlan\u0131yor',
   'planning.phaseReview': '\u0130nceleme',
   'planning.analyzingCodebase': 'Claude kodtaban\u0131n\u0131 analiz ediyor...',
-  'planning.noStructuredTasks': 'Claude yap\u0131land\u0131r\u0131lm\u0131\u015f g\u00f6rev olu\u015fturamad\u0131. \u00c7\u0131kt\u0131y\u0131 inceleyin.',
+  'planning.noStructuredTasks':
+    'Claude yap\u0131land\u0131r\u0131lm\u0131\u015f g\u00f6rev olu\u015fturamad\u0131. \u00c7\u0131kt\u0131y\u0131 inceleyin.',
   'planning.claudeOutputLabel': 'Claude \u00c7\u0131kt\u0131s\u0131',
   'planning.active': 'Aktif',
   'planning.removeTask': 'Bu g\u00f6revi kald\u0131r',
@@ -657,12 +678,14 @@ export default {
   'cm.plugins.addMp': 'Ekle',
   'cm.plugins.mpPlaceholder': 'github-kullanici/repo',
   // Agents
-  'cm.agents.desc': 'Ajanlar \u00f6zel ara\u00e7lara ve yeteneklere sahip uzmanla\u015fm\u0131\u015f Claude \u00f6rnekleridir.',
+  'cm.agents.desc':
+    'Ajanlar \u00f6zel ara\u00e7lara ve yeteneklere sahip uzmanla\u015fm\u0131\u015f Claude \u00f6rnekleridir.',
   'cm.agents.user': 'Kullan\u0131c\u0131 Ajanlar\u0131',
   'cm.agents.builtin': 'Dahili Ajanlar',
   'cm.agents.empty': 'Yap\u0131land\u0131r\u0131lm\u0131\u015f ajan yok',
   // Hooks
-  'cm.hooks.desc': 'Hook\u2019lar Claude olaylar\u0131na yan\u0131t olarak kabuk komutlar\u0131 \u00e7al\u0131\u015ft\u0131r\u0131r.',
+  'cm.hooks.desc':
+    'Hook\u2019lar Claude olaylar\u0131na yan\u0131t olarak kabuk komutlar\u0131 \u00e7al\u0131\u015ft\u0131r\u0131r.',
   'cm.hooks.editor': 'JSON Edit\u00f6r\u00fc',
   'cm.hooks.saved': 'Kaydedildi',
   // Account
@@ -702,7 +725,8 @@ export default {
   'header.commands': 'Komutlar',
   'commands.title': '\u00d6zel Komutlar',
   'commands.empty': '\u00d6zel komut yok',
-  'commands.emptyDesc': 'Claude i\u00e7in \u00f6zel slash komutlar\u0131 olu\u015fturmak i\u00e7in ~/.claude/commands/ dizinine .md dosyalar\u0131 ekleyin.',
+  'commands.emptyDesc':
+    'Claude i\u00e7in \u00f6zel slash komutlar\u0131 olu\u015fturmak i\u00e7in ~/.claude/commands/ dizinine .md dosyalar\u0131 ekleyin.',
   'commands.selectOne': '\u0130\u00e7eri\u011fini g\u00f6rmek i\u00e7in bir komut se\u00e7in',
   'commands.commandCount': 'komut',
 
@@ -710,7 +734,8 @@ export default {
   'header.skills': 'Beceriler',
   'skills.title': '\u00d6zel Beceriler',
   'skills.empty': '\u00d6zel beceri yok',
-  'skills.emptyDesc': 'Claude i\u00e7in \u00f6zel beceriler olu\u015fturmak i\u00e7in ~/.claude/skills/ dizinine .md dosyalar\u0131 ekleyin.',
+  'skills.emptyDesc':
+    'Claude i\u00e7in \u00f6zel beceriler olu\u015fturmak i\u00e7in ~/.claude/skills/ dizinine .md dosyalar\u0131 ekleyin.',
   'skills.selectOne': '\u0130\u00e7eri\u011fini g\u00f6rmek i\u00e7in bir beceri se\u00e7in',
   'skills.skillCount': 'beceri',
 
@@ -719,7 +744,8 @@ export default {
   'scan.review': '\u0130nceleme',
   'scan.saved': 'Kaydedildi',
   'scan.idleTitle': 'Kod taban\u0131n\u0131z\u0131 analiz edin',
-  'scan.idleDesc': 'Tarama, yapay zeka kullanarak teknoloji y\u0131\u011f\u0131n\u0131, dizinleri, kal\u0131plar\u0131 ve giri\u015f noktalar\u0131n\u0131 analiz edecek.',
+  'scan.idleDesc':
+    'Tarama, yapay zeka kullanarak teknoloji y\u0131\u011f\u0131n\u0131, dizinleri, kal\u0131plar\u0131 ve giri\u015f noktalar\u0131n\u0131 analiz edecek.',
   'scan.scanning': 'Kod taban\u0131 taran\u0131yor...',
   'scan.scanningDesc': 'Yapay zeka projenizi analiz ediyor. Bu bir dakika s\u00fcrebilir.',
   'scan.resultPreview': 'Analiz Sonucu',
@@ -740,30 +766,37 @@ export default {
   'settings.notifications': 'Bildirimler',
   'settings.about': 'Hakk\u0131nda',
   'settings.launchAtStartup': 'Ba\u015flang\u0131\u00e7ta A\u00e7',
-  'settings.launchAtStartupDesc': 'Bilgisayar\u0131n\u0131z ba\u015flat\u0131ld\u0131\u011f\u0131nda Claude Board otomatik olarak a\u00e7\u0131ls\u0131n',
+  'settings.launchAtStartupDesc':
+    'Bilgisayar\u0131n\u0131z ba\u015flat\u0131ld\u0131\u011f\u0131nda Claude Board otomatik olarak a\u00e7\u0131ls\u0131n',
   'settings.minimizeToTray': 'Tepsi Alan\u0131na K\u00fc\u00e7\u00fclt',
   'settings.minimizeToTrayDesc': 'Pencereyi kapatmak yerine sistem tepsisine k\u00fc\u00e7\u00fclt',
   'settings.confirmBeforeDelete': 'Silmeden \u00d6nce Onayla',
   'settings.confirmBeforeDeleteDesc': 'G\u00f6rev veya proje silmeden \u00f6nce onay diyalo\u011fu g\u00f6ster',
   'settings.autoOpenTerminal': 'Terminali Otomatik A\u00e7',
-  'settings.autoOpenTerminalDesc': 'Bir g\u00f6rev \u00e7al\u0131\u015fmaya ba\u015flad\u0131\u011f\u0131nda terminal panelini otomatik a\u00e7',
+  'settings.autoOpenTerminalDesc':
+    'Bir g\u00f6rev \u00e7al\u0131\u015fmaya ba\u015flad\u0131\u011f\u0131nda terminal panelini otomatik a\u00e7',
   'settings.defaultModel': 'Varsay\u0131lan Model',
   'settings.defaultModelDesc': 'Yeni g\u00f6revler i\u00e7in varsay\u0131lan Claude modeli',
   'settings.defaultEffort': 'Varsay\u0131lan D\u00fc\u015f\u00fcnme \u00c7abas\u0131',
-  'settings.defaultEffortDesc': 'Yeni g\u00f6revler i\u00e7in varsay\u0131lan d\u00fc\u015f\u00fcnme \u00e7abas\u0131 seviyesi',
+  'settings.defaultEffortDesc':
+    'Yeni g\u00f6revler i\u00e7in varsay\u0131lan d\u00fc\u015f\u00fcnme \u00e7abas\u0131 seviyesi',
   'settings.language': 'Dil',
   'settings.languageDesc': 'Uygulama g\u00f6r\u00fcnt\u00fcleme dili',
-  'settings.notificationsDesc': 'G\u00f6rev olaylar\u0131 i\u00e7in yerel masa\u00fcst\u00fc bildirimlerini yap\u0131land\u0131r',
+  'settings.notificationsDesc':
+    'G\u00f6rev olaylar\u0131 i\u00e7in yerel masa\u00fcst\u00fc bildirimlerini yap\u0131land\u0131r',
   'settings.notifyTaskCompleted': 'G\u00f6rev Tamamland\u0131',
   'settings.notifyTaskCompletedDesc': 'Bir g\u00f6rev tamamlan\u0131p teste ge\u00e7ti\u011finde bildir',
   'settings.notifyTaskFailed': 'G\u00f6rev Ba\u015far\u0131s\u0131z',
-  'settings.notifyTaskFailedDesc': 'Bir g\u00f6rev ba\u015far\u0131s\u0131z oldu\u011funda veya otomatik test ge\u00e7emedi\u011finde bildir',
+  'settings.notifyTaskFailedDesc':
+    'Bir g\u00f6rev ba\u015far\u0131s\u0131z oldu\u011funda veya otomatik test ge\u00e7emedi\u011finde bildir',
   'settings.notifyTaskStarted': 'G\u00f6rev Ba\u015flad\u0131',
-  'settings.notifyTaskStartedDesc': 'Claude bir g\u00f6rev \u00fczerinde \u00e7al\u0131\u015fmaya ba\u015flad\u0131\u011f\u0131nda bildir',
+  'settings.notifyTaskStartedDesc':
+    'Claude bir g\u00f6rev \u00fczerinde \u00e7al\u0131\u015fmaya ba\u015flad\u0131\u011f\u0131nda bildir',
   'settings.notifyRevisionRequested': 'Revizyon \u0130stendi',
   'settings.notifyRevisionRequestedDesc': "Claude'a revizyon geri bildirimi g\u00f6nderildi\u011finde bildir",
   'settings.notifyQueueStarted': 'Kuyruktan Ba\u015flat\u0131ld\u0131',
-  'settings.notifyQueueStartedDesc': 'Bir g\u00f6rev kuyruktan otomatik ba\u015flat\u0131ld\u0131\u011f\u0131nda bildir',
+  'settings.notifyQueueStartedDesc':
+    'Bir g\u00f6rev kuyruktan otomatik ba\u015flat\u0131ld\u0131\u011f\u0131nda bildir',
   'settings.soundEnabled': 'Bildirim Sesi',
   'settings.soundEnabledDesc': 'Uyar\u0131larla birlikte sistem bildirim sesini \u00e7al',
   'settings.aboutTagline': 'Claude Code i\u00e7in g\u00f6rsel g\u00f6rev y\u00f6netim panosu',

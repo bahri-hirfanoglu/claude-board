@@ -27,19 +27,19 @@ export function SystemLine({ log }) {
   }
 
   return (
-    <div className={`flex items-start gap-2 py-1 text-[11px] ${
-      log.log_type === 'error' ? 'text-red-400' :
-      log.log_type === 'success' ? 'text-emerald-400' :
-      'text-claude/70'
-    }`}>
+    <div
+      className={`flex items-start gap-2 py-1 text-[11px] ${
+        log.log_type === 'error' ? 'text-red-400' : log.log_type === 'success' ? 'text-emerald-400' : 'text-claude/70'
+      }`}
+    >
       <span className="text-surface-600 text-[10px] w-[48px] flex-shrink-0 text-right font-mono select-none">
         {fmtTime(log.created_at)}
       </span>
-      <span className={`w-2 h-2 rounded-full mt-0.5 flex-shrink-0 ${
-        log.log_type === 'error' ? 'bg-red-400' :
-        log.log_type === 'success' ? 'bg-emerald-400' :
-        'bg-claude/50'
-      }`} />
+      <span
+        className={`w-2 h-2 rounded-full mt-0.5 flex-shrink-0 ${
+          log.log_type === 'error' ? 'bg-red-400' : log.log_type === 'success' ? 'bg-emerald-400' : 'bg-claude/50'
+        }`}
+      />
       <span className="whitespace-pre-wrap break-words min-w-0">{msg}</span>
     </div>
   );

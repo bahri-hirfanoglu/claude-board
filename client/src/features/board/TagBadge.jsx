@@ -20,7 +20,11 @@ export default function TagBadge({ tag, size = 'sm', onClick, className = '' }) 
 export function parseTags(tagsField) {
   if (!tagsField) return [];
   if (Array.isArray(tagsField)) return tagsField;
-  try { return JSON.parse(tagsField); } catch { return []; }
+  try {
+    return JSON.parse(tagsField);
+  } catch {
+    return [];
+  }
 }
 
 export function TagList({ tags, max = 3, size = 'sm', onTagClick }) {
@@ -30,7 +34,7 @@ export function TagList({ tags, max = 3, size = 'sm', onTagClick }) {
   const extra = parsed.length - max;
   return (
     <span className="inline-flex items-center gap-0.5 flex-wrap">
-      {shown.map(tag => (
+      {shown.map((tag) => (
         <TagBadge key={tag} tag={tag} size={size} onClick={onTagClick ? () => onTagClick(tag) : undefined} />
       ))}
       {extra > 0 && <span className="text-[8px] text-surface-600">+{extra}</span>}

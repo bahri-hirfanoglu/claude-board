@@ -20,21 +20,27 @@ export function useCrudResource({ projectId, getAll, create, update, remove }) {
     reload();
   }, [reload]);
 
-  const handleSave = useCallback(async (data) => {
-    if (editing === 'new') {
-      await create(projectId, data);
-    } else if (editing?.id) {
-      await update(editing.id, data);
-    }
-    setEditing(null);
-    reload();
-  }, [editing, projectId, create, update, reload]);
+  const handleSave = useCallback(
+    async (data) => {
+      if (editing === 'new') {
+        await create(projectId, data);
+      } else if (editing?.id) {
+        await update(editing.id, data);
+      }
+      setEditing(null);
+      reload();
+    },
+    [editing, projectId, create, update, reload],
+  );
 
-  const handleDelete = useCallback(async (id) => {
-    await remove(id);
-    setDeleting(null);
-    reload();
-  }, [remove, reload]);
+  const handleDelete = useCallback(
+    async (id) => {
+      await remove(id);
+      setDeleting(null);
+      reload();
+    },
+    [remove, reload],
+  );
 
   return { items, loading, editing, setEditing, deleting, setDeleting, handleSave, handleDelete, reload };
 }

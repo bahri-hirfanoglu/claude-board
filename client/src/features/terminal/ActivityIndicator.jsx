@@ -11,7 +11,7 @@ export function ActivityIndicator({ logs, isRunning }) {
       if (l.log_type === 'tool' && l.meta?.toolName && !l.meta.isResult) {
         // Check if this tool has a result
         const toolId = l.meta.toolId;
-        const hasResult = logs.slice(i + 1).some(r => r.log_type === 'tool_result' && r.meta?.toolId === toolId);
+        const hasResult = logs.slice(i + 1).some((r) => r.log_type === 'tool_result' && r.meta?.toolId === toolId);
         if (!hasResult) {
           return { phase: 'tool', toolName: l.meta.toolName, file: l.meta.input?.file };
         }

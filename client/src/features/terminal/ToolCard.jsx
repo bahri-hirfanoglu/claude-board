@@ -34,16 +34,17 @@ export function ToolCard({ call, result, isExpanded, onToggle }) {
   else if (input.query) summary = input.query;
 
   return (
-    <div className={`my-1 rounded-lg border transition-colors ${
-      isError ? 'border-red-500/20 bg-red-500/5' :
-      !hasResult ? 'border-amber-500/20 bg-amber-500/5' :
-      'border-surface-700/30 bg-surface-800/30 hover:border-surface-700/60'
-    }`}>
+    <div
+      className={`my-1 rounded-lg border transition-colors ${
+        isError
+          ? 'border-red-500/20 bg-red-500/5'
+          : !hasResult
+            ? 'border-amber-500/20 bg-amber-500/5'
+            : 'border-surface-700/30 bg-surface-800/30 hover:border-surface-700/60'
+      }`}
+    >
       {/* Header row */}
-      <button
-        onClick={onToggle}
-        className="flex items-center gap-2 w-full text-left px-3 py-2 text-xs"
-      >
+      <button onClick={onToggle} className="flex items-center gap-2 w-full text-left px-3 py-2 text-xs">
         <span className="text-surface-600 text-[10px] w-[48px] flex-shrink-0 text-right font-mono select-none">
           {fmtTime(call?.created_at || result?.created_at)}
         </span>
@@ -51,9 +52,7 @@ export function ToolCard({ call, result, isExpanded, onToggle }) {
         <Icon size={14} className={`${color} flex-shrink-0`} />
         <span className={`font-semibold ${color}`}>{toolName}</span>
 
-        {summary && (
-          <span className="text-surface-400 truncate text-[11px] min-w-0 flex-1">{summary}</span>
-        )}
+        {summary && <span className="text-surface-400 truncate text-[11px] min-w-0 flex-1">{summary}</span>}
 
         <span className="flex items-center gap-2 flex-shrink-0 ml-auto">
           {duration && (
@@ -62,7 +61,11 @@ export function ToolCard({ call, result, isExpanded, onToggle }) {
               {fmtMs(duration)}
             </span>
           )}
-          {isExpanded ? <ChevronDown size={12} className="text-surface-600" /> : <ChevronRight size={12} className="text-surface-600" />}
+          {isExpanded ? (
+            <ChevronDown size={12} className="text-surface-600" />
+          ) : (
+            <ChevronRight size={12} className="text-surface-600" />
+          )}
         </span>
       </button>
 
@@ -135,11 +138,17 @@ export function ToolCard({ call, result, isExpanded, onToggle }) {
             <div className="mt-1.5">
               <div className="text-[10px] text-surface-500 mb-1 flex items-center gap-1 font-medium">
                 output
-                {resMeta.resultLines > 1 && <span className="text-surface-600 font-normal">({resMeta.resultLines} lines)</span>}
+                {resMeta.resultLines > 1 && (
+                  <span className="text-surface-600 font-normal">({resMeta.resultLines} lines)</span>
+                )}
               </div>
-              <pre className={`rounded-md bg-surface-900/80 border border-surface-700/30 px-3 py-2 text-[11px] font-mono overflow-x-auto max-h-[160px] overflow-y-auto whitespace-pre-wrap break-words leading-relaxed ${
-                isError ? 'text-red-400/80' : 'text-surface-400'
-              }`}>{resMeta.resultPreview}</pre>
+              <pre
+                className={`rounded-md bg-surface-900/80 border border-surface-700/30 px-3 py-2 text-[11px] font-mono overflow-x-auto max-h-[160px] overflow-y-auto whitespace-pre-wrap break-words leading-relaxed ${
+                  isError ? 'text-red-400/80' : 'text-surface-400'
+                }`}
+              >
+                {resMeta.resultPreview}
+              </pre>
             </div>
           )}
         </div>

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { getAllCommands } from '../commands/commandRegistry';
 import '../commands/index';
 
-const statusCmd = getAllCommands().find(c => c.id === 'change_status');
+const statusCmd = getAllCommands().find((c) => c.id === 'change_status');
 
 function ctx(overrides = {}) {
   return {

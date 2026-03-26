@@ -12,7 +12,10 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
   const textareaRef = useRef(null);
 
   useEffect(() => {
-    api.getRevisions(task.id).then(setRevisions).catch(() => {});
+    api
+      .getRevisions(task.id)
+      .then(setRevisions)
+      .catch(() => {});
   }, [task.id]);
 
   useEffect(() => {
@@ -46,7 +49,7 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
         className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-lg shadow-2xl animate-slide-up"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-800">
@@ -69,15 +72,13 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
               </span>
             </div>
             <div className="space-y-2">
-              {revisions.map(rev => (
+              {revisions.map((rev) => (
                 <div key={rev.id} className="bg-surface-800/50 rounded-lg p-2.5 border border-surface-700/50">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-medium text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
                       Rev #{rev.revision_number}
                     </span>
-                    <span className="text-[10px] text-surface-600">
-                      {new Date(rev.created_at).toLocaleString()}
-                    </span>
+                    <span className="text-[10px] text-surface-600">{new Date(rev.created_at).toLocaleString()}</span>
                   </div>
                   <p className="text-xs text-surface-300 whitespace-pre-wrap">{rev.feedback}</p>
                 </div>
@@ -91,9 +92,7 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
           {mode === null ? (
             <div className="space-y-3">
               <p className="text-xs text-surface-400">
-                {revisionCount > 0
-                  ? t('review.revisedTimes', { count: revisionCount })
-                  : t('review.reviewPrompt')}
+                {revisionCount > 0 ? t('review.revisedTimes', { count: revisionCount }) : t('review.reviewPrompt')}
               </p>
               <div className="flex gap-2">
                 <button
@@ -124,13 +123,16 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
               <textarea
                 ref={textareaRef}
                 value={feedback}
-                onChange={e => setFeedback(e.target.value)}
+                onChange={(e) => setFeedback(e.target.value)}
                 placeholder={t('review.feedbackPlaceholder')}
                 className="w-full h-32 px-3 py-2.5 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-200 placeholder-surface-600 resize-none focus:outline-none focus:border-claude/50 focus:ring-1 focus:ring-claude/20"
               />
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setMode(null); setFeedback(''); }}
+                  onClick={() => {
+                    setMode(null);
+                    setFeedback('');
+                  }}
                   className="px-4 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-surface-400 text-sm transition-colors"
                 >
                   {t('common.back')}

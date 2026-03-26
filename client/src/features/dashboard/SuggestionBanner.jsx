@@ -10,16 +10,16 @@ export function SuggestionBanner({ suggestions, setSuggestions, t }) {
       setInstalling(s.id);
       try {
         await api.installPlugin(s.actionArgs);
-        setSuggestions(prev => prev.filter(x => x.id !== s.id));
+        setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
       } catch {}
       setInstalling(null);
     } else if (s.action === 'navigate') {
       // Could navigate to claude manager tab
-      setSuggestions(prev => prev.filter(x => x.id !== s.id));
+      setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
     }
   };
 
-  const dismiss = (id) => setSuggestions(prev => prev.filter(x => x.id !== id));
+  const dismiss = (id) => setSuggestions((prev) => prev.filter((x) => x.id !== id));
 
   return (
     <div className="space-y-2 mb-6">
@@ -27,18 +27,30 @@ export function SuggestionBanner({ suggestions, setSuggestions, t }) {
         <Lightbulb size={13} className="text-amber-400" />
         <span className="text-xs font-medium text-surface-400">{t('dashboard.suggestions')}</span>
       </div>
-      {suggestions.map(s => (
-        <div key={s.id} className="flex items-center gap-3 bg-surface-800/60 border border-surface-700/30 rounded-lg px-4 py-3">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${s.priority === 'high' ? 'bg-claude/15' : 'bg-surface-700/50'}`}>
-            {s.type === 'plugin' ? <Download size={14} className="text-claude" /> : <Lightbulb size={14} className="text-amber-400" />}
+      {suggestions.map((s) => (
+        <div
+          key={s.id}
+          className="flex items-center gap-3 bg-surface-800/60 border border-surface-700/30 rounded-lg px-4 py-3"
+        >
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${s.priority === 'high' ? 'bg-claude/15' : 'bg-surface-700/50'}`}
+          >
+            {s.type === 'plugin' ? (
+              <Download size={14} className="text-claude" />
+            ) : (
+              <Lightbulb size={14} className="text-amber-400" />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-surface-200">{s.title}</p>
             <p className="text-[11px] text-surface-500 mt-0.5">{s.description}</p>
           </div>
           {s.action === 'install_plugin' && (
-            <button onClick={() => handleAction(s)} disabled={installing === s.id}
-              className="px-3 py-1.5 text-xs font-medium bg-claude hover:bg-claude-light rounded-lg disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0">
+            <button
+              onClick={() => handleAction(s)}
+              disabled={installing === s.id}
+              className="px-3 py-1.5 text-xs font-medium bg-claude hover:bg-claude-light rounded-lg disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+            >
               {installing === s.id ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
               {t('dashboard.install')}
             </button>

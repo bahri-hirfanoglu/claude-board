@@ -1,11 +1,30 @@
 import { useState, useEffect } from 'react';
-import { X, RefreshCw, BarChart3, Clock, CheckCircle2, TrendingUp, Layers, Cpu, Coins, AlertTriangle, Zap } from 'lucide-react';
+import {
+  X,
+  RefreshCw,
+  BarChart3,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
+  Layers,
+  Cpu,
+  Coins,
+  AlertTriangle,
+  Zap,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
 
 const STATUS_LABELS = { backlog: 'Backlog', in_progress: 'In Progress', testing: 'Testing', done: 'Done' };
 const STATUS_COLORS = { backlog: '#918678', in_progress: '#f59e0b', testing: '#DA7756', done: '#34d399' };
-const TYPE_COLORS = { feature: '#3b82f6', bugfix: '#ef4444', refactor: '#a855f7', docs: '#22c55e', test: '#eab308', chore: '#6b7280' };
+const TYPE_COLORS = {
+  feature: '#3b82f6',
+  bugfix: '#ef4444',
+  refactor: '#a855f7',
+  docs: '#22c55e',
+  test: '#eab308',
+  chore: '#6b7280',
+};
 const PRIORITY_LABELS = { 0: 'None', 1: 'Low', 2: 'Medium', 3: 'High' };
 const PRIORITY_COLORS = { 0: '#6b7280', 1: '#eab308', 2: '#f97316', 3: '#ef4444' };
 const MODEL_COLORS = { haiku: '#22c55e', sonnet: '#3b82f6', opus: '#a855f7', unknown: '#6b7280' };
@@ -38,7 +57,7 @@ function formatTokens(n) {
 }
 
 function BarChart({ data, colorMap, labelMap, maxVal }) {
-  const max = maxVal || Math.max(...data.map(d => d.count), 1);
+  const max = maxVal || Math.max(...data.map((d) => d.count), 1);
   return (
     <div className="space-y-1.5">
       {data.map((item, i) => {
@@ -46,9 +65,7 @@ function BarChart({ data, colorMap, labelMap, maxVal }) {
         const pct = (item.count / max) * 100;
         return (
           <div key={i} className="flex items-center gap-2">
-            <span className="text-[10px] text-surface-400 w-20 text-right truncate">
-              {labelMap?.[key] || key}
-            </span>
+            <span className="text-[10px] text-surface-400 w-20 text-right truncate">{labelMap?.[key] || key}</span>
             <div className="flex-1 h-5 bg-surface-800 rounded overflow-hidden">
               <div
                 className="h-full rounded transition-all duration-500"
@@ -59,16 +76,15 @@ function BarChart({ data, colorMap, labelMap, maxVal }) {
           </div>
         );
       })}
-      {data.length === 0 && (
-        <div className="text-[10px] text-surface-600 text-center py-2">No data</div>
-      )}
+      {data.length === 0 && <div className="text-[10px] text-surface-600 text-center py-2">No data</div>}
     </div>
   );
 }
 
 function TimelineChart({ data }) {
-  if (data.length === 0) return <div className="text-[10px] text-surface-600 text-center py-4">No completions in the last 14 days</div>;
-  const max = Math.max(...data.map(d => d.count), 1);
+  if (data.length === 0)
+    return <div className="text-[10px] text-surface-600 text-center py-4">No completions in the last 14 days</div>;
+  const max = Math.max(...data.map((d) => d.count), 1);
   return (
     <div>
       <div className="flex items-end gap-0.5 h-24">
@@ -77,7 +93,11 @@ function TimelineChart({ data }) {
           const day = new Date(item.day);
           const label = day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1 group" title={`${label}: ${item.count} tasks`}>
+            <div
+              key={i}
+              className="flex-1 flex flex-col items-center gap-1 group"
+              title={`${label}: ${item.count} tasks`}
+            >
               <span className="text-[8px] text-surface-400 opacity-0 group-hover:opacity-100 transition-opacity">
                 {item.count}
               </span>
@@ -92,8 +112,12 @@ function TimelineChart({ data }) {
         })}
       </div>
       <div className="flex justify-between mt-1.5">
-        <span className="text-[9px] text-surface-500">{new Date(data[0].day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-        <span className="text-[9px] text-surface-500">{new Date(data[data.length - 1].day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+        <span className="text-[9px] text-surface-500">
+          {new Date(data[0].day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </span>
+        <span className="text-[9px] text-surface-500">
+          {new Date(data[data.length - 1].day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </span>
       </div>
     </div>
   );
@@ -116,15 +140,17 @@ export default function StatsPanel({ projectId, onClose }) {
     }
   };
 
-  useEffect(() => { load(); }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    load();
+  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalTasks = stats?.byStatus?.reduce((sum, s) => sum + s.count, 0) || 0;
-  const doneCount = stats?.byStatus?.find(s => s.label === 'done')?.count || 0;
-  const inProgressCount = stats?.byStatus?.find(s => s.label === 'in_progress')?.count || 0;
+  const doneCount = stats?.byStatus?.find((s) => s.label === 'done')?.count || 0;
+  const inProgressCount = stats?.byStatus?.find((s) => s.label === 'in_progress')?.count || 0;
 
-  const statusData = (stats?.byStatus || []).map(s => ({ key: s.label, count: s.count }));
-  const typeData = (stats?.byType || []).map(s => ({ key: s.label || 'feature', count: s.count }));
-  const priorityData = (stats?.byPriority || []).map(s => ({ key: String(s.label), count: s.count }));
+  const statusData = (stats?.byStatus || []).map((s) => ({ key: s.label, count: s.count }));
+  const typeData = (stats?.byType || []).map((s) => ({ key: s.label || 'feature', count: s.count }));
+  const priorityData = (stats?.byPriority || []).map((s) => ({ key: String(s.label), count: s.count }));
 
   const usage = stats?.claudeUsage || {};
   const totalAllTokens = (usage.totalInputTokens || 0) + (usage.totalOutputTokens || 0);
@@ -137,10 +163,17 @@ export default function StatsPanel({ projectId, onClose }) {
           <h3 className="text-sm font-medium">{t('stats.title')}</h3>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={load} className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors" title="Refresh">
+          <button
+            onClick={load}
+            className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors"
+            title="Refresh"
+          >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           </button>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors"
+          >
             <X size={14} />
           </button>
         </div>
@@ -148,7 +181,9 @@ export default function StatsPanel({ projectId, onClose }) {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
         {loading && !stats ? (
-          <div className="flex items-center justify-center py-12"><div className="w-5 h-5 rounded-full border-2 border-claude/20 border-t-claude animate-spin" /></div>
+          <div className="flex items-center justify-center py-12">
+            <div className="w-5 h-5 rounded-full border-2 border-claude/20 border-t-claude animate-spin" />
+          </div>
         ) : (
           <>
             {/* Summary Cards */}
@@ -179,9 +214,7 @@ export default function StatsPanel({ projectId, onClose }) {
                   <Clock size={12} className="text-claude" />
                   <span className="text-[10px] text-surface-500 uppercase tracking-wider">{t('stats.avgTime')}</span>
                 </div>
-                <div className="text-xl font-semibold text-claude">
-                  {formatDuration(stats?.duration?.avgMinutes)}
-                </div>
+                <div className="text-xl font-semibold text-claude">{formatDuration(stats?.duration?.avgMinutes)}</div>
               </div>
             </div>
 
@@ -198,7 +231,8 @@ export default function StatsPanel({ projectId, onClose }) {
                       </div>
                       <div className="text-sm font-semibold text-surface-200">{formatTokens(totalAllTokens)}</div>
                       <div className="text-[9px] text-surface-600 mt-0.5">
-                        {formatTokens(usage.totalInputTokens || 0)} in / {formatTokens(usage.totalOutputTokens || 0)} out
+                        {formatTokens(usage.totalInputTokens || 0)} in / {formatTokens(usage.totalOutputTokens || 0)}{' '}
+                        out
                       </div>
                     </div>
                     <div>
@@ -206,9 +240,7 @@ export default function StatsPanel({ projectId, onClose }) {
                         <Coins size={10} className="text-emerald-400" />
                         <span className="text-[10px] text-surface-500">{t('stats.totalCost')}</span>
                       </div>
-                      <div className="text-sm font-semibold text-emerald-400">
-                        ${(usage.totalCost || 0).toFixed(4)}
-                      </div>
+                      <div className="text-sm font-semibold text-emerald-400">${(usage.totalCost || 0).toFixed(4)}</div>
                       <div className="text-[9px] text-surface-600 mt-0.5">
                         {usage.tasksWithUsage || 0} tasks tracked
                       </div>
@@ -228,7 +260,9 @@ export default function StatsPanel({ projectId, onClose }) {
                         <AlertTriangle size={10} className="text-red-400" />
                         <span className="text-[10px] text-surface-500">{t('stats.rateLimits')}</span>
                       </div>
-                      <div className={`text-xs font-medium ${(usage.totalRateLimits || 0) > 0 ? 'text-red-400' : 'text-surface-300'}`}>
+                      <div
+                        className={`text-xs font-medium ${(usage.totalRateLimits || 0) > 0 ? 'text-red-400' : 'text-surface-300'}`}
+                      >
                         {usage.totalRateLimits || 0}
                       </div>
                     </div>
@@ -237,7 +271,9 @@ export default function StatsPanel({ projectId, onClose }) {
                         <Cpu size={10} className="text-surface-400" />
                         <span className="text-[10px] text-surface-500">{t('stats.cache')}</span>
                       </div>
-                      <div className="text-xs font-medium text-surface-300">{formatTokens(usage.totalCacheRead || 0)}</div>
+                      <div className="text-xs font-medium text-surface-300">
+                        {formatTokens(usage.totalCacheRead || 0)}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -254,7 +290,10 @@ export default function StatsPanel({ projectId, onClose }) {
                     return (
                       <div key={i} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: MODEL_COLORS[displayName] || '#6b7280' }} />
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: MODEL_COLORS[displayName] || '#6b7280' }}
+                          />
                           <span className="text-xs text-surface-300 font-medium capitalize">{displayName}</span>
                           <span className="text-[10px] text-surface-600">{m.count} tasks</span>
                         </div>
@@ -314,7 +353,13 @@ export default function StatsPanel({ projectId, onClose }) {
                           <div className="min-w-0 flex-1">
                             <div className="text-xs font-medium text-surface-200 truncate">{task.title}</div>
                             <div className="text-[10px] text-surface-500 mt-0.5">
-                              {task.taskType || 'feature'} &middot; {task.modelUsed || task.model || 'sonnet'} &middot; {task.completedAt ? new Date(task.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
+                              {task.taskType || 'feature'} &middot; {task.modelUsed || task.model || 'sonnet'} &middot;{' '}
+                              {task.completedAt
+                                ? new Date(task.completedAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })
+                                : '-'}
                             </div>
                           </div>
                           <div className="flex items-center gap-1 text-[10px] text-surface-400 ml-2 flex-shrink-0">
@@ -325,10 +370,15 @@ export default function StatsPanel({ projectId, onClose }) {
                         {taskTokens > 0 && (
                           <div className="flex items-center gap-3 mt-1.5 text-[9px] text-surface-600">
                             <span>{formatTokens(taskTokens)} tokens</span>
-                            <span>{(task.inputTokens || 0).toLocaleString()} in / {(task.outputTokens || 0).toLocaleString()} out</span>
+                            <span>
+                              {(task.inputTokens || 0).toLocaleString()} in /{' '}
+                              {(task.outputTokens || 0).toLocaleString()} out
+                            </span>
                             {task.totalCost > 0 && <span>${task.totalCost.toFixed(4)}</span>}
                             {task.numTurns > 0 && <span>{task.numTurns} turns</span>}
-                            {task.rateLimitHits > 0 && <span className="text-amber-500">{task.rateLimitHits} rate limits</span>}
+                            {task.rateLimitHits > 0 && (
+                              <span className="text-amber-500">{task.rateLimitHits} rate limits</span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -346,7 +396,9 @@ export default function StatsPanel({ projectId, onClose }) {
                   <div className="grid grid-cols-3 gap-3 text-center">
                     <div>
                       <div className="text-[10px] text-surface-500 mb-0.5">{t('stats.fastest')}</div>
-                      <div className="text-xs font-medium text-emerald-400">{formatDuration(stats.duration.minMinutes)}</div>
+                      <div className="text-xs font-medium text-emerald-400">
+                        {formatDuration(stats.duration.minMinutes)}
+                      </div>
                     </div>
                     <div>
                       <div className="text-[10px] text-surface-500 mb-0.5">{t('stats.average')}</div>
@@ -354,7 +406,9 @@ export default function StatsPanel({ projectId, onClose }) {
                     </div>
                     <div>
                       <div className="text-[10px] text-surface-500 mb-0.5">{t('stats.slowest')}</div>
-                      <div className="text-xs font-medium text-red-400">{formatDuration(stats.duration.maxMinutes)}</div>
+                      <div className="text-xs font-medium text-red-400">
+                        {formatDuration(stats.duration.maxMinutes)}
+                      </div>
                     </div>
                   </div>
                   <div className="text-[10px] text-surface-600 text-center mt-2">
