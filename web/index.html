@@ -89,6 +89,12 @@
       box-shadow: 0 2px 12px rgba(218,119,86,0.2);
     }
     .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(218,119,86,0.4); }
+    .lang-btn {
+      padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+      background: rgba(42,37,32,0.5); color: #918678; border: 1px solid rgba(61,55,46,0.3);
+      cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+    }
+    .lang-btn:hover { color: #ebe4d8; border-color: rgba(218,119,86,0.3); }
 
     /* ─── Hero ─── */
     .hero {
@@ -595,14 +601,15 @@
       Claude Board
     </a>
     <div class="nav-links">
-      <a href="#orchestration">Orchestration</a>
-      <a href="#how">How it works</a>
-      <a href="#features">Features</a>
-      <a href="#preview">Preview</a>
-      <a href="https://docs.claboard.dev" target="_blank">Docs</a>
+      <a href="#orchestration" data-i18n="nav.orchestration">Orchestration</a>
+      <a href="#how" data-i18n="nav.how">How it works</a>
+      <a href="#features" data-i18n="nav.features">Features</a>
+      <a href="#preview" data-i18n="nav.preview">Preview</a>
+      <a href="https://docs.claboard.dev" target="_blank" data-i18n="nav.docs">Docs</a>
+      <button onclick="toggleLang()" class="lang-btn" id="langBtn" title="Turkce">TR</button>
       <a href="#download" class="nav-cta">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download
+        <span data-i18n="nav.download">Download</span>
       </a>
     </div>
   </div>
@@ -612,16 +619,16 @@
 <section class="hero">
   <div class="container">
     <div class="hero-badge"><span class="dot"></span> Open Source &mdash; <span id="app-version">v1.5.15</span></div>
-    <h1>Orchestrate your<br><span class="accent">AI dev squad.</span></h1>
-    <p class="subtitle">Run multiple Claude agents with dependency graphs, wave execution, and live observability. Build features in parallel &mdash; from a single command center.</p>
+    <h1 data-i18n-html="hero.title">Orchestrate your<br><span class="accent">AI dev squad.</span></h1>
+    <p class="subtitle" data-i18n="hero.subtitle">Run multiple Claude agents with dependency graphs, wave execution, and live observability. Build features in parallel &mdash; from a single command center.</p>
     <div class="hero-buttons">
       <a href="#download" class="btn btn-primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download App
+        <span data-i18n="hero.downloadBtn">Download App</span>
       </a>
       <a href="https://github.com/bahri-hirfanoglu/claude-board" class="btn btn-secondary" target="_blank">
         <svg viewBox="0 0 24 24" fill="currentColor" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-        View Source
+        <span data-i18n="hero.viewSource">View Source</span>
       </a>
     </div>
 
@@ -936,9 +943,9 @@
 <!-- Orchestration Modes -->
 <section class="modes" id="orchestration">
   <div class="container">
-    <div class="section-label fade-in">Orchestration Engine</div>
-    <h2 class="section-title fade-in">Three views. Total control.</h2>
-    <p class="section-desc fade-in">Monitor, debug, and manage your entire AI pipeline from the orchestration command center.</p>
+    <div class="section-label fade-in" data-i18n="orch.label">Orchestration Engine</div>
+    <h2 class="section-title fade-in" data-i18n="orch.title">Three views. Total control.</h2>
+    <p class="section-desc fade-in" data-i18n="orch.desc">Monitor, debug, and manage your entire AI pipeline from the orchestration command center.</p>
     <div class="modes-grid">
       <!-- Graph Mode -->
       <div class="mode-card fade-in stagger-1">
@@ -971,8 +978,8 @@
         </div>
         <div class="mode-content">
           <div class="mode-icon">&#128424;</div>
-          <h3>Dependency Graph</h3>
-          <p>Interactive DAG with draggable nodes, conditional edges, and wave grouping. Shift+drag to create dependencies.</p>
+          <h3 data-i18n="orch.graphTitle">Dependency Graph</h3>
+          <p data-i18n="orch.graphDesc">Interactive DAG with draggable nodes, conditional edges, and wave grouping. Shift+drag to create dependencies.</p>
         </div>
       </div>
 
@@ -1015,8 +1022,8 @@
         </div>
         <div class="mode-content">
           <div class="mode-icon">&#128197;</div>
-          <h3>Execution Timeline</h3>
-          <p>Gantt-style view with real-time progress, NOW marker, wave groups, and hover tooltips with cost breakdown.</p>
+          <h3 data-i18n="orch.timelineTitle">Execution Timeline</h3>
+          <p data-i18n="orch.timelineDesc">Gantt-style view with real-time progress, NOW marker, wave groups, and hover tooltips with cost breakdown.</p>
         </div>
       </div>
 
@@ -1055,8 +1062,8 @@
         </div>
         <div class="mode-content">
           <div class="mode-icon">&#128225;</div>
-          <h3>Live Observability</h3>
-          <p>Real-time feed of all tool calls, file heatmap with conflict detection, and per-agent activity cards.</p>
+          <h3 data-i18n="orch.liveTitle">Live Observability</h3>
+          <p data-i18n="orch.liveDesc">Real-time feed of all tool calls, file heatmap with conflict detection, and per-agent activity cards.</p>
         </div>
       </div>
     </div>
@@ -1066,29 +1073,29 @@
 <!-- How it works -->
 <section class="how" id="how">
   <div class="container">
-    <div class="section-label fade-in">How it works</div>
-    <h2 class="section-title fade-in">From idea to production.<br>In three moves.</h2>
+    <div class="section-label fade-in" data-i18n="how.label">How it works</div>
+    <h2 class="section-title fade-in" data-i18n-html="how.title">From idea to production.<br>In three moves.</h2>
     <div class="how-grid">
       <div class="how-steps">
         <div class="how-step active fade-in" onclick="switchStep(0)">
           <div class="step-num">1</div>
           <div class="step-text">
-            <h3>Define your tasks</h3>
-            <p>Describe features, bugs, or refactors. Pick models, set priorities, and define dependencies between tasks with drag-and-drop.</p>
+            <h3 data-i18n="how.step1Title">Define your tasks</h3>
+            <p data-i18n="how.step1Desc">Describe features, bugs, or refactors. Pick models, set priorities, and define dependencies between tasks with drag-and-drop.</p>
           </div>
         </div>
         <div class="how-step fade-in" onclick="switchStep(1)">
           <div class="step-num">2</div>
           <div class="step-text">
-            <h3>Agents orchestrate</h3>
-            <p>Tasks execute in dependency-aware waves. Each agent creates a branch, writes code, runs tests, and commits &mdash; all visible in the live terminal.</p>
+            <h3 data-i18n="how.step2Title">Agents orchestrate</h3>
+            <p data-i18n="how.step2Desc">Tasks execute in dependency-aware waves. Each agent creates a branch, writes code, runs tests, and commits &mdash; all visible in the live terminal.</p>
           </div>
         </div>
         <div class="how-step fade-in" onclick="switchStep(2)">
           <div class="step-num">3</div>
           <div class="step-text">
-            <h3>Review &amp; ship</h3>
-            <p>Review diffs, auto-test results, and token costs. Approve to auto-create PRs, or request changes &mdash; Claude iterates on your feedback.</p>
+            <h3 data-i18n="how.step3Title">Review &amp; ship</h3>
+            <p data-i18n="how.step3Desc">Review diffs, auto-test results, and token costs. Approve to auto-create PRs, or request changes &mdash; Claude iterates on your feedback.</p>
           </div>
         </div>
       </div>
@@ -1185,9 +1192,9 @@
 <!-- Features -->
 <section id="features">
   <div class="container">
-    <div class="section-label fade-in">Features</div>
-    <h2 class="section-title fade-in">Everything you need to<br>run an AI dev squad.</h2>
-    <p class="section-desc fade-in">From orchestration to deployment, Claude Board handles the entire lifecycle.</p>
+    <div class="section-label fade-in" data-i18n="feat.label">Features</div>
+    <h2 class="section-title fade-in" data-i18n-html="feat.title">Everything you need to<br>run an AI dev squad.</h2>
+    <p class="section-desc fade-in" data-i18n="feat.desc">From orchestration to deployment, Claude Board handles the entire lifecycle.</p>
     <div class="features-grid">
 
       <!-- Featured: Orchestration -->
@@ -1278,9 +1285,9 @@
 <!-- Preview -->
 <section class="preview" id="preview">
   <div class="container">
-    <div class="section-label fade-in">Preview</div>
-    <h2 class="section-title fade-in">See it in action.</h2>
-    <p class="section-desc fade-in">Click to explore different views of Claude Board.</p>
+    <div class="section-label fade-in" data-i18n="preview.label">Preview</div>
+    <h2 class="section-title fade-in" data-i18n="preview.title">See it in action.</h2>
+    <p class="section-desc fade-in" data-i18n="preview.desc">Click to explore different views of Claude Board.</p>
     <div class="preview-tabs">
       <button class="preview-tab active" onclick="switchPreview('pv-board', this)">Board</button>
       <button class="preview-tab" onclick="switchPreview('pv-dashboard', this)">Dashboard</button>
@@ -1608,9 +1615,9 @@
 <!-- Download -->
 <section class="download" id="download">
   <div class="container">
-    <div class="section-label fade-in">Download</div>
-    <h2 class="section-title fade-in">Get Claude Board.</h2>
-    <p class="section-desc fade-in" style="margin:0 auto 0">Free &amp; open source. Requires <a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code CLI</a>.</p>
+    <div class="section-label fade-in" data-i18n="dl.label">Download</div>
+    <h2 class="section-title fade-in" data-i18n="dl.title">Get Claude Board.</h2>
+    <p class="section-desc fade-in" style="margin:0 auto 0" data-i18n-html="dl.desc">Free &amp; open source. Requires <a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code CLI</a>.</p>
     <div class="download-grid">
       <a href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest" class="download-card fade-in stagger-1" target="_blank">
         <div class="platform-icon">&#128187;</div>
@@ -1637,16 +1644,16 @@
 <!-- CTA -->
 <section class="cta">
   <div class="container">
-    <h2>Ready to orchestrate your AI squad?</h2>
-    <p>Dependency graphs. Wave execution. Live observability. All running on your machine.</p>
+    <h2 data-i18n="cta.title">Ready to orchestrate your AI squad?</h2>
+    <p data-i18n="cta.desc">Dependency graphs. Wave execution. Live observability. All running on your machine.</p>
     <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
       <a href="https://github.com/bahri-hirfanoglu/claude-board" class="btn btn-primary" target="_blank">
         <svg viewBox="0 0 24 24" fill="currentColor" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-        Star on GitHub
+        <span data-i18n="cta.github">Star on GitHub</span>
       </a>
       <a href="https://docs.claboard.dev" class="btn btn-secondary" target="_blank">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        Read Docs
+        <span data-i18n="cta.docs">Read Docs</span>
       </a>
     </div>
   </div>
@@ -1659,6 +1666,87 @@
 </footer>
 
 <script>
+  // ─── i18n System ───
+  var currentLang = localStorage.getItem('lang') || 'en';
+  var i18n = {
+    tr: {
+      'nav.orchestration': 'Orkestrasyon',
+      'nav.how': 'Nasil calisir',
+      'nav.features': 'Ozellikler',
+      'nav.preview': 'Onizleme',
+      'nav.docs': 'Dokumantasyon',
+      'nav.download': 'Indir',
+      'hero.title': 'AI gelistirici<br><span class="accent">ekibini yonet.</span>',
+      'hero.subtitle': 'Birden fazla Claude ajanini bagimlilik grafikleri, dalga yurutme ve canli gozlemlenebilirlik ile calistirin. Ozellikleri paralel olarak gelistirin \u2014 tek bir komut merkezinden.',
+      'hero.downloadBtn': 'Uygulamayi Indir',
+      'hero.viewSource': 'Kaynak Kodu',
+      'orch.label': 'Orkestrasyon Motoru',
+      'orch.title': 'Uc gorunum. Tam kontrol.',
+      'orch.desc': 'Tum AI pipeline\'inizi orkestrasyon komut merkezinden izleyin, hata ayiklayin ve yonetin.',
+      'orch.graphTitle': 'Bagimlilik Grafi',
+      'orch.graphDesc': 'Suruklenebilir dugumler, kosullu kenarlar ve dalga gruplama ile interaktif DAG. Bagimlilik olusturmak icin Shift+surukle.',
+      'orch.timelineTitle': 'Yurutme Zaman Cizgisi',
+      'orch.timelineDesc': 'Gercek zamanli ilerleme, SIMDI isaretcisi, dalga gruplari ve maliyet dokumu ile Gantt tarzi gorunum.',
+      'orch.liveTitle': 'Canli Gozlemlenebilirlik',
+      'orch.liveDesc': 'Tum arac cagrilarinin gercek zamanli beslemesi, catisma tespitli dosya isi haritasi ve ajan bazli etkinlik kartlari.',
+      'how.label': 'Nasil calisir',
+      'how.title': 'Fikirden uretime.<br>Uc adimda.',
+      'how.step1Title': 'Gorevlerinizi tanimlayin',
+      'how.step1Desc': 'Ozellikler, hatalar veya yeniden duzenlemeler tanimlayin. Modelleri secin, oncelikleri belirleyin ve surukle-birak ile gorevler arasi bagimliliklari olusturun.',
+      'how.step2Title': 'Ajanlar orkestre eder',
+      'how.step2Desc': 'Gorevler bagimlilik duyarli dalgalar halinde yurutulur. Her ajan bir dal olusturur, kod yazar, test calistirir ve commit eder \u2014 tumu canli terminalde gorunur.',
+      'how.step3Title': 'Inceleyin ve yollayin',
+      'how.step3Desc': 'Diff\'leri, otomatik test sonuclarini ve token maliyetlerini inceleyin. Otomatik PR olusturmak icin onaylayin veya degisiklik isteyin \u2014 Claude geri bildiriminize gore yineler.',
+      'feat.label': 'Ozellikler',
+      'feat.title': 'AI gelistirici ekibi<br>calistirmak icin gereken her sey.',
+      'feat.desc': 'Orkestrasyondan dagitima, Claude Board tum yasam dongusunu yonetir.',
+      'preview.label': 'Onizleme',
+      'preview.title': 'Calisirken gorun.',
+      'preview.desc': 'Claude Board\'un farkli gorunumlerini kesfetmek icin tiklayin.',
+      'dl.label': 'Indir',
+      'dl.title': 'Claude Board\'u Edin.',
+      'dl.desc': 'Ucretsiz ve acik kaynak. <a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code CLI</a> gerektirir.',
+      'cta.title': 'AI ekibinizi orkestre etmeye hazir misiniz?',
+      'cta.desc': 'Bagimlilik grafikleri. Dalga yurutme. Canli gozlemlenebilirlik. Hepsi makinenizde calisir.',
+      'cta.github': 'GitHub\'da Yildizla',
+      'cta.docs': 'Dokumantasyonu Oku',
+    }
+  };
+
+  function applyLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('lang', lang);
+    document.documentElement.lang = lang;
+    var btn = document.getElementById('langBtn');
+    if (lang === 'tr') {
+      btn.textContent = 'EN';
+      btn.title = 'English';
+    } else {
+      btn.textContent = 'TR';
+      btn.title = 'Turkce';
+    }
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n');
+      if (lang === 'en') {
+        if (el._i18nOriginal) el.textContent = el._i18nOriginal;
+      } else {
+        if (!el._i18nOriginal) el._i18nOriginal = el.textContent;
+        if (i18n[lang] && i18n[lang][key]) el.textContent = i18n[lang][key];
+      }
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(function(el) {
+      var key = el.getAttribute('data-i18n-html');
+      if (lang === 'en') {
+        if (el._i18nOriginalHtml) el.innerHTML = el._i18nOriginalHtml;
+      } else {
+        if (!el._i18nOriginalHtml) el._i18nOriginalHtml = el.innerHTML;
+        if (i18n[lang] && i18n[lang][key]) el.innerHTML = i18n[lang][key];
+      }
+    });
+  }
+  function toggleLang() { applyLang(currentLang === 'en' ? 'tr' : 'en'); }
+  if (currentLang !== 'en') applyLang(currentLang);
+
   // ─── Ambient Particles ───
   (function() {
     var container = document.getElementById('particles');
