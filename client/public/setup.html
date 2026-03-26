@@ -75,7 +75,7 @@ h2{font-size:18px;font-weight:700;letter-spacing:-.2px;color:var(--text);margin-
 .ck::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0 3px 3px 0;transition:background .3s}
 .ck.pass::before{background:var(--green)}.ck.fail::before{background:var(--red)}
 .ci{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;transition:.3s}
-.ci.ok{background:rgba(34,197,94,.1);color:var(--green)}.ci.bad{background:rgba(239,68,68,.1);color:var(--red)}
+.ci.ok{background:rgba(34,197,94,.1);color:var(--green)}.ci.bad{background:rgba(239,68,68,.1);color:var(--red)}.ci.opt{background:rgba(145,134,120,.1);color:var(--dim)}.ck.warn::before{background:var(--dim)}
 .ci.ld{background:rgba(218,119,86,.08)}.ci.ld::after{content:'';width:14px;height:14px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite}
 .cn{flex:1}.cn .nm{font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:1px}.cn .dt{font-size:10.5px;color:var(--muted)}
 .cn .fx{font-size:10.5px;color:var(--amber);margin-top:4px;padding:3px 8px;background:rgba(245,158,11,.06);border-radius:6px;display:inline-block}
@@ -186,6 +186,7 @@ input::placeholder{color:var(--dim)}
     <div class="ck" id="c-claude"><div class="ci ld" id="i-claude"></div><div class="cn"><div class="nm">Claude CLI</div><div class="dt" id="d-claude"></div></div></div>
     <div class="ck" id="c-git"><div class="ci ld" id="i-git"></div><div class="cn"><div class="nm">Git</div><div class="dt" id="d-git"></div></div></div>
     <div class="ck" id="c-port"><div class="ci ld" id="i-port"></div><div class="cn"><div class="nm" id="t-pnm"></div><div class="dt" id="d-port"></div></div></div>
+    <div class="ck" id="c-gh"><div class="ci ld" id="i-gh"></div><div class="cn"><div class="nm">GitHub CLI <span style="font-size:9px;font-weight:400;color:var(--dim)">(optional)</span></div><div class="dt" id="d-gh"></div></div></div>
   </div>
 </div></div>
 
@@ -275,7 +276,7 @@ const T={en:{
   rt:'You\'re All Set!',rd:'Here\'s your workspace configuration:',
   nxt:'Next →',bk:'← Back',fin:'Launch Claude Board ✦',su:'Launching...',
   pOk:'Available',pBad:'In use',cOk:'Installed',cBad:'Not found',gOk:'Installed',gBad:'Not found',
-  cFx:'Install from claude.ai/download',gFx:'Install from git-scm.com',chk:'Checking...',pnm:'Port 4000',
+  cFx:'Install from claude.ai/download',gFx:'Install from git-scm.com',ghOk:'Authenticated',ghNo:'Not installed',ghNA:'Not authenticated — run: gh auth login',ghFx:'Install from cli.github.com (enables GitHub Issues sync)',chk:'Checking...',pnm:'Port 4000',
   sL:'Language',sD:'Data Directory',sP:'Port',sPr:'Project',sNo:'None',sMo:'Default Model',sPe:'Permissions',
   f1:'AI Orchestration',f2:'Auto Queue',f3:'Auto Testing',f4:'DAG Dependencies',f5:'Failed Retry',f6:'Webhooks',
 },tr:{
@@ -295,7 +296,7 @@ const T={en:{
   rt:'Hazırsınız!',rd:'Çalışma alanı yapılandırmanız:',
   nxt:'İleri →',bk:'← Geri',fin:'Claude Board\'u Başlat ✦',su:'Başlatılıyor...',
   pOk:'Kullanılabilir',pBad:'Kullanımda',cOk:'Yüklü',cBad:'Bulunamadı',gOk:'Yüklü',gBad:'Bulunamadı',
-  cFx:'claude.ai/download adresinden yükleyin',gFx:'git-scm.com adresinden yükleyin',chk:'Kontrol ediliyor...',pnm:'Port 4000',
+  cFx:'claude.ai/download adresinden yükleyin',gFx:'git-scm.com adresinden yükleyin',ghOk:'Kimlik doğrulandı',ghNo:'Yüklü değil',ghNA:'Kimlik doğrulanmadı — çalıştırın: gh auth login',ghFx:'cli.github.com adresinden yükleyin (GitHub Issues sync için)',chk:'Kontrol ediliyor...',pnm:'Port 4000',
   sL:'Dil',sD:'Veri Dizini',sP:'Port',sPr:'Proje',sNo:'Yok',sMo:'Varsayılan Model',sPe:'İzinler',
   f1:'AI Orkestrasyon',f2:'Otomatik Kuyruk',f3:'Otomatik Test',f4:'DAG Bağımlılıklar',f5:'Başarısız Tekrar',f6:'Webhook\'lar',
 }};
@@ -328,11 +329,18 @@ function setModel(m,el){defModel=m;document.querySelectorAll('#modelRow .lg').fo
 
 async function runChk(){
   const p=parseInt(document.getElementById('portIn').value)||4000;
-  ['claude','git','port'].forEach(k=>{document.getElementById('i-'+k).className='ci ld';document.getElementById('i-'+k).innerHTML='';document.getElementById('d-'+k).textContent=t('chk');document.getElementById('c-'+k).className='ck';const f=document.querySelector('#c-'+k+' .fx');if(f)f.remove()});
-  try{sys=await invoke('check_system',{port:p})}catch(e){sys={claude:false,git:false,port_available:true}}
+  ['claude','git','port','gh'].forEach(k=>{document.getElementById('i-'+k).className='ci ld';document.getElementById('i-'+k).innerHTML='';document.getElementById('d-'+k).textContent=t('chk');document.getElementById('c-'+k).className='ck';const f=document.querySelector('#c-'+k+' .fx');if(f)f.remove()});
+  try{sys=await invoke('check_system',{port:p})}catch(e){sys={claude:false,git:false,port_available:true,gh:false,gh_authenticated:false}}
   setTimeout(()=>sc('claude',sys.claude,sys.claude?(sys.claude_version||t('cOk')):t('cBad'),sys.claude?null:t('cFx')),350);
   setTimeout(()=>sc('git',sys.git,sys.git?(sys.git_version||t('gOk')):t('gBad'),sys.git?null:t('gFx')),650);
   setTimeout(()=>sc('port',sys.port_available,sys.port_available?t('pOk'):t('pBad'),null),950);
+  setTimeout(()=>{
+    const ghOk=sys.gh&&sys.gh_authenticated;
+    const ghDet=sys.gh?(sys.gh_authenticated?(sys.gh_version||t('ghOk')):t('ghNA')):t('ghNo');
+    sc('gh',ghOk,ghDet,sys.gh?null:t('ghFx'));
+    // gh is optional — don't block with fail state, use neutral style
+    if(!ghOk){document.getElementById('c-gh').classList.remove('fail');document.getElementById('c-gh').classList.add('warn');document.getElementById('i-gh').className='ci opt';document.getElementById('i-gh').innerHTML='—'}
+  },1250);
 }
 function sc(k,ok,det,fix){
   const i=document.getElementById('i-'+k);i.className='ci '+(ok?'ok':'bad');i.innerHTML=ok?'✓':'✗';i.style.animation=ok?'pop .35s ease':'shake .4s ease';

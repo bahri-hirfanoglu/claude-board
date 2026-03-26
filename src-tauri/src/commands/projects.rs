@@ -51,6 +51,7 @@ pub fn update_project(
     auto_test: Option<bool>, test_prompt: Option<String>,
     task_timeout_minutes: Option<i64>,
     max_retries: Option<i64>,
+    github_repo: Option<String>, github_sync_enabled: Option<i64>,
 ) -> Result<pq::Project, String> {
     let db = db::get_db();
     let project = pq::get_by_id(&db, id).ok_or("Project not found")?;
@@ -86,6 +87,11 @@ pub fn update_project(
             auto_branch.unwrap_or(project.auto_branch.unwrap_or(1) == 1),
             auto_pr.unwrap_or(project.auto_pr.unwrap_or(0) == 1),
             pr_base_branch.as_deref().unwrap_or(project.pr_base_branch.as_deref().unwrap_or("main")));
+    }
+    if github_repo.is_some() || github_sync_enabled.is_some() {
+        pq::update_github_settings(&db, id,
+            github_repo.as_deref().unwrap_or(project.github_repo.as_deref().unwrap_or("")),
+            github_sync_enabled.unwrap_or(project.github_sync_enabled.unwrap_or(0)) == 1);
     }
 
     let updated = pq::get_by_id(&db, id).ok_or("Failed to retrieve updated project")?;

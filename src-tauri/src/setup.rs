@@ -59,6 +59,15 @@ pub fn check_system(port: Option<u16>) -> serde_json::Value {
         .map(|l| { drop(l); true })
         .unwrap_or(false);
 
+    // GitHub CLI (optional)
+    let gh_version = silent_cmd("gh", &["--version"]);
+    let gh_ok = gh_version.is_some();
+    let gh_auth = if gh_ok {
+        silent_cmd("gh", &["auth", "token"]).is_some()
+    } else {
+        false
+    };
+
     serde_json::json!({
         "claude": claude_ok,
         "claude_version": claude_version.unwrap_or_default(),
@@ -66,6 +75,9 @@ pub fn check_system(port: Option<u16>) -> serde_json::Value {
         "git_version": git_version.unwrap_or_default(),
         "port_available": port_ok,
         "port": port,
+        "gh": gh_ok,
+        "gh_version": gh_version.unwrap_or_default().lines().next().unwrap_or("").to_string(),
+        "gh_authenticated": gh_auth,
     })
 }
 

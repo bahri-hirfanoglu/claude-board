@@ -287,6 +287,12 @@ pub fn run() {
             // Settings
             commands::settings::get_app_settings,
             commands::settings::update_app_settings,
+            // GitHub
+            commands::github::github_detect_repo,
+            commands::github::github_check_status,
+            commands::github::github_fetch_issues,
+            commands::github::github_import_issues,
+            commands::github::github_close_issue,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.0] - 2026-03-26
+
+### Features
+- **GitHub Issues Sync** — Browse open issues from your repo in a side panel, selectively import as tasks with `github` tag, auto-close issues when tasks are approved. Uses `gh` CLI authentication (no PAT needed). Auto-detect repo from git remote
+- **GitHub CLI Check in Setup** — Setup wizard now checks for `gh` CLI (optional) alongside Claude CLI, Git, and port availability
+- **GitHub Issue Badge** — Task cards show linked issue number (#42) with click-to-open link
+
+### Improvements
+- **Async GitHub API** — All GitHub network calls use async reqwest (non-blocking)
+- **Bug Fixes** — Fixed PlanningModal timer stale closure, Board dependency silent catch, task status race condition, OrchestrationView unhandled rejection, Rust process kill logging, 4xx error toast visibility
+- **Configurable MCP Port** — Port configurable via VITE_MCP_PORT environment variable
+- **Docs UTF-8 Fix** — All Turkish doc menu names and content use proper UTF-8 characters
+- **GitHub Issues Documentation** — Full EN + TR documentation for the GitHub Issues feature
+
 ## [1.5.16] - 2026-03-26
 
 ### Features

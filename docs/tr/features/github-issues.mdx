@@ -1,0 +1,89 @@
+---
+title: "GitHub Issues Senkronizasyonu"
+description: "GitHub issue'larını göz atın, içe aktarın ve otomatik etiket eşleme ile görev olarak senkronize edin"
+icon: "github"
+---
+
+GitHub Issues Senkronizasyonu, deponuzun açık issue'larını doğrudan Claude Board'dan görüntülemenizi ve seçerek görev olarak içe aktarmanızı sağlar. İçe aktarılan görevler `github` etiketi alır ve orijinal issue'ya geri bağlantı içerir.
+
+## Ön Koşullar
+
+<Steps>
+  <Step title="GitHub CLI'ı Kurun" icon="terminal">
+    [`gh`](https://cli.github.com/) kurun — Claude Board mevcut `gh` kimlik doğrulamanızı kullanır, ayrı token gerekmez.
+  </Step>
+  <Step title="Kimlik Doğrulayın" icon="key">
+    `gh auth login` çalıştırın ve yönergeleri takip edin. Claude Board bu oturumu otomatik olarak kullanacaktır.
+  </Step>
+  <Step title="Projeyi Yapılandırın" icon="gear">
+    **Proje Ayarları > GitHub** sekmesine gidin. Depo, git remote'unuzdan otomatik algılanır. Senkronizasyonu etkinleştirin ve kaydedin.
+  </Step>
+</Steps>
+
+<Tip>Kurulum sihirbazı ilk yapılandırma sırasında `gh` CLI'ı kontrol eder. İsteğe bağlıdır — sonra da kurabilirsiniz.</Tip>
+
+## Issue'lara Göz Atma
+
+Board araç çubuğundaki **Issues** düğmesine tıklayarak sağ tarafta GitHub Issues panelini açın.
+
+Panel, deponuzdaki tüm açık issue'ları şunlarla birlikte gösterir:
+- **Issue numarası ve başlığı**
+- **Gövde önizlemesi** (ilk 200 karakter)
+- **Etiketler** renkli rozetlerle
+- **Önerilen görev türü** etiket eşlemesine göre
+- **İçe aktarma durumu** — zaten içe aktarılmış issue'lar soluk görünür
+
+En son issue'ları GitHub'dan çekmek için **yenile** düğmesini kullanın.
+
+## Issue'ları İçe Aktarma
+
+<Steps>
+  <Step title="Issue'ları seçin" icon="check">
+    Tek tek issue'lara tıklayarak seçin veya içe aktarılmamış tüm issue'ları seçmek için **Tümünü seç** kullanın.
+  </Step>
+  <Step title="Görev olarak içe aktarın" icon="download">
+    **N tanesini görev olarak içe aktar** düğmesine tıklayın. Seçili issue'lar backlog görevleri olarak oluşturulur:
+    - Issue başlığından başlık
+    - Issue gövdesinden açıklama
+    - Etiketlerden eşlenen görev türü (aşağıya bakın)
+    - Otomatik olarak `github` etiketi
+    - Orijinal GitHub issue'ya bağlantı
+  </Step>
+  <Step title="Görevler üzerinde çalışın" icon="play">
+    İçe aktarılan görevler backlog'unuzda görünür. Otomatik kuyruğa alınmazlar — diğer görevler gibi inceleyip manuel olarak başlatırsınız.
+  </Step>
+</Steps>
+
+## Etiket Eşleme
+
+GitHub etiketleri otomatik olarak Claude Board görev türlerine eşlenir:
+
+| GitHub Etiketi | Görev Türü |
+|---------------|------------|
+| `bug`, `fix` | bugfix |
+| `refactor` | refactor |
+| `documentation`, `docs` | docs |
+| `test`, `testing` | test |
+| `chore`, `maintenance` | chore |
+| *(eşleşme yok)* | feature |
+
+## Onaylama Sırasında Otomatik Kapatma
+
+GitHub issue'ından içe aktarılmış bir görevi onayladığınızda, bağlı issue GitHub'da **otomatik olarak kapatılır**. Bu, manuel işlem olmadan her iki sistemi senkronize tutar.
+
+## Görev Kartı Rozeti
+
+GitHub'dan içe aktarılan görevler, görev kartında issue numarasını (örn. `#42`) gösteren küçük bir rozet gösterir. Rozete tıklamak, orijinal issue'yu GitHub'da yeni bir sekmede açar.
+
+## Bağlantı Kontrolü
+
+**Proje Ayarları > GitHub**'da bağlantıyı doğrulamak için **Bağlantıyı Kontrol Et** düğmesini kullanın:
+
+| Durum | Anlam |
+|-------|-------|
+| **Bağlandı** | `gh` CLI kurulu, kimlik doğrulanmış ve depoya erişim var |
+| **Kurulu değil** | `gh` CLI bulunamadı — [cli.github.com](https://cli.github.com) adresinden kurun |
+| **Kimlik doğrulanmadı** | Kimlik doğrulamak için `gh auth login` çalıştırın |
+| **Erişilemiyor** | Token bu depoya erişim izni yok |
+
+<Info>Claude Board GitHub token'ınızı asla saklamaz. Her istekte `gh auth token` ile okur, mevcut CLI oturumunuzu kullanır.</Info>

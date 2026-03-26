@@ -79,6 +79,7 @@
                 "pages": [
                   "features/git-automation",
                   "features/auto-pr",
+                  "features/github-issues",
                   "features/webhooks"
                 ]
               },
@@ -166,10 +167,10 @@
         "language": "tr",
         "tabs": [
           {
-            "tab": "Dokumantasyon",
+            "tab": "Dokümantasyon",
             "groups": [
               {
-                "group": "Baslangic",
+                "group": "Başlangıç",
                 "icon": "rocket",
                 "pages": ["tr/introduction", "tr/installation", "tr/quickstart"]
               },
@@ -192,7 +193,7 @@
                 ]
               },
               {
-                "group": "Calistirma ve Test",
+                "group": "Çalıştırma ve Test",
                 "icon": "play",
                 "pages": [
                   "tr/features/terminal",
@@ -203,16 +204,17 @@
                 ]
               },
               {
-                "group": "Git ve Dagitim",
+                "group": "Git ve Dağıtım",
                 "icon": "code-branch",
                 "pages": [
                   "tr/features/git-automation",
                   "tr/features/auto-pr",
+                  "tr/features/github-issues",
                   "tr/features/webhooks"
                 ]
               },
               {
-                "group": "AI Yapilandirma",
+                "group": "AI Yapılandırma",
                 "icon": "wand-magic-sparkles",
                 "pages": [
                   "tr/features/roles",
@@ -223,7 +225,7 @@
                 ]
               },
               {
-                "group": "Icerik ve Sablonlar",
+                "group": "İçerik ve Şablonlar",
                 "icon": "file-lines",
                 "pages": [
                   "tr/features/templates",
@@ -233,7 +235,7 @@
                 ]
               },
               {
-                "group": "Analitik ve Arayuz",
+                "group": "Analitik ve Arayüz",
                 "icon": "chart-bar",
                 "pages": [
                   "tr/features/analytics",
@@ -245,7 +247,7 @@
                 ]
               },
               {
-                "group": "Yapilandirma",
+                "group": "Yapılandırma",
                 "icon": "gear",
                 "pages": [
                   "tr/configuration/projects",
@@ -255,7 +257,7 @@
                 ]
               },
               {
-                "group": "Masaustu Uygulamasi",
+                "group": "Masaüstü Uygulaması",
                 "icon": "desktop",
                 "pages": [
                   "tr/desktop/setup",
@@ -267,7 +269,7 @@
             ]
           },
           {
-            "tab": "API Referansi",
+            "tab": "API Referansı",
             "groups": [
               {
                 "group": "Endpointler",
@@ -283,7 +285,7 @@
                 ]
               },
               {
-                "group": "Gercek Zamanli",
+                "group": "Gerçek Zamanlı",
                 "icon": "bolt",
                 "pages": ["tr/api/events"]
               }

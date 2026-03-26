@@ -15,6 +15,7 @@ src-tauri/target/
 # Claude
 .claude/
 .mcp.json
+CLAUDE.md
 
 # OS
 .DS_Store
