@@ -732,7 +732,13 @@ pub fn start(
     // Load matching prompt template for this task type
     let template = templates::find_for_task(&db, task.project_id, task.task_type.as_deref().unwrap_or("feature"));
 
-    let prompt = build_prompt(task, &revisions, &enabled_snippets, &task_attachments, role.as_ref(), task.project_id, &parent_contexts, template.as_ref());
+    // Auto-create branch BEFORE building prompt so branch name is included in instructions
+    let mut task_clone = task.clone();
+    if let Some(branch) = ensure_task_branch(task, working_dir, project, &db, &app) {
+        task_clone.branch_name = Some(branch);
+    }
+
+    let prompt = build_prompt(&task_clone, &revisions, &enabled_snippets, &task_attachments, role.as_ref(), task.project_id, &parent_contexts, template.as_ref());
     let model = task.model.as_deref().unwrap_or("sonnet");
     let effort = task.thinking_effort.as_deref().unwrap_or("medium");
     let permission_mode = project.permission_mode.as_deref().unwrap_or("auto-accept");
@@ -750,12 +756,6 @@ pub fn start(
             },
             session: UsageSession::default(),
         });
-    }
-
-    // Auto-create branch
-    let mut task_clone = task.clone();
-    if let Some(branch) = ensure_task_branch(task, working_dir, project, &db, &app) {
-        task_clone.branch_name = Some(branch);
     }
 
     crate::services::notification::notify_task_started(&app, &crate::services::notification::TaskNotification::new(&task.title, task.task_key.as_deref()));
@@ -1026,16 +1026,42 @@ After all checks, you MUST output this exact JSON block as your final output:
                         tasks::add_log(&db, task_id, &format!("Auto-test PASSED: {}", summary), "success", None);
                         app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test PASSED: {}", summary), "logType": "success"})).ok();
                         tasks::update_status(&db, task_id, "done");
+                        tasks::finalize_timer(&db, task_id);
                         // Regenerate lifecycle summary with test results included
                         generate_lifecycle_summary(task_id, &db);
                         emit_task_updated(&db, &app, task_id);
-                        activity::add(&db, project_id, Some(task_id), "test_passed", &format!("Auto-test passed: {}", task_title), None);
+                        activity::add(&db, project_id, Some(task_id), "task_approved", &format!("Task auto-approved: {}", task_title), None);
                         crate::services::notification::notify_test_passed(&app, &crate::services::notification::TaskNotification::new(&task_title, task_key.as_deref()));
                         crate::services::webhook::fire(project_id, "test_passed", &format!("Auto-test passed: {}", task_title),
                             serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title, "summary": summary}));
-                        // Cleanup feature branch after approval
+
                         if let (Some(done_task), Some(proj)) = (tasks::get_by_id(&db, task_id), projects::get_by_id(&db, project_id)) {
-                            cleanup_task_branch(&done_task, &working_dir, &proj);
+                            // Auto-create PR if enabled
+                            auto_create_pr_public(&done_task, &working_dir, &proj, &db, &app);
+                            // Cleanup feature branch (skipped if auto_pr is on)
+                            let after_pr = tasks::get_by_id(&db, task_id).unwrap_or(done_task.clone());
+                            cleanup_task_branch(&after_pr, &working_dir, &proj);
+
+                            // Auto-close linked GitHub issue
+                            if proj.github_sync_enabled.unwrap_or(0) == 1 {
+                                if let Some(issue_num) = done_task.github_issue_number {
+                                    let repo = proj.github_repo.as_deref().unwrap_or("").to_string();
+                                    if !repo.is_empty() {
+                                        let pr_url = after_pr.pr_url.as_deref().unwrap_or("").to_string();
+                                        let tk = done_task.task_key.as_deref().unwrap_or("").to_string();
+                                        let comment = if !pr_url.is_empty() {
+                                            format!("Completed via Claude Board task `{}`. PR: {}", tk, pr_url)
+                                        } else {
+                                            format!("Completed via Claude Board task `{}`.", tk)
+                                        };
+                                        std::thread::spawn(move || {
+                                            if let Ok(token) = crate::commands::github::get_gh_token_pub() {
+                                                let _ = crate::services::github_sync::close_and_comment(&token, &repo, issue_num, &comment);
+                                            }
+                                        });
+                                    }
+                                }
+                            }
                         }
                         crate::services::queue::on_task_completed(&db, &app, project_id, task_id);
                     } else {
