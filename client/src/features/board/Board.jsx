@@ -47,7 +47,7 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
         // "to" depends on "from" (from must complete first)
         await api.addDependency(to.id, from.id);
       }
-    } catch (e) { console.error(e); }
+    } catch {}
     setDepDialog(null);
   }, [depDialog]);
 

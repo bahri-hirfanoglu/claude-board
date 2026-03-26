@@ -12,7 +12,7 @@ export default function ReviewModal({ task, onApprove, onRequestChanges, onClose
   const textareaRef = useRef(null);
 
   useEffect(() => {
-    api.getRevisions(task.id).then(setRevisions).catch(console.error);
+    api.getRevisions(task.id).then(setRevisions).catch(() => {});
   }, [task.id]);
 
   useEffect(() => {

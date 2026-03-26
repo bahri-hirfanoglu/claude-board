@@ -470,7 +470,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
   useEffect(() => {
     api.getTaskLogs(task.id).then(data => {
       setLogs(data.map(l => ({ ...l, meta: l.meta || null })));
-    }).catch(console.error);
+    }).catch(() => {});
   }, [task.id]);
 
   useEffect(() => {

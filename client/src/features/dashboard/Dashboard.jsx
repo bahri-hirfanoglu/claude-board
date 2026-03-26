@@ -336,7 +336,7 @@ function SuggestionBanner({ suggestions, setSuggestions, t }) {
       try {
         await api.installPlugin(s.actionArgs);
         setSuggestions(prev => prev.filter(x => x.id !== s.id));
-      } catch (e) { console.error(e); }
+      } catch {}
       setInstalling(null);
     } else if (s.action === 'navigate') {
       // Could navigate to claude manager tab

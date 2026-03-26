@@ -70,7 +70,7 @@ export default function PipelineView({ tasks, onStatusChange, onViewLogs, onView
     setLocalQueue(newOrder);
     try {
       await api.reorderQueue(tasks[0]?.project_id, newOrder.map(t => t.id));
-    } catch (e) { console.error(e); }
+    } catch {}
   };
 
   const handleQueueDrop = (targetIdx) => {
