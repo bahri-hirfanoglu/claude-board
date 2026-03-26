@@ -1,0 +1,71 @@
+---
+title: "Inceleme Sistemi"
+description: "Gorevleri onaylayin veya geri bildirimle degisiklik isteyin"
+icon: "magnifying-glass"
+---
+
+Bir Claude ajani islemi tamamladiginda, gorev **Testing** durumuna gecer. Inceleme sistemi, calismayi degerlendirmenize ve onaylamaniza veya revizyon icin geri gondermenize olanak tanir.
+
+<Frame><img src="/images/feature-review.svg" alt="Review System" /></Frame>
+
+## Inceleme Islemleri
+
+<Tabs>
+  <Tab title="Onayla">
+    Gorevi tamamlandi olarak isaretlemek icin **Approve** dugmesine tiklayin. Gorev **Done** sutununa tasinir ve baska bir ajan calismasi gerceklesmez.
+  </Tab>
+  <Tab title="Degisiklik Iste">
+    Nelerin degismesi gerektigini aciklayan yazili geri bildirim saglayin. Claude Board, geri bildiriminizi orijinal prompt'a ekleyerek yeni bir ajan oturumu baslatir. Gorev tekrar **In Progress** durumuna doner.
+
+    ```
+    The login endpoint works, but:
+    - Missing input validation on email field
+    - Password should require minimum 8 characters
+    - Add rate limiting to prevent brute force
+    ```
+  </Tab>
+</Tabs>
+
+## Geri Bildirim Dongusu
+
+Revizyon dongusu gerektiginde tekrarlanabilir:
+
+<Steps>
+  <Step title="Claude tamamlar → Testing">
+    Degisiklikleri terminal gunlugunde veya IDE'nizde inceleyin.
+  </Step>
+  <Step title="Geri bildirimle degisiklik isteyin">
+    Eksik veya hatali olani tanimlayin. Acik olun — Claude net talimatlarla daha iyi performans gosterir.
+  </Step>
+  <Step title="Claude duzeltir → Testing">
+    Ajan geri bildiriminizi alir, duzeltmeleri yapar ve Testing durumuna doner.
+  </Step>
+  <Step title="Onayla → Done">
+    Memnun kaldiginizda gorevi onaylayin.
+  </Step>
+</Steps>
+
+## Revizyon Gecmisi
+
+Her revizyon kaydedilir. Gorev detay gorunumu sunlari gosterir:
+
+- Sagladiginiz her tur geri bildirim
+- Her yineleme icin ajan oturum gunlukleri
+- Revizyon basina token kullanimi
+- Toplam kumulatif maliyet
+
+<Tip>Geri bildirimi bir kod incelemesi yapar gibi yazin. Belirli dosya veya fonksiyon referanslari iceren madde isaretleri, Claude'un hedefli duzeltmeler yapmasina yardimci olur.</Tip>
+
+## En Iyi Uygulamalar
+
+<AccordionGroup>
+  <Accordion title="Geri bildirimde spesifik olun">
+    "Bu calismiyor" yerine "`/api/users` endpoint'i e-posta alani eksik oldugunda 500 hatasi donuyor" deyin.
+  </Accordion>
+  <Accordion title="Onaylamadan once inceleyin">
+    Git diff'ini veya terminal gunluklerini kontrol edin. Claude beklediginizin otesinde degisiklikler yapmis olabilir.
+  </Accordion>
+  <Accordion title="Kucuk ve odakli gorevler kullanin">
+    Belirsiz aciklamali buyuk gorevler daha fazla revizyon dongusune yol acar. Isi daha kucuk parcalara bolun.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,51 @@
+---
+title: "Git Otomasyonu"
+description: "Görevlerden otomatik dal oluşturma ve pull request açma"
+icon: "code-branch"
+---
+
+Claude Board, deponuzu düzenli tutmak için her görev için otomatik olarak git dalları ve pull request'ler oluşturabilir.
+
+<Frame><img src="/images/feature-git.svg" alt="Git Otomasyonu" /></Frame>
+
+## Otomatik Dal
+
+Etkinleştirildiğinde, bir görevi **Devam Ediyor** durumuna taşımak, görev başlığına dayalı yeni bir git dalı oluşturur:
+
+```
+Task: "Add user authentication with JWT"
+Branch: feature/add-user-authentication-with-jwt
+```
+
+Dal adları şu şekilde oluşturulur:
+1. Görev başlığı alınır
+2. Küçük harfe dönüştürülür
+3. Boşluklar ve özel karakterler tire ile değiştirilir
+4. Görev türü ön ek olarak eklenir (`feature/`, `bugfix/`, `refactor/` vb.)
+
+<Tip>Dal, yapılandırılmış **temel daldan** (varsayılan: `main`) oluşturulur. Projeniz farklı bir ana dal kullanıyorsa bunu proje ayarlarından değiştirin.</Tip>
+
+## Otomatik Pull Request
+
+Bir görev **Test Ediliyor** durumuna geçtiğinde, Claude Board otomatik olarak bir pull request oluşturabilir:
+
+- **Başlık** — görev başlığı
+- **İçerik** — görev açıklaması
+- **Base** — yapılandırılmış temel dal
+- **Head** — otomatik oluşturulan görev dalı
+
+<Note>Otomatik PR, Claude Board'un çalıştığı makinede `gh` CLI'nin kurulu ve kimlik doğrulamasının yapılmış olmasını gerektirir.</Note>
+
+## Yapılandırma
+
+Proje ayarlarınızda git otomasyonunu yapılandırın:
+
+| Ayar | Varsayılan | Açıklama |
+|------|-----------|----------|
+| Otomatik Dal | Kapalı | Dalları otomatik olarak oluştur |
+| Otomatik PR | Kapalı | Görev Test Ediliyor durumuna geçtiğinde PR oluştur |
+| Temel Dal | `main` | Özellik dallarının oluşturulacağı dal |
+
+## Manuel Geçersiz Kılma
+
+Otomatik dal devre dışıysa, Claude ajanları yine de projenin çalışma dizininde çalışır. Bir görevi başlatmadan önce dalları manuel olarak oluşturabilir veya prompt talimatları aracılığıyla Claude'un bunları kendi çalışmasının parçası olarak oluşturmasını sağlayabilirsiniz.

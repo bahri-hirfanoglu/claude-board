@@ -1,0 +1,106 @@
+---
+title: "Prompt Şablonları"
+description: "Claude'un sistem komutunu görev türüne göre özelleştirin"
+icon: "file-code"
+---
+
+Prompt şablonları, görevler yürütülürken Claude'un sistem komutuna otomatik olarak enjekte edilen yeniden kullanılabilir talimatlar tanımlamanızı sağlar. Kodlama standartlarını, framework kalıplarını ve kalite yönergelerini uygulamak için kullanın.
+
+## Nasıl Çalışır
+
+<Steps>
+  <Step title="Şablon oluşturun" icon="plus">
+    **Project > Templates** yoluna gidin ve yeni bir prompt şablonu oluşturun.
+  </Step>
+  <Step title="Görev türünü belirleyin" icon="tag">
+    Şablonu bir görev türüne (`feature`, `bugfix`, `refactor` vb.) atayın. O türdeki tüm görevler bu şablonu otomatik olarak kullanacaktır.
+  </Step>
+  <Step title="Talimatları yazın" icon="pen">
+    Dinamik değerler için isteğe bağlı `{{variable}}` yer tutucularıyla şablon içeriğinizi yazın.
+  </Step>
+  <Step title="Otomatik enjeksiyon" icon="bolt">
+    Eşleşen bir görev çalıştığında, şablon Claude'un komutuna enjekte edilir — manuel işlem gerekmez.
+  </Step>
+</Steps>
+
+## Şablon Eşleştirme
+
+Şablonlar **task_type** bazında eşleştirilir:
+
+| Şablon Türü | Uygulandığı Yer |
+|---------------|-----------|
+| `feature` | Projedeki tüm özellik görevleri |
+| `bugfix` | Tüm hata düzeltme görevleri |
+| `refactor` | Tüm yeniden düzenleme görevleri |
+| `test` | Tüm test görevleri |
+| `docs` | Tüm dokümantasyon görevleri |
+| `chore` | Tüm bakım görevleri |
+
+Eşleşen bir şablon yoksa, ek talimat olmadan varsayılan komut kullanılır.
+
+## Şablon Değişkenleri
+
+Dinamik yer tutucular için `{{variable_name}}` söz dizimini kullanın:
+
+```
+Review the {{component}} module for {{issue_type}} issues.
+Focus on {{specific_area}} and ensure {{quality_criteria}}.
+```
+
+Değişkenler, görev oluşturma penceresindeki şablon seçicisinden görev oluştururken doldurulur.
+
+## Komut Enjeksiyon Sırası
+
+Şablonlar, Claude'un dikkatinde yüksek öncelikle enjekte edilir:
+
+```
+1. Role instructions (if a role is assigned)
+2. Prompt Template content ← şablonunuz buraya gelir
+3. Context snippets
+4. Task title & description
+5. File attachments
+```
+
+<Info>Şablonlar görev detaylarından önce görünür, bu nedenle Claude bunları görevin nasıl yürütüleceğini şekillendiren yüksek öncelikli talimatlar olarak değerlendirir.</Info>
+
+## Örnek Şablonlar
+
+<Tabs>
+  <Tab title="Kod Standartları">
+    ```
+    You are working on a TypeScript project using strict mode.
+    - Always use `const` over `let` unless reassignment is needed
+    - Prefer named exports over default exports
+    - Use Zod for runtime validation at API boundaries
+    - Write JSDoc comments for public functions
+    ```
+  </Tab>
+  <Tab title="Framework">
+    ```
+    This is a Next.js 14 application using the App Router.
+    - Use Server Components by default, Client Components only when needed
+    - Data fetching should use server actions or route handlers
+    - Styles use Tailwind CSS with the project's design tokens in tailwind.config.ts
+    ```
+  </Tab>
+  <Tab title="Test">
+    ```
+    Write tests using Vitest with React Testing Library.
+    - Test behavior, not implementation details
+    - Use `screen.getByRole` over `getByTestId` when possible
+    - Mock external APIs with MSW (Mock Service Worker)
+    - Aim for >80% coverage on new code
+    ```
+  </Tab>
+  <Tab title="Güvenlik İncelemesi">
+    ```
+    Review this code with a security focus. Check for:
+    - SQL injection (use parameterized queries)
+    - XSS (sanitize user input, escape output)
+    - Missing authentication/authorization checks
+    - Hardcoded secrets or credentials
+    - Insecure deserialization
+    Report findings as inline code comments.
+    ```
+  </Tab>
+</Tabs>

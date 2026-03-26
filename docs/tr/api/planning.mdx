@@ -1,0 +1,202 @@
+---
+title: "Planning API"
+description: "Yapay zeka destekli planlama oturumlarını başlatma, izleme ve iptal etme"
+icon: "sparkles"
+---
+
+## Planlama Başlat
+
+```http
+POST /api/projects/:projectId/plan
+```
+
+Yeni bir planlama oturumu başlatır. Claude kod tabanını inceleyerek görevler oluşturur.
+
+**İstek Gövdesi:**
+
+```json
+{
+  "topic": "Build an authentication system with OAuth2 and JWT",
+  "model": "sonnet",
+  "effort": "medium",
+  "granularity": "balanced",
+  "context": "Express.js backend, React frontend"
+}
+```
+
+| Alan | Tür | Varsayılan | Açıklama |
+|------|-----|------------|----------|
+| `topic` | string | *zorunlu* | Planlanacak konu — ana özellik veya hedef |
+| `model` | string | `sonnet` | Claude modeli: `haiku`, `sonnet`, `opus` |
+| `effort` | string | `medium` | Düşünme bütçesi: `low`, `medium`, `high` |
+| `granularity` | string | `balanced` | Görev ayrıntı düzeyi: `high-level`, `balanced`, `detailed` |
+| `context` | string | `""` | Teknoloji yığını veya kısıtlamalar hakkında ek bağlam |
+
+**Yanıt:**
+
+```json
+{
+  "planId": "plan-1-1711234567890",
+  "status": "started"
+}
+```
+
+Proje için zaten aktif bir planlama oturumu varsa `409` döndürür.
+
+## Durum Getir
+
+```http
+GET /api/projects/:projectId/plan/status
+```
+
+Bir planlama oturumunun çalışıp çalışmadığını kontrol eder.
+
+**Yanıt (aktif):**
+
+```json
+{
+  "active": true,
+  "planId": "plan-1-1711234567890",
+  "elapsed": 12340,
+  "tokens": { "input": 15000, "output": 3200 },
+  "toolCalls": 8,
+  "turns": 3,
+  "phase": "exploring",
+  "topic": "Build an authentication system"
+}
+```
+
+**Yanıt (aktif değil):**
+
+```json
+{
+  "active": false,
+  "planId": null
+}
+```
+
+## Planlamayı İptal Et
+
+```http
+POST /api/projects/:projectId/plan/cancel
+```
+
+Aktif planlama oturumunu durdurur ve Claude sürecini sonlandırır.
+
+**Yanıt:**
+
+```json
+{
+  "status": "cancelled"
+}
+```
+
+Aktif planlama oturumu yoksa `404` döndürür.
+
+## WebSocket Olayları
+
+Planlama ilerlemesi Socket.IO olayları aracılığıyla aktarılır:
+
+### plan:started
+
+Bir planlama oturumu başladığında yayınlanır.
+
+```json
+{
+  "projectId": 1,
+  "planId": "plan-1-1711234567890",
+  "topic": "Build authentication",
+  "model": "sonnet",
+  "effort": "medium"
+}
+```
+
+### plan:phase
+
+Planlama aşaması değiştiğinde yayınlanır.
+
+```json
+{
+  "projectId": 1,
+  "planId": "plan-1-1711234567890",
+  "phase": "exploring"
+}
+```
+
+Aşamalar: `starting` &rarr; `exploring` &rarr; `writing` &rarr; (tamamlandı)
+
+### plan:progress
+
+Claude metin çıktısı ürettiğinde yayınlanır.
+
+```json
+{
+  "projectId": 1,
+  "planId": "plan-1-1711234567890",
+  "type": "text",
+  "content": "I'll start by examining the project structure..."
+}
+```
+
+### plan:log
+
+Araç çağrıları ve sonuçları için yayınlanır.
+
+```json
+{
+  "projectId": 1,
+  "planId": "plan-1-1711234567890",
+  "type": "tool",
+  "message": "Read → src/app.js",
+  "tool": "Read"
+}
+```
+
+Türler: `tool`, `result`, `error`, `phase`
+
+### plan:stats
+
+Her Claude turunda güncellenmiş kullanım istatistikleriyle yayınlanır.
+
+```json
+{
+  "projectId": 1,
+  "planId": "plan-1-1711234567890",
+  "elapsed": 8500,
+  "tokens": { "input": 12000, "output": 2400 },
+  "toolCalls": 5,
+  "turns": 2
+}
+```
+
+### plan:completed
+
+Planlama tamamlandığında yayınlanır. Oluşturulan görevleri içerir.
+
+```json
+{
+  "projectId": 1,
+  "planId": "plan-1-1711234567890",
+  "tasks": [
+    { "id": 42, "title": "Set up auth middleware", "task_type": "feature", "task_key": "FTR-CB-1042" }
+  ],
+  "stats": {
+    "elapsed": 45000,
+    "tokens": { "input": 25000, "output": 8000 },
+    "toolCalls": 12,
+    "turns": 4,
+    "exitCode": 0
+  }
+}
+```
+
+### plan:cancelled
+
+Bir planlama oturumu manuel olarak iptal edildiğinde yayınlanır.
+
+```json
+{
+  "projectId": 1,
+  "planId": "plan-1-1711234567890"
+}
+```

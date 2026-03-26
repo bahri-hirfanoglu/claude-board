@@ -1,0 +1,60 @@
+---
+title: "Gorevler"
+description: "Gorev yasam dongusu, alanlari ve yapilandirmasi"
+icon: "list-check"
+---
+
+Gorevler, Claude Board'daki temel is birimidir. Her gorev, bir Claude ajaninin tamamlamasi gereken bir isi temsil eder.
+
+## Yasam Dongusu
+
+<Steps>
+  <Step title="Backlog" icon="inbox">
+    Gorev olusturulmustur ve beklemektedir. Herhangi bir ajan calismiyordur. Basligi, aciklamayi veya ayarlari serbestce duzenleyebilirsiniz.
+  </Step>
+  <Step title="In Progress" icon="play">
+    Bir Claude ajani baslatilir ve calismaya baslar. Canli terminal, ciktiyi gercek zamanli olarak aktarir. Akilli zamanlayici, aktif kodlama suresini takip eder.
+  </Step>
+  <Step title="Testing" icon="flask">
+    Claude islemi tamamlamistir. Zamanlayici duraklar. Degisiklikleri inceleyin — tamamlandi olarak isaretlemek icin onaylayin veya Claude'u tekrar calismaya gondermek icin degisiklik isteyin.
+  </Step>
+  <Step title="Done" icon="check">
+    Gorev tamamlanmistir. Token kullanimi, sure ve gunlukler referans icin saklanir.
+  </Step>
+</Steps>
+
+## Gorev Alanlari
+
+| Alan | Aciklama |
+|-------|-------------|
+| **Baslik** | Isin kisa ozeti |
+| **Aciklama** | Claude icin ayrintili talimatlar |
+| **Tur** | `feature`, `bugfix`, `refactor`, `docs`, `test`, `chore` |
+| **Oncelik** | 0 (dusuk) ile 3 (acil) arasi — sira sirasini etkiler |
+| **Model** | `opus`, `sonnet` veya `haiku` |
+| **Dusunme Eforu** | Claude'un akil yurutme derinligini kontrol eder: `low`, `medium`, `high` |
+
+## Model Secimi
+
+<Tabs>
+  <Tab title="Opus">
+    Karmasik, coklu dosya iceren ozellikler icin en uygunudur. En yuksek token kullanimi ve maliyet, ancak en guclu akil yurutme yetenegine sahiptir.
+  </Tab>
+  <Tab title="Sonnet">
+    Cogu gorev icin dengeli bir secimdir. Makul maliyetle iyi akil yurutme saglar. **Onerilen varsayilan.**
+  </Tab>
+  <Tab title="Haiku">
+    Hizli ve ekonomiktir. Basit duzeltmeler, dokumantasyon guncellemeleri veya sablon kod uretimi icin kullanin.
+  </Tab>
+</Tabs>
+
+## Oncelik Seviyeleri
+
+[Otomatik kuyruk](/features/queue) etkinlestirildiginde, daha yuksek oncelikli gorevler once baslar:
+
+- **Urgent (3)** — bir yuva musaitse hemen calisir
+- **High (2)** — siradaki
+- **Medium (1)** — varsayilan
+- **Low (0)** — en son calisir
+
+<Tip>Bir gorev hala backlog'dayken modelini, turunu ve onceligini degistirebilirsiniz. In Progress durumuna gectikten sonra yalnizca aciklama guncellenebilir (revizyon geri bildirimi icin).</Tip>

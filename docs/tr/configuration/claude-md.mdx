@@ -1,0 +1,62 @@
+---
+title: "CLAUDE.md Duzenleyici"
+description: "Projenizin CLAUDE.md yapilandirmasini arayuzden duzenleme"
+icon: "file-code"
+---
+
+`CLAUDE.md`, Claude'un bir proje uzerinde calismaya basladiginda otomatik olarak okudugu ozel bir dosyadir. Projeye ozel talimatlar, kurallar ve baglam bilgisi icerir. Claude Board bu dosyayi yonetmek icin yerlesik bir duzenleyici icerir.
+
+## CLAUDE.md Nedir?
+
+Projenizin kokunde bulunan bir `CLAUDE.md` dosyasi Claude'a sunlari soyler:
+
+- Projenin nasil yapilandirildigini
+- Hangi kurallara uyulmasi gerektigini
+- Derleme ve test icin hangi komutlarin kullanilacagini
+- Onemli mimari kararlari
+
+```markdown
+# Project: My API
+
+## Stack
+- Node.js + Express + TypeScript
+- PostgreSQL with Prisma ORM
+- Jest for testing
+
+## Commands
+- `npm run build` — compile TypeScript
+- `npm test` — run all tests
+- `npm run lint` — check code style
+
+## Conventions
+- Use Prisma for all database access
+- All endpoints return JSON with `{ data, error }` shape
+- Write integration tests for every new endpoint
+```
+
+## Yerlesik Duzenleyici
+
+Claude Board, `CLAUDE.md` dosyasini goruntulemek ve duzenlemek icin proje ayarlarinda bir metin duzenleyici sunar. Degisiklikler dogrudan projenizin calisma dizinindeki dosyaya kaydedilir.
+
+<Steps>
+  <Step title="Proje ayarlarini acin">
+    Proje panonuzdaki disli simgesine tiklayin.
+  </Step>
+  <Step title="CLAUDE.md sekmesine gidin">
+    CLAUDE.md bolumunu secin.
+  </Step>
+  <Step title="Duzenleyin ve kaydedin">
+    Icerigi degistirin ve Kaydet'e tiklayin. Dosya projenizin calisma dizinine yazilir.
+  </Step>
+</Steps>
+
+## CLAUDE.md ile Baglam Parcalari Karsilastirmasi
+
+| Ozellik | CLAUDE.md | Baglam Parcalari |
+|---------|-----------|-----------------|
+| **Konum** | Deponuzdaki dosya | Claude Board'un veritabaninda saklanir |
+| **Surumlendirme** | Evet, git'e commit edilir | Hayir |
+| **Acma/Kapama** | Her zaman aktif | Tek tek etkinlestirilebilir/devre disi birakilabilir |
+| **Kapsam** | Claude CLI tarafindan dogrudan okunur | Claude Board tarafindan prompt'a enjekte edilir |
+
+<Tip>Depoda kalmasi gereken kararli proje kurallari icin `CLAUDE.md` kullanin. Sik degisen gecici kurallar veya talimatlar icin baglam parcalari kullanin.</Tip>

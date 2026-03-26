@@ -1,0 +1,72 @@
+---
+title: "Snippets API"
+description: "Bağlam snippet'leri için CRUD uç noktaları"
+icon: "puzzle-piece"
+---
+
+## Snippet'leri Listele
+
+```http
+GET /api/projects/:projectId/snippets
+```
+
+Bir projeye ait tüm bağlam snippet'lerini döndürür.
+
+```json
+[
+  {
+    "id": 1,
+    "projectId": 1,
+    "name": "Code Style",
+    "content": "Use TypeScript strict mode...",
+    "enabled": true,
+    "createdAt": "2025-01-15T10:00:00Z"
+  }
+]
+```
+
+## Snippet Getir
+
+```http
+GET /api/projects/:projectId/snippets/:id
+```
+
+## Snippet Oluştur
+
+```http
+POST /api/projects/:projectId/snippets
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "Code Style",
+  "content": "Use TypeScript strict mode.\nPrefer functional components.\nUse named exports.",
+  "enabled": true
+}
+```
+
+| Alan | Zorunlu | Varsayılan | Açıklama |
+|------|---------|------------|----------|
+| `name` | Evet | — | Snippet görünen adı |
+| `content` | Evet | — | Claude'un prompt'una enjekte edilen metin |
+| `enabled` | Hayır | `true` | Prompt'lara dahil edilip edilmeyeceği |
+
+## Snippet Güncelle
+
+```http
+PUT /api/projects/:projectId/snippets/:id
+Content-Type: application/json
+```
+
+Oluşturma ile aynı alanları kabul eder. Yalnızca gönderilen alanlar güncellenir.
+
+<Tip>Bir snippet'i `{ "enabled": false }` göndererek devre dışı bırakın — bu, içeriği korurken gelecekteki prompt'lardan hariç tutar.</Tip>
+
+## Snippet Sil
+
+```http
+DELETE /api/projects/:projectId/snippets/:id
+```
+
+<Note>Bir snippet'i silmek kalıcıdır. Prompt'lardan geçici olarak kaldırmak istiyorsanız bunun yerine devre dışı bırakın.</Note>

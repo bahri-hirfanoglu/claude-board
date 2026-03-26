@@ -1,0 +1,36 @@
+---
+title: "Model Filtresi"
+description: "Tum gorunumlerde gorevleri yapay zeka modeline gore filtreleme"
+icon: "filter"
+---
+
+Board arac cubugu, belirli bir Claude modeline atanmis gorevlere hizlica odaklanmanizi saglayan model filtre yongalari icerir.
+
+<Frame><img src="/images/feature-model-filter.svg" alt="Model Filter" /></Frame>
+
+## Kullanim
+
+Filtre yongalari, projenizde birden fazla model kullanan gorevler oldugunda arac cubugunda gorunum degistirme butonlarinin yaninda gorunur. Her yonga su bilgileri gosterir:
+
+- Modelin rengine uygun **renkli nokta** (Haiku icin yesil, Sonnet icin mavi, Opus icin mor)
+- **Model adi**
+- O model icin **gorev sayisi**
+
+Filtrelemek icin bir yongaya tiklayin. Filtreyi temizlemek icin tekrar tiklayin veya **X** butonuna basin.
+
+## Kapsam
+
+Model filtresi **tum gorunumlerde** gecerlidir:
+
+- **Board gorunumu** — Sutunlar yalnizca filtrelenmis gorevleri gosterir
+- **Liste gorunumu** — Tablo satirlari filtrelenir
+- **Zaman cizgisi gorunumu** — Yalnizca filtrelenmis gorevler zaman cizgisinde gorunur
+- **Ozet gorunumu** — Istatistikler yalnizca filtrelenmis gorevleri yansitir
+
+## Model Renkleri
+
+| Model | Renk | Nokta |
+|-------|------|-------|
+| Haiku | Yesil | `#4ade80` |
+| Sonnet | Mavi | `#60a5fa` |
+| Opus | Mor | `#c084fc` |

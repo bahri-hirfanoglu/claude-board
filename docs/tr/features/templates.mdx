@@ -1,0 +1,55 @@
+---
+title: "Komut Şablonları"
+description: "Değişkenler ve ön ayarlarla yeniden kullanılabilir komut şablonları"
+icon: "file-lines"
+---
+
+Komut şablonları, görevler için yeniden kullanılabilir talimat kalıpları tanımlamanızı sağlar. Her görev açıklamasına aynı standart metni yazmak yerine bir şablon oluşturun ve otomatik olarak uygulayın.
+
+## Şablonlar Nasıl Çalışır
+
+Bir şablon, görev başladığında değiştirilen isteğe bağlı **değişkenler** içeren bir metin bloğudur. İşlenmiş şablon, Claude'a gönderilmeden önce görev açıklamasının başına eklenir.
+
+```
+You are working on the {{project_name}} project.
+Task type: {{task_type}}
+Priority: {{priority}}
+
+Always write tests for new code.
+Follow the existing code style.
+Commit with descriptive messages.
+```
+
+## Değişkenler
+
+Şablonlar aşağıdaki yerleşik değişkenleri destekler:
+
+| Değişken | Karşılığı |
+|----------|-------------|
+| `{{project_name}}` | Projenin adı |
+| `{{task_title}}` | Görevin başlığı |
+| `{{task_type}}` | `feature`, `bugfix`, `refactor` vb. |
+| `{{priority}}` | `low`, `medium`, `high`, `urgent` |
+| `{{model}}` | `opus`, `sonnet`, `haiku` |
+
+## Görev Türü Varsayılanları
+
+Her görev türüne varsayılan bir şablon atayın. O türde yeni bir görev oluşturulduğunda şablon otomatik olarak uygulanır:
+
+| Görev Türü | Örnek Şablon Odağı |
+|-----------|----------------------|
+| `feature` | Mimari yönergeleri, test gereksinimleri |
+| `bugfix` | Önce yeniden üret, minimal düzeltme, regresyon testi ekle |
+| `refactor` | Davranış değişikliği yok, test kapsamını koru |
+| `docs` | Stil kılavuzuna uy, içindekiler tablosunu güncelle |
+| `test` | Kapsam hedefleri, uç durumlar, mock stratejisi |
+
+## Model ve Çaba Ön Ayarları
+
+Şablonlar ayrıca varsayılan **model** ve **düşünme çabası** değerlerini belirtebilir. Uygulandığında, kullanıcı açıkça değiştirmedikçe görev varsayılanlarını geçersiz kılar.
+
+<Tip>Basit görevler için `haiku` modeli ve `low` çaba seviyesiyle bir "hızlı düzeltme" şablonu, karmaşık işler için `opus` ve `high` çaba seviyesiyle bir "derin özellik" şablonu oluşturun.</Tip>
+
+## Şablonları Yönetme
+
+Proje ayarları veya [Templates API](/api/templates) aracılığıyla şablon oluşturun, düzenleyin ve silin.

@@ -1,0 +1,78 @@
+---
+title: "Masaustu Bildirimleri"
+description: "Gorev olaylari icin yerel isletim sistemi bildirimleri, olay bazli acma/kapama ve yerellestime destegi"
+icon: "bell"
+---
+
+Claude Board, onemli gorev olaylari gerceklestiginde **yerel masaustu bildirimleri** gonderir. Bildirimler isletim sisteminin bildirim sistemini kullanir — Windows bildirim penceresi ve macOS Bildirim Merkezi.
+
+## Desteklenen Olaylar
+
+Her olay turu, [Uygulama Ayarlari](/features/settings) icinde bagimsiz olarak etkinlestirilebilir veya devre disi birakilabilir:
+
+| Olay | Varsayilan | Aciklama |
+|------|-----------|----------|
+| **Gorev Tamamlandi** | Acik | Claude bir gorev uzerinde calismayi bitirdi (Testing'e tasindi) |
+| **Gorev Basarisiz** | Acik | Bir gorev basarisiz oldu veya hatayla sonlandi |
+| **Gorev Basladi** | Kapali | Claude bir gorev uzerinde calismaya basladi |
+| **Revizyon Istendi** | Acik | Revizyon geri bildirimi Claude'a gonderildi |
+| **Kuyruk Otomatik Basladi** | Kapali | Bir gorev kuyruktan otomatik olarak baslatildi |
+
+Otomatik test sonuclari da bildirim tetikler:
+- **Test Basarili** Gorev Tamamlandi secenegini kullanir
+- **Test Basarisiz** Gorev Basarisiz secenegini kullanir
+
+## Bildirim Formati
+
+Bildirimler kolay tanimlama icin **gorev anahtarini** icerir:
+
+```
+Claude Board — Task Completed
+[FTR-CB-1042] Implement login page
+✔ Completed — ready for review
+```
+
+### Olay Simgeleri
+
+Her olay turu ayirt edici bir sembol kullanir:
+
+| Olay | Sembol |
+|------|--------|
+| Basladi | ▶ |
+| Tamamlandi | ✔ |
+| Basarisiz | ✘ |
+| Revizyon | ↻ |
+| Kuyruk | ⏵ |
+
+## Yerellestime
+
+Bildirim basliklari ve mesajlari, Uygulama Ayarlari'ndaki **dil ayarini** takip eder. Turkce secildiginde bildirimler Turkce gorunur:
+
+```
+Claude Board — Gorev Tamamlandi
+[FTR-CB-1042] Login sayfasi
+✔ Tamamlandi — inceleme bekliyor
+```
+
+## Uygulama Simgesi
+
+Claude Board uygulama simgesi her iki platformda da bildirimlerde goruntulenir. Windows'ta uygulama simgesi bildirim basliginda gorunur. macOS'ta bildirim gonderici simgesi olarak gorunur.
+
+## Platform Destegi
+
+| Platform | Bildirim Sistemi | Uygulama Simgesi |
+|----------|-----------------|------------------|
+| **Windows 10/11** | Bildirim penceresi | Uygulama bildiriminden otomatik |
+| **macOS 10.15+** | UNUserNotificationCenter | Uygulama paketinden otomatik |
+
+<Info>Bildirim sesleri isletim sisteminizin bildirim ayarlari tarafindan kontrol edilir.</Info>
+
+## Yapilandirma
+
+Bildirimleri **Uygulama Ayarlari → Bildirimler** bolumunden acip kapatin:
+
+1. Uygulama Ayarlari'ni acin (Panodaki disli simgesi)
+2. **Bildirimler** sekmesine tiklayin
+3. Bireysel olay turlerini acin/kapatin
+
+Tum degisiklikler aninda yururluge girer.

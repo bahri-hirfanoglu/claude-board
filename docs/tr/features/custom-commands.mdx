@@ -1,0 +1,38 @@
+---
+title: "Özel Komutlar ve Beceriler"
+description: "Claude'un özel komutlarını ve becerilerini görüntüleyin ve inceleyin"
+icon: "terminal"
+---
+
+Claude Board, `~/.claude/commands/` ve `~/.claude/skills/` dizinlerinde saklanan markdown dosyalarınız olan özel Claude komutları ve becerileri için görüntüleyiciler sunar.
+
+## Özel Komutlar Görüntüleyicisi
+
+Proje menüsünden erişin → **Commands**. Bölünmüş panel penceresi şunları gösterir:
+
+- **Sol panel**: `~/.claude/commands/` dizinindeki tüm `*.md` dosyalarının listesi
+- **Sağ panel**: Seçilen komutun tam içerik önizlemesi
+
+Uygulamadan ayrılmadan mevcut özel slash komutlarınıza göz atabilirsiniz.
+
+## Özel Beceriler Görüntüleyicisi
+
+Proje menüsünden erişin → **Skills**. Aynı bölünmüş panel düzeni:
+
+- **Sol panel**: `~/.claude/skills/` dizinindeki tüm `*.md` dosyalarının listesi
+- **Sağ panel**: Seçilen becerinin tam içerik önizlemesi
+
+## Özel Komut Oluşturma
+
+Özel komutlar, `~/.claude/commands/` dizinindeki markdown dosyalarıdır. Her dosya bir slash komutuna dönüşür:
+
+```
+~/.claude/commands/
+├── review.md      → /review
+├── test.md        → /test
+└── deploy.md      → /deploy
+```
+
+Dosya içeriği, komut çağrıldığında Claude'un aldığı komut şablonudur.
+
+<Info>Bu görüntüleyiciler salt okunurdur — sisteminizde yüklü olanları gösterir. Komut oluşturmak veya düzenlemek için `~/.claude/commands/` veya `~/.claude/skills/` dizinlerindeki markdown dosyalarını doğrudan düzenleyin.</Info>

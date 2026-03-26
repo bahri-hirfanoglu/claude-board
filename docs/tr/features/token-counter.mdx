@@ -1,0 +1,31 @@
+---
+title: "Token Sayaci"
+description: "Gorev olusturmada gercek zamanli token tahmini ve maliyet on izlemesi"
+icon: "coins"
+---
+
+Token sayaci, gorev aciklamanizi yazarken tahmini token sayisini ve giris maliyetini gosterir. Bir gorevi calistirmadan once API maliyetlerini tahmin etmenize yardimci olur.
+
+## Nasil Calisir
+
+Gorev olusturma penceresinde yazarken sayac su hesaplamalari yapar:
+
+- **Token tahmini** — Karakter sayisina dayali yaklasik token sayisi (~4 karakter/token)
+- **Giris maliyeti** — Secilen modelin fiyatlandirmasina gore tahmini maliyet
+- **Karakter sayisi** — Prompt'unuzun ham karakter uzunlugu
+
+Sayac, icerik 10 tokeni astiktan sonra aciklama alaninin altinda gorunur.
+
+## Model Fiyatlandirmasi
+
+Maliyet tahminleri, gorev seceneklerinde secilen modele dayanir:
+
+| Model | Giris Maliyeti (1M token basina) |
+|-------|----------------------------------|
+| **Haiku** | $0.25 |
+| **Sonnet** | $3.00 |
+| **Opus** | $15.00 |
+
+<Info>Bunlar yalnizca giris token tahminleridir. Gercek gorev maliyeti, gorev karmasikligina gore degisen cikis tokenleri, onbellek tokenleri ve arac kullanimini icerir.</Info>
+
+<Tip>Asiri uzun prompt'lari tespit etmek icin token sayacini kullanin. Kisa ve odakli bir prompt, genellikle uzun olandan daha iyi sonuclar uretir.</Tip>

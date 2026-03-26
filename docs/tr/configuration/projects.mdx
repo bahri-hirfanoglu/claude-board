@@ -1,0 +1,63 @@
+---
+title: "Proje Ayarlari"
+description: "Proje adi, dizin, izinler ve diger ayarlari yapilandirma"
+icon: "folder-open"
+---
+
+Claude Board'daki her proje, Claude ajanlarin uzerinde calistigi bir kod tabanini temsil eder. Projeleri depo yapiniza ve is akisi tercihlerinize uygun sekilde yapilandirin.
+
+## Temel Ayarlar
+
+| Ayar | Aciklama |
+|------|----------|
+| **Ad** | Board'da gosterilen gorunen ad |
+| **Slug** | URL-uyumlu tanimlayici, addan otomatik olusturulur |
+| **Calisma Dizini** | Projenin kod tabanina giden mutlak yol |
+| **Avatar** | Istege bagli proje simgesi veya gorseli |
+
+<Warning>Calisma dizini mevcut olmali ve Claude Board'u calistiran islem tarafindan erisilebilir olmalidir. Claude ajanlari bu dizinde dosya okur ve yazar.</Warning>
+
+## Izin Modu
+
+Claude'un arac izinlerini nasil yonetecegini kontrol eder. Ayrintilar icin [Izinler](/configuration/permissions) sayfasina bakin.
+
+| Mod | Davranis |
+|-----|----------|
+| **Auto Accept** | Claude tum araclari onay almadan kullanir |
+| **Allowed Tools** | Yalnizca belirtilen arac kategorilerine izin verilir |
+| **Default** | Claude CLI'in yerlesik izin davranisini kullanir |
+
+## Izin Verilen Araclar
+
+**Allowed Tools** modunu kullanirken, Claude'un hangi arac kategorilerini kullanabilecegini belirtin:
+
+- `Read` — dosya iceriklerini okuma
+- `Edit` — dosyalari degistirme
+- `Write` — yeni dosya olusturma
+- `Bash` — kabuk komutlari calistirma
+- `Glob` — dosya deseni arama
+- `Grep` — dosya icerigi arama
+
+## Ek Ayarlar
+
+<AccordionGroup>
+  <Accordion title="Otomatik Kuyruk">
+    Otomatik gorev yurutmeyi etkinlestirin ve maksimum es zamanli ajan sayisini (1-5) ayarlayin. Bkz. [Auto-Queue](/features/queue).
+  </Accordion>
+  <Accordion title="Git Otomasyonu">
+    Otomatik dal olusturma, otomatik PR ve temel dal yapilandirmasi. Bkz. [Git Automation](/features/git-automation).
+  </Accordion>
+  <Accordion title="Webhook'lar">
+    Gorev olaylari icin bildirim uç noktalari ekleyin. Bkz. [Webhooks](/features/webhooks).
+  </Accordion>
+  <Accordion title="Baglam Parcalari">
+    Her prompt'a enjekte edilen proje kurallarini tanimlayin. Bkz. [Snippets](/features/snippets).
+  </Accordion>
+  <Accordion title="Prompt Sablonlari">
+    Yeniden kullanilabilir prompt desenleri olusturun. Bkz. [Templates](/features/templates).
+  </Accordion>
+</AccordionGroup>
+
+## Proje Duzenleme
+
+Ayarlari acmak icin proje panosundaki disli simgesine tiklayin. Degisiklikler aninda kaydedilir. Calisma dizinini degistirmek calisan gorevleri etkilemez — yalnizca yeni ajan oturumlari guncellenmis yolu kullanir.

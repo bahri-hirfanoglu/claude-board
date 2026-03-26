@@ -1,0 +1,44 @@
+---
+title: "Bölünmüş Terminal"
+description: "Birden fazla ajan çıktısını yan yana görüntüleyin"
+icon: "columns-2"
+---
+
+Bölünmüş terminal görünümüyle aynı anda birden fazla çalışan ajanı izleyin.
+
+## Bölünmüş Görünümü Etkinleştirme
+
+1. İki veya daha fazla görev için terminal loglarını açın (görev kartlarında "Loglar"a tıklayın veya birden fazla görev başlatın)
+2. Alt terminal panelinde, sekme çubuğunun **sağ tarafındaki** bölme simgelerini bulun
+3. Yan yana bölme için **Sütunlar** (||) simgesine tıklayın
+4. Üst-alt bölme için **Satırlar** (=) simgesine tıklayın
+
+## Bölme Modları
+
+| Mod | Simge | Düzen |
+|-----|-------|-------|
+| **Dikey** | `\|\|` | İki terminal yan yana |
+| **Yatay** | `=` | İki terminal üst üste |
+| **Kapalı** | Etkin simgeye tekrar tıklayın | Tek terminal |
+
+## Sekme Yönetimi
+
+- Her açık görevin sekme çubuğunda kendi sekmesi vardır
+- **Birincil panel** — vurgu rengi kenarlığı ile vurgulanır
+- **Bölünmüş panel** — mor kenarlık ile vurgulanır
+- Etkin panele atamak için bir sekmeye tıklayın
+- Bölme etkinken, atanmamış bir sekmeye tıklamak onu bölünmüş panele taşır
+
+## Kontroller
+
+- **Yeniden boyutlandırma** — terminal panelinin üst kenarını sürükleyerek yüksekliği ayarlayın
+- **Düzen geçişi** — alt panel ve yan panel modları arasında geçiş yapın
+- **Sekme kapatma** — herhangi bir sekmede × simgesine tıklayarak kapatın (bölünmüş sekmeyi kapatmak bölme modundan çıkar)
+
+<Tip>Yalnızca bir sekme açıkken bölme düğmeleri devre dışı (soluk) görünür. Bölmeyi etkinleştirmek için ikinci bir görevin loglarını açın.</Tip>
+
+## En İyi Uygulamalar
+
+- Orkestrasyon modunda paralel görevler çalıştırırken bölünmüş görünümü kullanın
+- Ajan çıktısını izlerken DAG'ı takip etmek için **Orkestrasyon Görünümü** ile birlikte kullanın
+- Dikey bölme geniş ekranlar için, yatay bölme dar ekranlar için daha uygundur

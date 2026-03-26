@@ -1,0 +1,84 @@
+---
+title: "Orkestrasyon Gorunumu"
+description: "Coklu ajan paralel yurutme icin DAG grafi, zaman cizelgesi ve canli gozlemlenebilirlik sunan komuta merkezi"
+icon: "sitemap"
+---
+
+Orkestrasyon Gorunumu, paralel olarak calisan birden fazla Claude ajanini yonetmek icin komuta merkezinizdir. Uc goruntuleme modu sunar: bagimlilik grafi, yurutme zaman cizelgesi ve canli gozlemlenebilirlik panosu.
+
+## Goruntuleme Modlari
+
+Orkestrasyon gorunumunun sag ust kosesindeki gecis dugmelerini kullanarak modlar arasinda gecis yapin.
+
+<Tabs>
+  <Tab title="Graph">
+    Gorevleri dugum, bagimliliklari ise yonlu kenar olarak gosteren etkilesimli SVG bagimlilik grafi. Dugumler duruma gore renklendirilir: gri (backlog), kehribar (devam ediyor), yesil (tamamlandi). Calisan gorevler animasyonlu bir ilerleme cubuguyla titresir.
+
+    **Kosullu kenarlar** renkle kodlanir:
+    - **Gri duz cizgi** — Always (varsayilan bagimlilik)
+    - **Yesil kesikli cizgi** — On Success (yalnizca ust gorev basarili olursa calisir)
+    - **Kirmizi kesikli cizgi** — On Failure (yalnizca ust gorev basarisiz olursa calisir)
+  </Tab>
+  <Tab title="Timeline">
+    Her gorevin ne zaman basladigini, ne kadar sure calistigini ve dalga gruplamasini gosteren Gantt tarzi yatay zaman cizelgesi. Ozellikler:
+    - Otomatik olceklenen zaman ekseni (dakika/saat/gun)
+    - "NOW" isaretcisi (kirmizi kesikli cizgi)
+    - Titresim animasyonlu calisan gorev cubuklari
+    - Token/maliyet/model bilgisi iceren fareyle uzerine gelme ipuclari
+    - Kosullu renklendirmeli bagimlilik kenar katmanlari
+  </Tab>
+  <Tab title="Live">
+    Tum aktif ajanlari, dosya erisim kaliplarini ve canli etkinlik akisini gosteren gercek zamanli gozlemlenebilirlik panosu.
+
+    **Ajan Etkinlik Kartlari** — Calisan her ajan sunlari gosterir: gorev basligi, model, gecen sure, arac cagrisi sayisi, token kullanimi, maliyet ve erisilen aktif dosyalar.
+
+    **Dosya Isi Haritasi** — Hangi dosyalara hangi ajanlar tarafindan erisildigi gorsel haritasi. Catismalar (ayni dosyaya birden fazla ajanin erismesi) kirmizi ile vurgulanir.
+
+    **Canli Akis** — Tum ajanlar genelinde tum arac cagrilarinin zaman damgali, arac adli ve dosya yollu kronolojik akisi. Duraklatma dugmesi icerir.
+
+    **Istatistik Cubugu** — Toplam calisan ajan, arac cagrisi, token, maliyet ve catisma sayisi.
+  </Tab>
+</Tabs>
+
+## Dalga Yurutme
+
+Gorevler, bagimlilik yapilarina gore **dalgalar** halinde gruplanir:
+
+```
+Wave 0: [Tasks with no dependencies]     → run in parallel
+Wave 1: [Tasks depending on Wave 0]      → start when Wave 0 completes
+Wave 2: [Tasks depending on Wave 0 + 1]  → start when deps complete
+```
+
+## Canli Ajan Kartlari
+
+Calisan her Claude ajani, kenar cubugunda (Graph/Timeline modlari) sunlari gosteren bir kart alir:
+
+- Gorev basligi ve anahtari
+- Model (Haiku/Sonnet/Opus) ve gecen sure
+- Canli token kullanimi (giris/cikis dokumu)
+- Gercek zamanli maliyet tahmini
+- Dosya yolunu iceren son arac cagrisi
+- Tur sayisi
+- Token ilerleme cubugu
+
+## Dosya Catismasi Algilama
+
+Birden fazla ajan ayni anda ayni dosyaya eristiginde, Claude Board olasi catismalari tespit eder:
+
+- **Write/Edit catismalari** bir `agent:file_conflict` olayini tetikler
+- Live gorunumu catisma iceren dosyalari kirmizi ile vurgular
+- Ajan kartlari catisma uyarilari gosterir
+
+<Tip>Maksimum eslesik ajan sayisini 2-3 olarak ayarlayin ve ajanlarin ayni anda cakisan dosyalari duzenlemesini onlemek icin gorev bagimliklarini kullanin.</Tip>
+
+## Graf Etkilesimi
+
+- **Fareyle uzerine gelin** — Bagimlilk kenarlarini vurgulamak icin bir dugumun uzerine gelin
+- **Tiklayin** — Gorev ayrintilarina acmak icin bir dugume tiklayin
+- **Shift+surukleme** — Bagimlilik kenari olusturmak icin bir dugumden digerine Shift+surukleme yapin
+- **Surukleme** — Dugumleri yeniden konumlandirmak icin surukleyin (konumlar kaydedilir)
+
+## Otomatik Yenileme
+
+Gorunum, `task:updated` olaylarinda otomatik olarak yenilenir — gorevler durum degistirdiginde, bagimliliklar degistirildiginde veya yeni gorevler olusturuldugunda aninda guncellenir.

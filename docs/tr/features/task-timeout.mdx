@@ -1,0 +1,52 @@
+---
+title: "Gorev Zaman Asimi"
+description: "Yapilandirmali sure sonrasinda otomatik gorev sonlandirma"
+icon: "hourglass-end"
+---
+
+Proje bazinda zaman asimi ayarlayarak gorevlerin suresiz calismasini onleyin. Bir gorev siniri astiginda, otomatik olarak sonlandirilir ve [yeniden deneme politikasini](/features/retry-backoff) izler.
+
+## Yapilandirma
+
+**Project Settings > Automation** bolumunde **Task Timeout** degerini dakika cinsinden ayarlayin:
+
+| Deger | Davranis |
+|-------|----------|
+| **0** (varsayilan) | Zaman asimi yok — gorevler tamamlanana kadar calisir |
+| **1–1440** | Bu kadar dakika sonra otomatik sonlandirma (maksimum 24 saat) |
+
+<Tip>Genis bir zaman asimiyla baslayin (30–60 dakika) ve tipik gorev surenize gore asagi dogru ayarlayin. Ortalama gorev surelerini gormek icin [Analytics](/features/analytics) sayfasini kontrol edin.</Tip>
+
+## Nasil Calisir
+
+<Steps>
+  <Step title="Gorev baslar" icon="play">
+    Ajan sureci baslatildiginda bir zamanlayici baslar.
+  </Step>
+  <Step title="Izleme" icon="eye">
+    Kuyruk yoklama isi, aktif surecleri her 15 saniyede zaman asimina karsi kontrol eder.
+  </Step>
+  <Step title="Zaman asimi tetiklenir" icon="hourglass-end">
+    Bir gorev siniri astiginda:
+    1. Surec sonlandirilir (macOS/Linux'ta `SIGTERM`, Windows'ta `taskkill`)
+    2. Gorev yeniden deneme politikasini izler — geri cekilmeyle yeniden dene veya Failed durumuna tasi
+    3. Webhook bildirimi tetiklenir (`task_timeout` olayi)
+    4. Zaman asimi gorev gecmisine kaydedilir
+  </Step>
+</Steps>
+
+## Kullanim Alanlari
+
+<Columns cols={3}>
+  <Card title="Hiz Siniri Donguleri" icon="rotate">
+    Aksi takdirde sonsuza kadar calisacak hiz siniri bekleme dongulerine takilan gorevleri sonlandirin.
+  </Card>
+  <Card title="Sonsuz Donguler" icon="infinity">
+    Claude'un bir akil yurutme veya duzenleme dongusune girdigi gorevleri sonlandirin.
+  </Card>
+  <Card title="Kaynak Yonetimi" icon="gauge">
+    Tek bir gorevin ajan slotunu tekeline almasini onleyerek kuyrugun saglikli kalmasini saglayin.
+  </Card>
+</Columns>
+
+<Warning>Zaman asimina ugrayan gorev bir basarisizlik olarak sayilir ve bir yeniden deneme hakki tuketir. Tum yeniden denemeler tukenirse, gorev [Failed durumuna](/features/failed-status) gecer.</Warning>

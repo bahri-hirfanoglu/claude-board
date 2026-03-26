@@ -1,0 +1,61 @@
+---
+title: "Canlı Terminal"
+description: "Claude'un çalışmasını filtrelenmiş log çıktısıyla gerçek zamanlı olarak izleyin"
+icon: "terminal"
+---
+
+Canlı terminal, bir Claude ajanının gerçekleştirdiği her işlemi anlık olarak aktarır. Devam eden herhangi bir görev kartındaki terminal simgesine tıklayarak açabilirsiniz.
+
+<Frame><img src="/images/feature-terminal.svg" alt="Canlı Terminal" /></Frame>
+
+## Log Türleri
+
+Her log kaydının, stilini ve filtrelenebilirliğini belirleyen bir türü vardır:
+
+| Tür | Simge | Açıklama |
+|-----|-------|----------|
+| `claude` | Beyin | Claude'un akıl yürütme ve metin çıktısı |
+| `tool` | Anahtar | Araç çağrıları (dosya okuma, düzenleme, bash vb.) |
+| `tool_result` | Onay | Araç çalıştırmasından dönen sonuçlar |
+| `system` | Bilgi | Sistem mesajları (başlama, durdurma, durum değişiklikleri) |
+| `error` | Uyarı | CLI veya araç hatalarından kaynaklanan hatalar |
+
+## Filtreler
+
+Belirli log türlerini göstermek veya gizlemek için filtre araç çubuğunu kullanın. Bu, önemli olana odaklanmanıza yardımcı olur:
+
+<Tabs>
+  <Tab title="Tümü">
+    Her şeyi gösterir. Varsayılan görünüm.
+  </Tab>
+  <Tab title="Yalnızca Claude">
+    Yalnızca Claude'un akıl yürütme çıktısını görün — düşünce sürecini anlamak için faydalıdır.
+  </Tab>
+  <Tab title="Yalnızca Araçlar">
+    Dosya düzenlemelerini, bash komutlarını ve sonuçlarını görün — kod değişikliklerini takip etmek için faydalıdır.
+  </Tab>
+  <Tab title="Yalnızca Hatalar">
+    Başarılı işlemleri kaydırmadan hataları hızlıca tespit edin.
+  </Tab>
+</Tabs>
+
+## Arama
+
+Arama çubuğu, logları metin içeriğine göre filtreler. İlgili kayıtları anında bulmak için bir dosya adı, fonksiyon adı veya anahtar kelime yazın.
+
+## Düzen Seçenekleri
+
+<Columns cols={2}>
+  <Card title="Yan Panel" icon="table-columns">
+    Terminal, panonun sağ tarafında açılır. Geniş ekranlar için uygundur — panoyu ve terminali aynı anda görüntüleyebilirsiniz.
+  </Card>
+  <Card title="Alt Panel" icon="window-minimize">
+    Terminal altta açılır. Dar ekranlar için veya tam pano genişliğini kullanmak istediğinizde daha uygundur.
+  </Card>
+</Columns>
+
+## Log Kalıcılığı
+
+Tüm terminal logları veritabanına kaydedilir. Görev **Tamamlandı** durumuna geçtikten sonra bile görev kartına tıklayarak tamamlanmış görevlerin loglarını tekrar inceleyebilirsiniz.
+
+<Info>Loglar, `task:log` olayı kullanılarak WebSocket üzerinden gerçek zamanlı olarak aktarılır. Siz yukarı kaydırmadığınız sürece terminal otomatik olarak en son kayda kaydırılır.</Info>

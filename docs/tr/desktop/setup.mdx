@@ -1,0 +1,66 @@
+---
+title: "Masaustu Kurulumu"
+description: "6 adimli kurulum sihirbazi, sistem dogrulamasi ve ilk proje yapilandirmasi"
+icon: "desktop"
+---
+
+Claude Board masaustu uygulamasi, Tauri v2 ve Rust arka ucu ile olusturulmus yerel bir uygulamadir. Ilk baslatmada, rehberli bir kurulum sihirbazi sizi sistem yapilandirmasindan gecirir ve ilk projenizi olusturur.
+
+## Kurulum Sihirbazi
+
+Kurulum sihirbazi, sistem dogrulamasi, dil secimi ve proje yapilandirmasi iceren 6 adimdan olusur:
+
+<Steps>
+  <Step title="Hos Geldiniz" icon="hand-wave">
+    Rust arka ucu baslatilirken animasyonlu logo ve yukleme gostergesi ile acilis ekrani.
+  </Step>
+  <Step title="Dil Secimi" icon="globe">
+    Tercih ettiginiz dili secin (English veya Turkish). Bu, tum uygulama icin arayuz dilini belirler.
+  </Step>
+  <Step title="Sistem Kontrolu" icon="check-circle">
+    Ortaminizin otomatik dogrulamasi:
+    - **Claude CLI** — `claude`'un kurulu oldugunu ve PATH'te erisilebilir oldugunu dogrular
+    - **Node.js** — Node.js 18+ uyumlulugunu kontrol eder
+    - **Git** — Dal otomasyonu icin git'in mevcut oldugunu onaylar
+    - **Port kullanilabilirligi** — MCP sunucu portunun (varsayilan 4000) gecerliliginini kontrol eder
+  </Step>
+  <Step title="Veri Dizini" icon="folder">
+    Claude Board'un SQLite veritabanini, yuklemeleri ve yapilandirmayi nerede saklayacagini secin. Varsayilan olarak isletim sistemine ozel uygulama veri yolunu kullanir.
+  </Step>
+  <Step title="MCP Sunucu Portu" icon="plug">
+    Claude runner entegrasyonu tarafindan kullanilan yerlesik MCP HTTP sunucusunun portunu yapilandirin. Sihirbaz, devam etmeden once portun kullanilabilir oldugunu dogrular.
+  </Step>
+  <Step title="Ilk Proje" icon="rocket">
+    Bir ad ve calisma dizini ile ilk projenizi olusturun. Bu proje, kurulum tamamlandiginda board'unuzda hemen gorunur.
+  </Step>
+</Steps>
+
+## Acilis Ekrani
+
+Rust arka ucu baslatilirken, Claude Board logosunu ortam animasyonlari ve yukleme gostergesi ile birlikte gosteren bir acilis ekrani goruntulenir. Arka uc hazir oldugunda ana pencere acilir.
+
+## Tekil Ornek Kilidi
+
+Ayni anda yalnizca bir Claude Board ornegi calisabilir. Ikinci bir ornegi acmaya calistiginizda:
+
+- Mevcut pencere on plana getirilir
+- Ikinci ornek sessizce kapanir
+
+<Info>Bu, ayni veri dizinine erisen birden fazla islemden kaynaklanabilecek veritabani kilitleme sorunlarini onler.</Info>
+
+## Sistem Tepsisi
+
+Masaustu uygulamasi sistem tepsisine kucultulur. Secenekler icin tepsi simgesine sag tiklayin:
+
+- **Show** — pencereyi on plana getir
+- **Quit** — arka ucu durdur ve cik
+
+## Kurulumdan Sonra Ayarlari Degistirme
+
+Ilk kurulumdan sonra veri dizinini veya MCP sunucu portunu yeniden yapilandirmak icin:
+
+1. Menudan uygulamanin ayarlarini acin
+2. Degerleri guncelleyin
+3. Degisikliklerin yururluge girmesi icin uygulamayi yeniden baslatin
+
+<Note>Veri dizinini degistirmek mevcut verileri tasimaz. Gerekirse veritabanini ve uploads klasorunu manuel olarak kopyalayin.</Note>

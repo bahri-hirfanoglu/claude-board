@@ -1,0 +1,70 @@
+---
+title: "Giris"
+description: "Birden fazla Claude ajanini gorsel bir komut merkezinden yonetin"
+icon: "sparkles"
+---
+
+# Claude Board'a Hosgeldiniz
+
+Claude Board, yerel makinenizi coklu ajan gelistirme ekibine donusturen acik kaynakli bir yapay zeka orkestrasyon platformudur. Bagimlilik grafiklerini tanimlayarak gorevleri paralel dalgalar halinde calistirin ve her seyi gercek zamanli gozlemlenebilirlik panosu uzerinden takip edin.
+
+<Frame>
+  <img src="/images/dashboard.png" alt="Claude Board Dashboard" />
+</Frame>
+
+## Nasil calisir
+
+<Steps>
+  <Step title="Gorevleri ve bagimliliklari tanimlayin" icon="plus">
+    Gorsel Kanban panosu uzerinde gorevler olusturun. Surukle-birak ile bagimlilik belirleyin, model secin (Opus, Sonnet, Haiku) ve baglam parcaciklari veya dosya referanslari ekleyin.
+  </Step>
+  <Step title="Ajanlar dalgalar halinde calisir" icon="play">
+    Gorevler bagimlilik sirasina gore dalgalar halinde calistirilir. Dalga 0 gorevleri paralel olarak baslar, Dalga 1 ise bagimliliklarin tamamlanmasiyla devreye girer. Her ajan bir dal olusturur, kod yazar, testleri calistirir ve commit atar — tumunu canli terminalde izleyebilirsiniz.
+  </Step>
+  <Step title="Inceleyin ve yayinlayin" icon="check">
+    Degisiklikleri, otomatik test sonuclarini ve token maliyetlerini inceleyin. Onaylayarak otomatik PR olusturabilir veya degisiklik talep edebilirsiniz — Claude geri bildiriminize gore ussel geri cekilme ile yeniden deneyerek calismaya devam eder.
+  </Step>
+</Steps>
+
+## Temel ozellikler
+
+<Columns cols={2}>
+  <Card title="Orkestrasyon Motoru" icon="sitemap" href="/features/orchestration">
+    DAG bagimlilik grafi, Gantt zaman cizelgesi ve dosya cakisma algilamali canli gozlemlenebilirlik panosu.
+  </Card>
+  <Card title="Dalga Yurutme" icon="layer-group" href="/features/queue">
+    Bagimlilik sirasina uygun paralel yurutme. Hatalardan sonra ussel geri cekilme ile otomatik yeniden deneme.
+  </Card>
+  <Card title="Coklu Ajan" icon="users" href="/concepts/agents">
+    Farkli gorevler uzerinde ayni anda en fazla 5 Claude ajanini gercek zamanli izleme ile calistirin.
+  </Card>
+  <Card title="Canli Terminal" icon="terminal" href="/features/terminal">
+    Dosya duzenlemelerini, arac cagrilarini ve komutlari bolunmus terminal destegi ile gercek zamanli izleyin.
+  </Card>
+  <Card title="Git Otomasyonu" icon="code-branch" href="/features/git-automation">
+    Her gorev icin otomatik dal ve pull request olusturma. Tamamlandiginda dal temizligi.
+  </Card>
+  <Card title="Claude Manager" icon="sliders" href="/features/claude-manager">
+    MCP sunucularini, eklentileri, izinleri, hook'lari ve ayarlari tek bir panelden yonetin.
+  </Card>
+  <Card title="Otomatik Test ve Inceleme" icon="vial" href="/features/auto-test">
+    Tamamlandiginda otomatik test yurutme. Basarisiz testler otomatik revizyon dongusunu tetikler.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/features/webhooks">
+    Slack, Discord, Teams veya ozel uç noktalara proje bazli filtreleme ile etkinlik gonderin.
+  </Card>
+</Columns>
+
+## Sonraki adimlar
+
+<Columns cols={3}>
+  <Card title="Kurulum" icon="download" href="/installation">
+    Masaustu uygulamasini indirin veya kaynak koddan derleyin.
+  </Card>
+  <Card title="Hizli Baslangic" icon="rocket" href="/quickstart">
+    Ilk projenizi olusturun ve dakikalar icinde bir gorev calistirin.
+  </Card>
+  <Card title="Orkestrasyon" icon="sitemap" href="/features/orchestration">
+    Bagimlilik grafikleri, zaman cizelgesi ve canli gorunumler hakkinda bilgi edinin.
+  </Card>
+</Columns>

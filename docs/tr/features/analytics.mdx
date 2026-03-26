@@ -1,0 +1,52 @@
+---
+title: "Analitik"
+description: "Maliyet takibi, performans metrikleri, model karsilastirmasi ve verimlilik paneli"
+icon: "chart-mixed"
+---
+
+Analitik gorunumu kapsamli maliyet takibi, model karsilastirmasi, verimlilik metrikleri ve siralanabilir gorev performans tablosu sunar. Board arac cubugundan (TrendingUp simgesi) erisebilirsiniz.
+
+## Maliyet Ozeti
+
+Ustteki dort istatistik karti su bilgileri gosterir:
+
+| Metrik | Aciklama |
+|--------|----------|
+| **Toplam Maliyet** | Tum gorevler genelindeki kumulatif API maliyeti |
+| **Toplam Token** | Giris + cikis tokenlari ve dagilimi |
+| **Ort. Maliyet/Gorev** | Kullanim ile birlikte gorev basina ortalama maliyet |
+| **Ort. Token/Gorev** | Ortalama token tuketimi |
+
+## Model Karsilastirmasi
+
+Modelleri maliyet ve token kullanimina gore karsilastiran cubuk grafik:
+
+- Her model (Haiku, Sonnet, Opus) gorev sayisini, toplam tokenleri ve toplam maliyeti gosterir
+- Modele gore renk kodlu: yesil (Haiku), mavi (Sonnet), mor (Opus)
+- Is yukleriniz icin hangi modelin en uygun maliyetli oldugunu belirlemenize yardimci olur
+
+## Maliyet Trendi
+
+Zaman icindeki harcamayi gosteren gunluk maliyet grafigi. Gunluk kesin degerler (maliyet, token, gorev sayisi) icin uzerine gelin.
+
+## Verimlilik Metrikleri
+
+Dort verimlilik karti:
+
+| Metrik | Aciklama |
+|--------|----------|
+| **Is Hacmi** | Calisma suresi basina tamamlanan gorev sayisi |
+| **Basari Orani** | Toplama kiyasla done/testing durumuna ulasan gorevlerin yuzdesi |
+| **Onbellek Orani** | Prompt onbellek isabet yuzdesi (yuksekse = daha ucuz) |
+| **Ort. Tur Sayisi** | Gorev basina ortalama konusma tur sayisi |
+
+## Gorev Performans Tablosu
+
+Kullanim verileriyle birlikte tum gorevlerin siralanabilir tablosu:
+
+- **Siralama**: Maliyet (varsayilan), Token veya Sure — sutun basliklarini tiklayin
+- **Sutunlar**: Gorev anahtari, baslik, model, sure, token, maliyet
+- **En pahalI 3 gorev** uyari simgesiyle vurgulanir
+- 20 satir sayfalandirmali
+
+<Tip>Pahali gorevleri belirlemek icin maliyete gore azalan siralama yapin. Dokumantasyon veya bakis gorevleri gibi basit isler icin daha ucuz bir model (Haiku) kullanmayi dusunun.</Tip>

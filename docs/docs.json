@@ -17,6 +17,17 @@
   "appearance": {
     "default": "dark"
   },
+  "languages": [
+    {
+      "language": "en",
+      "label": "English",
+      "default": true
+    },
+    {
+      "language": "tr",
+      "label": "Turkce"
+    }
+  ],
   "navbar": {
     "links": [
       {

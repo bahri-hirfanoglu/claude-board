@@ -1,0 +1,84 @@
+---
+title: "Templates API"
+description: "Prompt şablonları için CRUD uç noktaları"
+icon: "file-lines"
+---
+
+## Şablonları Listele
+
+```http
+GET /api/projects/:projectId/templates
+```
+
+Bir projeye ait tüm prompt şablonlarını döndürür.
+
+```json
+[
+  {
+    "id": 1,
+    "projectId": 1,
+    "name": "Feature Template",
+    "content": "You are working on {{project_name}}...",
+    "taskType": "feature",
+    "model": "sonnet",
+    "thinkingEffort": "medium",
+    "createdAt": "2025-01-15T10:00:00Z"
+  }
+]
+```
+
+## Şablon Getir
+
+```http
+GET /api/projects/:projectId/templates/:id
+```
+
+## Şablon Oluştur
+
+```http
+POST /api/projects/:projectId/templates
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "Feature Template",
+  "content": "You are working on {{project_name}}.\nTask: {{task_title}}\nType: {{task_type}}\n\nWrite clean, tested code.",
+  "taskType": "feature",
+  "model": "sonnet",
+  "thinkingEffort": "medium"
+}
+```
+
+| Alan | Zorunlu | Varsayılan | Açıklama |
+|------|---------|------------|----------|
+| `name` | Evet | — | Şablon görünen adı |
+| `content` | Evet | — | İsteğe bağlı `{{variables}}` içeren şablon metni |
+| `taskType` | Hayır | — | Bu görev türüne otomatik uygula |
+| `model` | Hayır | — | Şablon kullanıldığında varsayılan model |
+| `thinkingEffort` | Hayır | — | Varsayılan düşünme çabası |
+
+### Şablon Değişkenleri
+
+| Değişken | Karşılığı |
+|----------|-----------|
+| `{{project_name}}` | Proje adı |
+| `{{task_title}}` | Görev başlığı |
+| `{{task_type}}` | Görev türü (feature, bugfix, vb.) |
+| `{{priority}}` | Öncelik seviyesi |
+| `{{model}}` | Seçilen model |
+
+## Şablon Güncelle
+
+```http
+PUT /api/projects/:projectId/templates/:id
+Content-Type: application/json
+```
+
+Oluşturma ile aynı alanları kabul eder.
+
+## Şablon Sil
+
+```http
+DELETE /api/projects/:projectId/templates/:id
+```

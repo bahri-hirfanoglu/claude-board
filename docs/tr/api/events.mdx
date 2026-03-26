@@ -1,0 +1,144 @@
+---
+title: "Tauri Events"
+description: "Tauri olay sistemi aracılığıyla gerçek zamanlı olaylar"
+icon: "bolt"
+---
+
+Claude Board, Rust arka ucu ile ön yüz arasındaki gerçek zamanlı iletişim için [Tauri olay sistemini](https://v2.tauri.app/develop/calling-rust/#event-system) kullanır. Tüm pano güncellemeleri, terminal günlükleri ve kullanım metrikleri Tauri olayları aracılığıyla iletilir.
+
+## Olayları Dinleme
+
+Tauri events API'sini kullanarak ön yüzde olaylara abone olun:
+
+```javascript
+import { listen } from "@tauri-apps/api/event";
+
+const unlisten = await listen("task:updated", (event) => {
+  console.log("Task updated:", event.payload);
+});
+
+// Artık gerek kalmadığında aboneliği iptal etmek için unlisten() çağrısını yapın
+```
+
+## Görev Olayları
+
+### task:created
+
+Herhangi bir projeye yeni görev eklendiğinde yayınlanır.
+
+```json
+{
+  "task": { "id": 1, "title": "Add login", "status": "backlog", "projectId": 1 }
+}
+```
+
+### task:updated
+
+Bir görevin alanları veya durumu değiştiğinde yayınlanır.
+
+```json
+{
+  "task": { "id": 1, "title": "Add login", "status": "in_progress", "projectId": 1 }
+}
+```
+
+### task:deleted
+
+Bir görev kaldırıldığında yayınlanır.
+
+```json
+{ "taskId": 1, "projectId": 1 }
+```
+
+## Ajan Olayları
+
+### task:log
+
+Claude ajanı çıktı üretirken gerçek zamanlı olarak aktarılır.
+
+```json
+{
+  "taskId": 1,
+  "type": "tool",
+  "content": "Reading file: src/app.ts",
+  "timestamp": "2025-01-15T10:30:00Z"
+}
+```
+
+Günlük türleri: `claude`, `tool`, `tool_result`, `system`, `error`
+
+### task:usage
+
+Çalışan bir görev için periyodik token kullanım güncellemeleri.
+
+```json
+{
+  "taskId": 1,
+  "inputTokens": 5000,
+  "outputTokens": 1200,
+  "cacheRead": 800,
+  "cacheCreation": 200,
+  "cost": 0.45
+}
+```
+
+### claude:limits
+
+Ajan API hız sınırlarıyla karşılaştığında yayınlanır.
+
+```json
+{
+  "taskId": 1,
+  "retryAfter": 30,
+  "message": "Rate limit reached, retrying in 30s"
+}
+```
+
+### claude:finished
+
+Claude ajan süreci sonlandığında yayınlanır.
+
+```json
+{
+  "taskId": 1,
+  "exitCode": 0,
+  "duration": 45000
+}
+```
+
+## İş Birliği Olayları
+
+### agent:file_conflict
+
+Birden fazla ajan aynı dosyaya eşzamanlı olarak eriştiğinde (özellikle Write/Edit işlemlerinde) yayınlanır.
+
+```json
+{
+  "taskId": 5,
+  "conflictingTaskId": 8,
+  "filePath": "src/main.rs",
+  "toolName": "Edit"
+}
+```
+
+### task:test_started
+
+Otomatik test doğrulaması başladığında yayınlanır.
+
+```json
+{ "taskId": 1 }
+```
+
+### task:test_completed
+
+Otomatik test doğrulaması tamamlandığında yayınlanır.
+
+```json
+{
+  "taskId": 1,
+  "verdict": "approve",
+  "summary": "All checks passed"
+}
+```
+
+<Note>Tüm olaylar global olarak yayınlanır. Yalnızca ilgili güncellemeleri göstermek için ön yüzde `projectId` veya `taskId` ile filtreleme yapın.</Note>

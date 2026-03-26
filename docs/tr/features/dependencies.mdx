@@ -1,0 +1,85 @@
+---
+title: "Gorev Bagimliliklari"
+description: "Kosullu is akislari, baglam aktarimi ve alt gorev olusturma destekli DAG tabanli bagimlilik sistemi"
+icon: "diagram-project"
+---
+
+Gorev bagimliliklari yurutme sirasini tanimlar ve gelismis orkestrasyon kaliplarini mumkun kilar. Claude Board, kosullu dallanma, otomatik baglam paylasimi ve alt gorev olusturma destekli tam DAG (Yonlu Dongusel Olmayan Graf) bagimliklarini destekler.
+
+## Bagimlilik Ekleme
+
+<Steps>
+  <Step title="Gorev penceresini acin">
+    Mevcut bir gorevde duzenle'ye tiklayin veya yeni bir gorev olusturun.
+  </Step>
+  <Step title="Secenekleri genisletin">
+    Bagimlilik duzenleyicisini gostermek icin **Options** bolumune tiklayin.
+  </Step>
+  <Step title="Arayin ve ekleyin">
+    Ust gorevleri aramak ve secmek icin **Add dependency** dugmesine tiklayin. Ayrica Orkestrasyon Graf gorunumunde dugumler arasinda **Shift+surukleme** de yapabilirsiniz.
+  </Step>
+</Steps>
+
+## Kosullu Bagimliliklar
+
+Bagimliliklar, alt gorevlerin ne zaman tetiklenecegini kontrol eden kosullara sahip olabilir:
+
+| Kosul | Kenar Rengi | Davranis |
+|-----------|-----------|----------|
+| **Always** (varsayilan) | Gri duz cizgi | Ust gorev `done` veya `testing` durumuna ulastiginda alt gorev baslar |
+| **On Success** | Yesil kesikli | Always ile ayni — ust gorev basarili oldugunda alt gorev baslar |
+| **On Failure** | Kirmizi kesikli | Yalnizca ust gorev kalici olarak basarisiz oldugunda (yeniden denemeler tukendigi) alt gorev baslar |
+
+<Tip>Otomatik kurtarma is akislari olusturmak icin On Failure kosullarini kullanin. Ornek: Bir derleme gorevi basarisiz olursa, otomatik olarak bir hata ayiklama gorevi tetikleyin.</Tip>
+
+## Ajan Baglam Aktarimi
+
+Bir ust gorev tamamlandiginda, Claude Board otomatik olarak sunlari iceren bir **baglam ozeti** olusturur:
+
+- Git diff istatistikleri (degisen dosyalar)
+- Son commit mesajlari
+- Son Claude cikti ozeti
+- Dal bilgisi
+
+Bu baglam, bagimli alt gorev istemlerine **otomatik olarak enjekte edilir**. Alt ajanlar, ust gorevin ne yaptigini, hangi dosyalarin degistigini bilir ve kod tabanini yeniden kesfetmeden bu calisma uzerine insa edebilir.
+
+## Alt Gorev Olusturma
+
+Calisan ajanlar, MCP araclari araciligiyla alt gorevler olusturabilir. Bir ajan `parent_task_id` ile `create_task` cagirdiginda, alt gorev ust goreve baglenir:
+
+1. Ajan, `parent_task_id` degerini kendi gorev kimligine ayarlayarak `create_task` cagrisinda bulunur
+2. Alt gorev backlog'da olusturulur ve otomatik olarak kuyruga alinir
+3. Claude sureci tamamlandiktan sonra ust gorev **alt gorevleri bekleme** durumuna gecer
+4. Alt gorevler yurutulur (DAG ve eslesiklik kurallarina uygun olarak)
+5. **Tum** alt gorevler `done`/`testing` durumuna ulastiginda, ust gorev otomatik olarak tamamlanir
+
+<Info>Alt gorevler, ust gorevin proje baglamini miras alir. Ust gorev istemi, Claude'a alt gorevler olustururken `parent_task_id` degerini nasil kullanacagini belirtir.</Info>
+
+## Dongu Algilama
+
+Claude Board, DFS (Oncelik Derinlik Aramasi) gecisi kullanarak dongusel bagimliliklari onler. Bir bagimlilik eklemek bir dongu olusturacaksa (A -> B -> C -> A), islem reddedilir.
+
+## Bagimlilik Kaliplari
+
+<Tabs>
+  <Tab title="Chain">
+    Sirali: A -> B -> C -> D. Her gorev ancak onceki tamamlandiktan sonra baslar.
+  </Tab>
+  <Tab title="Fan-out">
+    Bir ust, birden fazla alt: A -> [B, C, D]. A tamamlandiginda tum alt gorevler paralel olarak calisir.
+  </Tab>
+  <Tab title="Fan-in">
+    Birden fazla ust, bir alt: [A, B, C] -> D. D yalnizca TUM ust gorevler tamamlandiginda baslar.
+  </Tab>
+  <Tab title="Conditional">
+    Basari/basarisizlik dallanmasi: A -> B (on_success), A -> C (on_failure). A basarili olursa B calisir. A basarisiz olursa bunun yerine C calisir.
+  </Tab>
+</Tabs>
+
+## API
+
+- `addDependency(taskId, dependsOnId, conditionType?)` — Opsiyonel kosul (`always`, `on_success`, `on_failure`) ile bagimlilik ekle
+- `removeDependency(taskId, dependsOnId)` — Bir bagimliligi kaldir
+- `getTaskDependencies(taskId)` — Ust ve alt gorevleri getir
+- `getDependencyGraph(projectId)` — Kenarlar (`conditionType` dahil) ve dalgalar iceren tam graf
+- `getExecutionWaves(projectId)` — Dalga gruplamalari

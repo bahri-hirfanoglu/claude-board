@@ -1,0 +1,106 @@
+---
+title: "Sesli Asistan"
+description: "Konusma tanima ile eller serbest gorev yonetimi"
+icon: "microphone"
+---
+
+Claude Board, sesli komutlar kullanarak gorev olusturmanizi, durum kontrolu yapmanizi ve board'unuzu yonetmenizi saglayan yerlesik bir sesli asistan icerir.
+
+<Frame><img src="/images/feature-voice.svg" alt="Voice Assistant" /></Frame>
+
+## Baslarken
+
+Asistan panelini acmak icin sag alt kosedeki **mikrofon butonuna** (kayan eylem butonu) tiklayin. Panel acikken mikrofonu acip kapatmak icin **Alt+V** tusuna da basabilirsiniz.
+
+## Mevcut Komutlar
+
+| Komut | Ne yapar |
+|-------|----------|
+| **"Create task"** | Yeni bir gorev olusturmak icin cok adimli bir akis baslatir |
+| **"List tasks"** | Duruma gore gorev sayilarini bildirir |
+| **"Change status"** | Bir gorevi yeni bir duruma tasima surecinde size rehberlik eder |
+| **"Help"** | Mevcut tum komutlari listeler |
+| **"Cancel"** | Aktif herhangi bir islemi durdurur |
+
+## Gorev Olusturma Akisi
+
+"Create task" dediginizde, asistan sizi su adimlardan gecirir:
+
+1. **Baslik** — "Gorev basligi ne olmali?"
+2. **Aciklama** — "Bir aciklama eklemek ister misiniz?" (atlamak icin "skip" deyin)
+3. **Tur** — "Tur ne? Feature, bugfix, refactor, docs, test veya chore."
+4. **Oncelik** — "Oncelik? None, low, medium veya high."
+5. **Onay** — "Olusturayim mi?" ("yes" veya "no" deyin)
+
+## Ozellikler
+
+### Metinden Konusmaya
+Asistan yanItlarini sesli olarak okur. Sesi kapatmak/acmak icin panel basligindaki hoparlor simgesini degistirin.
+
+### Ses Gorsellestiricisi
+Mikrofon aktifken panelde, ses giris seviyelerini gosteren gercek zamanli bir dalga formu gorsellestiricisi gorunur.
+
+### Ses Efektleri
+- Dinleme basladiginda **yukselen bip**
+- Dinleme durdurulanda **alcalan bip**
+
+### Komut Ipuclari
+Asistan bosta oldugunda, yaygin komutlara hizli erisim icin tiklanabilir oneri yongalari gorunur.
+
+### Metin Girisi
+Panel'in altindaki metin giris alanina komutlari da yazabilirsiniz. Sesli ve metin girisi ayni sekilde calisir.
+
+### Klavye Kisayolu
+Tiklamadan mikrofonu acmak/kapatmak icin **Alt+V** tusuna basin.
+
+## Mimari
+
+Sesli asistan moduler bir eklenti mimarisi kullanir:
+
+```
+features/voice/
+├── VoiceAssistant.jsx           # Ince UI kapligi (FAB + panel)
+├── VoiceAssistantProvider.jsx   # React context + durum makinesi
+├── engine/
+│   ├── ttsEngine.js             # Metinden konusmaya (Web Speech API)
+│   ├── sttEngine.js             # Dalga formu icin ses analizcisi
+│   └── soundEffects.js          # Web Audio API bip efektleri
+├── intent/
+│   ├── intentParser.js          # Desen tabanli niyet algilama
+│   └── entityExtractors.js      # Tur, oncelik, model cikarimi
+├── commands/
+│   ├── commandRegistry.js       # Eklenti kayit defteri
+│   ├── createTaskCommand.js     # "Create task" akisi
+│   ├── listTasksCommand.js      # "List tasks"
+│   ├── changeStatusCommand.js   # "Change status" akisi
+│   ├── helpCommand.js           # "Help"
+│   └── cancelCommand.js         # "Cancel"
+└── components/
+    ├── ChatPanel.jsx            # Mesaj listesi + kontroller
+    ├── AudioVisualizer.jsx      # Canvas dalga formu
+    └── CommandHints.jsx         # Oneri yongalari
+```
+
+### Ozel Komut Ekleme
+
+Yeni bir sesli komut eklemek icin:
+
+1. `commands/` klasorunde yeni bir dosya olusturun (orn. `myCommand.js`)
+2. Desenler, akis durumlari ve bir calistirma fonksiyonu ile `registerCommand()` kullanin
+3. Dosyayi `commands/index.js` icinde ice aktarin
+
+Baska hicbir dosyanin degismesine gerek yoktur — kayit defteri yeni komutlari otomatik olarak kesfeder.
+
+## Tarayici Destegi
+
+Sesli asistan, [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) icin tarayici destegi gerektirir:
+
+- **Chrome / Edge** — Tam destek (tanima + sentez)
+- **Safari** — Yalnizca sentez (tanima yok)
+- **Firefox** — Sinirli destek
+
+Konusma tanima mevcut degilse, mikrofon butonu devre disi birakilir ancak metin girisi yine de calisir.
+
+## Gorev Penceresinde Sesle Yazim
+
+Asistandan bagimsiz olarak, gorev olusturma penceresi de dogrudan sesle yazim icin **baslik** ve **aciklama** alanlarinda mikrofon butonlarina sahiptir. Bunlar bagimsiz calisir ve form alanlarini hizlica doldurmak icin kullanislidir.

@@ -1,0 +1,81 @@
+---
+title: "Ajanlar"
+description: "Claude ajanlarinin nasil baslatildigi, calistigi ve kullanimi takip ettigi"
+icon: "robot"
+---
+
+Bir gorev **In Progress** durumuna gectiginde, Claude Board yerel makinenizde bir Claude Code CLI sureci baslatir. Bu "ajan"dir — kod tabaninizi okur, dosyalara yazar, komutlar calistirir ve kod commit'ler.
+
+## Ajanlarin Baslatilmasi
+
+<Steps>
+  <Step title="Gorev In Progress durumuna gecer" icon="play">
+    Sunucu, gorev aciklamasindan, proje [baglam parcalarindan](/features/snippets), [prompt sablonundan](/features/prompt-templates), [rolden](/features/roles) ve varsa [dosya eklerinden](/features/attachments) bir prompt olusturur.
+  </Step>
+  <Step title="Dal olusturulur" icon="code-branch">
+    Git otomasyonu etkinse, temel daldan bir ozellik dali olusturulur (ornegin `feature/CB-101-add-auth`).
+  </Step>
+  <Step title="CLI sureci baslatilir" icon="terminal">
+    Claude Board, `claude` komutunu `--no-input` ve yapilandirilmis izin moduyla calistirir. Calisma dizini, projenin yapilandirilmis yoluna ayarlanir.
+  </Step>
+  <Step title="Akis baslar" icon="signal">
+    Tum cikti yakalanir ve WebSocket araciligiyla bagli istemcilere aktarilir. Gunlukler, [oturum tekrari](/features/session-replay) icin veritabanina kaydedilir.
+  </Step>
+  <Step title="Ajan tamamlanir" icon="check">
+    CLI cikis yaptiginda, gorev otomatik olarak **Testing** durumuna gecer. [Otomatik test](/features/auto-test) etkinse, gecisten once testler calistirilir.
+  </Step>
+</Steps>
+
+## Token Takibi
+
+Claude Board, gorev basina token kullanimini gercek zamanli olarak takip eder:
+
+| Metrik | Aciklama |
+|--------|-------------|
+| **Girdi token'lari** | Claude'a gonderilen token'lar (prompt + baglam) |
+| **Cikti token'lari** | Claude tarafindan uretilen token'lar |
+| **Maliyet tahmini** | Model fiyatlandirmasindan hesaplanir (Opus/Sonnet/Haiku oranlari) |
+| **Onbellek okuma/olusturma** | Prompt onbelleginden sunulan veya eklenen token'lar |
+
+Kullanim guncellemeleri `task:usage` WebSocket olayiyla yayilir ve gorev kartinda gorunur.
+
+## Akilli Zamanlayici
+
+Gorev zamanlayicisi, aktif ajan suresini dogru bir sekilde olcer:
+
+| Olay | Zamanlayici |
+|-------|-------|
+| Gorev In Progress durumuna gecer | **Baslar** |
+| Gorev Testing durumuna gecer (inceleme bekliyor) | **Duraklar** |
+| Gorev In Progress durumuna doner (degisiklik istendi) | **Devam eder** |
+| Gorev Done durumuna gecer | **Durur** |
+
+<Info>Akilli zamanlayici, inceleme bekleme suresini haric tutarak Claude'un gercekte kodlamaya ne kadar zaman harcadiginin dogru bir resmini sunar.</Info>
+
+## Eszamanlilik
+
+Ayni anda en fazla **5 ajan** calistirabilirsiniz. [Otomatik kuyruk](/features/queue) ozelligi, proje basina eszamanlilik siniri belirlemenize olanak tanir.
+
+| Ajan Sayisi | En Uygun Kullanim |
+|--------|----------|
+| **1** | Sirali gorevler, basit projeler |
+| **2-3** | Dusuk catisma riskiyle orta duzeyde paralellik |
+| **4-5** | [Bagimlilik yonetimi](/features/dependencies) ile maksimum verimlilik |
+
+<Warning>Ayni projede birden fazla ajan calistirmak dosya catismalarina neden olabilir. Her ajanin hangi dosyalara eristigi koordine etmek icin [gorev bagimliliklarini](/features/dependencies) kullanin. [Canli gorunum](/features/orchestration) catismalari gercek zamanli olarak tespit eder.</Warning>
+
+## Ajan Yasam Dongusu Olaylari
+
+Her ajan, izleyebileceginiz olaylar yayar:
+
+| Olay | Ne Zaman |
+|-------|------|
+| `task:started` | Ajan sureci baslatildiginda |
+| `task:output` | Terminal cikti parcasi |
+| `task:usage` | Token/maliyet guncellemesi |
+| `task:tool_call` | Bireysel arac cagrisi (Read, Write, Edit, Bash) |
+| `task:completed` | Ajan basariyla cikis yaptiginda |
+| `task:failed` | Ajan hatayla cikis yaptiginda |
+| `agent:file_conflict` | Iki ajan ayni dosyaya eristiginde |
+
+WebSocket abonelik ayrintilari icin [Events API](/api/events) sayfasina bakin.

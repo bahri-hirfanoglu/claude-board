@@ -1,0 +1,87 @@
+---
+title: "Projects API"
+description: "Projeleri yönetmek için CRUD uç noktaları"
+icon: "folder"
+---
+
+## Projeleri Listele
+
+```http
+GET /api/projects
+```
+
+Tüm projeleri temel bilgileriyle birlikte döndürür.
+
+```json
+[
+  {
+    "id": 1,
+    "name": "My App",
+    "slug": "my-app",
+    "workingDir": "/home/user/my-app",
+    "createdAt": "2025-01-15T10:00:00Z"
+  }
+]
+```
+
+## Proje Özetini Getir
+
+```http
+GET /api/projects/summary
+```
+
+Tüm projeleri duruma göre görev sayılarıyla birlikte döndürür. Genel pano görünümü için kullanışlıdır.
+
+## Proje Getir
+
+```http
+GET /api/projects/:id
+```
+
+İzin modu, izin verilen araçlar ve kuyruk yapılandırması dahil tam ayarlarıyla birlikte tek bir projeyi döndürür.
+
+## Proje Oluştur
+
+```http
+POST /api/projects
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "My App",
+  "slug": "my-app",
+  "workingDir": "/home/user/my-app",
+  "permissionMode": "auto-accept",
+  "allowedTools": [],
+  "autoQueue": false,
+  "maxConcurrent": 1
+}
+```
+
+| Alan | Zorunlu | Açıklama |
+|------|---------|----------|
+| `name` | Evet | Proje görünen adı |
+| `slug` | Evet | URL uyumlu tanımlayıcı |
+| `workingDir` | Evet | Kod tabanının mutlak yolu |
+| `permissionMode` | Hayır | `auto-accept`, `allow-tools`, `default` |
+| `allowedTools` | Hayır | Araç adları dizisi (`allow-tools` modu için) |
+| `autoQueue` | Hayır | Otomatik kuyruğu etkinleştir |
+| `maxConcurrent` | Hayır | Maksimum eşzamanlı ajan sayısı (1–5) |
+
+## Proje Güncelle
+
+```http
+PUT /api/projects/:id
+Content-Type: application/json
+```
+
+Oluşturma ile aynı alanları kabul eder. Yalnızca gönderilen alanlar güncellenir.
+
+## Proje Sil
+
+```http
+DELETE /api/projects/:id
+```
+
+<Warning>Bir projeyi silmek, projeye ait tüm görevleri, günlükleri, webhook'ları, snippet'leri ve şablonları kaldırır. Bu işlem geri alınamaz.</Warning>

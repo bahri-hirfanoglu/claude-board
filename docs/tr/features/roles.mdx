@@ -1,0 +1,40 @@
+---
+title: "Roller"
+description: "Claude ajanları için özel sistem komutlarıyla uzmanlaşmış kişilikler tanımlayın"
+icon: "user-shield"
+---
+
+Roller, Claude ajanları için yeniden kullanılabilir kişilikler tanımlamanızı sağlar. Her rolün bir adı, açıklaması, sistem komutu ve rengi vardır. Bir göreve atandığında, rolün komutu Claude'un talimatlarının başına eklenir.
+
+## Rol Oluşturma
+
+1. Proje menüsünü açın ve **Roles** seçeneğine tıklayın
+2. **New Role** butonuna tıklayın
+3. Aşağıdaki alanları doldurun:
+   - **Name** — Kısa tanımlayıcı (ör. "Backend Expert", "Security Reviewer")
+   - **Description** — Bu rolün uzmanlık alanı
+   - **Prompt** — Claude'un davranışını yönlendiren sistem komutu metni
+   - **Color** — Rol için görsel gösterge
+
+## Görevlere Rol Atama
+
+Bir görev oluştururken veya düzenlerken, **Options** bölümünü genişletin ve rol seçiciden bir rol belirleyin. Rolün komutu, o görev için Claude'un talimatlarına otomatik olarak dahil edilir.
+
+## Kullanım Senaryoları
+
+| Rol | Komut Odağı |
+|------|-------------|
+| **Backend Expert** | "Sunucu tarafı koda, veritabanı sorgularına ve API tasarımına odaklan." |
+| **Frontend Specialist** | "React bileşenlerine, CSS'e ve kullanıcı etkileşimlerine odaklan." |
+| **Security Reviewer** | "Kodu OWASP güvenlik açıkları ve en iyi güvenlik uygulamaları açısından incele." |
+| **Documentation Writer** | "Kod örnekleriyle birlikte açık ve öz dokümantasyon yaz." |
+| **Test Engineer** | "Uç durumları da kapsayan kapsamlı birim ve entegrasyon testleri yaz." |
+
+<Tip>Roller, otomatik kuyruk özelliğiyle birlikte iyi çalışır — bir iş hattındaki görevlere farklı roller atayarak her ajanın kendi görevinde uzmanlaşmasını sağlayabilirsiniz.</Tip>
+
+## Global ve Proje Rolleri
+
+- **Proje rolleri** tek bir projeyle sınırlıdır
+- **Global roller** tüm projelerde kullanılabilir
+
+Her ikisi de proje menüsündeki Roller penceresinden yönetilir.
