@@ -17,17 +17,6 @@
   "appearance": {
     "default": "dark"
   },
-  "languages": [
-    {
-      "language": "en",
-      "label": "English",
-      "default": true
-    },
-    {
-      "language": "tr",
-      "label": "Turkce"
-    }
-  ],
   "navbar": {
     "links": [
       {
@@ -42,128 +31,263 @@
     }
   },
   "navigation": {
-    "tabs": [
+    "languages": [
       {
-        "tab": "Documentation",
-        "groups": [
+        "language": "en",
+        "default": true,
+        "tabs": [
           {
-            "group": "Getting Started",
-            "icon": "rocket",
-            "pages": ["introduction", "installation", "quickstart"]
-          },
-          {
-            "group": "Core Concepts",
-            "icon": "lightbulb",
-            "pages": ["concepts/board", "concepts/tasks", "concepts/agents", "concepts/review"]
-          },
-          {
-            "group": "Orchestration",
-            "icon": "sitemap",
-            "pages": [
-              "features/orchestration",
-              "features/dependencies",
-              "features/queue",
-              "features/planning-mode",
-              "features/retry-backoff",
-              "features/failed-status",
-              "features/task-timeout"
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "icon": "rocket",
+                "pages": ["introduction", "installation", "quickstart"]
+              },
+              {
+                "group": "Core Concepts",
+                "icon": "lightbulb",
+                "pages": ["concepts/board", "concepts/tasks", "concepts/agents", "concepts/review"]
+              },
+              {
+                "group": "Orchestration",
+                "icon": "sitemap",
+                "pages": [
+                  "features/orchestration",
+                  "features/dependencies",
+                  "features/queue",
+                  "features/planning-mode",
+                  "features/retry-backoff",
+                  "features/failed-status",
+                  "features/task-timeout"
+                ]
+              },
+              {
+                "group": "Execution & Testing",
+                "icon": "play",
+                "pages": [
+                  "features/terminal",
+                  "features/split-terminal",
+                  "features/session-replay",
+                  "features/auto-test",
+                  "features/diff-viewer"
+                ]
+              },
+              {
+                "group": "Git & Deployment",
+                "icon": "code-branch",
+                "pages": [
+                  "features/git-automation",
+                  "features/auto-pr",
+                  "features/webhooks"
+                ]
+              },
+              {
+                "group": "AI Configuration",
+                "icon": "wand-magic-sparkles",
+                "pages": [
+                  "features/roles",
+                  "features/custom-commands",
+                  "features/skill-import",
+                  "features/scan",
+                  "features/claude-manager"
+                ]
+              },
+              {
+                "group": "Content & Templates",
+                "icon": "file-lines",
+                "pages": [
+                  "features/templates",
+                  "features/prompt-templates",
+                  "features/snippets",
+                  "features/attachments"
+                ]
+              },
+              {
+                "group": "Analytics & UI",
+                "icon": "chart-bar",
+                "pages": [
+                  "features/analytics",
+                  "features/token-counter",
+                  "features/task-keys",
+                  "features/model-filter",
+                  "features/status-animations",
+                  "features/voice-assistant"
+                ]
+              },
+              {
+                "group": "Configuration",
+                "icon": "gear",
+                "pages": [
+                  "configuration/projects",
+                  "configuration/permissions",
+                  "configuration/claude-md",
+                  "configuration/environment"
+                ]
+              },
+              {
+                "group": "Desktop App",
+                "icon": "desktop",
+                "pages": [
+                  "desktop/setup",
+                  "desktop/builds",
+                  "features/settings",
+                  "features/notifications"
+                ]
+              }
             ]
           },
           {
-            "group": "Execution & Testing",
-            "icon": "play",
-            "pages": [
-              "features/terminal",
-              "features/split-terminal",
-              "features/session-replay",
-              "features/auto-test",
-              "features/diff-viewer"
-            ]
-          },
-          {
-            "group": "Git & Deployment",
-            "icon": "code-branch",
-            "pages": [
-              "features/git-automation",
-              "features/auto-pr",
-              "features/webhooks"
-            ]
-          },
-          {
-            "group": "AI Configuration",
-            "icon": "wand-magic-sparkles",
-            "pages": [
-              "features/roles",
-              "features/custom-commands",
-              "features/skill-import",
-              "features/scan",
-              "features/claude-manager"
-            ]
-          },
-          {
-            "group": "Content & Templates",
-            "icon": "file-lines",
-            "pages": [
-              "features/templates",
-              "features/prompt-templates",
-              "features/snippets",
-              "features/attachments"
-            ]
-          },
-          {
-            "group": "Analytics & UI",
-            "icon": "chart-bar",
-            "pages": [
-              "features/analytics",
-              "features/token-counter",
-              "features/task-keys",
-              "features/model-filter",
-              "features/status-animations",
-              "features/voice-assistant"
-            ]
-          },
-          {
-            "group": "Configuration",
-            "icon": "gear",
-            "pages": [
-              "configuration/projects",
-              "configuration/permissions",
-              "configuration/claude-md",
-              "configuration/environment"
-            ]
-          },
-          {
-            "group": "Desktop App",
-            "icon": "desktop",
-            "pages": [
-              "desktop/setup",
-              "desktop/builds",
-              "features/settings",
-              "features/notifications"
+            "tab": "API Reference",
+            "groups": [
+              {
+                "group": "Endpoints",
+                "icon": "code",
+                "pages": [
+                  "api/projects",
+                  "api/tasks",
+                  "api/planning",
+                  "api/webhooks",
+                  "api/snippets",
+                  "api/templates",
+                  "api/stats"
+                ]
+              },
+              {
+                "group": "Real-time",
+                "icon": "bolt",
+                "pages": ["api/events"]
+              }
             ]
           }
         ]
       },
       {
-        "tab": "API Reference",
-        "groups": [
+        "language": "tr",
+        "tabs": [
           {
-            "group": "Endpoints",
-            "icon": "code",
-            "pages": [
-              "api/projects",
-              "api/tasks",
-              "api/planning",
-              "api/webhooks",
-              "api/snippets",
-              "api/templates",
-              "api/stats"
+            "tab": "Dokumantasyon",
+            "groups": [
+              {
+                "group": "Baslangic",
+                "icon": "rocket",
+                "pages": ["tr/introduction", "tr/installation", "tr/quickstart"]
+              },
+              {
+                "group": "Temel Kavramlar",
+                "icon": "lightbulb",
+                "pages": ["tr/concepts/board", "tr/concepts/tasks", "tr/concepts/agents", "tr/concepts/review"]
+              },
+              {
+                "group": "Orkestrasyon",
+                "icon": "sitemap",
+                "pages": [
+                  "tr/features/orchestration",
+                  "tr/features/dependencies",
+                  "tr/features/queue",
+                  "tr/features/planning-mode",
+                  "tr/features/retry-backoff",
+                  "tr/features/failed-status",
+                  "tr/features/task-timeout"
+                ]
+              },
+              {
+                "group": "Calistirma ve Test",
+                "icon": "play",
+                "pages": [
+                  "tr/features/terminal",
+                  "tr/features/split-terminal",
+                  "tr/features/session-replay",
+                  "tr/features/auto-test",
+                  "tr/features/diff-viewer"
+                ]
+              },
+              {
+                "group": "Git ve Dagitim",
+                "icon": "code-branch",
+                "pages": [
+                  "tr/features/git-automation",
+                  "tr/features/auto-pr",
+                  "tr/features/webhooks"
+                ]
+              },
+              {
+                "group": "AI Yapilandirma",
+                "icon": "wand-magic-sparkles",
+                "pages": [
+                  "tr/features/roles",
+                  "tr/features/custom-commands",
+                  "tr/features/skill-import",
+                  "tr/features/scan",
+                  "tr/features/claude-manager"
+                ]
+              },
+              {
+                "group": "Icerik ve Sablonlar",
+                "icon": "file-lines",
+                "pages": [
+                  "tr/features/templates",
+                  "tr/features/prompt-templates",
+                  "tr/features/snippets",
+                  "tr/features/attachments"
+                ]
+              },
+              {
+                "group": "Analitik ve Arayuz",
+                "icon": "chart-bar",
+                "pages": [
+                  "tr/features/analytics",
+                  "tr/features/token-counter",
+                  "tr/features/task-keys",
+                  "tr/features/model-filter",
+                  "tr/features/status-animations",
+                  "tr/features/voice-assistant"
+                ]
+              },
+              {
+                "group": "Yapilandirma",
+                "icon": "gear",
+                "pages": [
+                  "tr/configuration/projects",
+                  "tr/configuration/permissions",
+                  "tr/configuration/claude-md",
+                  "tr/configuration/environment"
+                ]
+              },
+              {
+                "group": "Masaustu Uygulamasi",
+                "icon": "desktop",
+                "pages": [
+                  "tr/desktop/setup",
+                  "tr/desktop/builds",
+                  "tr/features/settings",
+                  "tr/features/notifications"
+                ]
+              }
             ]
           },
           {
-            "group": "Real-time",
-            "icon": "bolt",
-            "pages": ["api/events"]
+            "tab": "API Referansi",
+            "groups": [
+              {
+                "group": "Endpointler",
+                "icon": "code",
+                "pages": [
+                  "tr/api/projects",
+                  "tr/api/tasks",
+                  "tr/api/planning",
+                  "tr/api/webhooks",
+                  "tr/api/snippets",
+                  "tr/api/templates",
+                  "tr/api/stats"
+                ]
+              },
+              {
+                "group": "Gercek Zamanli",
+                "icon": "bolt",
+                "pages": ["tr/api/events"]
+              }
+            ]
           }
         ]
       }
