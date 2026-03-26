@@ -25,3 +25,5 @@ logs/
 
 # Signing keys
 src-tauri/keys/
+
+scripts/
