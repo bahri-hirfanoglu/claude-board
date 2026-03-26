@@ -6,39 +6,56 @@ icon: "table-columns"
 
 Claude Board offers multiple views to manage your tasks. Switch between them using the view toggle in the top toolbar.
 
-<Frame><img src="/images/feature-kanban.svg" alt="Kanban Board" /></Frame>
+## Views
 
-## Kanban Board
+<Tabs>
+  <Tab title="Kanban Board">
+    The default view. Tasks are organized into columns by status:
 
-The default view. Tasks are organized into four columns by status:
+    | Column | Description |
+    |--------|-------------|
+    | **Backlog** | Queued tasks waiting to start |
+    | **In Progress** | Claude is actively working |
+    | **Testing** | Completed, awaiting your review |
+    | **Done** | Approved and finished |
+    | **Failed** | Permanently failed after all retries |
 
-| Column | Status | Description |
-|--------|--------|-------------|
-| Backlog | `backlog` | Queued tasks waiting to start |
-| In Progress | `in_progress` | Claude is actively working |
-| Testing | `testing` | Completed, awaiting review |
-| Done | `done` | Approved and finished |
+    **Drag and Drop** — Move tasks between columns by dragging. Dropping into **In Progress** spawns a Claude agent automatically. Hold **Alt** while dragging to create a [dependency](/features/dependencies) between two tasks.
+  </Tab>
+  <Tab title="List View">
+    A compact table showing all tasks with sortable columns: title, status, priority, model, type, cost, duration, and creation date. Best for large projects with many tasks.
+  </Tab>
+  <Tab title="Summary View">
+    A dashboard-style overview with:
+    - **Status breakdown** — task counts per column
+    - **Priority distribution** — low, medium, high, urgent
+    - **Recent activity** — latest task updates
+    - **Agent utilization** — active vs idle agent slots
+  </Tab>
+  <Tab title="Orchestration">
+    The command center for multi-agent execution. Three sub-views:
+    - **Graph** — Interactive dependency DAG with draggable nodes
+    - **Timeline** — Gantt-style execution view with NOW marker
+    - **Live** — Real-time tool call feed with file conflict detection
 
-### Drag and Drop
+    See [Orchestration View](/features/orchestration) for details.
+  </Tab>
+</Tabs>
 
-Move tasks between columns by dragging their cards. Dropping a task into **In Progress** automatically spawns a Claude agent.
+## Real-time Updates
 
-<Tip>On mobile, use the **quick-move buttons** on each card instead of drag-and-drop. Tap the arrow icons to shift a task to the next or previous column.</Tip>
+<Info>All views update in real-time via WebSocket. Task status changes, terminal output, token usage, and dependency updates are pushed instantly — you never need to refresh the page.</Info>
 
-## List View
+## Toolbar
 
-A compact table showing all tasks with sortable columns: title, status, priority, model, type, and creation date. Useful when you have many tasks and need a quick overview.
+The board toolbar provides quick access to:
 
-## Summary View
-
-A dashboard-style overview with:
-
-- **Status breakdown** — how many tasks in each column
-- **Priority distribution** — low, medium, high, urgent counts
-- **Recent activity** — latest task updates
-- **Agent utilization** — active vs idle agent slots
-
-<Note>All views update in real-time via WebSocket. You never need to refresh the page.</Note>
+| Feature | Description |
+|---------|-------------|
+| **View toggle** | Switch between Kanban, List, Summary, and Orchestration |
+| **Model filter** | Show only tasks for a specific model (Opus/Sonnet/Haiku) |
+| **New Task** | Create a new task with the quick-create modal |
+| **Search** | Filter tasks by title or description |
 
 ## Mobile Experience
 
@@ -49,6 +66,11 @@ Claude Board is fully responsive. On smaller screens:
 - The terminal opens as a bottom sheet
 - Task creation uses a full-screen modal
 
-<Card title="Task Lifecycle" icon="arrows-rotate" href="/concepts/tasks">
-  Learn how tasks flow through each status.
-</Card>
+<Columns cols={2}>
+  <Card title="Task Lifecycle" icon="arrows-rotate" href="/concepts/tasks">
+    Learn how tasks flow through each status.
+  </Card>
+  <Card title="Orchestration" icon="sitemap" href="/features/orchestration">
+    Explore the dependency graph and timeline views.
+  </Card>
+</Columns>

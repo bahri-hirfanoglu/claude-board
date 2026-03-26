@@ -1,12 +1,12 @@
 ---
 title: "Introduction"
-description: "Build your own AI dev squad with Claude Board"
+description: "Orchestrate multiple Claude agents from a visual command center"
 icon: "sparkles"
 ---
 
 # Welcome to Claude Board
 
-Claude Board is an open-source desktop application that turns your local machine into an AI-powered development squad. Create tasks on a visual Kanban board, and Claude agents autonomously write code, create branches, and commit changes — all while you watch in real-time.
+Claude Board is an open-source AI orchestration platform that turns your local machine into a multi-agent development squad. Define tasks with dependency graphs, execute them in parallel waves, and monitor everything through a real-time observability dashboard.
 
 <Frame>
   <img src="/images/dashboard.png" alt="Claude Board Dashboard" />
@@ -15,34 +15,43 @@ Claude Board is an open-source desktop application that turns your local machine
 ## How it works
 
 <Steps>
-  <Step title="Create a task" icon="plus">
-    Describe what you need — a feature, bugfix, refactor, or test. Pick a model (Opus, Sonnet, or Haiku) and set the priority.
+  <Step title="Define tasks & dependencies" icon="plus">
+    Create tasks on a visual Kanban board. Set dependencies with drag-and-drop, choose models (Opus, Sonnet, Haiku), and attach context snippets or file references.
   </Step>
-  <Step title="Claude starts coding" icon="play">
-    Drag to "In Progress" and a Claude agent spawns automatically. It reads your codebase, writes code, runs tests, and commits — visible in the live terminal.
+  <Step title="Agents orchestrate in waves" icon="play">
+    Tasks execute in dependency-aware waves. Wave 0 tasks run in parallel, Wave 1 starts when dependencies resolve. Each agent creates a branch, writes code, runs tests, and commits — all visible in the live terminal.
   </Step>
-  <Step title="Review and ship" icon="check">
-    The task moves to "Testing". Review the changes, approve or request revisions. Claude picks up your feedback and iterates.
+  <Step title="Review & ship" icon="check">
+    Review diffs, auto-test results, and token costs. Approve to auto-create PRs, or request changes — Claude iterates on your feedback with exponential backoff retry on failures.
   </Step>
 </Steps>
 
 ## Key features
 
 <Columns cols={2}>
+  <Card title="Orchestration Engine" icon="sitemap" href="/features/orchestration">
+    DAG dependency graph, Gantt timeline, and live observability dashboard with file conflict detection.
+  </Card>
+  <Card title="Wave Execution" icon="layer-group" href="/features/queue">
+    Parallel execution in dependency-aware waves. Auto-retry with exponential backoff on failures.
+  </Card>
   <Card title="Multiple Agents" icon="users" href="/concepts/agents">
-    Run up to 5 Claude agents simultaneously on different tasks.
+    Run up to 5 Claude agents simultaneously on different tasks with real-time monitoring.
+  </Card>
+  <Card title="Live Terminal" icon="terminal" href="/features/terminal">
+    Watch file edits, tool calls, and commands in real-time with split-terminal support.
+  </Card>
+  <Card title="Git Automation" icon="code-branch" href="/features/git-automation">
+    Auto-create branches and pull requests per task. Branch cleanup on completion.
   </Card>
   <Card title="Claude Manager" icon="sliders" href="/features/claude-manager">
     Manage MCP servers, plugins, permissions, hooks, and settings from one panel.
   </Card>
-  <Card title="Live Terminal" icon="terminal" href="/features/terminal">
-    Watch file edits, tool calls, and commands in real-time.
+  <Card title="Auto-Test & Review" icon="vial" href="/features/auto-test">
+    Automatic test execution on completion. Failed tests trigger auto-revision cycles.
   </Card>
-  <Card title="Git Automation" icon="code-branch" href="/features/git-automation">
-    Auto-create branches and pull requests per task.
-  </Card>
-  <Card title="Webhook Notifications" icon="bell" href="/features/webhooks">
-    Send events to Slack, Discord, Teams, or custom endpoints.
+  <Card title="Webhooks" icon="bell" href="/features/webhooks">
+    Send events to Slack, Discord, Teams, or custom endpoints with per-project filtering.
   </Card>
 </Columns>
 
@@ -55,7 +64,7 @@ Claude Board is an open-source desktop application that turns your local machine
   <Card title="Quick Start" icon="rocket" href="/quickstart">
     Create your first project and run a task in minutes.
   </Card>
-  <Card title="API Reference" icon="code" href="/api/projects">
-    Explore the REST API and WebSocket events.
+  <Card title="Orchestration" icon="sitemap" href="/features/orchestration">
+    Learn about dependency graphs, timeline, and live views.
   </Card>
 </Columns>

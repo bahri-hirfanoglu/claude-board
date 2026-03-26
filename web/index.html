@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Claude Board — AI-Powered Task Management for Claude Code</title>
-  <meta name="description" content="Turn your local machine into an AI-powered dev squad. Manage Claude agents from a visual board — they code, you review." />
-  <meta property="og:title" content="Claude Board" />
-  <meta property="og:description" content="Run a squad of Claude agents from your local machine. They code, you review." />
+  <title>Claude Board — AI Orchestration Platform for Claude Code</title>
+  <meta name="description" content="Orchestrate multiple Claude agents from a visual command center. DAG dependencies, live observability, auto-retry, and wave execution — all from your desktop." />
+  <meta property="og:title" content="Claude Board — AI Orchestration Platform" />
+  <meta property="og:description" content="Orchestrate a squad of Claude agents with dependency graphs, timeline views, and live observability." />
   <meta name="theme-color" content="#DA7756" />
   <link rel="icon" type="image/png" href="icon.png" />
   <style>
@@ -14,292 +14,596 @@
     html { scroll-behavior: smooth; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
-      background: #0f0d0b; color: #b5ab9a; line-height: 1.6; -webkit-font-smoothing: antialiased;
+      background: #0a0908; color: #b5ab9a; line-height: 1.6; -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
     }
     a { color: #DA7756; text-decoration: none; }
     a:hover { color: #E8926E; }
-    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
-    section { padding: 100px 0; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 120px 0; position: relative; }
 
     /* ─── Animations ─── */
-    @keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(40px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
-    @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-6px); } }
-    @keyframes slideIn { from { opacity:0; transform:translateX(-20px); } to { opacity:1; transform:translateX(0); } }
-    @keyframes typewriter { from { width:0; } to { width:100%; } }
-    @keyframes blink { 50% { border-color:transparent; } }
+    @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
     @keyframes shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }
-    @keyframes taskMove { 0% { transform:translateX(0); opacity:1; } 40% { transform:translateX(0); opacity:1; } 50% { transform:translateX(110%); opacity:0; } 51% { transform:translateX(-110%); opacity:0; } 60% { transform:translateX(0); opacity:1; } 100% { transform:translateX(0); opacity:1; } }
-    .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.6s, transform 0.6s; }
+    @keyframes glow { 0%,100% { filter: drop-shadow(0 0 8px rgba(218,119,86,0.3)); } 50% { filter: drop-shadow(0 0 20px rgba(218,119,86,0.6)); } }
+    @keyframes flowDash { to { stroke-dashoffset: -20; } }
+    @keyframes nodeAppear { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes edgeDraw { from { stroke-dashoffset: 200; } to { stroke-dashoffset: 0; } }
+    @keyframes ripple { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(2.5); opacity: 0; } }
+    @keyframes typeChar { from { width: 0; } to { width: 100%; } }
+    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes slideRight { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes barGrow { from { width: 0; } to { width: var(--bar-width); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes morphGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes particleFloat {
+      0% { transform: translateY(0) translateX(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+    }
+    .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
     .fade-in.visible { opacity: 1; transform: translateY(0); }
+    .stagger-1 { transition-delay: 0.1s; }
+    .stagger-2 { transition-delay: 0.2s; }
+    .stagger-3 { transition-delay: 0.3s; }
+    .stagger-4 { transition-delay: 0.4s; }
+
+    /* ─── Ambient Particles ─── */
+    .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .particle {
+      position: absolute; width: 2px; height: 2px; border-radius: 50%;
+      background: rgba(218, 119, 86, 0.3);
+      animation: particleFloat linear infinite;
+    }
 
     /* ─── Nav ─── */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      background: rgba(15, 13, 11, 0.85); backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(61, 55, 46, 0.3);
+      background: rgba(10, 9, 8, 0.8); backdrop-filter: blur(24px) saturate(1.2);
+      border-bottom: 1px solid rgba(61, 55, 46, 0.2);
+      transition: all 0.3s;
     }
+    nav.scrolled { background: rgba(10, 9, 8, 0.95); box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
     .nav-inner {
-      max-width: 1100px; margin: 0 auto; padding: 0 24px;
+      max-width: 1200px; margin: 0 auto; padding: 0 24px;
       display: flex; align-items: center; justify-content: space-between; height: 64px;
     }
     .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: #ebe4d8; }
     .nav-logo svg { width: 28px; height: 28px; }
-    .nav-links { display: flex; align-items: center; gap: 28px; }
-    .nav-links a { color: #918678; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-links a { color: #736858; font-size: 14px; font-weight: 500; transition: color 0.2s; }
     .nav-links a:hover { color: #ebe4d8; }
     .nav-cta {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 8px 20px; border-radius: 10px;
-      background: #DA7756; color: white !important; font-size: 13px; font-weight: 600; transition: background 0.2s;
+      background: linear-gradient(135deg, #DA7756, #C45A3C); color: white !important;
+      font-size: 13px; font-weight: 600; transition: all 0.3s;
+      box-shadow: 0 2px 12px rgba(218,119,86,0.2);
     }
-    .nav-cta:hover { background: #E8926E; }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(218,119,86,0.4); }
 
     /* ─── Hero ─── */
     .hero {
-      padding: 160px 0 80px; text-align: center;
-      background: radial-gradient(ellipse at 50% 0%, rgba(218, 119, 86, 0.08) 0%, transparent 60%);
+      padding: 160px 0 100px; text-align: center; position: relative;
+      background: radial-gradient(ellipse at 50% 0%, rgba(218, 119, 86, 0.06) 0%, transparent 50%),
+                  radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.03) 0%, transparent 40%),
+                  radial-gradient(ellipse at 80% 50%, rgba(52, 211, 153, 0.03) 0%, transparent 40%);
+    }
+    .hero::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(218,119,86,0.08) 0%, transparent 70%);
+      filter: blur(80px); pointer-events: none;
     }
     .hero-badge {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 16px; border-radius: 100px;
-      background: rgba(218, 119, 86, 0.1); border: 1px solid rgba(218, 119, 86, 0.2);
+      padding: 6px 18px; border-radius: 100px;
+      background: rgba(218, 119, 86, 0.08); border: 1px solid rgba(218, 119, 86, 0.15);
       font-size: 12px; font-weight: 600; color: #DA7756; margin-bottom: 32px;
-      animation: fadeUp 0.6s ease;
+      animation: fadeUp 0.6s ease; position: relative;
     }
     .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #DA7756; animation: pulse 2s infinite; }
     .hero h1 {
-      font-size: clamp(40px, 6vw, 64px); font-weight: 800; color: #ebe4d8;
-      line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; animation: fadeUp 0.6s 0.1s both;
+      font-size: clamp(42px, 6vw, 72px); font-weight: 800; color: #ebe4d8;
+      line-height: 1.05; letter-spacing: -2px; margin-bottom: 24px; animation: fadeUp 0.6s 0.1s both;
+      position: relative;
     }
-    .hero h1 .accent { color: #DA7756; }
+    .hero h1 .accent {
+      background: linear-gradient(135deg, #DA7756, #E8926E, #f59e0b);
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: morphGradient 4s ease infinite;
+    }
     .hero .subtitle {
-      font-size: clamp(16px, 2vw, 19px); color: #918678;
-      max-width: 560px; margin: 0 auto 44px; animation: fadeUp 0.6s 0.2s both;
+      font-size: clamp(16px, 2vw, 20px); color: #918678;
+      max-width: 620px; margin: 0 auto 48px; animation: fadeUp 0.6s 0.2s both;
+      line-height: 1.7; position: relative;
     }
-    .hero-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; animation: fadeUp 0.6s 0.3s both; }
+    .hero-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; animation: fadeUp 0.6s 0.3s both; position: relative; }
     .btn {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 14px 32px; border-radius: 12px;
-      font-size: 15px; font-weight: 600; transition: all 0.2s; border: none; cursor: pointer;
+      padding: 14px 32px; border-radius: 14px;
+      font-size: 15px; font-weight: 600; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: none; cursor: pointer;
     }
     .btn-primary {
       background: linear-gradient(135deg, #DA7756, #C45A3C); color: white;
-      box-shadow: 0 4px 24px rgba(218, 119, 86, 0.3);
+      box-shadow: 0 4px 24px rgba(218, 119, 86, 0.25);
+      position: relative; overflow: hidden;
     }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(218, 119, 86, 0.4); color: white; }
-    .btn-secondary { background: rgba(42, 37, 32, 0.8); color: #ebe4d8; border: 1px solid #3d372e; }
-    .btn-secondary:hover { border-color: #564d40; color: #ebe4d8; }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+      transform: translateX(-100%); transition: transform 0.5s;
+    }
+    .btn-primary:hover::after { transform: translateX(100%); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(218, 119, 86, 0.4); color: white; }
+    .btn-secondary { background: rgba(42, 37, 32, 0.6); color: #ebe4d8; border: 1px solid rgba(61,55,46,0.4); backdrop-filter: blur(10px); }
+    .btn-secondary:hover { border-color: #564d40; color: #ebe4d8; transform: translateY(-2px); }
     .btn svg { width: 18px; height: 18px; }
 
-    /* ─── Live Board Mockup ─── */
-    .hero-board {
-      margin-top: 64px; animation: fadeUp 0.8s 0.4s both;
-      background: #1a1714; border: 1px solid #2a2520; border-radius: 16px;
-      padding: 20px; box-shadow: 0 40px 120px rgba(0,0,0,0.5);
-      max-width: 900px; margin-left: auto; margin-right: auto;
+    /* ─── Orchestration DAG Hero ─── */
+    .hero-dag {
+      margin-top: 72px; animation: fadeUp 0.8s 0.5s both;
+      position: relative; max-width: 960px; margin-left: auto; margin-right: auto;
     }
-    .board-header {
-      display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px;
-      border-bottom: 1px solid #2a2520;
+    .dag-container {
+      background: rgba(20, 17, 14, 0.8); border: 1px solid rgba(42, 37, 32, 0.6);
+      border-radius: 20px; padding: 24px;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.4), 0 0 0 1px rgba(218,119,86,0.05);
+      backdrop-filter: blur(20px); position: relative; overflow: hidden;
     }
-    .board-avatar { width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, #E8926E, #C45A3C); }
-    .board-title { font-size: 13px; font-weight: 700; color: #ebe4d8; }
-    .board-tabs { display: flex; gap: 4px; margin-left: auto; }
-    .board-tab {
-      padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; color: #564d40;
+    .dag-container::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(218,119,86,0.3), transparent);
     }
-    .board-tab.active { background: rgba(218,119,86,0.15); color: #DA7756; }
-    .board-columns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-    .board-col { background: #15120f; border-radius: 10px; padding: 10px; min-height: 180px; }
-    .col-header {
-      display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
-      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    .dag-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px;
+      border-bottom: 1px solid rgba(42, 37, 32, 0.5);
     }
-    .col-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .col-count { margin-left: auto; font-size: 9px; background: #2a2520; padding: 1px 6px; border-radius: 8px; color: #736858; }
-    .mock-card {
-      background: #1f1b17; border: 1px solid #2a2520; border-radius: 8px; padding: 10px;
-      margin-bottom: 8px; transition: all 0.3s;
+    .dag-avatar { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #E8926E, #C45A3C); }
+    .dag-title { font-size: 14px; font-weight: 700; color: #ebe4d8; }
+    .dag-tabs { display: flex; gap: 4px; margin-left: auto; }
+    .dag-tab {
+      padding: 5px 14px; border-radius: 8px; font-size: 11px; font-weight: 600;
+      color: #564d40; cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
     }
-    .mock-card:hover { border-color: #3d372e; transform: translateY(-1px); }
-    .mock-card .tag {
-      display: inline-block; font-size: 8px; font-weight: 700; padding: 2px 6px;
-      border-radius: 4px; margin-bottom: 6px;
-    }
-    .mock-card .title { font-size: 11px; font-weight: 600; color: #ebe4d8; margin-bottom: 4px; }
-    .mock-card .meta { font-size: 9px; color: #564d40; display: flex; align-items: center; gap: 6px; }
-    .mock-card .running {
-      display: inline-flex; align-items: center; gap: 3px;
-      font-size: 8px; font-weight: 600; color: #f59e0b; background: rgba(245,158,11,0.1);
-      padding: 2px 6px; border-radius: 4px;
-    }
-    .mock-card .running .blink-dot { width: 4px; height: 4px; border-radius: 50%; background: #f59e0b; animation: pulse 1.5s infinite; }
-    .card-animate { animation: float 3s ease-in-out infinite; }
-    .card-animate:nth-child(2) { animation-delay: 0.5s; }
-    .card-animate:nth-child(3) { animation-delay: 1s; }
+    .dag-tab.active { background: rgba(218,119,86,0.12); color: #DA7756; border-color: rgba(218,119,86,0.2); }
+    .dag-tab:hover:not(.active) { color: #918678; }
+    .dag-view { position: relative; min-height: 340px; }
 
-    /* ─── Terminal Mockup ─── */
-    .mock-terminal {
-      background: #0f0d0b; border: 1px solid #2a2520; border-radius: 8px;
-      padding: 12px; margin-top: 12px; font-family: 'SF Mono', Menlo, monospace;
+    /* DAG SVG */
+    .dag-svg { width: 100%; height: 340px; }
+    .dag-node {
+      cursor: pointer; transition: filter 0.3s;
     }
-    .term-line { font-size: 10px; line-height: 1.8; display: flex; gap: 6px; }
-    .term-prompt { color: #DA7756; }
-    .term-text { color: #918678; }
-    .term-success { color: #34d399; }
-    .term-typing {
-      overflow: hidden; white-space: nowrap; border-right: 2px solid #DA7756;
-      animation: typewriter 2s steps(40) 1s both, blink 0.8s step-end infinite 3s;
+    .dag-node:hover { filter: brightness(1.2); }
+    .dag-node-rect {
+      rx: 12; ry: 12; stroke-width: 1.5; transition: all 0.3s;
+    }
+    .dag-edge {
+      fill: none; stroke-width: 2; stroke-linecap: round;
+    }
+    .dag-edge-animated {
+      stroke-dasharray: 8 4;
+      animation: flowDash 1s linear infinite;
     }
 
-    /* ─── How it works ─── */
-    .how { background: #15120f; }
+    /* Wave labels */
+    .wave-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+      fill: #564d40;
+    }
+    .wave-line { stroke: rgba(61, 55, 46, 0.3); stroke-width: 1; stroke-dasharray: 4 4; }
+
+    /* Agent sidebar */
+    .dag-sidebar {
+      position: absolute; top: 0; right: 0; width: 220px; height: 100%;
+      display: flex; flex-direction: column; gap: 10px; padding: 4px;
+    }
+    .agent-card {
+      background: rgba(26, 23, 20, 0.9); border: 1px solid rgba(42, 37, 32, 0.6);
+      border-radius: 12px; padding: 14px; font-size: 11px;
+      animation: slideRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .agent-card:nth-child(2) { animation-delay: 0.15s; }
+    .agent-card:nth-child(3) { animation-delay: 0.3s; }
+    .agent-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .agent-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 1.5s infinite; }
+    .agent-name { font-weight: 700; color: #ebe4d8; font-size: 12px; }
+    .agent-model { margin-left: auto; font-size: 9px; padding: 2px 8px; border-radius: 6px; font-weight: 700; }
+    .agent-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .agent-stat { display: flex; flex-direction: column; }
+    .agent-stat-label { font-size: 9px; color: #564d40; text-transform: uppercase; letter-spacing: 0.5px; }
+    .agent-stat-value { font-size: 11px; color: #918678; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .agent-progress { margin-top: 8px; height: 3px; background: rgba(42,37,32,0.5); border-radius: 2px; overflow: hidden; }
+    .agent-progress-bar { height: 100%; border-radius: 2px; animation: barGrow 2s ease-out both; }
+    .agent-tool {
+      margin-top: 8px; padding: 6px 8px; background: rgba(15,13,11,0.8); border-radius: 6px;
+      font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10px; color: #736858;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .agent-tool-icon { color: #c084fc; }
+
+    /* ─── Capability Ticker ─── */
+    .ticker-wrap {
+      margin-top: 64px; animation: fadeUp 0.6s 0.7s both; position: relative;
+      overflow: hidden; mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+      -webkit-mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+    }
+    .ticker-track {
+      display: flex; gap: 12px; width: max-content;
+      animation: tickerScroll 30s linear infinite;
+    }
+    .ticker-track:hover { animation-play-state: paused; }
+    @keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .ticker-pill {
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+      padding: 10px 20px; border-radius: 100px;
+      background: rgba(20, 17, 14, 0.7); border: 1px solid rgba(42, 37, 32, 0.4);
+      font-size: 13px; font-weight: 600; color: #918678;
+      backdrop-filter: blur(10px); transition: all 0.3s; flex-shrink: 0;
+    }
+    .ticker-pill:hover { border-color: rgba(218,119,86,0.3); color: #ebe4d8; }
+    .ticker-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ─── Section Shared ─── */
     .section-label {
       text-transform: uppercase; letter-spacing: 3px; font-size: 11px;
-      font-weight: 700; color: #DA7756; margin-bottom: 12px;
+      font-weight: 700; color: #DA7756; margin-bottom: 16px;
     }
     .section-title {
-      font-size: clamp(28px, 4vw, 40px); font-weight: 800; color: #ebe4d8;
-      letter-spacing: -0.5px; margin-bottom: 16px;
+      font-size: clamp(30px, 4vw, 44px); font-weight: 800; color: #ebe4d8;
+      letter-spacing: -0.5px; margin-bottom: 16px; line-height: 1.15;
     }
-    .section-desc { font-size: 16px; color: #918678; max-width: 560px; margin-bottom: 56px; }
-    .steps-flow { display: flex; flex-direction: column; gap: 0; position: relative; }
-    .step-item {
-      display: flex; gap: 24px; align-items: flex-start; position: relative; padding-bottom: 48px;
+    .section-desc { font-size: 17px; color: #918678; max-width: 560px; margin-bottom: 64px; line-height: 1.7; }
+
+    /* ─── Hero View Switching ─── */
+    .hero-view { animation: fadeIn 0.35s ease; }
+    .hero-view:not(.active) { display: none !important; }
+
+    /* ─── Orchestration Modes ─── */
+    .modes { background: rgba(15, 12, 10, 0.5); }
+    .modes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .mode-card {
+      padding: 0; border-radius: 20px; overflow: hidden;
+      background: rgba(20, 17, 14, 0.8); border: 1px solid rgba(42, 37, 32, 0.4);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative;
     }
-    .step-line {
-      position: absolute; left: 23px; top: 48px; bottom: 0; width: 2px;
-      background: linear-gradient(to bottom, #DA7756, #3d372e);
+    .mode-card::before {
+      content: ''; position: absolute; inset: 0; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(218,119,86,0.08), transparent);
+      opacity: 0; transition: opacity 0.4s;
     }
-    .step-item:last-child .step-line { display: none; }
-    .step-item:last-child { padding-bottom: 0; }
+    .mode-card:hover { border-color: rgba(218,119,86,0.3); transform: translateY(-6px); }
+    .mode-card:hover::before { opacity: 1; }
+    .mode-visual {
+      height: 200px; position: relative; overflow: hidden;
+      background: rgba(10, 9, 8, 0.5); border-bottom: 1px solid rgba(42,37,32,0.3);
+    }
+    .mode-content { padding: 28px; position: relative; }
+    .mode-icon {
+      width: 40px; height: 40px; border-radius: 10px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; background: rgba(218,119,86,0.1);
+    }
+    .mode-card h3 { font-size: 18px; font-weight: 700; color: #ebe4d8; margin-bottom: 8px; }
+    .mode-card p { font-size: 14px; color: #918678; line-height: 1.6; }
+
+    /* Mode-specific visuals */
+    .graph-visual svg { width: 100%; height: 100%; }
+    .timeline-visual { padding: 20px; display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+    .tl-bar-row { display: flex; align-items: center; gap: 10px; }
+    .tl-label { font-size: 10px; color: #564d40; width: 60px; text-align: right; font-weight: 600; }
+    .tl-track { flex: 1; height: 24px; background: rgba(42,37,32,0.2); border-radius: 6px; position: relative; overflow: hidden; }
+    .tl-bar { height: 100%; border-radius: 6px; position: absolute; animation: barGrow 1.5s ease-out both; }
+    .tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: #ef4444; left: 70%; }
+    .tl-now::after { content: 'NOW'; position: absolute; top: -16px; left: -12px; font-size: 8px; color: #ef4444; font-weight: 700; }
+    .live-visual { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .live-feed-line {
+      display: flex; align-items: center; gap: 8px; font-size: 10px;
+      padding: 6px 10px; background: rgba(26,23,20,0.8); border-radius: 6px;
+      font-family: 'SF Mono', Menlo, monospace;
+      animation: slideRight 0.3s ease-out both;
+    }
+    .live-feed-line:nth-child(2) { animation-delay: 0.1s; }
+    .live-feed-line:nth-child(3) { animation-delay: 0.2s; }
+    .live-feed-line:nth-child(4) { animation-delay: 0.3s; }
+    .live-feed-line:nth-child(5) { animation-delay: 0.4s; }
+    .live-time { color: #564d40; font-variant-numeric: tabular-nums; }
+    .live-agent { font-weight: 700; }
+    .live-tool { color: #c084fc; }
+    .live-file { color: #918678; }
+
+    /* ─── How it Works ─── */
+    .how { background: transparent; }
+    .how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+    .how-steps { display: flex; flex-direction: column; gap: 0; }
+    .how-step {
+      display: flex; gap: 20px; padding: 24px 0; position: relative;
+      cursor: pointer; transition: all 0.3s;
+    }
+    .how-step::before {
+      content: ''; position: absolute; left: 23px; top: 72px; bottom: 0; width: 2px;
+      background: linear-gradient(to bottom, rgba(218,119,86,0.3), rgba(61,55,46,0.2));
+    }
+    .how-step:last-child::before { display: none; }
+    .how-step.active .step-num { box-shadow: 0 0 0 8px rgba(218,119,86,0.15), 0 4px 16px rgba(218,119,86,0.3); }
     .step-num {
       width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       font-size: 18px; font-weight: 800; color: white; z-index: 1;
       background: linear-gradient(135deg, #DA7756, #C45A3C);
-      box-shadow: 0 4px 16px rgba(218,119,86,0.3);
+      transition: all 0.3s;
     }
-    .step-content h3 { font-size: 18px; font-weight: 700; color: #ebe4d8; margin-bottom: 6px; margin-top: 4px; }
-    .step-content p { font-size: 14px; color: #918678; max-width: 480px; }
-    .step-content .step-visual {
-      margin-top: 16px; background: #1a1714; border: 1px solid #2a2520;
-      border-radius: 10px; padding: 12px; font-family: 'SF Mono', monospace; font-size: 11px;
+    .step-text h3 { font-size: 18px; font-weight: 700; color: #ebe4d8; margin-bottom: 4px; margin-top: 4px; }
+    .step-text p { font-size: 14px; color: #918678; line-height: 1.6; }
+    .how-visual {
+      background: rgba(20, 17, 14, 0.8); border: 1px solid rgba(42,37,32,0.5);
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 30px 100px rgba(0,0,0,0.3);
+    }
+    .how-visual-inner { padding: 24px; min-height: 400px; position: relative; }
+    .how-screen { display: none; animation: fadeIn 0.4s ease; }
+    .how-screen.active { display: block; }
+
+    /* Step visuals */
+    .task-create-visual { display: flex; flex-direction: column; gap: 16px; }
+    .tcv-field {
+      background: rgba(15,13,11,0.8); border: 1px solid rgba(42,37,32,0.5); border-radius: 12px;
+      padding: 14px 16px; transition: border-color 0.3s;
+    }
+    .tcv-field:focus-within, .tcv-field.highlight { border-color: rgba(218,119,86,0.4); }
+    .tcv-label { font-size: 10px; color: #564d40; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 700; }
+    .tcv-value { font-size: 13px; color: #ebe4d8; font-weight: 500; }
+    .tcv-row { display: flex; gap: 12px; }
+    .tcv-row .tcv-field { flex: 1; }
+    .tcv-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tcv-tag {
+      padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700;
     }
 
-    /* ─── Features ─── */
+    .orchestrate-visual {
+      font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px;
+    }
+    .ov-line { display: flex; gap: 8px; padding: 4px 0; }
+    .ov-prompt { color: #DA7756; }
+    .ov-cmd { color: #ebe4d8; }
+    .ov-dim { color: #564d40; }
+    .ov-success { color: #34d399; }
+    .ov-purple { color: #c084fc; }
+    .ov-blue { color: #60a5fa; }
+    .ov-yellow { color: #fbbf24; }
+    .ov-wave { margin: 12px 0 8px; padding: 6px 10px; background: rgba(218,119,86,0.08); border-radius: 6px; color: #DA7756; font-weight: 700; font-size: 10px; }
+
+    .review-visual { display: flex; flex-direction: column; gap: 12px; }
+    .rv-diff { background: rgba(15,13,11,0.8); border-radius: 10px; padding: 14px; font-family: 'SF Mono', monospace; font-size: 11px; }
+    .rv-add { color: #34d399; }
+    .rv-del { color: #f87171; }
+    .rv-line { padding: 2px 0; }
+    .rv-file { color: #DA7756; font-weight: 700; margin-bottom: 8px; display: block; }
+    .rv-stats {
+      display: flex; gap: 20px; padding: 16px; background: rgba(15,13,11,0.8); border-radius: 10px;
+    }
+    .rv-stat { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+    .rv-stat-val { font-size: 20px; font-weight: 800; color: #ebe4d8; }
+    .rv-stat-lbl { font-size: 10px; color: #564d40; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ─── Features Grid ─── */
     .features-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
     }
     .feature-card {
-      padding: 32px; border-radius: 16px;
-      background: #1a1714; border: 1px solid #2a2520;
-      transition: border-color 0.3s, transform 0.3s;
+      padding: 32px; border-radius: 18px;
+      background: rgba(20, 17, 14, 0.6); border: 1px solid rgba(42, 37, 32, 0.4);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: hidden;
     }
-    .feature-card:hover { border-color: rgba(218,119,86,0.3); transform: translateY(-3px); }
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--card-accent, rgba(218,119,86,0.3)), transparent);
+      opacity: 0; transition: opacity 0.4s;
+    }
+    .feature-card:hover { border-color: rgba(218,119,86,0.2); transform: translateY(-4px); }
+    .feature-card:hover::before { opacity: 1; }
     .feature-icon {
-      width: 44px; height: 44px; border-radius: 12px; margin-bottom: 20px;
-      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      width: 48px; height: 48px; border-radius: 14px; margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
     }
     .feature-card h3 { font-size: 16px; font-weight: 700; color: #ebe4d8; margin-bottom: 8px; }
     .feature-card p { font-size: 14px; color: #918678; line-height: 1.6; }
+    .feature-card.featured {
+      grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;
+    }
+    .feature-card.featured .feature-visual {
+      background: rgba(10,9,8,0.5); border-radius: 14px; padding: 20px; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+    }
 
     /* ─── Interactive Preview ─── */
-    .preview { background: #15120f; }
+    .preview { background: rgba(15, 12, 10, 0.5); }
     .preview-tabs {
-      display: flex; gap: 4px; margin-bottom: 24px; flex-wrap: wrap;
+      display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap;
     }
     .preview-tab {
-      padding: 8px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
-      cursor: pointer; border: 1px solid #2a2520; background: #1a1714; color: #918678;
-      transition: all 0.2s;
+      padding: 10px 22px; border-radius: 12px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: 1px solid rgba(42,37,32,0.4); background: rgba(20,17,14,0.6);
+      color: #918678; transition: all 0.3s; backdrop-filter: blur(10px);
     }
     .preview-tab:hover { border-color: #3d372e; color: #ebe4d8; }
-    .preview-tab.active { background: rgba(218,119,86,0.15); border-color: rgba(218,119,86,0.3); color: #DA7756; }
+    .preview-tab.active { background: rgba(218,119,86,0.12); border-color: rgba(218,119,86,0.3); color: #DA7756; }
     .preview-frame {
-      border-radius: 16px; border: 1px solid #2a2520; overflow: hidden;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.5); background: #1a1714; position: relative;
+      border-radius: 20px; border: 1px solid rgba(42,37,32,0.4); overflow: hidden;
+      box-shadow: 0 30px 100px rgba(0,0,0,0.4); background: rgba(20,17,14,0.8);
+      position: relative;
     }
-    .preview-frame img {
-      width: 100%; display: block; transition: opacity 0.3s;
+    .preview-frame img { width: 100%; display: block; transition: opacity 0.4s; }
+
+    /* ─── Preview Mockup System ─── */
+    .pv-screen { display: none; animation: fadeIn 0.3s ease; }
+    .pv-screen.active { display: block; }
+    .pv-app { display: flex; min-height: 420px; }
+    .pv-sidebar {
+      width: 48px; background: #0f0d0b; border-right: 1px solid rgba(42,37,32,0.4);
+      display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 10px; flex-shrink: 0;
     }
-    .preview-frame .preview-overlay {
-      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      background: rgba(15,13,11,0.8); opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    .pv-sidebar-logo { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #E8926E, #C45A3C); margin-bottom: 8px; }
+    .pv-sidebar-item { width: 28px; height: 28px; border-radius: 8px; background: rgba(42,37,32,0.3); transition: all 0.2s; }
+    .pv-sidebar-item.active { background: rgba(218,119,86,0.2); box-shadow: inset 0 0 0 1.5px rgba(218,119,86,0.4); }
+    .pv-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #14120f; }
+    .pv-toolbar {
+      display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid rgba(42,37,32,0.3);
+      font-size: 11px; gap: 12px; flex-shrink: 0;
     }
-    .preview-frame:hover .preview-overlay { opacity: 1; }
-    .preview-overlay span { color: #ebe4d8; font-size: 14px; font-weight: 600; }
+    .pv-view-tab {
+      padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; color: #564d40; cursor: pointer;
+    }
+    .pv-view-tab.active { background: rgba(218,119,86,0.12); color: #DA7756; }
+    .pv-col { background: rgba(10,9,8,0.5); border-radius: 8px; padding: 8px; }
+    .pv-col-head { display: flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: inherit; margin-bottom: 8px; }
+    .pv-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .pv-count { margin-left: auto; font-size: 8px; background: rgba(42,37,32,0.4); padding: 1px 5px; border-radius: 6px; color: #736858; }
+    .pv-task {
+      background: rgba(26,23,20,0.8); border: 1px solid rgba(42,37,32,0.4); border-radius: 7px;
+      padding: 8px; margin-bottom: 6px; font-size: 10px;
+    }
+    .pv-tag { font-size: 7px; font-weight: 700; padding: 2px 5px; border-radius: 3px; display: inline-block; margin-bottom: 3px; }
+    .pv-task-title { font-size: 10px; font-weight: 600; color: #ebe4d8; margin-bottom: 2px; }
+    .pv-task-meta { font-size: 8px; color: #564d40; }
+    .pv-stat-card {
+      background: rgba(15,13,11,0.6); border: 1px solid rgba(42,37,32,0.4); border-radius: 10px;
+      padding: 14px; text-align: center;
+    }
+    .pv-stat-num { font-size: 22px; font-weight: 800; color: #ebe4d8; }
+    .pv-stat-lbl { font-size: 9px; color: #564d40; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .pv-dag-node {
+      padding: 7px 10px; border-radius: 7px; font-size: 10px; font-weight: 600;
+      display: flex; align-items: center; gap: 6px; border: 1px solid rgba(42,37,32,0.4); background: rgba(20,17,14,0.8);
+      color: #918678;
+    }
+    .pv-dag-node.done { border-color: rgba(52,211,153,0.3); color: #34d399; }
+    .pv-dag-node.running { border-color: rgba(245,158,11,0.3); color: #f59e0b; }
+    .pv-dag-node.queued { opacity: 0.5; }
+    .pv-agent-mini {
+      background: rgba(26,23,20,0.8); border: 1px solid rgba(42,37,32,0.4); border-radius: 8px;
+      padding: 10px; font-size: 10px;
+    }
+    .pv-plan-row {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      background: rgba(15,13,11,0.4); border: 1px solid rgba(42,37,32,0.3); border-radius: 8px; font-size: 11px;
+    }
+    .pv-plan-num {
+      width: 22px; height: 22px; border-radius: 6px; background: rgba(218,119,86,0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; color: #DA7756; flex-shrink: 0;
+    }
+    .pv-activity-row {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      background: rgba(15,13,11,0.3); border-radius: 8px; font-size: 11px;
+    }
+    .pv-act-time { font-size: 10px; color: #564d40; font-variant-numeric: tabular-nums; width: 36px; flex-shrink: 0; }
+    .pv-act-badge { font-size: 8px; font-weight: 700; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
 
     /* ─── Download ─── */
     .download { text-align: center; }
     .download-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;
-      max-width: 750px; margin: 48px auto 0;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+      max-width: 800px; margin: 56px auto 0;
     }
     .download-card {
-      padding: 32px 24px; border-radius: 14px;
-      background: #1a1714; border: 1px solid #2a2520;
-      transition: all 0.3s; text-align: center; display: block; position: relative; overflow: hidden;
+      padding: 36px 24px; border-radius: 18px;
+      background: rgba(20,17,14,0.6); border: 1px solid rgba(42,37,32,0.4);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); text-align: center; display: block;
+      position: relative; overflow: hidden;
     }
     .download-card::before {
       content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(218,119,86,0.05), transparent);
-      opacity: 0; transition: opacity 0.3s;
+      background: linear-gradient(135deg, rgba(218,119,86,0.06), transparent);
+      opacity: 0; transition: opacity 0.4s;
     }
-    .download-card:hover { border-color: #DA7756; transform: translateY(-3px); }
+    .download-card:hover { border-color: rgba(218,119,86,0.4); transform: translateY(-4px); }
     .download-card:hover::before { opacity: 1; }
-    .download-card .platform-icon { font-size: 36px; margin-bottom: 14px; position: relative; }
-    .download-card h4 { font-size: 16px; font-weight: 700; color: #ebe4d8; margin-bottom: 4px; position: relative; }
+    .download-card .platform-icon { font-size: 40px; margin-bottom: 16px; position: relative; }
+    .download-card h4 { font-size: 17px; font-weight: 700; color: #ebe4d8; margin-bottom: 6px; position: relative; }
     .download-card .arch { font-size: 12px; color: #736858; position: relative; }
 
     /* ─── CTA ─── */
     .cta {
-      text-align: center; padding: 120px 0;
+      text-align: center; padding: 140px 0; position: relative;
       background: radial-gradient(ellipse at 50% 100%, rgba(218,119,86,0.06) 0%, transparent 60%);
     }
-    .cta h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 800; color: #ebe4d8; margin-bottom: 16px; }
-    .cta p { font-size: 16px; color: #918678; margin-bottom: 36px; }
+    .cta h2 { font-size: clamp(30px, 4vw, 44px); font-weight: 800; color: #ebe4d8; margin-bottom: 16px; }
+    .cta p { font-size: 17px; color: #918678; margin-bottom: 40px; max-width: 480px; margin-left: auto; margin-right: auto; }
 
     /* ─── Footer ─── */
     footer {
-      padding: 40px 0; border-top: 1px solid #1a1714;
+      padding: 48px 0; border-top: 1px solid rgba(42,37,32,0.3);
       text-align: center; font-size: 13px; color: #564d40;
     }
     footer a { color: #736858; } footer a:hover { color: #DA7756; }
 
     /* ─── Responsive ─── */
+    @media (max-width: 1024px) {
+      .modes-grid { grid-template-columns: 1fr; }
+      .how-grid { grid-template-columns: 1fr; gap: 40px; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .feature-card.featured { grid-column: span 2; }
+      .dag-sidebar { display: none; }
+      #hero-board > div { grid-template-columns: repeat(3, 1fr) !important; }
+      #hero-board > div > div:nth-child(4),
+      #hero-board > div > div:nth-child(5) { display: none; }
+      #hero-live > div { grid-template-columns: 1fr !important; }
+      #hero-live > div > div:last-child { display: none; }
+    }
     @media (max-width: 768px) {
       .nav-links a:not(.nav-cta) { display: none; }
       .hero { padding: 120px 0 60px; }
-      .board-columns { grid-template-columns: repeat(2, 1fr); }
-      section { padding: 60px 0; }
       .features-grid { grid-template-columns: 1fr; }
-      .step-item { gap: 16px; }
+      .feature-card.featured { grid-column: span 1; grid-template-columns: 1fr; }
+      section { padding: 80px 0; }
+      .stats-bar { gap: 20px; flex-wrap: wrap; }
+      .stat-value { font-size: 22px; }
+      .pv-sidebar { display: none; }
+      .pv-app { min-height: 320px; }
+      .download-grid { grid-template-columns: 1fr; max-width: 320px; }
+      .modes-grid { gap: 16px; }
     }
     @media (max-width: 480px) {
-      .board-columns { grid-template-columns: 1fr 1fr; }
-      .board-col:nth-child(3), .board-col:nth-child(4) { display: none; }
+      .hero h1 { letter-spacing: -1px; }
+      .dag-container { padding: 16px; }
+      .dag-svg { height: 240px; }
     }
   </style>
 </head>
 <body>
 
+<!-- Ambient Particles -->
+<div class="particles" id="particles"></div>
+
 <!-- Nav -->
-<nav>
+<nav id="navbar">
   <div class="nav-inner">
     <a href="#" class="nav-logo">
       <svg viewBox="0 0 512 512" fill="none"><rect width="512" height="512" rx="112" fill="url(#ng)"/><path d="M256 72 C256 72,272 188,276 212 C280 236,324 256,440 256 C324 256,280 276,276 300 C272 324,256 440,256 440 C256 440,240 324,236 300 C232 276,188 256,72 256 C188 256,232 236,236 212 C240 188,256 72,256 72Z" fill="white" opacity=".95"/><defs><linearGradient id="ng" x1="0" y1="0" x2="512" y2="512"><stop stop-color="#E8926E"/><stop offset="1" stop-color="#C45A3C"/></linearGradient></defs></svg>
       Claude Board
     </a>
     <div class="nav-links">
+      <a href="#orchestration">Orchestration</a>
       <a href="#how">How it works</a>
       <a href="#features">Features</a>
       <a href="#preview">Preview</a>
-      <a href="#download">Download</a>
       <a href="https://docs.claboard.dev" target="_blank">Docs</a>
-      <a href="https://github.com/bahri-hirfanoglu/claude-board" target="_blank" class="nav-cta">GitHub</a>
+      <a href="#download" class="nav-cta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </a>
     </div>
   </div>
 </nav>
@@ -307,9 +611,9 @@
 <!-- Hero -->
 <section class="hero">
   <div class="container">
-    <div class="hero-badge"><span class="dot"></span> Open Source &mdash; <span id="app-version">v1.5.1</span></div>
-    <h1>Build your own<br><span class="accent">AI dev squad.</span></h1>
-    <p class="subtitle">Run multiple Claude agents from your local machine. Create tasks, assign models, watch them code in real-time &mdash; all from a single board.</p>
+    <div class="hero-badge"><span class="dot"></span> Open Source &mdash; <span id="app-version">v1.5.15</span></div>
+    <h1>Orchestrate your<br><span class="accent">AI dev squad.</span></h1>
+    <p class="subtitle">Run multiple Claude agents with dependency graphs, wave execution, and live observability. Build features in parallel &mdash; from a single command center.</p>
     <div class="hero-buttons">
       <a href="#download" class="btn btn-primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -321,63 +625,438 @@
       </a>
     </div>
 
-    <!-- Interactive Board Mockup -->
-    <div class="hero-board">
-      <div class="board-header">
-        <div class="board-avatar"></div>
-        <span class="board-title">My Project</span>
-        <div class="board-tabs">
-          <span class="board-tab active">Board</span>
-          <span class="board-tab">List</span>
-          <span class="board-tab">Timeline</span>
-        </div>
-      </div>
-      <div class="board-columns">
-        <div class="board-col">
-          <div class="col-header"><span class="col-dot" style="background:#918678"></span><span style="color:#918678">Backlog</span><span class="col-count">2</span></div>
-          <div class="mock-card card-animate">
-            <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">feature</span>
-            <div class="title">Add dark mode support</div>
-            <div class="meta"><span>sonnet</span><span>#12</span></div>
-          </div>
-          <div class="mock-card card-animate">
-            <span class="tag" style="background:rgba(239,68,68,0.15);color:#f87171">bugfix</span>
-            <div class="title">Fix login redirect loop</div>
-            <div class="meta"><span>haiku</span><span>#13</span></div>
+    <!-- Interactive DAG Mockup -->
+    <div class="hero-dag">
+      <div class="dag-container">
+        <div class="dag-header">
+          <div class="dag-avatar"></div>
+          <span class="dag-title">E-Commerce Platform</span>
+          <div class="dag-tabs">
+            <span class="dag-tab active" onclick="switchHeroView('graph',this)">Graph</span>
+            <span class="dag-tab" onclick="switchHeroView('timeline',this)">Timeline</span>
+            <span class="dag-tab" onclick="switchHeroView('live',this)">Live</span>
+            <span class="dag-tab" onclick="switchHeroView('board',this)">Board</span>
           </div>
         </div>
-        <div class="board-col">
-          <div class="col-header"><span class="col-dot" style="background:#f59e0b"></span><span style="color:#f59e0b">In Progress</span><span class="col-count">1</span></div>
-          <div class="mock-card" style="border-color:#f59e0b30">
-            <span class="tag" style="background:rgba(168,85,247,0.15);color:#c084fc">refactor</span>
-            <div class="title">Migrate API to REST v2</div>
-            <div class="running"><span class="blink-dot"></span> Running</div>
-            <div class="mock-terminal">
-              <div class="term-line"><span class="term-prompt">&#9656;</span><span class="term-text">Reading src/api/routes.js</span></div>
-              <div class="term-line"><span class="term-prompt">&#9656;</span><span class="term-text term-typing">Editing 3 files...</span></div>
+
+        <!-- ═══ GRAPH VIEW ═══ -->
+        <div class="dag-view hero-view active" id="hero-graph">
+          <svg class="dag-svg" viewBox="0 0 700 340">
+            <!-- Wave zone dividers -->
+            <line class="wave-line" x1="232" y1="0" x2="232" y2="340"/>
+            <line class="wave-line" x1="468" y1="0" x2="468" y2="340"/>
+            <text class="wave-label" x="116" y="18">Wave 0</text>
+            <text class="wave-label" x="350" y="18">Wave 1</text>
+            <text class="wave-label" x="584" y="18">Wave 2</text>
+
+            <!-- Edges -->
+            <path class="dag-edge dag-edge-animated" d="M200,78 C250,78 282,158 330,158" stroke="rgba(52,211,153,0.5)" style="animation-delay:0.5s"/>
+            <path class="dag-edge dag-edge-animated" d="M200,78 C250,78 282,258 330,258" stroke="rgba(61,55,46,0.4)" style="animation-delay:0.7s"/>
+            <path class="dag-edge dag-edge-animated" d="M200,168 C250,168 282,158 330,158" stroke="rgba(61,55,46,0.4)" style="animation-delay:0.9s"/>
+            <path class="dag-edge dag-edge-animated" d="M200,168 C250,168 282,78 330,78" stroke="rgba(61,55,46,0.4)" style="animation-delay:1.1s"/>
+            <path class="dag-edge dag-edge-animated" d="M430,158 C465,158 468,118 500,118" stroke="rgba(52,211,153,0.5)" style="animation-delay:1.3s"/>
+            <path class="dag-edge dag-edge-animated" d="M430,78 C465,78 468,118 500,118" stroke="rgba(61,55,46,0.4)" style="animation-delay:1.5s"/>
+            <path class="dag-edge dag-edge-animated" d="M430,258 C465,258 468,238 500,238" stroke="rgba(61,55,46,0.4)" style="animation-delay:1.7s"/>
+
+            <!-- Wave 0 -->
+            <g class="dag-node" style="animation:nodeAppear 0.5s ease both">
+              <rect class="dag-node-rect" x="60" y="50" width="140" height="56" fill="#162416" stroke="#34d399"/>
+              <circle cx="74" cy="78" r="4" fill="#34d399"/>
+              <text x="136" y="74" fill="#34d399" font-size="11" font-weight="700" text-anchor="middle">Auth API</text>
+              <text x="136" y="92" fill="#564d40" font-size="9" text-anchor="middle">opus &#183; 4m 12s &#183; done</text>
+            </g>
+            <g class="dag-node" style="animation:nodeAppear 0.5s 0.15s ease both">
+              <rect class="dag-node-rect" x="60" y="140" width="140" height="56" fill="#231e0e" stroke="#f59e0b"/>
+              <circle cx="74" cy="168" r="4" fill="#f59e0b"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+              <text x="136" y="164" fill="#f59e0b" font-size="11" font-weight="700" text-anchor="middle">Product Catalog</text>
+              <text x="136" y="182" fill="#564d40" font-size="9" text-anchor="middle">sonnet &#183; running</text>
+              <rect x="76" y="190" width="108" height="3" rx="1.5" fill="rgba(42,37,32,0.5)"/>
+              <rect x="76" y="190" rx="1.5" height="3" fill="#f59e0b"><animate attributeName="width" from="30" to="108" dur="10s" fill="freeze"/></rect>
+            </g>
+            <g class="dag-node" style="animation:nodeAppear 0.5s 0.3s ease both">
+              <rect class="dag-node-rect" x="60" y="230" width="140" height="56" fill="#162416" stroke="#34d399"/>
+              <circle cx="74" cy="258" r="4" fill="#34d399"/>
+              <text x="136" y="254" fill="#34d399" font-size="11" font-weight="700" text-anchor="middle">DB Schema</text>
+              <text x="136" y="272" fill="#564d40" font-size="9" text-anchor="middle">haiku &#183; 1m 02s &#183; done</text>
+            </g>
+
+            <!-- Wave 1 -->
+            <g class="dag-node" style="animation:nodeAppear 0.5s 0.45s ease both">
+              <rect class="dag-node-rect" x="290" y="50" width="140" height="56" fill="#14120f" stroke="#3d372e"/>
+              <text x="360" y="72" fill="#918678" font-size="11" font-weight="700" text-anchor="middle">Search Service</text>
+              <text x="360" y="90" fill="#564d40" font-size="9" text-anchor="middle">sonnet &#183; queued</text>
+            </g>
+            <g class="dag-node" style="animation:nodeAppear 0.5s 0.6s ease both">
+              <rect class="dag-node-rect" x="290" y="130" width="140" height="56" fill="#14120f" stroke="#3d372e"/>
+              <text x="360" y="152" fill="#918678" font-size="11" font-weight="700" text-anchor="middle">Payment</text>
+              <text x="360" y="170" fill="#564d40" font-size="9" text-anchor="middle">opus &#183; waiting deps</text>
+            </g>
+            <g class="dag-node" style="animation:nodeAppear 0.5s 0.75s ease both">
+              <rect class="dag-node-rect" x="290" y="230" width="140" height="56" fill="#14120f" stroke="#3d372e"/>
+              <text x="360" y="252" fill="#918678" font-size="11" font-weight="700" text-anchor="middle">Admin Dashboard</text>
+              <text x="360" y="270" fill="#564d40" font-size="9" text-anchor="middle">sonnet &#183; waiting deps</text>
+            </g>
+
+            <!-- Wave 2 -->
+            <g class="dag-node" style="animation:nodeAppear 0.5s 0.9s ease both">
+              <rect class="dag-node-rect" x="500" y="90" width="140" height="56" fill="#14120f" stroke="#3d372e"/>
+              <text x="570" y="112" fill="#918678" font-size="11" font-weight="700" text-anchor="middle">E2E Tests</text>
+              <text x="570" y="130" fill="#564d40" font-size="9" text-anchor="middle">opus &#183; wave 2</text>
+            </g>
+            <g class="dag-node" style="animation:nodeAppear 0.5s 1.05s ease both">
+              <rect class="dag-node-rect" x="500" y="210" width="140" height="56" fill="#14120f" stroke="#3d372e"/>
+              <text x="570" y="232" fill="#918678" font-size="11" font-weight="700" text-anchor="middle">Deploy Script</text>
+              <text x="570" y="250" fill="#564d40" font-size="9" text-anchor="middle">haiku &#183; wave 2</text>
+            </g>
+          </svg>
+
+          <!-- Agent Sidebar -->
+          <div class="dag-sidebar">
+            <div class="agent-card">
+              <div class="agent-card-header">
+                <div class="agent-dot" style="background:#f59e0b"></div>
+                <span class="agent-name">Product Catalog</span>
+                <span class="agent-model" style="background:rgba(168,85,247,0.15);color:#c084fc">sonnet</span>
+              </div>
+              <div class="agent-stats">
+                <div class="agent-stat"><span class="agent-stat-label">Tokens</span><span class="agent-stat-value">24.3k</span></div>
+                <div class="agent-stat"><span class="agent-stat-label">Cost</span><span class="agent-stat-value">$0.08</span></div>
+                <div class="agent-stat"><span class="agent-stat-label">Tools</span><span class="agent-stat-value">18</span></div>
+                <div class="agent-stat"><span class="agent-stat-label">Time</span><span class="agent-stat-value">2m 34s</span></div>
+              </div>
+              <div class="agent-progress"><div class="agent-progress-bar" style="--bar-width:65%;background:#f59e0b"></div></div>
+              <div class="agent-tool"><span class="agent-tool-icon">&#9656;</span> Edit src/models/product.js</div>
+            </div>
+            <div class="agent-card">
+              <div class="agent-card-header">
+                <div class="agent-dot" style="background:#34d399"></div>
+                <span class="agent-name">Auth API</span>
+                <span class="agent-model" style="background:rgba(218,119,86,0.15);color:#DA7756">opus</span>
+              </div>
+              <div class="agent-stats">
+                <div class="agent-stat"><span class="agent-stat-label">Tokens</span><span class="agent-stat-value">48.1k</span></div>
+                <div class="agent-stat"><span class="agent-stat-label">Cost</span><span class="agent-stat-value">$0.24</span></div>
+                <div class="agent-stat"><span class="agent-stat-label">Tools</span><span class="agent-stat-value">31</span></div>
+                <div class="agent-stat"><span class="agent-stat-label">Time</span><span class="agent-stat-value">4m 12s</span></div>
+              </div>
+              <div class="agent-progress"><div class="agent-progress-bar" style="--bar-width:100%;background:#34d399"></div></div>
+              <div class="agent-tool"><span style="color:#34d399">&#10003;</span> Completed &#183; 7 files</div>
+            </div>
+            <div class="agent-card">
+              <div class="agent-card-header">
+                <div class="agent-dot" style="background:#34d399"></div>
+                <span class="agent-name">DB Schema</span>
+                <span class="agent-model" style="background:rgba(59,130,246,0.15);color:#60a5fa">haiku</span>
+              </div>
+              <div class="agent-stats">
+                <div class="agent-stat"><span class="agent-stat-label">Tokens</span><span class="agent-stat-value">8.2k</span></div>
+                <div class="agent-stat"><span class="agent-stat-label">Cost</span><span class="agent-stat-value">$0.02</span></div>
+                <div class="agent-stat"><span class="agent-stat-label">Tools</span><span class="agent-stat-value">9</span></div>
+                <div class="agent-stat"><span class="agent-stat-label">Time</span><span class="agent-stat-value">1m 02s</span></div>
+              </div>
+              <div class="agent-progress"><div class="agent-progress-bar" style="--bar-width:100%;background:#34d399"></div></div>
+              <div class="agent-tool"><span style="color:#34d399">&#10003;</span> Completed &#183; 3 files</div>
             </div>
           </div>
         </div>
-        <div class="board-col">
-          <div class="col-header"><span class="col-dot" style="background:#DA7756"></span><span style="color:#DA7756">Testing</span><span class="col-count">1</span></div>
-          <div class="mock-card card-animate">
-            <span class="tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">feature</span>
-            <div class="title">User profile settings</div>
-            <div class="meta"><span>opus</span><span>3m</span><span>#10</span></div>
+
+        <!-- ═══ TIMELINE VIEW ═══ -->
+        <div class="dag-view hero-view" id="hero-timeline" style="display:none">
+          <div style="padding:16px 20px;display:flex;flex-direction:column;gap:0;min-height:340px">
+            <!-- Time axis -->
+            <div style="display:flex;align-items:center;margin-bottom:12px;padding-left:130px">
+              <div style="flex:1;display:flex;justify-content:space-between;font-size:9px;color:#564d40;font-weight:700;font-variant-numeric:tabular-nums">
+                <span>0:00</span><span>1:00</span><span>2:00</span><span>3:00</span><span>4:00</span><span>5:00</span><span>6:00</span>
+              </div>
+            </div>
+            <!-- Wave 0 label -->
+            <div style="font-size:9px;font-weight:700;color:#DA7756;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;padding:4px 8px;background:rgba(218,119,86,0.06);border-radius:4px;display:inline-block;width:fit-content">Wave 0</div>
+            <!-- Auth API -->
+            <div style="display:flex;align-items:center;gap:12px;height:36px">
+              <div style="width:118px;text-align:right;font-size:11px;font-weight:600;color:#34d399;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;gap:6px"><span style="color:#564d40;font-size:9px">&#10003;</span> Auth API</div>
+              <div style="flex:1;height:24px;background:rgba(42,37,32,0.15);border-radius:6px;position:relative;overflow:hidden">
+                <div style="position:absolute;left:0;top:0;width:68%;height:100%;background:linear-gradient(90deg,#22c55e,#34d399);border-radius:6px;animation:barGrow 1.2s ease-out both"></div>
+              </div>
+            </div>
+            <!-- Product Catalog -->
+            <div style="display:flex;align-items:center;gap:12px;height:36px">
+              <div style="width:118px;text-align:right;font-size:11px;font-weight:600;color:#f59e0b;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f59e0b;display:inline-block;animation:pulse 1.5s infinite"></span> Product Catalog</div>
+              <div style="flex:1;height:24px;background:rgba(42,37,32,0.15);border-radius:6px;position:relative;overflow:hidden">
+                <div style="position:absolute;left:8%;top:0;width:42%;height:100%;background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:6px;animation:barGrow 1.5s 0.2s ease-out both">
+                  <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);animation:shimmer 2s infinite;border-radius:6px"></div>
+                </div>
+              </div>
+            </div>
+            <!-- DB Schema -->
+            <div style="display:flex;align-items:center;gap:12px;height:36px">
+              <div style="width:118px;text-align:right;font-size:11px;font-weight:600;color:#34d399;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;gap:6px"><span style="color:#564d40;font-size:9px">&#10003;</span> DB Schema</div>
+              <div style="flex:1;height:24px;background:rgba(42,37,32,0.15);border-radius:6px;position:relative;overflow:hidden">
+                <div style="position:absolute;left:2%;top:0;width:18%;height:100%;background:linear-gradient(90deg,#22c55e,#34d399);border-radius:6px;animation:barGrow 1s 0.1s ease-out both"></div>
+              </div>
+            </div>
+            <!-- Wave 1 label -->
+            <div style="font-size:9px;font-weight:700;color:#DA7756;text-transform:uppercase;letter-spacing:1.5px;margin:10px 0 8px;padding:4px 8px;background:rgba(218,119,86,0.06);border-radius:4px;display:inline-block;width:fit-content">Wave 1</div>
+            <!-- Search Service -->
+            <div style="display:flex;align-items:center;gap:12px;height:36px">
+              <div style="width:118px;text-align:right;font-size:11px;font-weight:600;color:#918678;flex-shrink:0">Search Service</div>
+              <div style="flex:1;height:24px;background:rgba(42,37,32,0.15);border-radius:6px;position:relative;overflow:hidden">
+                <div style="position:absolute;left:58%;top:0;width:22%;height:100%;background:rgba(61,55,46,0.35);border-radius:6px;border:1px dashed rgba(61,55,46,0.4)"></div>
+              </div>
+            </div>
+            <!-- Payment -->
+            <div style="display:flex;align-items:center;gap:12px;height:36px">
+              <div style="width:118px;text-align:right;font-size:11px;font-weight:600;color:#918678;flex-shrink:0">Payment</div>
+              <div style="flex:1;height:24px;background:rgba(42,37,32,0.15);border-radius:6px;position:relative;overflow:hidden">
+                <div style="position:absolute;left:58%;top:0;width:28%;height:100%;background:rgba(61,55,46,0.35);border-radius:6px;border:1px dashed rgba(61,55,46,0.4)"></div>
+                <!-- NOW marker -->
+                <div style="position:absolute;top:-6px;bottom:-6px;left:52%;width:2px;background:#ef4444;z-index:2"></div>
+                <div style="position:absolute;top:-18px;left:calc(52% - 14px);font-size:8px;color:#ef4444;font-weight:700;letter-spacing:0.5px">NOW</div>
+              </div>
+            </div>
+            <!-- Wave 2 label -->
+            <div style="font-size:9px;font-weight:700;color:#DA7756;text-transform:uppercase;letter-spacing:1.5px;margin:10px 0 8px;padding:4px 8px;background:rgba(218,119,86,0.06);border-radius:4px;display:inline-block;width:fit-content">Wave 2</div>
+            <!-- E2E Tests -->
+            <div style="display:flex;align-items:center;gap:12px;height:36px">
+              <div style="width:118px;text-align:right;font-size:11px;font-weight:600;color:#918678;flex-shrink:0">E2E Tests</div>
+              <div style="flex:1;height:24px;background:rgba(42,37,32,0.15);border-radius:6px;position:relative;overflow:hidden">
+                <div style="position:absolute;left:82%;top:0;width:16%;height:100%;background:rgba(61,55,46,0.25);border-radius:6px;border:1px dashed rgba(61,55,46,0.3)"></div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="board-col">
-          <div class="col-header"><span class="col-dot" style="background:#34d399"></span><span style="color:#34d399">Done</span><span class="col-count">3</span></div>
-          <div class="mock-card card-animate">
-            <span class="tag" style="background:rgba(34,197,94,0.15);color:#4ade80">docs</span>
-            <div class="title">Update API documentation</div>
-            <div class="meta"><span class="term-success">&#10003;</span><span>2m</span><span>$0.04</span></div>
+
+        <!-- ═══ LIVE VIEW ═══ -->
+        <div class="dag-view hero-view" id="hero-live" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 240px;gap:16px;padding:16px 20px;min-height:340px">
+            <!-- Live feed -->
+            <div style="display:flex;flex-direction:column;gap:6px;overflow:hidden" id="hero-live-feed">
+              <div style="font-size:10px;font-weight:700;color:#564d40;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;display:flex;align-items:center;gap:8px">
+                <span style="width:6px;height:6px;border-radius:50%;background:#34d399;animation:pulse 1.5s infinite"></span> Live Activity Feed
+              </div>
+              <div class="live-feed-line"><span class="live-time">14:23:05</span><span class="live-agent" style="color:#f59e0b">Catalog</span><span class="live-tool">Write</span><span class="live-file">src/controllers/products.js <span style="color:#34d399">+67</span></span></div>
+              <div class="live-feed-line"><span class="live-time">14:23:03</span><span class="live-agent" style="color:#f59e0b">Catalog</span><span class="live-tool">Read</span><span class="live-file">src/models/product.js</span></div>
+              <div class="live-feed-line"><span class="live-time">14:23:01</span><span class="live-agent" style="color:#34d399">Auth</span><span class="live-tool">Bash</span><span class="live-file" style="color:#34d399">npm test &#10003; 23 passed</span></div>
+              <div class="live-feed-line"><span class="live-time">14:22:58</span><span class="live-agent" style="color:#34d399">Auth</span><span class="live-tool">Write</span><span class="live-file">src/auth/jwt.service.js <span style="color:#34d399">+94</span></span></div>
+              <div class="live-feed-line"><span class="live-time">14:22:55</span><span class="live-agent" style="color:#60a5fa">Schema</span><span class="live-tool">Bash</span><span class="live-file">git commit -m "feat: init schema"</span></div>
+              <div class="live-feed-line" style="border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.04)"><span class="live-time">14:22:52</span><span style="color:#ef4444;font-weight:700;font-size:9px">&#9888; CONFLICT</span><span class="live-file" style="color:#ef4444">config.js &mdash; Auth + Catalog</span></div>
+              <div class="live-feed-line"><span class="live-time">14:22:48</span><span class="live-agent" style="color:#f59e0b">Catalog</span><span class="live-tool">Read</span><span class="live-file">package.json</span></div>
+              <div class="live-feed-line"><span class="live-time">14:22:44</span><span class="live-agent" style="color:#34d399">Auth</span><span class="live-tool">Edit</span><span class="live-file">src/routes/auth.js</span></div>
+            </div>
+            <!-- File heatmap -->
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:10px;font-weight:700;color:#564d40;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px">File Access</div>
+              <div style="font-size:10px;padding:8px 10px;background:rgba(26,23,20,0.9);border-radius:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(42,37,32,0.4)"><span style="color:#918678">src/auth/jwt.service.js</span><span style="color:#34d399;font-weight:700">Auth</span></div>
+              <div style="font-size:10px;padding:8px 10px;background:rgba(26,23,20,0.9);border-radius:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(42,37,32,0.4)"><span style="color:#918678">src/models/product.js</span><span style="color:#f59e0b;font-weight:700">Catalog</span></div>
+              <div style="font-size:10px;padding:8px 10px;background:rgba(239,68,68,0.04);border-radius:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(239,68,68,0.2)"><span style="color:#ef4444">config.js</span><span style="color:#ef4444;font-weight:700;font-size:9px">2 agents</span></div>
+              <div style="font-size:10px;padding:8px 10px;background:rgba(26,23,20,0.9);border-radius:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(42,37,32,0.4)"><span style="color:#918678">src/routes/auth.js</span><span style="color:#34d399;font-weight:700">Auth</span></div>
+              <div style="font-size:10px;padding:8px 10px;background:rgba(26,23,20,0.9);border-radius:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(42,37,32,0.4)"><span style="color:#918678">migrations/001.sql</span><span style="color:#60a5fa;font-weight:700">Schema</span></div>
+              <!-- Stats -->
+              <div style="margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="background:rgba(26,23,20,0.9);border-radius:8px;padding:10px;text-align:center;border:1px solid rgba(42,37,32,0.4)">
+                  <div style="font-size:18px;font-weight:800;color:#ebe4d8">58</div>
+                  <div style="font-size:9px;color:#564d40;font-weight:600;text-transform:uppercase">Tool Calls</div>
+                </div>
+                <div style="background:rgba(26,23,20,0.9);border-radius:8px;padding:10px;text-align:center;border:1px solid rgba(42,37,32,0.4)">
+                  <div style="font-size:18px;font-weight:800;color:#ef4444">1</div>
+                  <div style="font-size:9px;color:#564d40;font-weight:600;text-transform:uppercase">Conflicts</div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="mock-card card-animate">
-            <span class="tag" style="background:rgba(234,179,8,0.15);color:#facc15">test</span>
-            <div class="title">Add integration tests</div>
-            <div class="meta"><span class="term-success">&#10003;</span><span>5m</span><span>$0.12</span></div>
+        </div>
+
+        <!-- ═══ BOARD VIEW ═══ -->
+        <div class="dag-view hero-view" id="hero-board" style="display:none">
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:16px 20px;min-height:340px">
+            <!-- Backlog -->
+            <div style="background:rgba(15,13,11,0.6);border-radius:10px;padding:10px">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#918678"><span style="width:6px;height:6px;border-radius:50%;background:#918678"></span> Backlog <span style="margin-left:auto;font-size:9px;background:rgba(42,37,32,0.5);padding:1px 6px;border-radius:8px;color:#736858">2</span></div>
+              <div style="background:rgba(26,23,20,0.8);border:1px solid rgba(42,37,32,0.4);border-radius:8px;padding:10px;margin-bottom:8px"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(59,130,246,0.15);color:#60a5fa;display:inline-block;margin-bottom:4px">feature</span><div style="font-size:11px;font-weight:600;color:#ebe4d8;margin-bottom:4px">Search Service</div><div style="font-size:9px;color:#564d40">sonnet &#183; #CB-105</div></div>
+              <div style="background:rgba(26,23,20,0.8);border:1px solid rgba(42,37,32,0.4);border-radius:8px;padding:10px"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(168,85,247,0.15);color:#c084fc;display:inline-block;margin-bottom:4px">refactor</span><div style="font-size:11px;font-weight:600;color:#ebe4d8;margin-bottom:4px">Admin Dashboard</div><div style="font-size:9px;color:#564d40">sonnet &#183; #CB-106</div></div>
+            </div>
+            <!-- In Progress -->
+            <div style="background:rgba(15,13,11,0.6);border-radius:10px;padding:10px">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f59e0b"><span style="width:6px;height:6px;border-radius:50%;background:#f59e0b"></span> Running <span style="margin-left:auto;font-size:9px;background:rgba(42,37,32,0.5);padding:1px 6px;border-radius:8px;color:#736858">1</span></div>
+              <div style="background:rgba(26,23,20,0.8);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(59,130,246,0.15);color:#60a5fa;display:inline-block;margin-bottom:4px">feature</span><div style="font-size:11px;font-weight:600;color:#ebe4d8;margin-bottom:4px">Product Catalog</div><div style="display:inline-flex;align-items:center;gap:3px;font-size:8px;font-weight:600;color:#f59e0b;background:rgba(245,158,11,0.1);padding:2px 6px;border-radius:4px"><span style="width:4px;height:4px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite"></span> Running</div><div style="margin-top:8px;background:rgba(15,13,11,0.8);border-radius:6px;padding:8px;font-family:monospace;font-size:9px;color:#918678"><span style="color:#c084fc">Edit</span> product.js</div></div>
+            </div>
+            <!-- Testing -->
+            <div style="background:rgba(15,13,11,0.6);border-radius:10px;padding:10px">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#DA7756"><span style="width:6px;height:6px;border-radius:50%;background:#DA7756"></span> Testing <span style="margin-left:auto;font-size:9px;background:rgba(42,37,32,0.5);padding:1px 6px;border-radius:8px;color:#736858">1</span></div>
+              <div style="background:rgba(26,23,20,0.8);border:1px solid rgba(42,37,32,0.4);border-radius:8px;padding:10px"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(218,119,86,0.15);color:#DA7756;display:inline-block;margin-bottom:4px">feature</span><div style="font-size:11px;font-weight:600;color:#ebe4d8;margin-bottom:4px">Auth API</div><div style="font-size:9px;color:#564d40">opus &#183; 4m 12s &#183; #CB-101</div></div>
+            </div>
+            <!-- Done -->
+            <div style="background:rgba(15,13,11,0.6);border-radius:10px;padding:10px">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#34d399"><span style="width:6px;height:6px;border-radius:50%;background:#34d399"></span> Done <span style="margin-left:auto;font-size:9px;background:rgba(42,37,32,0.5);padding:1px 6px;border-radius:8px;color:#736858">2</span></div>
+              <div style="background:rgba(26,23,20,0.8);border:1px solid rgba(42,37,32,0.4);border-radius:8px;padding:10px;margin-bottom:8px"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(34,197,94,0.15);color:#4ade80;display:inline-block;margin-bottom:4px">migration</span><div style="font-size:11px;font-weight:600;color:#ebe4d8;margin-bottom:4px">DB Schema</div><div style="font-size:9px;color:#564d40"><span style="color:#34d399">&#10003;</span> 1m 02s &#183; #CB-102</div></div>
+              <div style="background:rgba(26,23,20,0.8);border:1px solid rgba(42,37,32,0.4);border-radius:8px;padding:10px"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(234,179,8,0.15);color:#facc15;display:inline-block;margin-bottom:4px">config</span><div style="font-size:11px;font-weight:600;color:#ebe4d8;margin-bottom:4px">ENV Setup</div><div style="font-size:9px;color:#564d40"><span style="color:#34d399">&#10003;</span> 0m 45s &#183; #CB-100</div></div>
+            </div>
+            <!-- Failed -->
+            <div style="background:rgba(15,13,11,0.6);border-radius:10px;padding:10px">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#ef4444"><span style="width:6px;height:6px;border-radius:50%;background:#ef4444"></span> Failed <span style="margin-left:auto;font-size:9px;background:rgba(42,37,32,0.5);padding:1px 6px;border-radius:8px;color:#736858">1</span></div>
+              <div style="background:rgba(26,23,20,0.8);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:10px"><span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(239,68,68,0.15);color:#f87171;display:inline-block;margin-bottom:4px">bugfix</span><div style="font-size:11px;font-weight:600;color:#ebe4d8;margin-bottom:4px">Cache Layer</div><div style="font-size:9px;color:#ef4444">3/3 retries &#183; #CB-99</div></div>
+            </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Capability Ticker -->
+    <div class="ticker-wrap">
+      <div class="ticker-track">
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#34d399"></span> DAG Dependencies</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#f59e0b"></span> Wave Execution</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#DA7756"></span> Live Terminal</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#c084fc"></span> Auto-PR Creation</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#60a5fa"></span> Session Replay</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#ef4444"></span> Conflict Detection</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#34d399"></span> Auto-Test</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#fbbf24"></span> Exponential Backoff</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#DA7756"></span> Webhooks</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#c084fc"></span> Planning Mode</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#60a5fa"></span> Token Analytics</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#34d399"></span> Git Automation</div>
+        <!-- Duplicate for seamless loop -->
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#34d399"></span> DAG Dependencies</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#f59e0b"></span> Wave Execution</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#DA7756"></span> Live Terminal</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#c084fc"></span> Auto-PR Creation</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#60a5fa"></span> Session Replay</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#ef4444"></span> Conflict Detection</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#34d399"></span> Auto-Test</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#fbbf24"></span> Exponential Backoff</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#DA7756"></span> Webhooks</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#c084fc"></span> Planning Mode</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#60a5fa"></span> Token Analytics</div>
+        <div class="ticker-pill"><span class="ticker-dot" style="background:#34d399"></span> Git Automation</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Orchestration Modes -->
+<section class="modes" id="orchestration">
+  <div class="container">
+    <div class="section-label fade-in">Orchestration Engine</div>
+    <h2 class="section-title fade-in">Three views. Total control.</h2>
+    <p class="section-desc fade-in">Monitor, debug, and manage your entire AI pipeline from the orchestration command center.</p>
+    <div class="modes-grid">
+      <!-- Graph Mode -->
+      <div class="mode-card fade-in stagger-1">
+        <div class="mode-visual" style="padding:20px;display:flex;align-items:center;justify-content:center">
+          <div style="position:relative;width:100%;height:160px">
+            <!-- Nodes -->
+            <div style="position:absolute;left:6%;top:8%;width:72px;height:38px;background:#162416;border:1.5px solid #34d399;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:5px">
+              <span style="width:5px;height:5px;border-radius:50%;background:#34d399"></span>
+              <span style="font-size:9px;font-weight:700;color:#34d399">Auth</span>
+            </div>
+            <div style="position:absolute;left:6%;top:58%;width:72px;height:38px;background:#231e0e;border:1.5px solid #f59e0b;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:5px">
+              <span style="width:5px;height:5px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite"></span>
+              <span style="font-size:9px;font-weight:700;color:#f59e0b">API</span>
+            </div>
+            <div style="position:absolute;left:38%;top:33%;width:72px;height:38px;background:#14120f;border:1.5px solid #3d372e;border-radius:8px;display:flex;align-items:center;justify-content:center">
+              <span style="font-size:9px;font-weight:700;color:#918678">Payment</span>
+            </div>
+            <div style="position:absolute;left:70%;top:12%;width:72px;height:38px;background:#14120f;border:1.5px solid #3d372e;border-radius:8px;display:flex;align-items:center;justify-content:center">
+              <span style="font-size:9px;font-weight:700;color:#918678">Tests</span>
+            </div>
+            <div style="position:absolute;left:70%;top:58%;width:72px;height:38px;background:#14120f;border:1.5px solid #3d372e;border-radius:8px;display:flex;align-items:center;justify-content:center">
+              <span style="font-size:9px;font-weight:700;color:#918678">Deploy</span>
+            </div>
+            <!-- Connecting lines (CSS borders) -->
+            <div style="position:absolute;left:28%;top:17%;width:12%;height:2px;background:rgba(52,211,153,0.4);transform:rotate(22deg);transform-origin:left center"></div>
+            <div style="position:absolute;left:28%;top:67%;width:12%;height:2px;background:rgba(61,55,46,0.4);transform:rotate(-22deg);transform-origin:left center"></div>
+            <div style="position:absolute;left:60%;top:38%;width:12%;height:2px;background:rgba(61,55,46,0.4);transform:rotate(-14deg);transform-origin:left center"></div>
+            <div style="position:absolute;left:60%;top:56%;width:12%;height:2px;background:rgba(61,55,46,0.4);transform:rotate(14deg);transform-origin:left center"></div>
+          </div>
+        </div>
+        <div class="mode-content">
+          <div class="mode-icon">&#128424;</div>
+          <h3>Dependency Graph</h3>
+          <p>Interactive DAG with draggable nodes, conditional edges, and wave grouping. Shift+drag to create dependencies.</p>
+        </div>
+      </div>
+
+      <!-- Timeline Mode -->
+      <div class="mode-card fade-in stagger-2">
+        <div class="mode-visual timeline-visual">
+          <div class="tl-bar-row">
+            <span class="tl-label">Auth API</span>
+            <div class="tl-track">
+              <div class="tl-bar" style="--bar-width:55%;left:0;background:linear-gradient(90deg,#34d399,#2dd4a0);border-radius:6px"></div>
+            </div>
+          </div>
+          <div class="tl-bar-row">
+            <span class="tl-label">Catalog</span>
+            <div class="tl-track">
+              <div class="tl-bar" style="--bar-width:40%;left:10%;background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:6px;animation-delay:0.2s">
+                <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);animation:shimmer 2s infinite;border-radius:6px"></div>
+              </div>
+            </div>
+          </div>
+          <div class="tl-bar-row">
+            <span class="tl-label">Schema</span>
+            <div class="tl-track">
+              <div class="tl-bar" style="--bar-width:25%;left:5%;background:linear-gradient(90deg,#34d399,#2dd4a0);border-radius:6px;animation-delay:0.4s"></div>
+            </div>
+          </div>
+          <div class="tl-bar-row">
+            <span class="tl-label">Payment</span>
+            <div class="tl-track">
+              <div class="tl-bar" style="--bar-width:30%;left:55%;background:rgba(61,55,46,0.3);border-radius:6px;animation-delay:0.6s"></div>
+              <div class="tl-now"></div>
+            </div>
+          </div>
+          <div class="tl-bar-row">
+            <span class="tl-label">Tests</span>
+            <div class="tl-track">
+              <div class="tl-bar" style="--bar-width:20%;left:75%;background:rgba(61,55,46,0.3);border-radius:6px;animation-delay:0.8s"></div>
+            </div>
+          </div>
+        </div>
+        <div class="mode-content">
+          <div class="mode-icon">&#128197;</div>
+          <h3>Execution Timeline</h3>
+          <p>Gantt-style view with real-time progress, NOW marker, wave groups, and hover tooltips with cost breakdown.</p>
+        </div>
+      </div>
+
+      <!-- Live Mode -->
+      <div class="mode-card fade-in stagger-3">
+        <div class="mode-visual live-visual">
+          <div class="live-feed-line">
+            <span class="live-time">14:23:01</span>
+            <span class="live-agent" style="color:#f59e0b">Catalog</span>
+            <span class="live-tool">Edit</span>
+            <span class="live-file">src/models/product.js</span>
+          </div>
+          <div class="live-feed-line">
+            <span class="live-time">14:23:00</span>
+            <span class="live-agent" style="color:#34d399">Auth</span>
+            <span class="live-tool">Bash</span>
+            <span class="live-file" style="color:#34d399">npm test &#10003; 12 passed</span>
+          </div>
+          <div class="live-feed-line">
+            <span class="live-time">14:22:58</span>
+            <span class="live-agent" style="color:#f59e0b">Catalog</span>
+            <span class="live-tool">Read</span>
+            <span class="live-file">src/routes/products.js</span>
+          </div>
+          <div class="live-feed-line">
+            <span class="live-time">14:22:55</span>
+            <span class="live-agent" style="color:#34d399">Auth</span>
+            <span class="live-tool">Write</span>
+            <span class="live-file">src/middleware/jwt.js <span style="color:#34d399">+42</span></span>
+          </div>
+          <div class="live-feed-line" style="border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.05)">
+            <span class="live-time">14:22:52</span>
+            <span style="color:#ef4444;font-weight:700;font-size:9px">&#9888; CONFLICT</span>
+            <span class="live-file" style="color:#ef4444">config.js &mdash; 2 agents</span>
+          </div>
+        </div>
+        <div class="mode-content">
+          <div class="mode-icon">&#128225;</div>
+          <h3>Live Observability</h3>
+          <p>Real-time feed of all tool calls, file heatmap with conflict detection, and per-agent activity cards.</p>
         </div>
       </div>
     </div>
@@ -387,53 +1066,114 @@
 <!-- How it works -->
 <section class="how" id="how">
   <div class="container">
-    <div class="section-label">How it works</div>
-    <h2 class="section-title">Three steps. Zero boilerplate.</h2>
-    <p class="section-desc">You describe the task. Your agents handle the rest.</p>
-    <div class="steps-flow">
-      <div class="step-item fade-in">
-        <div class="step-num">1</div>
-        <div class="step-line"></div>
-        <div class="step-content">
-          <h3>Create a task</h3>
-          <p>Describe what you need &mdash; a feature, bugfix, refactor, or test. Pick a model and priority.</p>
-          <div class="step-visual">
-            <div style="color:#DA7756;margin-bottom:4px">+ New Task</div>
-            <div style="color:#ebe4d8">"Add webhook notification system with Slack and Discord support"</div>
-            <div style="color:#564d40;margin-top:4px">Model: sonnet &bull; Type: feature &bull; Priority: high</div>
+    <div class="section-label fade-in">How it works</div>
+    <h2 class="section-title fade-in">From idea to production.<br>In three moves.</h2>
+    <div class="how-grid">
+      <div class="how-steps">
+        <div class="how-step active fade-in" onclick="switchStep(0)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <h3>Define your tasks</h3>
+            <p>Describe features, bugs, or refactors. Pick models, set priorities, and define dependencies between tasks with drag-and-drop.</p>
+          </div>
+        </div>
+        <div class="how-step fade-in" onclick="switchStep(1)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <h3>Agents orchestrate</h3>
+            <p>Tasks execute in dependency-aware waves. Each agent creates a branch, writes code, runs tests, and commits &mdash; all visible in the live terminal.</p>
+          </div>
+        </div>
+        <div class="how-step fade-in" onclick="switchStep(2)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <h3>Review &amp; ship</h3>
+            <p>Review diffs, auto-test results, and token costs. Approve to auto-create PRs, or request changes &mdash; Claude iterates on your feedback.</p>
           </div>
         </div>
       </div>
-      <div class="step-item fade-in">
-        <div class="step-num">2</div>
-        <div class="step-line"></div>
-        <div class="step-content">
-          <h3>Claude starts coding</h3>
-          <p>Drag to "In Progress" and Claude creates a branch, reads the codebase, writes code, and commits &mdash; all visible in the live terminal.</p>
-          <div class="step-visual">
-            <div class="term-line"><span class="term-prompt">&#9656;</span><span style="color:#c084fc">Read</span><span class="term-text"> src/routes/webhooks.js</span></div>
-            <div class="term-line"><span class="term-prompt">&#9656;</span><span style="color:#c084fc">Write</span><span class="term-text"> src/services/dispatcher.js <span style="color:#34d399">+158 lines</span></span></div>
-            <div class="term-line"><span class="term-prompt">&#9656;</span><span style="color:#60a5fa">Bash</span><span class="term-text"> npm test <span style="color:#34d399">&#10003; 23 passed</span></span></div>
-            <div class="term-line"><span class="term-prompt">&#9656;</span><span style="color:#60a5fa">Bash</span><span class="term-text"> git commit -m "Add webhook system"</span></div>
+      <div class="how-visual fade-in">
+        <div class="how-visual-inner">
+          <!-- Step 1: Task Creation -->
+          <div class="how-screen active" id="how-screen-0">
+            <div class="task-create-visual">
+              <div class="tcv-field highlight">
+                <div class="tcv-label">Task Description</div>
+                <div class="tcv-value">"Build a payment integration with Stripe. Handle subscriptions, webhooks, and refunds."</div>
+              </div>
+              <div class="tcv-row">
+                <div class="tcv-field">
+                  <div class="tcv-label">Model</div>
+                  <div class="tcv-value" style="color:#DA7756">&#11044; Opus</div>
+                </div>
+                <div class="tcv-field">
+                  <div class="tcv-label">Type</div>
+                  <div class="tcv-value">Feature</div>
+                </div>
+                <div class="tcv-field">
+                  <div class="tcv-label">Priority</div>
+                  <div class="tcv-value" style="color:#ef4444">High</div>
+                </div>
+              </div>
+              <div class="tcv-field">
+                <div class="tcv-label">Dependencies</div>
+                <div class="tcv-tags">
+                  <span class="tcv-tag" style="background:rgba(52,211,153,0.15);color:#34d399">&#10003; Auth API</span>
+                  <span class="tcv-tag" style="background:rgba(52,211,153,0.15);color:#34d399">&#10003; DB Schema</span>
+                </div>
+              </div>
+              <div class="tcv-field">
+                <div class="tcv-label">Attached Context</div>
+                <div class="tcv-tags">
+                  <span class="tcv-tag" style="background:rgba(218,119,86,0.15);color:#DA7756">&#128196; stripe-api-docs.md</span>
+                  <span class="tcv-tag" style="background:rgba(139,92,246,0.15);color:#c084fc">&#9881; coding-standards</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="step-item fade-in">
-        <div class="step-num">3</div>
-        <div class="step-line"></div>
-        <div class="step-content">
-          <h3>Review & ship</h3>
-          <p>Task moves to Testing. Review the diff, approve or request changes. Claude picks up your feedback and iterates.</p>
-          <div class="step-visual">
-            <div style="display:flex;gap:12px;align-items:center">
-              <span style="color:#34d399;font-size:14px">&#10003;</span>
-              <span style="color:#ebe4d8">4 files changed</span>
-              <span style="color:#34d399">+218</span>
-              <span style="color:#f87171">-12</span>
-              <span style="color:#564d40">&bull;</span>
-              <span style="color:#DA7756">$0.08</span>
-              <span style="color:#564d40">&bull;</span>
-              <span style="color:#918678">3m 24s</span>
+
+          <!-- Step 2: Orchestration -->
+          <div class="how-screen" id="how-screen-1">
+            <div class="orchestrate-visual">
+              <div class="ov-wave">&#9654; Wave 0 &mdash; 3 agents parallel</div>
+              <div class="ov-line"><span class="ov-prompt">&#9656;</span><span class="ov-purple">Read</span><span class="ov-dim"> src/auth/middleware.js</span></div>
+              <div class="ov-line"><span class="ov-prompt">&#9656;</span><span class="ov-purple">Write</span><span class="ov-cmd"> src/auth/jwt.service.js </span><span class="ov-success">+94 lines</span></div>
+              <div class="ov-line"><span class="ov-prompt">&#9656;</span><span class="ov-blue">Bash</span><span class="ov-dim"> npm test</span><span class="ov-success"> &#10003; 18 passed</span></div>
+              <div class="ov-line"><span class="ov-prompt">&#9656;</span><span class="ov-blue">Bash</span><span class="ov-dim"> git commit -m "feat: JWT auth service"</span></div>
+              <div class="ov-line"><span class="ov-success">&#10003; Auth API completed</span><span class="ov-dim"> &bull; 4m 12s &bull; $0.24</span></div>
+              <div class="ov-wave">&#9654; Wave 1 &mdash; dependencies resolved, starting 3 agents</div>
+              <div class="ov-line"><span class="ov-yellow">&#8987; Payment Integration</span><span class="ov-dim"> waiting for Auth API </span><span class="ov-success">&#10003;</span></div>
+              <div class="ov-line"><span class="ov-prompt">&#9656;</span><span class="ov-purple">Read</span><span class="ov-dim"> src/services/stripe.js</span></div>
+              <div class="ov-line"><span class="ov-prompt">&#9656;</span><span class="ov-purple">Write</span><span class="ov-cmd"> src/payments/checkout.js </span><span class="ov-success">+158 lines</span></div>
+              <div class="ov-line"><span class="ov-prompt">&#9656;</span><span class="ov-purple">Write</span><span class="ov-cmd"> src/payments/webhooks.js </span><span class="ov-success">+82 lines</span></div>
+            </div>
+          </div>
+
+          <!-- Step 3: Review -->
+          <div class="how-screen" id="how-screen-2">
+            <div class="review-visual">
+              <div class="rv-stats">
+                <div class="rv-stat"><span class="rv-stat-val">12</span><span class="rv-stat-lbl">Files</span></div>
+                <div class="rv-stat"><span class="rv-stat-val" style="color:#34d399">+847</span><span class="rv-stat-lbl">Added</span></div>
+                <div class="rv-stat"><span class="rv-stat-val" style="color:#f87171">-23</span><span class="rv-stat-lbl">Removed</span></div>
+                <div class="rv-stat"><span class="rv-stat-val" style="color:#DA7756">$0.34</span><span class="rv-stat-lbl">Cost</span></div>
+              </div>
+              <div class="rv-diff">
+                <span class="rv-file">src/payments/checkout.js</span>
+                <div class="rv-line rv-add">+ import Stripe from 'stripe';</div>
+                <div class="rv-line rv-add">+ import { validateSession } from '../auth/jwt.service';</div>
+                <div class="rv-line" style="color:#564d40">&nbsp;</div>
+                <div class="rv-line rv-add">+ export async function createCheckoutSession(req, res) {</div>
+                <div class="rv-line rv-add">+   const session = await validateSession(req.headers.auth);</div>
+                <div class="rv-line rv-add">+   const checkout = await stripe.checkout.sessions.create({</div>
+                <div class="rv-line rv-add">+     customer: session.customerId,</div>
+                <div class="rv-line rv-add">+     line_items: req.body.items,</div>
+                <div class="rv-line rv-add">+   });</div>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:4px">
+                <div style="flex:1;padding:12px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:10px;text-align:center;font-size:13px;font-weight:700;color:#34d399;cursor:pointer">&#10003; Approve &amp; Create PR</div>
+                <div style="flex:1;padding:12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;text-align:center;font-size:13px;font-weight:700;color:#f59e0b;cursor:pointer">&#8635; Request Changes</div>
+              </div>
             </div>
           </div>
         </div>
@@ -445,45 +1185,422 @@
 <!-- Features -->
 <section id="features">
   <div class="container">
-    <div class="section-label">Features</div>
-    <h2 class="section-title">One developer. Unlimited agents.</h2>
-    <p class="section-desc">Everything you need to run a squad of Claude agents from your own machine.</p>
+    <div class="section-label fade-in">Features</div>
+    <h2 class="section-title fade-in">Everything you need to<br>run an AI dev squad.</h2>
+    <p class="section-desc fade-in">From orchestration to deployment, Claude Board handles the entire lifecycle.</p>
     <div class="features-grid">
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(218,119,86,0.12)">&#9889;</div><h3>Live Terminal</h3><p>Watch each agent's tool calls, file edits, and commands in real-time. See exactly what your squad is doing.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(168,85,247,0.12)">&#128268;</div><h3>Git Automation</h3><p>Each agent creates its own branch. Optional auto-PR on completion. Full commit history per task.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(234,179,8,0.12)">&#128276;</div><h3>Webhooks</h3><p>Slack, Discord, Teams, or custom endpoints. Per-project config with event filtering and one-click test.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(52,211,153,0.12)">&#9881;</div><h3>Parallel Agents</h3><p>Run up to 5 agents simultaneously. Auto-queue chains tasks &mdash; when one agent finishes, the next starts.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(59,130,246,0.12)">&#128202;</div><h3>Usage Analytics</h3><p>Token tracking, cost analysis, model breakdown, 30-day trends, and rate limit monitoring.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(244,114,182,0.12)">&#128196;</div><h3>Context & Templates</h3><p>Snippets inject project rules into every prompt. Templates with variable substitution. File attachments.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(99,102,241,0.12)">&#127911;</div><h3>Voice Assistant</h3><p>Built-in voice assistant with speech recognition and text-to-speech. Create tasks, change status, and manage your board hands-free.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(236,72,153,0.12)">&#127919;</div><h3>Task Keys</h3><p>Jira-style task identifiers like FTR-CB-1001. Auto-generated from task type, project key, and counter.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(245,158,11,0.12)">&#10024;</div><h3>Status Animations</h3><p>Particle effects on status transitions &mdash; sparks, shimmer waves, confetti bursts, and rewind effects.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(34,211,153,0.12)">&#128200;</div><h3>Advanced Timeline</h3><p>Gantt-style timeline with zoom controls, collapsible swimlanes, weekend shading, and rich hover tooltips.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(139,92,246,0.12)">&#128269;</div><h3>Model Filter</h3><p>Filter tasks by AI model (Haiku, Sonnet, Opus) from the board toolbar. Applies across all views.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(16,185,129,0.12)">&#9000;</div><h3>Keyboard Shortcuts</h3><p>Global hotkeys for common actions &mdash; toggle voice, create tasks, switch views, and navigate the board without touching the mouse.</p></div>
-      <div class="feature-card fade-in"><div class="feature-icon" style="background:rgba(96,165,250,0.12)">&#128736;</div><h3>Claude Manager</h3><p>Manage MCP servers, plugins, agents, and permissions from a visual dashboard. Configure your entire Claude environment in one place.</p></div>
+
+      <!-- Featured: Orchestration -->
+      <div class="feature-card featured fade-in" style="--card-accent:rgba(218,119,86,0.4)">
+        <div>
+          <div class="feature-icon" style="background:rgba(218,119,86,0.12)">&#128424;</div>
+          <h3>DAG Orchestration Engine</h3>
+          <p>Define task dependencies with drag-and-drop. Conditional execution paths (on_success, on_failure). Wave-based parallel execution with automatic conflict detection.</p>
+        </div>
+        <div class="feature-visual">
+          <div style="position:relative;width:100%;height:120px">
+            <!-- Nodes -->
+            <div style="position:absolute;left:8%;top:10%;width:32px;height:32px;border-radius:50%;background:#162416;border:1.5px solid #34d399;display:flex;align-items:center;justify-content:center"><span style="color:#34d399;font-size:10px;font-weight:700">&#10003;</span></div>
+            <div style="position:absolute;left:8%;top:60%;width:32px;height:32px;border-radius:50%;background:#231e0e;border:1.5px solid #f59e0b;display:flex;align-items:center;justify-content:center"><span style="color:#f59e0b;font-size:10px;font-weight:700">&#9656;</span></div>
+            <div style="position:absolute;left:42%;top:35%;width:32px;height:32px;border-radius:50%;background:#14120f;border:1.5px solid #3d372e;display:flex;align-items:center;justify-content:center"><span style="color:#918678;font-size:8px;font-weight:700">W1</span></div>
+            <div style="position:absolute;left:76%;top:35%;width:32px;height:32px;border-radius:50%;background:#14120f;border:1.5px solid #3d372e;display:flex;align-items:center;justify-content:center"><span style="color:#918678;font-size:8px;font-weight:700">W2</span></div>
+            <!-- Connecting lines -->
+            <div style="position:absolute;left:22%;top:22%;width:22%;height:2px;background:rgba(52,211,153,0.4);transform:rotate(18deg);transform-origin:left center"></div>
+            <div style="position:absolute;left:22%;top:72%;width:22%;height:2px;background:rgba(61,55,46,0.4);transform:rotate(-18deg);transform-origin:left center"></div>
+            <div style="position:absolute;left:56%;top:48%;width:22%;height:2px;background:rgba(61,55,46,0.4)"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature-card fade-in" style="--card-accent:rgba(245,158,11,0.3)">
+        <div class="feature-icon" style="background:rgba(245,158,11,0.12)">&#9889;</div>
+        <h3>Live Terminal</h3>
+        <p>Watch each agent's tool calls, file edits, and bash commands in real-time with split-terminal support.</p>
+      </div>
+
+      <div class="feature-card fade-in" style="--card-accent:rgba(168,85,247,0.3)">
+        <div class="feature-icon" style="background:rgba(168,85,247,0.12)">&#128268;</div>
+        <h3>Git Automation</h3>
+        <p>Auto-create branches per task. One-click PR creation on completion. Full commit history tracking.</p>
+      </div>
+
+      <div class="feature-card fade-in" style="--card-accent:rgba(52,211,153,0.3)">
+        <div class="feature-icon" style="background:rgba(52,211,153,0.12)">&#128260;</div>
+        <h3>Auto-Retry &amp; Backoff</h3>
+        <p>Failed tasks retry automatically with exponential backoff. Configurable max retries with 30s&times;2^n delay.</p>
+      </div>
+
+      <div class="feature-card fade-in" style="--card-accent:rgba(59,130,246,0.3)">
+        <div class="feature-icon" style="background:rgba(59,130,246,0.12)">&#128202;</div>
+        <h3>Usage Analytics</h3>
+        <p>Token tracking, cost analysis per agent, model breakdown, 30-day trends, and rate limit monitoring.</p>
+      </div>
+
+      <div class="feature-card fade-in" style="--card-accent:rgba(239,68,68,0.3)">
+        <div class="feature-icon" style="background:rgba(239,68,68,0.12)">&#128681;</div>
+        <h3>Auto-Test &amp; Review</h3>
+        <p>Auto-run test suites on task completion. Failed tests trigger auto-revision. Diff viewer with inline comments.</p>
+      </div>
+
+      <div class="feature-card fade-in" style="--card-accent:rgba(234,179,8,0.3)">
+        <div class="feature-icon" style="background:rgba(234,179,8,0.12)">&#128276;</div>
+        <h3>Webhooks</h3>
+        <p>Slack, Discord, Teams, or custom endpoints. Event filtering per project with one-click test delivery.</p>
+      </div>
+
+      <div class="feature-card fade-in" style="--card-accent:rgba(244,114,182,0.3)">
+        <div class="feature-icon" style="background:rgba(244,114,182,0.12)">&#128196;</div>
+        <h3>Context &amp; Templates</h3>
+        <p>Snippets inject rules into every prompt. Templates with variable substitution. File attachments for context.</p>
+      </div>
+
+      <div class="feature-card fade-in" style="--card-accent:rgba(139,92,246,0.3)">
+        <div class="feature-icon" style="background:rgba(139,92,246,0.12)">&#128736;</div>
+        <h3>Claude Manager</h3>
+        <p>Visual dashboard for MCP servers, plugins, agents, and permissions. One place for your Claude environment.</p>
+      </div>
+
+      <div class="feature-card fade-in" style="--card-accent:rgba(16,185,129,0.3)">
+        <div class="feature-icon" style="background:rgba(16,185,129,0.12)">&#128260;</div>
+        <h3>Session Replay</h3>
+        <p>Replay any agent's entire session step-by-step. Debug issues, understand decisions, learn from outputs.</p>
+      </div>
+
+      <div class="feature-card fade-in" style="--card-accent:rgba(96,165,250,0.3)">
+        <div class="feature-icon" style="background:rgba(96,165,250,0.12)">&#128274;</div>
+        <h3>Planning Mode</h3>
+        <p>Put your board in planning mode. Arrange tasks, set dependencies, and configure waves before execution.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- Interactive Preview -->
+<!-- Preview -->
 <section class="preview" id="preview">
   <div class="container">
-    <div class="section-label">Preview</div>
-    <h2 class="section-title">See it in action.</h2>
-    <p class="section-desc">Click to explore different views.</p>
+    <div class="section-label fade-in">Preview</div>
+    <h2 class="section-title fade-in">See it in action.</h2>
+    <p class="section-desc fade-in">Click to explore different views of Claude Board.</p>
     <div class="preview-tabs">
-      <button class="preview-tab active" onclick="switchPreview('board', this)">Board</button>
-      <button class="preview-tab" onclick="switchPreview('dashboard', this)">Dashboard</button>
-      <button class="preview-tab" onclick="switchPreview('terminal', this)">Terminal</button>
-      <button class="preview-tab" onclick="switchPreview('pipeline', this)">Pipeline</button>
-      <button class="preview-tab" onclick="switchPreview('planning', this)">Planning</button>
-      <button class="preview-tab" onclick="switchPreview('stats', this)">Statistics</button>
-      <button class="preview-tab" onclick="switchPreview('activity', this)">Activity</button>
-      <button class="preview-tab" onclick="switchPreview('task-modal', this)">Task Creation</button>
+      <button class="preview-tab active" onclick="switchPreview('pv-board', this)">Board</button>
+      <button class="preview-tab" onclick="switchPreview('pv-dashboard', this)">Dashboard</button>
+      <button class="preview-tab" onclick="switchPreview('pv-terminal', this)">Terminal</button>
+      <button class="preview-tab" onclick="switchPreview('pv-pipeline', this)">Pipeline</button>
+      <button class="preview-tab" onclick="switchPreview('pv-planning', this)">Planning</button>
+      <button class="preview-tab" onclick="switchPreview('pv-stats', this)">Statistics</button>
+      <button class="preview-tab" onclick="switchPreview('pv-activity', this)">Activity</button>
+      <button class="preview-tab" onclick="switchPreview('pv-task-modal', this)">Task Modal</button>
     </div>
-    <div class="preview-frame">
-      <img id="previewImg" src="hero-board.svg" alt="Claude Board Preview" />
+    <div class="preview-frame fade-in" style="padding:0;min-height:420px;position:relative">
+
+      <!-- ══ Board ══ -->
+      <div class="pv-screen active" id="pv-board">
+        <div class="pv-app">
+          <div class="pv-sidebar">
+            <div class="pv-sidebar-logo"></div>
+            <div class="pv-sidebar-item active"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+          </div>
+          <div class="pv-main">
+            <div class="pv-toolbar">
+              <span style="font-weight:700;color:#ebe4d8;font-size:13px">My Project</span>
+              <div style="display:flex;gap:4px;margin-left:auto">
+                <span class="pv-view-tab active">Board</span>
+                <span class="pv-view-tab">List</span>
+                <span class="pv-view-tab">Timeline</span>
+                <span class="pv-view-tab">Graph</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px;flex:1">
+              <!-- Backlog -->
+              <div class="pv-col">
+                <div class="pv-col-head"><span class="pv-dot" style="background:#918678"></span> Backlog <span class="pv-count">3</span></div>
+                <div class="pv-task"><span class="pv-tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">feature</span><div class="pv-task-title">Dark mode support</div><div class="pv-task-meta">sonnet &#183; #CB-12</div></div>
+                <div class="pv-task"><span class="pv-tag" style="background:rgba(239,68,68,0.15);color:#f87171">bugfix</span><div class="pv-task-title">Fix login redirect</div><div class="pv-task-meta">haiku &#183; #CB-13</div></div>
+                <div class="pv-task"><span class="pv-tag" style="background:rgba(168,85,247,0.15);color:#c084fc">refactor</span><div class="pv-task-title">Clean up utils</div><div class="pv-task-meta">haiku &#183; #CB-14</div></div>
+              </div>
+              <!-- Running -->
+              <div class="pv-col">
+                <div class="pv-col-head"><span class="pv-dot" style="background:#f59e0b"></span> Running <span class="pv-count">2</span></div>
+                <div class="pv-task" style="border-color:rgba(245,158,11,0.25)"><span class="pv-tag" style="background:rgba(168,85,247,0.15);color:#c084fc">refactor</span><div class="pv-task-title">Migrate API to v2</div><div style="display:inline-flex;align-items:center;gap:3px;font-size:7px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.1);padding:2px 5px;border-radius:3px;margin-top:2px"><span style="width:4px;height:4px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite"></span> Running</div></div>
+                <div class="pv-task" style="border-color:rgba(245,158,11,0.25)"><span class="pv-tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">feature</span><div class="pv-task-title">User auth system</div><div style="display:inline-flex;align-items:center;gap:3px;font-size:7px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,0.1);padding:2px 5px;border-radius:3px;margin-top:2px"><span style="width:4px;height:4px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite"></span> Running</div></div>
+              </div>
+              <!-- Testing -->
+              <div class="pv-col">
+                <div class="pv-col-head"><span class="pv-dot" style="background:#DA7756"></span> Testing <span class="pv-count">1</span></div>
+                <div class="pv-task"><span class="pv-tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">feature</span><div class="pv-task-title">Profile settings</div><div class="pv-task-meta">opus &#183; 3m &#183; #CB-10</div></div>
+              </div>
+              <!-- Done -->
+              <div class="pv-col">
+                <div class="pv-col-head"><span class="pv-dot" style="background:#34d399"></span> Done <span class="pv-count">2</span></div>
+                <div class="pv-task"><span class="pv-tag" style="background:rgba(34,197,94,0.15);color:#4ade80">docs</span><div class="pv-task-title">Update API docs</div><div class="pv-task-meta"><span style="color:#34d399">&#10003;</span> 2m &#183; #CB-8</div></div>
+                <div class="pv-task"><span class="pv-tag" style="background:rgba(234,179,8,0.15);color:#facc15">test</span><div class="pv-task-title">Integration tests</div><div class="pv-task-meta"><span style="color:#34d399">&#10003;</span> 5m &#183; #CB-9</div></div>
+              </div>
+              <!-- Failed -->
+              <div class="pv-col">
+                <div class="pv-col-head"><span class="pv-dot" style="background:#ef4444"></span> Failed <span class="pv-count">1</span></div>
+                <div class="pv-task" style="border-color:rgba(239,68,68,0.15)"><span class="pv-tag" style="background:rgba(239,68,68,0.15);color:#f87171">bugfix</span><div class="pv-task-title">Cache invalidation</div><div class="pv-task-meta" style="color:#ef4444">3/3 retries &#183; #CB-7</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Dashboard ══ -->
+      <div class="pv-screen" id="pv-dashboard">
+        <div class="pv-app">
+          <div class="pv-sidebar">
+            <div class="pv-sidebar-logo"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item active"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+          </div>
+          <div class="pv-main">
+            <div class="pv-toolbar"><span style="font-weight:700;color:#ebe4d8;font-size:13px">Dashboard</span></div>
+            <div style="padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+              <!-- Stat cards -->
+              <div class="pv-stat-card"><div class="pv-stat-num">9</div><div class="pv-stat-lbl">Total Tasks</div></div>
+              <div class="pv-stat-card"><div class="pv-stat-num" style="color:#f59e0b">2</div><div class="pv-stat-lbl">Running</div></div>
+              <div class="pv-stat-card"><div class="pv-stat-num" style="color:#34d399">5</div><div class="pv-stat-lbl">Completed</div></div>
+              <div class="pv-stat-card"><div class="pv-stat-num" style="color:#DA7756">82.4k</div><div class="pv-stat-lbl">Tokens Used</div></div>
+            </div>
+            <div style="padding:0 12px 12px;display:grid;grid-template-columns:2fr 1fr;gap:10px">
+              <!-- Chart area -->
+              <div style="background:rgba(15,13,11,0.6);border:1px solid rgba(42,37,32,0.4);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:700;color:#918678;margin-bottom:12px">Token Usage (7 days)</div>
+                <div style="display:flex;align-items:flex-end;gap:6px;height:100px">
+                  <div style="flex:1;background:rgba(218,119,86,0.2);border-radius:4px 4px 0 0;height:40%"></div>
+                  <div style="flex:1;background:rgba(218,119,86,0.3);border-radius:4px 4px 0 0;height:55%"></div>
+                  <div style="flex:1;background:rgba(218,119,86,0.2);border-radius:4px 4px 0 0;height:35%"></div>
+                  <div style="flex:1;background:rgba(218,119,86,0.4);border-radius:4px 4px 0 0;height:70%"></div>
+                  <div style="flex:1;background:rgba(218,119,86,0.35);border-radius:4px 4px 0 0;height:60%"></div>
+                  <div style="flex:1;background:rgba(218,119,86,0.5);border-radius:4px 4px 0 0;height:85%"></div>
+                  <div style="flex:1;background:linear-gradient(to top,#DA7756,#E8926E);border-radius:4px 4px 0 0;height:95%"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:8px;color:#564d40;margin-top:6px"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+              </div>
+              <!-- Model breakdown -->
+              <div style="background:rgba(15,13,11,0.6);border:1px solid rgba(42,37,32,0.4);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:700;color:#918678;margin-bottom:12px">By Model</div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px"><span style="color:#DA7756;font-weight:600">Opus</span><span style="color:#564d40">42%</span></div><div style="height:6px;background:rgba(42,37,32,0.3);border-radius:3px;overflow:hidden"><div style="width:42%;height:100%;background:#DA7756;border-radius:3px"></div></div></div>
+                  <div><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px"><span style="color:#c084fc;font-weight:600">Sonnet</span><span style="color:#564d40">38%</span></div><div style="height:6px;background:rgba(42,37,32,0.3);border-radius:3px;overflow:hidden"><div style="width:38%;height:100%;background:#c084fc;border-radius:3px"></div></div></div>
+                  <div><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px"><span style="color:#60a5fa;font-weight:600">Haiku</span><span style="color:#564d40">20%</span></div><div style="height:6px;background:rgba(42,37,32,0.3);border-radius:3px;overflow:hidden"><div style="width:20%;height:100%;background:#60a5fa;border-radius:3px"></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Terminal ══ -->
+      <div class="pv-screen" id="pv-terminal">
+        <div class="pv-app">
+          <div class="pv-sidebar">
+            <div class="pv-sidebar-logo"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item active"></div>
+            <div class="pv-sidebar-item"></div>
+          </div>
+          <div class="pv-main" style="background:#0a0908">
+            <div class="pv-toolbar"><span style="font-weight:700;color:#ebe4d8;font-size:13px">Live Terminal</span><span style="margin-left:auto;font-size:10px;color:#f59e0b;font-weight:600;display:flex;align-items:center;gap:4px"><span style="width:5px;height:5px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite"></span> Agent Running</span></div>
+            <div style="padding:14px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:11px;line-height:2">
+              <div><span style="color:#DA7756">&#9656;</span> <span style="color:#c084fc">Read</span> <span style="color:#918678">src/routes/api.js</span></div>
+              <div><span style="color:#DA7756">&#9656;</span> <span style="color:#c084fc">Read</span> <span style="color:#918678">src/models/user.js</span></div>
+              <div><span style="color:#DA7756">&#9656;</span> <span style="color:#c084fc">Write</span> <span style="color:#ebe4d8">src/routes/auth.js</span> <span style="color:#34d399">+127 lines</span></div>
+              <div><span style="color:#DA7756">&#9656;</span> <span style="color:#c084fc">Write</span> <span style="color:#ebe4d8">src/middleware/jwt.js</span> <span style="color:#34d399">+84 lines</span></div>
+              <div><span style="color:#DA7756">&#9656;</span> <span style="color:#c084fc">Edit</span> <span style="color:#918678">src/app.js</span> <span style="color:#34d399">+3</span> <span style="color:#f87171">-1</span></div>
+              <div><span style="color:#DA7756">&#9656;</span> <span style="color:#60a5fa">Bash</span> <span style="color:#918678">npm test</span></div>
+              <div style="padding-left:18px;color:#34d399">&#10003; 23 tests passed (0 failed)</div>
+              <div><span style="color:#DA7756">&#9656;</span> <span style="color:#60a5fa">Bash</span> <span style="color:#918678">git add -A && git commit -m "feat: JWT auth middleware"</span></div>
+              <div style="padding-left:18px;color:#918678">[feature/CB-101] 1 file changed, 211 insertions(+), 1 deletion(-)</div>
+              <div><span style="color:#DA7756">&#9656;</span> <span style="color:#c084fc">Read</span> <span style="color:#918678">src/services/stripe.js</span><span style="color:#DA7756;animation:blink 0.8s step-end infinite"> &#9646;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Pipeline ══ -->
+      <div class="pv-screen" id="pv-pipeline">
+        <div class="pv-app">
+          <div class="pv-sidebar">
+            <div class="pv-sidebar-logo"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item active"></div>
+          </div>
+          <div class="pv-main">
+            <div class="pv-toolbar"><span style="font-weight:700;color:#ebe4d8;font-size:13px">Orchestration &#183; Graph</span><div style="display:flex;gap:4px;margin-left:auto"><span class="pv-view-tab active">Graph</span><span class="pv-view-tab">Timeline</span><span class="pv-view-tab">Live</span></div></div>
+            <div style="padding:16px;display:flex;gap:14px;flex:1">
+              <!-- Mini DAG -->
+              <div style="flex:1;position:relative">
+                <!-- Wave labels -->
+                <div style="display:flex;margin-bottom:10px"><span style="flex:1;font-size:8px;font-weight:700;color:#564d40;text-transform:uppercase;letter-spacing:1px;text-align:center">Wave 0</span><span style="flex:1;font-size:8px;font-weight:700;color:#564d40;text-transform:uppercase;letter-spacing:1px;text-align:center">Wave 1</span><span style="flex:1;font-size:8px;font-weight:700;color:#564d40;text-transform:uppercase;letter-spacing:1px;text-align:center">Wave 2</span></div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                  <!-- W0 -->
+                  <div style="display:flex;flex-direction:column;gap:8px">
+                    <div class="pv-dag-node done"><span style="width:5px;height:5px;border-radius:50%;background:#34d399"></span> Auth API<span style="margin-left:auto;font-size:8px;color:#564d40">4m</span></div>
+                    <div class="pv-dag-node running"><span style="width:5px;height:5px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite"></span> Catalog<span style="margin-left:auto;font-size:8px;color:#564d40">2m</span></div>
+                    <div class="pv-dag-node done"><span style="width:5px;height:5px;border-radius:50%;background:#34d399"></span> Schema<span style="margin-left:auto;font-size:8px;color:#564d40">1m</span></div>
+                  </div>
+                  <!-- W1 -->
+                  <div style="display:flex;flex-direction:column;gap:8px">
+                    <div class="pv-dag-node queued">Search</div>
+                    <div class="pv-dag-node queued">Payment</div>
+                    <div class="pv-dag-node queued">Admin</div>
+                  </div>
+                  <!-- W2 -->
+                  <div style="display:flex;flex-direction:column;gap:8px;padding-top:16px">
+                    <div class="pv-dag-node queued">E2E Tests</div>
+                    <div class="pv-dag-node queued">Deploy</div>
+                  </div>
+                </div>
+              </div>
+              <!-- Agent cards -->
+              <div style="width:180px;display:flex;flex-direction:column;gap:8px">
+                <div style="font-size:9px;font-weight:700;color:#564d40;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Active Agents</div>
+                <div class="pv-agent-mini"><div style="display:flex;align-items:center;gap:5px;margin-bottom:6px"><span style="width:6px;height:6px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite"></span><span style="font-weight:700;color:#ebe4d8;font-size:10px">Catalog</span><span style="margin-left:auto;font-size:8px;color:#c084fc;font-weight:700">sonnet</span></div><div style="font-size:9px;color:#564d40">24.3k tokens &#183; 18 tools</div><div style="height:3px;background:rgba(42,37,32,0.4);border-radius:2px;margin-top:6px;overflow:hidden"><div style="width:65%;height:100%;background:#f59e0b;border-radius:2px"></div></div></div>
+                <div class="pv-agent-mini"><div style="display:flex;align-items:center;gap:5px;margin-bottom:6px"><span style="width:6px;height:6px;border-radius:50%;background:#34d399"></span><span style="font-weight:700;color:#ebe4d8;font-size:10px">Auth API</span><span style="margin-left:auto;font-size:8px;color:#DA7756;font-weight:700">opus</span></div><div style="font-size:9px;color:#34d399">&#10003; Completed &#183; 7 files</div></div>
+                <div class="pv-agent-mini"><div style="display:flex;align-items:center;gap:5px;margin-bottom:6px"><span style="width:6px;height:6px;border-radius:50%;background:#34d399"></span><span style="font-weight:700;color:#ebe4d8;font-size:10px">Schema</span><span style="margin-left:auto;font-size:8px;color:#60a5fa;font-weight:700">haiku</span></div><div style="font-size:9px;color:#34d399">&#10003; Completed &#183; 3 files</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Planning ══ -->
+      <div class="pv-screen" id="pv-planning">
+        <div class="pv-app">
+          <div class="pv-sidebar">
+            <div class="pv-sidebar-logo"></div>
+            <div class="pv-sidebar-item active"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+          </div>
+          <div class="pv-main">
+            <div class="pv-toolbar"><span style="font-weight:700;color:#ebe4d8;font-size:13px">Planning Mode</span><span style="margin-left:auto;padding:4px 12px;background:rgba(139,92,246,0.15);color:#c084fc;border-radius:6px;font-size:10px;font-weight:700">PLANNING</span></div>
+            <div style="padding:12px;display:flex;flex-direction:column;gap:8px">
+              <div class="pv-plan-row"><span class="pv-plan-num">1</span><span style="color:#ebe4d8;font-weight:600">Set up database schema</span><span style="margin-left:auto;font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(59,130,246,0.12);color:#60a5fa;font-weight:700">haiku</span><span style="font-size:9px;color:#564d40;width:50px;text-align:right">Wave 0</span></div>
+              <div class="pv-plan-row"><span class="pv-plan-num">2</span><span style="color:#ebe4d8;font-weight:600">Build authentication API</span><span style="margin-left:auto;font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(218,119,86,0.12);color:#DA7756;font-weight:700">opus</span><span style="font-size:9px;color:#564d40;width:50px;text-align:right">Wave 0</span></div>
+              <div class="pv-plan-row"><span class="pv-plan-num">3</span><span style="color:#ebe4d8;font-weight:600">Product catalog service</span><span style="margin-left:auto;font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(168,85,247,0.12);color:#c084fc;font-weight:700">sonnet</span><span style="font-size:9px;color:#564d40;width:50px;text-align:right">Wave 0</span></div>
+              <div style="border-top:1px dashed rgba(42,37,32,0.4);margin:4px 0"></div>
+              <div class="pv-plan-row" style="opacity:0.6"><span class="pv-plan-num">4</span><span style="color:#918678;font-weight:600">Payment integration</span><span style="font-size:8px;color:#564d40;margin-left:4px">depends on #1, #2</span><span style="margin-left:auto;font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(218,119,86,0.12);color:#DA7756;font-weight:700">opus</span><span style="font-size:9px;color:#564d40;width:50px;text-align:right">Wave 1</span></div>
+              <div class="pv-plan-row" style="opacity:0.6"><span class="pv-plan-num">5</span><span style="color:#918678;font-weight:600">Search service</span><span style="font-size:8px;color:#564d40;margin-left:4px">depends on #3</span><span style="margin-left:auto;font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(168,85,247,0.12);color:#c084fc;font-weight:700">sonnet</span><span style="font-size:9px;color:#564d40;width:50px;text-align:right">Wave 1</span></div>
+              <div style="border-top:1px dashed rgba(42,37,32,0.4);margin:4px 0"></div>
+              <div class="pv-plan-row" style="opacity:0.4"><span class="pv-plan-num">6</span><span style="color:#736858;font-weight:600">E2E test suite</span><span style="font-size:8px;color:#564d40;margin-left:4px">depends on #4, #5</span><span style="margin-left:auto;font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(218,119,86,0.12);color:#DA7756;font-weight:700">opus</span><span style="font-size:9px;color:#564d40;width:50px;text-align:right">Wave 2</span></div>
+            </div>
+            <div style="padding:0 12px 12px;display:flex;gap:8px">
+              <div style="flex:1;padding:10px;text-align:center;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:8px;font-size:11px;font-weight:700;color:#34d399;cursor:pointer">&#9654; Start Execution</div>
+              <div style="padding:10px 16px;text-align:center;background:rgba(42,37,32,0.3);border:1px solid rgba(42,37,32,0.4);border-radius:8px;font-size:11px;font-weight:600;color:#918678;cursor:pointer">+ Add Task</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Statistics ══ -->
+      <div class="pv-screen" id="pv-stats">
+        <div class="pv-app">
+          <div class="pv-sidebar">
+            <div class="pv-sidebar-logo"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item active"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+          </div>
+          <div class="pv-main">
+            <div class="pv-toolbar"><span style="font-weight:700;color:#ebe4d8;font-size:13px">Analytics</span><span style="margin-left:auto;font-size:10px;color:#564d40">Last 30 days</span></div>
+            <div style="padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+              <div class="pv-stat-card"><div class="pv-stat-num" style="color:#ebe4d8">156</div><div class="pv-stat-lbl">Tasks Run</div></div>
+              <div class="pv-stat-card"><div class="pv-stat-num" style="color:#34d399">89%</div><div class="pv-stat-lbl">Success Rate</div></div>
+              <div class="pv-stat-card"><div class="pv-stat-num" style="color:#DA7756">1.2M</div><div class="pv-stat-lbl">Tokens</div></div>
+              <div class="pv-stat-card"><div class="pv-stat-num" style="color:#c084fc">3.2m</div><div class="pv-stat-lbl">Avg Duration</div></div>
+            </div>
+            <div style="padding:0 12px 12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="background:rgba(15,13,11,0.6);border:1px solid rgba(42,37,32,0.4);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:700;color:#918678;margin-bottom:10px">Tasks by Status</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#34d399"></span><span style="font-size:10px;color:#918678;flex:1">Done</span><span style="font-size:11px;color:#ebe4d8;font-weight:700">139</span></div>
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#f59e0b"></span><span style="font-size:10px;color:#918678;flex:1">Running</span><span style="font-size:11px;color:#ebe4d8;font-weight:700">4</span></div>
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#ef4444"></span><span style="font-size:10px;color:#918678;flex:1">Failed</span><span style="font-size:11px;color:#ebe4d8;font-weight:700">13</span></div>
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#918678"></span><span style="font-size:10px;color:#918678;flex:1">Backlog</span><span style="font-size:11px;color:#ebe4d8;font-weight:700">0</span></div>
+                </div>
+              </div>
+              <div style="background:rgba(15,13,11,0.6);border:1px solid rgba(42,37,32,0.4);border-radius:10px;padding:14px">
+                <div style="font-size:10px;font-weight:700;color:#918678;margin-bottom:10px">Cost Breakdown</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#DA7756"></span><span style="font-size:10px;color:#918678;flex:1">Opus</span><span style="font-size:11px;color:#ebe4d8;font-weight:700">$12.40</span></div>
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#c084fc"></span><span style="font-size:10px;color:#918678;flex:1">Sonnet</span><span style="font-size:11px;color:#ebe4d8;font-weight:700">$4.80</span></div>
+                  <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#60a5fa"></span><span style="font-size:10px;color:#918678;flex:1">Haiku</span><span style="font-size:11px;color:#ebe4d8;font-weight:700">$0.90</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Activity ══ -->
+      <div class="pv-screen" id="pv-activity">
+        <div class="pv-app">
+          <div class="pv-sidebar">
+            <div class="pv-sidebar-logo"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item active"></div>
+            <div class="pv-sidebar-item"></div>
+          </div>
+          <div class="pv-main">
+            <div class="pv-toolbar"><span style="font-weight:700;color:#ebe4d8;font-size:13px">Activity Log</span></div>
+            <div style="padding:12px;display:flex;flex-direction:column;gap:6px">
+              <div class="pv-activity-row"><span class="pv-act-time">14:23</span><span class="pv-act-badge" style="background:rgba(52,211,153,0.12);color:#34d399">completed</span><span style="color:#ebe4d8;font-weight:600">Auth API</span><span style="color:#564d40">&#183; 7 files &#183; 4m 12s &#183; opus</span></div>
+              <div class="pv-activity-row"><span class="pv-act-time">14:22</span><span class="pv-act-badge" style="background:rgba(218,119,86,0.12);color:#DA7756">testing</span><span style="color:#ebe4d8;font-weight:600">Profile Settings</span><span style="color:#564d40">&#183; auto-test running</span></div>
+              <div class="pv-activity-row"><span class="pv-act-time">14:20</span><span class="pv-act-badge" style="background:rgba(245,158,11,0.12);color:#f59e0b">started</span><span style="color:#ebe4d8;font-weight:600">Product Catalog</span><span style="color:#564d40">&#183; branch created</span></div>
+              <div class="pv-activity-row"><span class="pv-act-time">14:18</span><span class="pv-act-badge" style="background:rgba(52,211,153,0.12);color:#34d399">completed</span><span style="color:#ebe4d8;font-weight:600">DB Schema</span><span style="color:#564d40">&#183; 3 files &#183; 1m 02s &#183; haiku</span></div>
+              <div class="pv-activity-row"><span class="pv-act-time">14:15</span><span class="pv-act-badge" style="background:rgba(239,68,68,0.12);color:#ef4444">failed</span><span style="color:#ebe4d8;font-weight:600">Cache Layer</span><span style="color:#564d40">&#183; retry 3/3 exhausted</span></div>
+              <div class="pv-activity-row"><span class="pv-act-time">14:12</span><span class="pv-act-badge" style="background:rgba(139,92,246,0.12);color:#c084fc">pr-created</span><span style="color:#ebe4d8;font-weight:600">API Docs</span><span style="color:#564d40">&#183; #47 opened</span></div>
+              <div class="pv-activity-row"><span class="pv-act-time">14:10</span><span class="pv-act-badge" style="background:rgba(245,158,11,0.12);color:#f59e0b">retry</span><span style="color:#ebe4d8;font-weight:600">Cache Layer</span><span style="color:#564d40">&#183; attempt 3 &#183; backoff 2m</span></div>
+              <div class="pv-activity-row"><span class="pv-act-time">14:05</span><span class="pv-act-badge" style="background:rgba(52,211,153,0.12);color:#34d399">completed</span><span style="color:#ebe4d8;font-weight:600">Integration Tests</span><span style="color:#564d40">&#183; 5 files &#183; 5m 30s</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Task Modal ══ -->
+      <div class="pv-screen" id="pv-task-modal">
+        <div class="pv-app" style="position:relative">
+          <div class="pv-sidebar">
+            <div class="pv-sidebar-logo"></div>
+            <div class="pv-sidebar-item active"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+            <div class="pv-sidebar-item"></div>
+          </div>
+          <div class="pv-main" style="position:relative">
+            <!-- Dim overlay -->
+            <div style="position:absolute;inset:0;background:rgba(10,9,8,0.6);z-index:1"></div>
+            <!-- Modal -->
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:360px;background:#1a1714;border:1px solid rgba(42,37,32,0.6);border-radius:16px;z-index:2;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+              <div style="font-size:14px;font-weight:700;color:#ebe4d8;margin-bottom:16px">New Task</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="background:rgba(15,13,11,0.8);border:1px solid rgba(218,119,86,0.3);border-radius:10px;padding:10px"><div style="font-size:9px;color:#564d40;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Description</div><div style="font-size:12px;color:#ebe4d8">"Add Stripe payment webhooks with signature verification"</div></div>
+                <div style="display:flex;gap:8px">
+                  <div style="flex:1;background:rgba(15,13,11,0.8);border:1px solid rgba(42,37,32,0.5);border-radius:10px;padding:10px"><div style="font-size:9px;color:#564d40;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Model</div><div style="font-size:11px;color:#DA7756;font-weight:600">Opus</div></div>
+                  <div style="flex:1;background:rgba(15,13,11,0.8);border:1px solid rgba(42,37,32,0.5);border-radius:10px;padding:10px"><div style="font-size:9px;color:#564d40;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Type</div><div style="font-size:11px;color:#ebe4d8;font-weight:600">Feature</div></div>
+                  <div style="flex:1;background:rgba(15,13,11,0.8);border:1px solid rgba(42,37,32,0.5);border-radius:10px;padding:10px"><div style="font-size:9px;color:#564d40;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Priority</div><div style="font-size:11px;color:#ef4444;font-weight:600">High</div></div>
+                </div>
+                <div style="background:rgba(15,13,11,0.8);border:1px solid rgba(42,37,32,0.5);border-radius:10px;padding:10px"><div style="font-size:9px;color:#564d40;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Dependencies</div><div style="display:flex;gap:4px"><span style="padding:3px 8px;border-radius:5px;font-size:9px;font-weight:700;background:rgba(52,211,153,0.12);color:#34d399">&#10003; Auth API</span><span style="padding:3px 8px;border-radius:5px;font-size:9px;font-weight:700;background:rgba(52,211,153,0.12);color:#34d399">&#10003; DB Schema</span></div></div>
+                <div style="padding:10px;text-align:center;background:linear-gradient(135deg,#DA7756,#C45A3C);border-radius:10px;font-size:12px;font-weight:700;color:white;cursor:pointer">Create Task</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -491,28 +1608,28 @@
 <!-- Download -->
 <section class="download" id="download">
   <div class="container">
-    <div class="section-label">Download</div>
-    <h2 class="section-title">Get Claude Board.</h2>
-    <p class="section-desc" style="margin:0 auto 0">Free &amp; open source. Requires <a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code CLI</a>.</p>
+    <div class="section-label fade-in">Download</div>
+    <h2 class="section-title fade-in">Get Claude Board.</h2>
+    <p class="section-desc fade-in" style="margin:0 auto 0">Free &amp; open source. Requires <a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code CLI</a>.</p>
     <div class="download-grid">
-      <a href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest" class="download-card fade-in" target="_blank">
+      <a href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest" class="download-card fade-in stagger-1" target="_blank">
         <div class="platform-icon">&#128187;</div>
         <h4>Windows</h4>
         <div class="arch">.exe installer &bull; x64</div>
       </a>
-      <a href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest" class="download-card fade-in" target="_blank">
+      <a href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest" class="download-card fade-in stagger-2" target="_blank">
         <div class="platform-icon">&#63743;</div>
         <h4>macOS</h4>
         <div class="arch">.dmg &bull; Intel &amp; Apple Silicon</div>
       </a>
-      <a href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest" class="download-card fade-in" target="_blank">
+      <a href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest" class="download-card fade-in stagger-3" target="_blank">
         <div class="platform-icon">&#128039;</div>
         <h4>Linux</h4>
         <div class="arch">AppImage &bull; .deb</div>
       </a>
     </div>
-    <p style="margin-top:36px;font-size:13px;color:#564d40">
-      Or run from source: <code style="background:#1a1714;padding:6px 14px;border-radius:8px;font-size:12px;color:#DA7756;margin-left:8px;border:1px solid #2a2520">git clone &amp;&amp; npm install &amp;&amp; npx tauri dev</code>
+    <p style="margin-top:40px;font-size:13px;color:#564d40">
+      Or build from source: <code style="background:rgba(26,23,20,0.8);padding:8px 16px;border-radius:10px;font-size:12px;color:#DA7756;margin-left:8px;border:1px solid rgba(42,37,32,0.4)">git clone &amp;&amp; npm install &amp;&amp; npx tauri dev</code>
     </p>
   </div>
 </section>
@@ -520,42 +1637,150 @@
 <!-- CTA -->
 <section class="cta">
   <div class="container">
-    <h2>Ready to build your AI squad?</h2>
-    <p>One board. Multiple agents. All running on your machine.</p>
-    <a href="https://github.com/bahri-hirfanoglu/claude-board" class="btn btn-primary" target="_blank">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-      Star on GitHub
-    </a>
+    <h2>Ready to orchestrate your AI squad?</h2>
+    <p>Dependency graphs. Wave execution. Live observability. All running on your machine.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a href="https://github.com/bahri-hirfanoglu/claude-board" class="btn btn-primary" target="_blank">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        Star on GitHub
+      </a>
+      <a href="https://docs.claboard.dev" class="btn btn-secondary" target="_blank">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Read Docs
+      </a>
+    </div>
   </div>
 </section>
 
-<footer><div class="container"><p>Built with <a href="https://claude.ai" target="_blank">Claude</a> &mdash; <a href="https://github.com/bahri-hirfanoglu/claude-board" target="_blank">GitHub</a> &mdash; <a href="https://github.com/bahri-hirfanoglu/claude-board/blob/main/LICENSE" target="_blank">MIT License</a></p></div></footer>
+<footer>
+  <div class="container">
+    <p>Built with <a href="https://claude.ai" target="_blank">Claude</a> &mdash; <a href="https://github.com/bahri-hirfanoglu/claude-board" target="_blank">GitHub</a> &mdash; <a href="https://docs.claboard.dev" target="_blank">Docs</a> &mdash; <a href="https://github.com/bahri-hirfanoglu/claude-board/blob/main/LICENSE" target="_blank">MIT License</a></p>
+  </div>
+</footer>
 
 <script>
-  // Preview tab switcher
-  function switchPreview(name, btn) {
-    var img = document.getElementById('previewImg');
-    var svgTabs = ['board', 'dashboard', 'terminal', 'pipeline', 'planning', 'stats', 'activity', 'task-modal'];
-    if (name === 'board') {
-      img.src = 'hero-board.svg';
-    } else if (svgTabs.includes(name)) {
-      img.src = 'preview-' + name + '.svg';
+  // ─── Ambient Particles ───
+  (function() {
+    var container = document.getElementById('particles');
+    for (var i = 0; i < 30; i++) {
+      var p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (8 + Math.random() * 20) + 's';
+      p.style.animationDelay = Math.random() * 15 + 's';
+      p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+      p.style.opacity = 0.1 + Math.random() * 0.3;
+      p.style.bottom = '-10px';
+      container.appendChild(p);
     }
-    document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+  })();
+
+  // ─── Nav scroll effect ───
+  var navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', function() {
+    navbar.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // ─── Hero view tab switcher ───
+  function switchHeroView(view, btn) {
+    document.querySelectorAll('.hero-view').forEach(function(v) {
+      v.classList.remove('active');
+      v.style.display = 'none';
+    });
+    var target = document.getElementById('hero-' + view);
+    if (target) {
+      target.style.display = '';
+      // Force reflow for animation
+      void target.offsetWidth;
+      target.classList.add('active');
+    }
+    document.querySelectorAll('.dag-tab').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    // Show/hide sidebar only on graph view
+    var sidebar = document.querySelector('.dag-sidebar');
+    if (sidebar) sidebar.style.display = (view === 'graph') ? '' : 'none';
+  }
+
+  // ─── How it works step switcher ───
+  function switchStep(idx) {
+    document.querySelectorAll('.how-step').forEach(function(s, i) {
+      s.classList.toggle('active', i === idx);
+    });
+    document.querySelectorAll('.how-screen').forEach(function(s, i) {
+      s.classList.toggle('active', i === idx);
+    });
+  }
+
+  // ─── Preview tab switcher ───
+  function switchPreview(id, btn) {
+    document.querySelectorAll('.pv-screen').forEach(function(s) { s.classList.remove('active'); });
+    var target = document.getElementById(id);
+    if (target) target.classList.add('active');
+    document.querySelectorAll('.preview-tab').forEach(function(t) { t.classList.remove('active'); });
     btn.classList.add('active');
   }
 
-  // Scroll reveal
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
-  }, { threshold: 0.1 });
-  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  // ─── Scroll reveal with stagger ───
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
 
-  // Fetch latest version from GitHub
+  // ─── Fetch latest version ───
   fetch('https://api.github.com/repos/bahri-hirfanoglu/claude-board/releases/latest')
-    .then(r => r.json())
-    .then(d => { if (d.tag_name) document.getElementById('app-version').textContent = d.tag_name; })
-    .catch(() => {});
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.tag_name) document.getElementById('app-version').textContent = d.tag_name; })
+    .catch(function() {});
+
+  // ─── Counter animation ───
+  function animateCounters() {
+    document.querySelectorAll('.stat-value[data-count]').forEach(function(el) {
+      var target = parseInt(el.getAttribute('data-count'));
+      var current = 0;
+      var step = Math.ceil(target / 30);
+      var interval = setInterval(function() {
+        current += step;
+        if (current >= target) { current = target; clearInterval(interval); }
+        el.textContent = current;
+      }, 40);
+    });
+  }
+  var statsObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) { animateCounters(); statsObserver.disconnect(); }
+    });
+  }, { threshold: 0.5 });
+  var statsBar = document.querySelector('.stats-bar');
+  if (statsBar) statsObserver.observe(statsBar);
+
+  // ─── Simulated live feed animation ───
+  (function() {
+    var feeds = [
+      { time: '14:23:05', agent: 'Catalog', agentColor: '#f59e0b', tool: 'Write', file: 'src/controllers/products.js <span style="color:#34d399">+67</span>' },
+      { time: '14:23:08', agent: 'Auth', agentColor: '#34d399', tool: 'Bash', file: 'git commit -m "feat: add JWT"' },
+      { time: '14:23:12', agent: 'Schema', agentColor: '#60a5fa', tool: 'Read', file: 'migrations/001_init.sql' },
+    ];
+    var liveContainer = document.querySelector('.live-visual');
+    if (!liveContainer) return;
+    var feedIdx = 0;
+    setInterval(function() {
+      var feed = feeds[feedIdx % feeds.length];
+      var line = document.createElement('div');
+      line.className = 'live-feed-line';
+      line.style.animation = 'slideRight 0.3s ease-out';
+      line.innerHTML = '<span class="live-time">' + feed.time + '</span>'
+        + '<span class="live-agent" style="color:' + feed.agentColor + '">' + feed.agent + '</span>'
+        + '<span class="live-tool">' + feed.tool + '</span>'
+        + '<span class="live-file">' + feed.file + '</span>';
+      liveContainer.insertBefore(line, liveContainer.firstChild);
+      if (liveContainer.children.length > 6) liveContainer.removeChild(liveContainer.lastChild);
+      feedIdx++;
+    }, 3000);
+  })();
 </script>
 
 </body>

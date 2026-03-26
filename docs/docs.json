@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "maple",
   "name": "Claude Board",
-  "description": "Build your own AI dev squad. Run multiple agents from your local machine.",
+  "description": "AI orchestration platform — run multiple Claude agents with dependency graphs, wave execution, and live observability.",
   "colors": {
     "primary": "#DA7756",
     "light": "#E8926E",

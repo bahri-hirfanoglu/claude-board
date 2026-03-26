@@ -6,7 +6,19 @@ icon: "download"
 
 ## Prerequisites
 
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
+Before installing Claude Board, make sure you have:
+
+<Steps>
+  <Step title="Claude Code CLI" icon="terminal">
+    Install and authenticate the [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code). Run `claude --version` to verify.
+  </Step>
+  <Step title="Git" icon="code-branch">
+    Git must be installed for branch automation and commit tracking. Run `git --version` to verify.
+  </Step>
+  <Step title="GitHub CLI (optional)" icon="github">
+    Install [`gh`](https://cli.github.com/) and run `gh auth login` if you want [Auto PR](/features/auto-pr) creation.
+  </Step>
+</Steps>
 
 ## Desktop App
 
@@ -24,11 +36,17 @@ Download the latest release for your platform:
   </Card>
 </Columns>
 
-On first launch, a setup wizard will guide you through choosing a data directory and configuring the MCP server port.
+### First Launch
 
-<Frame caption="First-run setup wizard">
-  <img src="/images/setup-wizard.png" alt="Setup Wizard" />
-</Frame>
+On first launch, the [6-step setup wizard](/desktop/setup) guides you through:
+
+1. **Language selection** — English or Turkish
+2. **System check** — Validates Claude CLI, Node.js, Git, and port availability
+3. **Data directory** — Where the SQLite database and uploads are stored
+4. **MCP server port** — Default `4000`, auto-checks availability
+5. **First project** — Creates your initial project with a working directory
+
+<Tip>The setup wizard runs only once. You can change settings later from the app menu.</Tip>
 
 ## Build from Source
 
@@ -36,9 +54,11 @@ Building from source requires both **Rust** and **Node.js** toolchains.
 
 ### Prerequisites
 
-- [Rust](https://rustup.rs/) (stable toolchain)
-- [Node.js](https://nodejs.org) >= 18.0.0
-- Platform-specific dependencies for Tauri — see the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/)
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [Rust](https://rustup.rs/) | Stable | Tauri v2 backend |
+| [Node.js](https://nodejs.org) | >= 18.0.0 | React frontend & build tools |
+| Platform deps | Latest | [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) |
 
 ### Steps
 
@@ -59,4 +79,22 @@ To produce a distributable installer:
 npx tauri build
 ```
 
-The output is written to `src-tauri/target/release/bundle/` and includes platform-specific installers (`.exe`/`.msi` on Windows, `.dmg` on macOS, `.deb`/`.AppImage` on Linux).
+The output is written to `src-tauri/target/release/bundle/` and includes platform-specific installers.
+
+| Platform | Output |
+|----------|--------|
+| Windows | `.exe` and `.msi` in `bundle/msi/` |
+| macOS | `.dmg` in `bundle/dmg/` |
+| Linux | `.deb` and `.AppImage` in `bundle/deb/` and `bundle/appimage/` |
+
+## Verify Installation
+
+After installing, verify everything works:
+
+<Accordion title="Verification checklist">
+  1. Launch Claude Board — you should see the setup wizard (first run) or the main board
+  2. Open Settings and confirm the MCP server port is active
+  3. Create a test project pointing to any code directory
+  4. Create a simple task (e.g., "List all files in the project root") and move to In Progress
+  5. Watch the live terminal — you should see Claude's output streaming in real-time
+</Accordion>
