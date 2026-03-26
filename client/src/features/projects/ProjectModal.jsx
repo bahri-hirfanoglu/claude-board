@@ -12,6 +12,7 @@ import {
   Settings,
   Workflow,
   FlaskConical,
+  Timer,
 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
@@ -68,6 +69,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
   const [prBaseBranch, setPrBaseBranch] = useState(project?.pr_base_branch || 'main');
   const [autoTest, setAutoTest] = useState(project?.auto_test ? true : false);
   const [testPrompt, setTestPrompt] = useState(project?.test_prompt || '');
+  const [taskTimeoutMinutes, setTaskTimeoutMinutes] = useState(project?.task_timeout_minutes || 0);
   const [loading, setLoading] = useState(false);
   const [autoSlug, setAutoSlug] = useState(!project);
   const nameRef = useRef(null);
@@ -114,6 +116,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         prBaseBranch: prBaseBranch.trim() || 'main',
         autoTest: !!autoTest,
         testPrompt: testPrompt.trim(),
+        task_timeout_minutes: taskTimeoutMinutes || 0,
       });
     } catch (err) {
       console.error(err);
@@ -409,6 +412,29 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                       </p>
                     </div>
                   )}
+                </div>
+
+                {/* Task Timeout */}
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5">
+                    <Timer size={12} />
+                    Task Timeout
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={1440}
+                      value={taskTimeoutMinutes || ''}
+                      onChange={(e) => setTaskTimeoutMinutes(parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                      className="w-24 px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs text-surface-200 focus:outline-none focus:ring-1 focus:ring-claude"
+                    />
+                    <span className="text-[10px] text-surface-500">minutes (0 = no limit)</span>
+                  </div>
+                  <p className="text-[9px] text-surface-600 mt-1">
+                    Auto-kill tasks that exceed this duration. Timed-out tasks follow the retry policy.
+                  </p>
                 </div>
               </div>
             )}

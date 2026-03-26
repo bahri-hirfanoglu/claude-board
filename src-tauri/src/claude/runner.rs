@@ -14,7 +14,14 @@ use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-type ProcessMap = Mutex<HashMap<i64, u32>>;
+/// Active process info: PID and start instant for timeout enforcement.
+struct ProcessInfo {
+    pid: u32,
+    started_at: std::time::Instant,
+    project_id: i64,
+}
+
+type ProcessMap = Mutex<HashMap<i64, ProcessInfo>>;
 type StartingSet = Mutex<HashSet<i64>>;
 
 static ACTIVE_PROCESSES: once_cell::sync::Lazy<ProcessMap> = once_cell::sync::Lazy::new(|| Mutex::new(HashMap::new()));
@@ -34,8 +41,8 @@ fn emit_task_updated(db: &DbPool, app: &AppHandle, task_id: i64) {
 }
 
 pub fn stop(task_id: i64, db: &DbPool, app: &AppHandle) {
-    if let Some(pid) = ACTIVE_PROCESSES.lock().remove(&task_id) {
-        kill_process(pid);
+    if let Some(info) = ACTIVE_PROCESSES.lock().remove(&task_id) {
+        kill_process(info.pid);
         STARTING_TASKS.lock().remove(&task_id);
         EVENT_CTX.task_usage.lock().remove(&task_id);
         EVENT_CTX.active_tool_calls.lock().retain(|_, tc| tc.task_id != task_id);
@@ -44,6 +51,51 @@ pub fn stop(task_id: i64, db: &DbPool, app: &AppHandle) {
         app.emit("task:log", &serde_json::json!({
             "taskId": task_id, "message": "Claude process stopped by user.", "logType": "system"
         })).ok();
+    }
+}
+
+/// Check active processes for timeout violations and kill them.
+/// Called periodically from queue poll thread.
+pub fn enforce_timeouts(app: &AppHandle) {
+    let db = crate::db::get_db();
+
+    // Collect tasks that exceeded timeout (snapshot under lock, then act outside lock)
+    let timed_out: Vec<(i64, u32)> = {
+        let procs = ACTIVE_PROCESSES.lock();
+        let mut result = Vec::new();
+        for (task_id, info) in procs.iter() {
+            let project = projects::get_by_id(&db, info.project_id);
+            let timeout_min = project.as_ref()
+                .and_then(|p| p.task_timeout_minutes)
+                .unwrap_or(0);
+            if timeout_min > 0 {
+                let elapsed_min = info.started_at.elapsed().as_secs() / 60;
+                if elapsed_min >= timeout_min as u64 {
+                    result.push((*task_id, info.pid));
+                }
+            }
+        }
+        result
+    };
+
+    for (task_id, _pid) in timed_out {
+        let task = tasks::get_by_id(&db, task_id);
+        let title = task.as_ref().map(|t| t.title.as_str()).unwrap_or("unknown");
+        let project_id = task.as_ref().map(|t| t.project_id).unwrap_or(0);
+
+        log::warn!("Task {} ({}) timed out — killing process", task_id, title);
+        tasks::add_log(&db, task_id, "Task timed out — process killed.", "error", None);
+        app.emit("task:log", &serde_json::json!({
+            "taskId": task_id, "message": "Task timed out — process killed.", "logType": "error"
+        })).ok();
+
+        // Stop the process (this removes from ACTIVE_PROCESSES and cleans up)
+        stop(task_id, &db, app);
+
+        // Trigger failure flow (retry or permanent fail)
+        crate::services::queue::handle_task_failure(&db, app, project_id, task_id);
+        crate::services::webhook::fire(project_id, "task_timeout", &format!("Task timed out: {}", title),
+            serde_json::json!({"taskId": task_id, "title": title}));
     }
 }
 
@@ -420,7 +472,11 @@ fn handle_process_lifecycle(
     attach_dir: &Path,
 ) {
     let pid = child.id();
-    ACTIVE_PROCESSES.lock().insert(task_id, pid);
+    ACTIVE_PROCESSES.lock().insert(task_id, ProcessInfo {
+        pid,
+        started_at: std::time::Instant::now(),
+        project_id,
+    });
     STARTING_TASKS.lock().remove(&task_id);
 
     // CRITICAL: Drain stderr in background thread to prevent pipe buffer deadlock.
@@ -505,6 +561,8 @@ fn handle_process_lifecycle(
             emit_task_updated(db, app, task_id);
             activity::add(db, project_id, Some(task_id), "task_completed", &format!("Task completed: {}", task_title), None);
             crate::services::notification::notify_task_completed(app, &crate::services::notification::TaskNotification::new(task_title, task_key));
+            crate::services::webhook::fire(project_id, "task_completed", &format!("Task completed: {}", task_title),
+                serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title}));
 
             // Auto-test: if enabled, start verification
             let project = projects::get_by_id(db, project_id);
@@ -523,6 +581,8 @@ fn handle_process_lifecycle(
         tasks::add_log(db, task_id, &format!("Claude exited with code {}.", status), "error", None);
         activity::add(db, project_id, Some(task_id), "task_failed", &format!("Task failed (exit {}): {}", status, task_title), None);
         crate::services::notification::notify_task_failed(app, &crate::services::notification::TaskNotification::new(task_title, task_key), &format!("exit code {}", status));
+        crate::services::webhook::fire(project_id, "task_failed", &format!("Task failed (exit {}): {}", status, task_title),
+            serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title, "exitCode": status}));
         crate::services::queue::handle_task_failure(db, app, project_id, task_id);
     }
 
@@ -597,6 +657,8 @@ pub fn start(
     }
 
     crate::services::notification::notify_task_started(&app, &crate::services::notification::TaskNotification::new(&task.title, task.task_key.as_deref()));
+    crate::services::webhook::fire(task.project_id, "task_started", &format!("Task started: {}", task.title),
+        serde_json::json!({"taskId": task_id, "taskKey": task.task_key, "title": task.title, "model": task.model}));
     tasks::add_log(&db, task_id, &format!("Starting Claude for task: {}", task.title), "system", None);
     tasks::add_log(&db, task_id, &format!("Model: {} | Effort: {} | Permissions: {}", model, effort, permission_mode), "info", None);
     activity::add(&db, task.project_id, Some(task_id), "claude_started", &format!("Claude started: {}", task.title), None);
@@ -770,7 +832,11 @@ After all checks, you MUST output this exact JSON block as your final output:
         };
 
         let pid = child.id();
-        ACTIVE_PROCESSES.lock().insert(task_id, pid);
+        ACTIVE_PROCESSES.lock().insert(task_id, ProcessInfo {
+            pid,
+            started_at: std::time::Instant::now(),
+            project_id,
+        });
         STARTING_TASKS.lock().remove(&task_id);
 
         // Drain stderr in background (prevents pipe deadlock + shows errors in real-time)
@@ -863,6 +929,8 @@ After all checks, you MUST output this exact JSON block as your final output:
                         emit_task_updated(&db, &app, task_id);
                         activity::add(&db, project_id, Some(task_id), "test_passed", &format!("Auto-test passed: {}", task_title), None);
                         crate::services::notification::notify_test_passed(&app, &crate::services::notification::TaskNotification::new(&task_title, task_key.as_deref()));
+                        crate::services::webhook::fire(project_id, "test_passed", &format!("Auto-test passed: {}", task_title),
+                            serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title, "summary": summary}));
                         crate::services::queue::on_task_completed(&db, &app, project_id, task_id);
                     } else {
                         let fail_msg = if feedback.is_empty() { summary.clone() } else { format!("{} — {}", summary, feedback) };
@@ -870,6 +938,8 @@ After all checks, you MUST output this exact JSON block as your final output:
                         app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test FAILED: {}", fail_msg), "logType": "error"})).ok();
                         activity::add(&db, project_id, Some(task_id), "test_failed", &format!("Auto-test failed: {}", task_title), None);
                         crate::services::notification::notify_test_failed(&app, &crate::services::notification::TaskNotification::new(&task_title, task_key.as_deref()));
+                        crate::services::webhook::fire(project_id, "test_failed", &format!("Auto-test failed: {}", task_title),
+                            serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title, "summary": summary, "feedback": feedback}));
                         app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary})).ok();
                     }
                 }

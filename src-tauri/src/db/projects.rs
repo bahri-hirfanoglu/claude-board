@@ -23,6 +23,7 @@ pub struct Project {
     pub max_retries: Option<i64>,
     pub auto_test: Option<i64>,
     pub test_prompt: Option<String>,
+    pub task_timeout_minutes: Option<i64>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
@@ -61,6 +62,7 @@ fn row_to_project(row: &rusqlite::Row) -> rusqlite::Result<Project> {
         max_retries: row.get("max_retries")?,
         auto_test: row.get("auto_test")?,
         test_prompt: row.get("test_prompt")?,
+        task_timeout_minutes: row.get("task_timeout_minutes").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -166,6 +168,14 @@ pub fn update_test_settings(db: &DbPool, id: i64, auto_test: bool, test_prompt: 
         "UPDATE projects SET auto_test=?1,test_prompt=?2,updated_at=datetime('now','localtime') WHERE id=?3",
         params![auto_test as i64, test_prompt, id],
     ) { log::error!("update_test_settings: {}", e); }
+}
+
+pub fn update_timeout(db: &DbPool, id: i64, timeout_minutes: i64) {
+    let conn = db.lock();
+    if let Err(e) = conn.execute(
+        "UPDATE projects SET task_timeout_minutes=?1,updated_at=datetime('now','localtime') WHERE id=?2",
+        params![timeout_minutes, id],
+    ) { log::error!("update_timeout: {}", e); }
 }
 
 pub fn delete(db: &DbPool, id: i64) {

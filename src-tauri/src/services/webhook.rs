@@ -1,5 +1,15 @@
 use crate::db::{self, webhooks};
 
+/// Fire-and-forget webhook dispatch from sync context.
+/// Spawns an async task so the caller is never blocked.
+pub fn fire(project_id: i64, event_type: &str, message: &str, metadata: serde_json::Value) {
+    let event_type = event_type.to_string();
+    let message = message.to_string();
+    tauri::async_runtime::spawn(async move {
+        dispatch(project_id, &event_type, &message, &metadata).await;
+    });
+}
+
 pub async fn dispatch(project_id: i64, event_type: &str, message: &str, metadata: &serde_json::Value) {
     let db = db::get_db();
     let hooks = webhooks::get_enabled_by_project(&db, project_id);
@@ -17,10 +27,13 @@ pub async fn dispatch(project_id: i64, event_type: &str, message: &str, metadata
             event_type, message, metadata,
         );
 
-        let _ = client.post(&hook.url)
+        if let Err(e) = client.post(&hook.url)
             .json(&payload)
             .timeout(std::time::Duration::from_secs(10))
-            .send().await;
+            .send().await
+        {
+            log::warn!("Webhook delivery failed for {}: {}", hook.name, e);
+        }
     }
 }
 
