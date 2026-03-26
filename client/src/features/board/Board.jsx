@@ -21,6 +21,7 @@ import { COLUMNS, MODELS, MODEL_COLORS, MODEL_DOT_COLORS, MODEL_BG_ACTIVE, getTa
 import { notifyError } from '../../lib/api';
 import { IS_TAURI } from '../../lib/tauriEvents';
 import GitHubIssuesPanel from './GitHubIssuesPanel';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { parseTags } from './TagBadge';
 import { api } from '../../lib/api';
@@ -362,46 +363,54 @@ export default function Board({
 
         {/* List view */}
         {viewMode === 'list' && (
-          <div className="flex-1 overflow-hidden">
-            <ListView
-              tasks={filteredTasks}
-              onStatusChange={onStatusChange}
-              onViewLogs={onViewLogs}
-              onEditTask={onEditTask}
-              onDeleteTask={onDeleteTask}
-              onReviewTask={onReviewTask}
-              onViewDetail={onViewDetail}
-            />
-          </div>
+          <ErrorBoundary>
+            <div className="flex-1 overflow-hidden">
+              <ListView
+                tasks={filteredTasks}
+                onStatusChange={onStatusChange}
+                onViewLogs={onViewLogs}
+                onEditTask={onEditTask}
+                onDeleteTask={onDeleteTask}
+                onReviewTask={onReviewTask}
+                onViewDetail={onViewDetail}
+              />
+            </div>
+          </ErrorBoundary>
         )}
 
         {viewMode === 'pipeline' && (
-          <div className="flex-1 overflow-hidden">
-            <PipelineView
-              tasks={filteredTasks}
-              onStatusChange={onStatusChange}
-              onViewLogs={onViewLogs}
-              onViewDetail={onViewDetail}
-            />
-          </div>
+          <ErrorBoundary>
+            <div className="flex-1 overflow-hidden">
+              <PipelineView
+                tasks={filteredTasks}
+                onStatusChange={onStatusChange}
+                onViewLogs={onViewLogs}
+                onViewDetail={onViewDetail}
+              />
+            </div>
+          </ErrorBoundary>
         )}
 
         {viewMode === 'orchestration' && (
-          <div className="flex-1 overflow-hidden">
-            <OrchestrationView
-              tasks={tasks}
-              projectId={projectId}
-              onViewLogs={onViewLogs}
-              onStatusChange={onStatusChange}
-              onViewDetail={onViewDetail}
-            />
-          </div>
+          <ErrorBoundary>
+            <div className="flex-1 overflow-hidden">
+              <OrchestrationView
+                tasks={tasks}
+                projectId={projectId}
+                onViewLogs={onViewLogs}
+                onStatusChange={onStatusChange}
+                onViewDetail={onViewDetail}
+              />
+            </div>
+          </ErrorBoundary>
         )}
 
         {viewMode === 'analytics' && (
-          <div className="flex-1 overflow-hidden">
-            <AnalyticsView tasks={filteredTasks} projectId={projectId} />
-          </div>
+          <ErrorBoundary>
+            <div className="flex-1 overflow-hidden">
+              <AnalyticsView tasks={filteredTasks} projectId={projectId} />
+            </div>
+          </ErrorBoundary>
         )}
         {/* Dependency creation dialog */}
         {depDialog && (

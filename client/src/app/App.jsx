@@ -14,6 +14,7 @@ import AppLayout from './AppLayout';
 import { StatusTransitionProvider } from '../features/board/StatusTransitionContext';
 import { I18nProvider, useTranslation } from '../i18n/I18nProvider';
 import OnboardingTour, { useOnboarding } from '../features/onboarding/OnboardingTour';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 function AppInner() {
   const { t } = useTranslation();
@@ -274,8 +275,10 @@ function AppInner() {
 
 export default function App() {
   return (
-    <I18nProvider>
-      <AppInner />
-    </I18nProvider>
+    <ErrorBoundary>
+      <I18nProvider>
+        <AppInner />
+      </I18nProvider>
+    </ErrorBoundary>
   );
 }

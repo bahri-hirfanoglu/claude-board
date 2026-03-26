@@ -112,8 +112,10 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
     if status == "testing" && prev_status == "in_progress" {
         tq::pause_timer(&db, id);
     }
-    if status == "done" && task.completed_at.is_none() {
-        tq::finalize_timer(&db, id);
+    if status == "done" {
+        if task.completed_at.is_none() {
+            tq::finalize_timer(&db, id);
+        }
         activity::add(&db, task.project_id, Some(id), "task_approved", &format!("Task approved: {}", task.title), None);
         if let Some(project) = pq::get_by_id(&db, task.project_id) {
             // Auto-create PR if enabled and not already created
