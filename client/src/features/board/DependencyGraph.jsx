@@ -6,6 +6,7 @@ const STATUS_COLORS = {
   in_progress: { fill: '#78350F', stroke: '#F59E0B', text: '#FDE68A' },
   testing: { fill: '#3B0764', stroke: '#A855F7', text: '#E9D5FF' },
   done: { fill: '#064E3B', stroke: '#10B981', text: '#A7F3D0' },
+  failed: { fill: '#450A0A', stroke: '#EF4444', text: '#FCA5A5' },
 };
 
 const NODE_W = 160;

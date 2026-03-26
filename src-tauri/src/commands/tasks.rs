@@ -91,12 +91,16 @@ pub fn update_task(
 pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16) -> Result<tq::Task, String> {
     let db = db::get_db();
     let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
-    let valid = ["backlog", "in_progress", "testing", "done"];
+    let valid = ["backlog", "in_progress", "testing", "done", "failed"];
     if !valid.contains(&status.as_str()) { return Err("Invalid status".into()); }
 
     let prev_status = task.status.as_deref().unwrap_or("backlog");
     tq::update_status(&db, id, &status);
 
+    // Reset retry state when moving out of failed
+    if prev_status == "failed" && (status == "backlog" || status == "in_progress") {
+        tq::reset_retry_count(&db, id);
+    }
     if status == "in_progress" {
         if task.started_at.is_none() { tq::set_started(&db, id); }
         else { tq::set_resumed(&db, id); }
@@ -111,6 +115,10 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
     if status == "done" && task.completed_at.is_none() {
         tq::finalize_timer(&db, id);
         activity::add(&db, task.project_id, Some(id), "task_approved", &format!("Task approved: {}", task.title), None);
+        // Cleanup feature branch when task is manually approved
+        if let Some(project) = pq::get_by_id(&db, task.project_id) {
+            runner::cleanup_task_branch(&task, &project.working_dir, &project);
+        }
     }
 
     let updated = tq::get_by_id(&db, id).ok_or("Task not found after status update")?;

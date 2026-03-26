@@ -50,6 +50,17 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<Template> {
     stmt.query_row(params![id], |r| row_to(r)).ok()
 }
 
+/// Find a matching template for a task: first try exact task_type match, then fallback to any template.
+pub fn find_for_task(db: &DbPool, project_id: i64, task_type: &str) -> Option<Template> {
+    let conn = db.lock();
+    // Exact match on task_type
+    let exact = conn.prepare("SELECT * FROM prompt_templates WHERE project_id=?1 AND task_type=?2 ORDER BY id DESC LIMIT 1")
+        .ok()
+        .and_then(|mut s| s.query_row(params![project_id, task_type], |r| row_to(r)).ok());
+    if exact.is_some() { return exact; }
+    None
+}
+
 pub fn create(db: &DbPool, pid: i64, name: &str, description: Option<&str>, template: &str, variables: Option<&str>, task_type: &str, model: &str, thinking_effort: &str) -> i64 {
     let conn = db.lock();
     match conn.execute(

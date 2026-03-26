@@ -110,6 +110,7 @@ pub fn get_ready_tasks(db: &DbPool, project_id: i64) -> Vec<Task> {
          LEFT JOIN projects p ON p.id = t.project_id
          WHERE t.project_id = ?1 AND t.status = 'backlog'
          AND COALESCE(t.retry_count, 0) <= CASE WHEN COALESCE(p.max_retries, 0) > 0 THEN p.max_retries ELSE 2 END
+         AND (t.retry_after IS NULL OR t.retry_after <= datetime('now','localtime'))
          AND NOT EXISTS (
              SELECT 1 FROM task_dependencies td
              JOIN tasks parent ON parent.id = td.depends_on_id

@@ -2,6 +2,7 @@ use crate::db::tasks::{Task, TaskRevision};
 use crate::db::snippets::Snippet;
 use crate::db::attachments::Attachment;
 use crate::db::roles::Role;
+use crate::db::templates::Template;
 
 pub fn build_prompt(
     task: &Task,
@@ -11,6 +12,7 @@ pub fn build_prompt(
     role: Option<&Role>,
     project_id: i64,
     parent_contexts: &[(String, String)],
+    template: Option<&Template>,
 ) -> String {
     let mut parts = Vec::new();
     let is_revision = !revisions.is_empty();
@@ -23,6 +25,20 @@ pub fn build_prompt(
                 parts.push(prompt.clone());
                 parts.push(String::new());
             }
+        }
+    }
+
+    // Prompt template: inject custom instructions for this task type
+    if let Some(tmpl) = template {
+        if !tmpl.template.is_empty() {
+            parts.push(format!("## Prompt Template: {}", tmpl.name));
+            if let Some(ref desc) = tmpl.description {
+                if !desc.is_empty() {
+                    parts.push(desc.clone());
+                }
+            }
+            parts.push(tmpl.template.clone());
+            parts.push(String::new());
         }
     }
 

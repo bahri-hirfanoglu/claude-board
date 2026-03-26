@@ -11,23 +11,26 @@ const STATUS_OPTIONS_RAW = COLUMNS.map(c => ({ id: c.id, dot: c.bg, color: c.col
 
 // Status flow order for "next" transition
 const STATUS_FLOW = ['backlog', 'in_progress', 'testing', 'done'];
+const FAILED_NEXT = 'backlog'; // failed tasks can move to backlog
 const FLOW_LABEL_KEYS = {
   backlog: 'card.startWorking',
   in_progress: 'card.sendToTesting',
   testing: 'card.markDone',
   done: null,
+  failed: 'card.moveToBacklog',
 };
 const NEXT_BG = {
   in_progress: 'bg-amber-500 active:bg-amber-600 text-white',
   testing: 'bg-claude active:bg-claude-dark text-white',
   done: 'bg-emerald-500 active:bg-emerald-600 text-white',
+  backlog: 'bg-surface-500 active:bg-surface-600 text-white',
 };
 
 function MobileStatusTransition({ task, onStatusChange }) {
   const { t } = useTranslation();
   const [showAll, setShowAll] = useState(false);
   const currentIdx = STATUS_FLOW.indexOf(task.status);
-  const nextStatus = currentIdx >= 0 && currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null;
+  const nextStatus = task.status === 'failed' ? FAILED_NEXT : (currentIdx >= 0 && currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null);
   const prevStatus = currentIdx > 0 ? STATUS_FLOW[currentIdx - 1] : null;
   const flowLabelKey = FLOW_LABEL_KEYS[task.status];
   const otherStatuses = STATUS_OPTIONS_RAW.filter(s => s.id !== task.status && s.id !== nextStatus);
@@ -109,13 +112,15 @@ function MobileStatusTransition({ task, onStatusChange }) {
   );
 }
 
-export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange, onReview, onViewDetail }) {
+export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange, onReview, onViewDetail, onDepDrop, draggedTask }) {
   const { t } = useTranslation();
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuRef = useRef(null);
   const transitionCtx = useStatusTransition();
   const transition = transitionCtx?.getTransition(task.id);
+  const [depDropHover, setDepDropHover] = useState(false);
+  const isDepTarget = draggedTask && draggedTask.id !== task.id;
 
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -154,12 +159,28 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           e.dataTransfer.setData('text/plain', task.id);
           onDragStart();
         }}
-        onDragEnd={onDragEnd}
+        onDragEnd={() => { setDepDropHover(false); onDragEnd(); }}
+        onDragOver={(e) => {
+          if (!isDepTarget || !e.altKey) return;
+          e.preventDefault();
+          e.stopPropagation();
+          e.dataTransfer.dropEffect = 'link';
+          setDepDropHover(true);
+        }}
+        onDragLeave={() => setDepDropHover(false)}
+        onDrop={(e) => {
+          if (!isDepTarget || !e.altKey) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setDepDropHover(false);
+          onDepDrop?.(draggedTask, task);
+        }}
         onClick={() => onViewDetail?.()}
         onContextMenu={handleContextMenu}
-        className={`group relative bg-surface-800 rounded-lg p-3 border border-surface-700/50 hover:border-surface-600 cursor-pointer active:cursor-grabbing transition-all duration-150 hover:shadow-lg hover:shadow-black/20 ${
-          task.priority > 0 ? `border-l-2 ${priorityColors[task.priority]}` : ''
-        } ${transition ? 'animate-card-pop' : ''}`}
+        className={`group relative bg-surface-800 rounded-lg p-3 border transition-all duration-150 hover:shadow-lg hover:shadow-black/20 ${
+          depDropHover ? 'border-blue-400 bg-blue-500/5 ring-1 ring-blue-400/30' : 'border-surface-700/50 hover:border-surface-600'
+        } ${task.priority > 0 ? `border-l-2 ${priorityColors[task.priority]}` : ''
+        } ${transition ? 'animate-card-pop' : ''} ${isDepTarget ? 'cursor-pointer' : 'active:cursor-grabbing cursor-pointer'}`}
       >
         {transition && <StatusTransitionEffect from={transition.from} to={transition.to} />}
         <div className="flex items-start justify-between gap-2">
@@ -199,9 +220,9 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
 
         <div className="flex items-center justify-between mt-2.5">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {task.is_running && task.status === 'testing' && (
+            {task.status === 'testing' && (
               <span className="flex items-center gap-1 text-[10px] font-medium text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
-                <FlaskConical size={10} className="animate-pulse" />
+                <FlaskConical size={10} className={task.is_running ? 'animate-pulse' : ''} />
                 {t('status.testing')}
               </span>
             )}

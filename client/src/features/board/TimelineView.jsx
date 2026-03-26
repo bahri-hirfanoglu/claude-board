@@ -7,6 +7,7 @@ const STATUS_COLORS = {
   in_progress: { bar: '#D97706', barLight: '#F59E0B', text: '#FDE68A' },
   testing: { bar: '#DA7756', barLight: '#e5936f', text: '#FECACA' },
   done: { bar: '#059669', barLight: '#10B981', text: '#A7F3D0' },
+  failed: { bar: '#DC2626', barLight: '#EF4444', text: '#FCA5A5' },
 };
 
 const TYPE_DOTS = {

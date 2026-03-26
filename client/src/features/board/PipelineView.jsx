@@ -49,6 +49,7 @@ export default function PipelineView({ tasks, onStatusChange, onViewLogs, onView
   const running = enrichedTasks.filter(t => t.status === 'in_progress' || t.is_running);
   const queued = enrichedTasks.filter(t => (t.status || 'backlog') === 'backlog')
     .sort((a, b) => (a.queue_position || 0) - (b.queue_position || 0) || (a.priority || 0) - (b.priority || 0));
+  const failed = enrichedTasks.filter(t => t.status === 'failed');
   const completed = enrichedTasks.filter(t => t.status === 'testing' || t.status === 'done')
     .sort((a, b) => {
       const da = b.completed_at || b.updated_at || '';
@@ -179,6 +180,15 @@ export default function PipelineView({ tasks, onStatusChange, onViewLogs, onView
           </div>
         ))}
       </Section>
+
+      {/* Failed */}
+      {failed.length > 0 && (
+        <Section title={t('status.failed')} count={failed.length} color="text-red-400" collapsible>
+          {failed.map(task => (
+            <PipelineCard key={task.id} task={task} onViewLogs={onViewLogs} onViewDetail={onViewDetail} />
+          ))}
+        </Section>
+      )}
 
       {/* Completed */}
       {completed.length > 0 && (

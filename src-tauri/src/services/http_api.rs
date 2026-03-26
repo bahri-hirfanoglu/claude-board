@@ -11,6 +11,11 @@ use tower_http::cors::CorsLayer;
 use serde::Deserialize;
 use crate::db::{self, projects, tasks, stats, activity, attachments, settings};
 
+/// Helper: serialize to JSON Value, fallback to empty object on error.
+fn to_json<T: serde::Serialize>(val: &T) -> serde_json::Value {
+    serde_json::to_value(val).unwrap_or_default()
+}
+
 pub async fn start_server(port: u16) {
     let app = Router::new()
         // Projects
@@ -43,24 +48,22 @@ pub async fn start_server(port: u16) {
 // ─── Handlers ───
 
 async fn list_projects() -> Json<serde_json::Value> {
-    Json(serde_json::to_value(projects::get_all(&db::get_db())).unwrap())
+    Json(to_json(&projects::get_all(&db::get_db())))
 }
 
 async fn projects_summary() -> Json<serde_json::Value> {
-    Json(serde_json::to_value(projects::get_summary(&db::get_db())).unwrap())
+    Json(to_json(&projects::get_summary(&db::get_db())))
 }
 
 async fn get_project(Path(id): Path<i64>) -> impl IntoResponse {
     match projects::get_by_id(&db::get_db(), id) {
-        Some(p) => Json(serde_json::to_value(p).unwrap()).into_response(),
+        Some(p) => Json(to_json(&p)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
 async fn list_tasks(Path(project_id): Path<i64>) -> Json<serde_json::Value> {
-    let db = db::get_db();
-    let t = tasks::get_by_project(&db, project_id);
-    Json(serde_json::to_value(t).unwrap())
+    Json(to_json(&tasks::get_by_project(&db::get_db(), project_id)))
 }
 
 #[derive(Deserialize)]
@@ -95,13 +98,15 @@ async fn create_task(Path(project_id): Path<i64>, Json(body): Json<CreateTaskBod
             tasks::set_awaiting_subtasks(&db, parent_id, true);
         }
     }
-    let task = tasks::get_by_id(&db, id).unwrap();
-    (StatusCode::CREATED, Json(serde_json::to_value(task).unwrap()))
+    match tasks::get_by_id(&db, id) {
+        Some(task) => (StatusCode::CREATED, Json(to_json(&task))).into_response(),
+        None => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
 }
 
 async fn get_task(Path(id): Path<i64>) -> impl IntoResponse {
     match tasks::get_by_id(&db::get_db(), id) {
-        Some(t) => Json(serde_json::to_value(t).unwrap()).into_response(),
+        Some(t) => Json(to_json(&t)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
     }
 }
@@ -135,8 +140,10 @@ async fn update_task(Path(id): Path<i64>, Json(body): Json<UpdateTaskBody>) -> i
         task.role_id,
         body.tags.as_deref().or(task.tags.as_deref()),
     );
-    let updated = tasks::get_by_id(&db, id).unwrap();
-    Json(serde_json::to_value(updated).unwrap()).into_response()
+    match tasks::get_by_id(&db, id) {
+        Some(updated) => Json(to_json(&updated)).into_response(),
+        None => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
 }
 
 async fn delete_task_handler(Path(id): Path<i64>) -> impl IntoResponse {
@@ -153,7 +160,7 @@ async fn change_status(Path(id): Path<i64>, Json(body): Json<StatusBody>) -> imp
     let db = db::get_db();
     tasks::update_status(&db, id, &body.status);
     match tasks::get_by_id(&db, id) {
-        Some(t) => Json(serde_json::to_value(t).unwrap()).into_response(),
+        Some(t) => Json(to_json(&t)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
     }
 }
@@ -170,11 +177,12 @@ async fn task_detail(Path(id): Path<i64>) -> impl IntoResponse {
         .and_then(|c| serde_json::from_str(c).ok())
         .unwrap_or(serde_json::json!([]));
 
-    let mut val = serde_json::to_value(&task).unwrap();
-    let obj = val.as_object_mut().unwrap();
-    obj.insert("commits".into(), commits);
-    obj.insert("revisions".into(), serde_json::to_value(revisions).unwrap());
-    obj.insert("attachments".into(), serde_json::to_value(atts).unwrap());
+    let mut val = to_json(&task);
+    if let Some(obj) = val.as_object_mut() {
+        obj.insert("commits".into(), commits);
+        obj.insert("revisions".into(), to_json(&revisions));
+        obj.insert("attachments".into(), to_json(&atts));
+    }
     Json(val).into_response()
 }
 
@@ -184,15 +192,15 @@ struct LogsQuery { limit: Option<i64> }
 async fn task_logs(Path(id): Path<i64>, Query(q): Query<LogsQuery>) -> Json<serde_json::Value> {
     let mut logs = tasks::get_recent_logs(&db::get_db(), id, q.limit.unwrap_or(500));
     logs.reverse();
-    Json(serde_json::to_value(logs).unwrap())
+    Json(to_json(&logs))
 }
 
 async fn task_revisions(Path(id): Path<i64>) -> Json<serde_json::Value> {
-    Json(serde_json::to_value(tasks::get_revisions(&db::get_db(), id)).unwrap())
+    Json(to_json(&tasks::get_revisions(&db::get_db(), id)))
 }
 
 async fn project_stats(Path(pid): Path<i64>) -> Json<serde_json::Value> {
-    Json(serde_json::to_value(stats::get_project_stats(&db::get_db(), pid)).unwrap())
+    Json(to_json(&stats::get_project_stats(&db::get_db(), pid)))
 }
 
 async fn claude_usage() -> Json<serde_json::Value> {
@@ -209,9 +217,7 @@ async fn claude_usage() -> Json<serde_json::Value> {
 struct ActivityQuery { limit: Option<i64>, offset: Option<i64> }
 
 async fn project_activity(Path(pid): Path<i64>, Query(q): Query<ActivityQuery>) -> Json<serde_json::Value> {
-    Json(serde_json::to_value(
-        activity::get_by_project(&db::get_db(), pid, q.limit.unwrap_or(50), q.offset.unwrap_or(0))
-    ).unwrap())
+    Json(to_json(&activity::get_by_project(&db::get_db(), pid, q.limit.unwrap_or(50), q.offset.unwrap_or(0))))
 }
 
 async fn auth_status() -> Json<serde_json::Value> {
@@ -219,7 +225,7 @@ async fn auth_status() -> Json<serde_json::Value> {
 }
 
 async fn get_settings() -> Json<serde_json::Value> {
-    Json(serde_json::to_value(settings::get(&db::get_db())).unwrap())
+    Json(to_json(&settings::get(&db::get_db())))
 }
 
 async fn update_settings(Json(body): Json<serde_json::Value>) -> Json<serde_json::Value> {
@@ -232,5 +238,5 @@ async fn update_settings(Json(body): Json<serde_json::Value>) -> Json<serde_json
     if let Some(v) = body.get("auto_open_terminal").and_then(|v| v.as_bool()) { current.auto_open_terminal = v; }
     if let Some(v) = body.get("sound_enabled").and_then(|v| v.as_bool()) { current.sound_enabled = v; }
     settings::update(&db, &current);
-    Json(serde_json::to_value(current).unwrap())
+    Json(to_json(&current))
 }

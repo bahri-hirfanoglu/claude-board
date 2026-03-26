@@ -4,6 +4,7 @@ export const COLUMNS = [
   { id: 'in_progress', label: 'In Progress', color: 'text-amber-400', bg: 'bg-amber-400', dot: 'bg-amber-400' },
   { id: 'testing', label: 'Testing', color: 'text-claude', bg: 'bg-claude', dot: 'bg-claude' },
   { id: 'done', label: 'Done', color: 'text-emerald-400', bg: 'bg-emerald-400', dot: 'bg-emerald-400' },
+  { id: 'failed', label: 'Failed', color: 'text-red-400', bg: 'bg-red-400', dot: 'bg-red-400' },
 ];
 
 // ─── Task types ───

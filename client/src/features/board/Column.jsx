@@ -2,7 +2,7 @@ import { useState } from 'react';
 import TaskCard from './TaskCard';
 import { useTranslation } from '../../i18n/I18nProvider';
 
-export default function Column({ column, tasks, draggedTask, onDragStart, onDragEnd, onDrop, onViewLogs, onEditTask, onDeleteTask, onStatusChange, onReviewTask, onViewDetail, isMobile }) {
+export default function Column({ column, tasks, draggedTask, onDragStart, onDragEnd, onDrop, onViewLogs, onEditTask, onDeleteTask, onStatusChange, onReviewTask, onViewDetail, onDepDrop, isMobile }) {
   const { t } = useTranslation();
   const [dragOver, setDragOver] = useState(false);
 
@@ -30,6 +30,7 @@ export default function Column({ column, tasks, draggedTask, onDragStart, onDrag
           <TaskCard
             key={task.id}
             task={task}
+            draggedTask={draggedTask}
             onDragStart={() => onDragStart(task)}
             onDragEnd={onDragEnd}
             onViewLogs={() => onViewLogs(task)}
@@ -38,6 +39,7 @@ export default function Column({ column, tasks, draggedTask, onDragStart, onDrag
             onStatusChange={onStatusChange}
             onReview={() => onReviewTask(task)}
             onViewDetail={() => onViewDetail(task)}
+            onDepDrop={onDepDrop}
           />
         ))}
         {tasks.length === 0 && (

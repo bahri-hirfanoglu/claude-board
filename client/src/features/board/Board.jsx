@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { LayoutGrid, List, X, GitBranch, Workflow, TrendingUp, Tag, ChevronDown } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { LayoutGrid, List, X, GitBranch, Workflow, TrendingUp, Tag, ChevronDown, Link2, ArrowRight } from 'lucide-react';
 import Column from './Column';
 import ListView from './ListView';
 import PipelineView from './PipelineView';
@@ -8,6 +8,7 @@ import AnalyticsView from './AnalyticsView';
 import { COLUMNS, MODELS, MODEL_COLORS, MODEL_DOT_COLORS, MODEL_BG_ACTIVE, getTagColor } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { parseTags } from './TagBadge';
+import { api } from '../../lib/api';
 
 const VIEWS = [
   { id: 'board', labelKey: 'board.board', icon: LayoutGrid },
@@ -28,6 +29,27 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
   const [tagFilter, setTagFilter] = useState([]);
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
   const tagDropdownRef = useRef(null);
+  const [depDialog, setDepDialog] = useState(null); // { from: task, to: task }
+
+  const handleDepDrop = useCallback((fromTask, toTask) => {
+    if (fromTask.id === toTask.id) return;
+    setDepDialog({ from: fromTask, to: toTask });
+  }, []);
+
+  const confirmDep = useCallback(async (direction) => {
+    if (!depDialog) return;
+    const { from, to } = depDialog;
+    try {
+      if (direction === 'depends') {
+        // "from" depends on "to" (to must complete first)
+        await api.addDependency(from.id, to.id);
+      } else {
+        // "to" depends on "from" (from must complete first)
+        await api.addDependency(to.id, from.id);
+      }
+    } catch (e) { console.error(e); }
+    setDepDialog(null);
+  }, [depDialog]);
 
   useEffect(() => {
     if (!tagDropdownOpen) return;
@@ -68,7 +90,7 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
   }, [tasks, modelFilter, tagFilter]);
 
   const groupedTasks = useMemo(() => {
-    const grouped = { backlog: [], in_progress: [], testing: [], done: [] };
+    const grouped = { backlog: [], in_progress: [], testing: [], done: [], failed: [] };
     for (const t of filteredTasks) {
       const s = t.status || 'backlog';
       if (grouped[s]) grouped[s].push(t);
@@ -225,6 +247,7 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
               onStatusChange={onStatusChange}
               onReviewTask={onReviewTask}
               onViewDetail={onViewDetail}
+              onDepDrop={handleDepDrop}
               isMobile
             />
           </div>
@@ -249,6 +272,7 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
                 onStatusChange={onStatusChange}
                 onReviewTask={onReviewTask}
                 onViewDetail={onViewDetail}
+                onDepDrop={handleDepDrop}
               />
             ))}
           </div>
@@ -299,6 +323,61 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
             tasks={filteredTasks}
             projectId={projectId}
           />
+        </div>
+      )}
+      {/* Dependency creation dialog */}
+      {depDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setDepDialog(null)}>
+          <div className="bg-surface-800 border border-surface-700 rounded-xl p-5 w-[380px] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-4">
+              <Link2 size={16} className="text-blue-400" />
+              <h3 className="text-sm font-medium text-surface-100">{t('board.createDependency') || 'Create Dependency'}</h3>
+            </div>
+            <p className="text-xs text-surface-400 mb-4">{t('board.depDialogDesc') || 'Choose the dependency direction between these tasks:'}</p>
+
+            <div className="space-y-2">
+              <button
+                onClick={() => confirmDep('depends')}
+                className="w-full flex items-center gap-3 p-3 rounded-lg bg-surface-700/50 hover:bg-surface-700 border border-surface-600/50 transition-colors text-left"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-medium text-surface-200 truncate">{depDialog.from.title}</div>
+                  <div className="text-[10px] text-surface-500">{depDialog.from.task_key}</div>
+                </div>
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <ArrowRight size={14} className="text-blue-400" />
+                  <span className="text-[9px] text-blue-400 mt-0.5">{t('board.dependsOn') || 'depends on'}</span>
+                </div>
+                <div className="flex-1 min-w-0 text-right">
+                  <div className="text-xs font-medium text-surface-200 truncate">{depDialog.to.title}</div>
+                  <div className="text-[10px] text-surface-500">{depDialog.to.task_key}</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => confirmDep('blocks')}
+                className="w-full flex items-center gap-3 p-3 rounded-lg bg-surface-700/50 hover:bg-surface-700 border border-surface-600/50 transition-colors text-left"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-medium text-surface-200 truncate">{depDialog.to.title}</div>
+                  <div className="text-[10px] text-surface-500">{depDialog.to.task_key}</div>
+                </div>
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <ArrowRight size={14} className="text-blue-400" />
+                  <span className="text-[9px] text-blue-400 mt-0.5">{t('board.dependsOn') || 'depends on'}</span>
+                </div>
+                <div className="flex-1 min-w-0 text-right">
+                  <div className="text-xs font-medium text-surface-200 truncate">{depDialog.from.title}</div>
+                  <div className="text-[10px] text-surface-500">{depDialog.from.task_key}</div>
+                </div>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setDepDialog(null)}
+              className="w-full mt-3 py-2 text-xs text-surface-500 hover:text-surface-300 transition-colors"
+            >{t('common.cancel')}</button>
+          </div>
         </div>
       )}
     </div>

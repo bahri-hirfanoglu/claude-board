@@ -45,6 +45,7 @@ pub struct Task {
     pub awaiting_subtasks: Option<i64>,
     pub tags: Option<String>,
     pub lifecycle_summary: Option<String>,
+    pub retry_after: Option<String>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     #[serde(default)]
@@ -112,6 +113,7 @@ pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
         awaiting_subtasks: row.get("awaiting_subtasks").ok().flatten(),
         tags: row.get("tags").ok().flatten(),
         lifecycle_summary: row.get("lifecycle_summary").ok().flatten(),
+        retry_after: row.get("retry_after").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         is_running: false,
@@ -137,6 +139,14 @@ pub fn increment_retry(db: &DbPool, task_id: i64) {
     if let Err(e) = conn.execute("UPDATE tasks SET retry_count=COALESCE(retry_count,0)+1 WHERE id=?1", params![task_id]) {
         log::error!("increment_retry: {}", e);
     }
+}
+
+pub fn set_retry_after(db: &DbPool, task_id: i64, delay_seconds: i64) {
+    let conn = db.lock();
+    if let Err(e) = conn.execute(
+        &format!("UPDATE tasks SET retry_after=datetime('now','localtime','+{} seconds') WHERE id=?1", delay_seconds),
+        params![task_id],
+    ) { log::error!("set_retry_after: {}", e); }
 }
 
 pub fn reset_retry_count(db: &DbPool, task_id: i64) {

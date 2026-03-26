@@ -175,7 +175,7 @@ function RewindEffect() {
 }
 
 // ─── Main component ───
-const STATUS_ORDER = { backlog: 0, in_progress: 1, testing: 2, done: 3 };
+const STATUS_ORDER = { backlog: 0, in_progress: 1, testing: 2, done: 3, failed: -1 };
 
 export default function StatusTransitionEffect({ from, to }) {
   const [visible, setVisible] = useState(true);
@@ -186,6 +186,8 @@ export default function StatusTransitionEffect({ from, to }) {
   }, []);
 
   if (!visible) return null;
+
+  if (to === 'failed') return <RewindEffect />;
 
   const fromIdx = STATUS_ORDER[from] ?? 0;
   const toIdx = STATUS_ORDER[to] ?? 0;

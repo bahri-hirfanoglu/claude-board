@@ -207,12 +207,18 @@ pub fn handle_task_failure(db: &DbPool, app: &AppHandle, project_id: i64, task_i
     let retry_count = task.retry_count.unwrap_or(0);
 
     if retry_count < max_retries {
-        // Retry: increment count, move to backlog, auto-queue will pick it up
+        // Retry with exponential backoff: 30s, 60s, 120s, 240s... capped at 600s (10min)
         tasks::increment_retry(db, task_id);
         tasks::update_status(db, task_id, "backlog");
         let new_count = retry_count + 1;
-        let msg = format!("Retry {}/{}: {}", new_count, max_retries, task.title);
-        tasks::add_log(db, task_id, &format!("Auto-retry ({}/{}): Task failed, retrying...", new_count, max_retries), "system", None);
+        let base_delay: i64 = 30; // 30 seconds
+        let delay = std::cmp::min(base_delay * (1 << retry_count), 600); // exponential, max 10min
+        // Add jitter: ±20%
+        let jitter = (delay as f64 * 0.2 * (rand::random::<f64>() * 2.0 - 1.0)) as i64;
+        let final_delay = std::cmp::max(delay + jitter, 10);
+        tasks::set_retry_after(db, task_id, final_delay);
+        let msg = format!("Retry {}/{}: {} (backoff {}s)", new_count, max_retries, task.title, final_delay);
+        tasks::add_log(db, task_id, &format!("Auto-retry ({}/{}): Waiting {}s before retry...", new_count, max_retries, final_delay), "system", None);
         activity::add(db, project_id, Some(task_id), "queue_retry", &msg, None);
         app.emit("task:log", &serde_json::json!({
             "taskId": task_id, "message": format!("Auto-retry ({}/{})", new_count, max_retries), "logType": "system"
@@ -220,10 +226,9 @@ pub fn handle_task_failure(db: &DbPool, app: &AppHandle, project_id: i64, task_i
         app.emit("task:updated", &tasks::get_by_id(db, task_id)).ok();
         start_next_queued(db, app, project_id);
     } else {
-        // Retries exhausted — permanently failed. Do NOT move to backlog to prevent auto-queue loop.
-        // Keep in backlog but mark retry_count > max so get_ready_tasks skips it.
+        // Retries exhausted — move to failed status
         tasks::increment_retry(db, task_id);
-        tasks::update_status(db, task_id, "backlog");
+        tasks::update_status(db, task_id, "failed");
         let msg = format!("Permanently failed after {} retries: {}", max_retries, task.title);
         tasks::add_log(db, task_id, &format!("All {} retries exhausted. Task will not auto-start. Move manually to retry.", max_retries), "error", None);
         activity::add(db, project_id, Some(task_id), "task_failed_permanent", &msg, None);
