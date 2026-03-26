@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.6.1] - 2026-03-27
+
+### Bug Fixes
+- **Branch Name Mismatch** — Branch now created before prompt so Claude uses the correct branch name (was: prompt says `task-79` but actual branch is `events-page-header`)
+- **Auto-PR on Auto-Test Approval** — PR is now created when auto-test approves a task (was: direct DB update bypassed all automation)
+- **GitHub Issue Close on Done** — Issues now close in all done transitions including auto-test approval, not just manual approve
+- **GitHub Issue Comment** — PR link and task key added as comment before closing issue
+- **CMD Window Flash on Windows** — All `gh` and `git` commands now use `CREATE_NO_WINDOW` flag
+- **Error Boundary** — Component crashes show error + "Try Again" button instead of grey/white screen
+- **PR Timing** — PR created only on done transition, not on Claude process exit (testing)
+
 ## [1.6.0] - 2026-03-26
 
 ### Features
