@@ -15,17 +15,19 @@ export default function LanguageSelector({ compact = false, inline = false }) {
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    const handler = (e) => {
+      if (!ref.current?.contains(e.target)) setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const current = languages.find(l => l.code === lang) || languages[0];
+  const current = languages.find((l) => l.code === lang) || languages[0];
 
   if (inline) {
     return (
       <div className="flex items-center gap-1 text-xs">
-        {languages.map(l => (
+        {languages.map((l) => (
           <button
             key={l.code}
             onClick={() => setLang(l.code)}
@@ -54,27 +56,28 @@ export default function LanguageSelector({ compact = false, inline = false }) {
         {compact ? (
           <span className="uppercase font-medium">{lang}</span>
         ) : (
-          <span>{current.flag} {current.label}</span>
+          <span>
+            {current.flag} {current.label}
+          </span>
         )}
       </button>
 
       {open && (
         <div className="absolute right-0 top-full mt-1 w-44 bg-surface-800 border border-surface-700 rounded-lg shadow-xl z-[60] py-1 overflow-hidden">
-          {languages.map(l => (
+          {languages.map((l) => (
             <button
               key={l.code}
-              onClick={() => { setLang(l.code); setOpen(false); }}
+              onClick={() => {
+                setLang(l.code);
+                setOpen(false);
+              }}
               className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors ${
-                l.code === lang
-                  ? 'text-claude bg-claude/10'
-                  : 'text-surface-300 hover:bg-surface-700'
+                l.code === lang ? 'text-claude bg-claude/10' : 'text-surface-300 hover:bg-surface-700'
               }`}
             >
               <span className="text-sm">{l.flag}</span>
               <span className="flex-1 text-left">{l.label}</span>
-              {l.code === lang && (
-                <span className="w-1.5 h-1.5 rounded-full bg-claude" />
-              )}
+              {l.code === lang && <span className="w-1.5 h-1.5 rounded-full bg-claude" />}
             </button>
           ))}
         </div>

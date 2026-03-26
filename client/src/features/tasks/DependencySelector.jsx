@@ -20,21 +20,26 @@ export default function DependencySelector({ taskId, allTasks, dependencies, onA
   const parents = useMemo(() => dependencies?.parents || [], [dependencies]);
   const children = useMemo(() => dependencies?.children || [], [dependencies]);
 
-  const parentTasks = useMemo(() =>
-    parents.map(id => allTasks.find(t => t.id === id)).filter(Boolean),
-    [parents, allTasks]
+  const parentTasks = useMemo(
+    () => parents.map((id) => allTasks.find((t) => t.id === id)).filter(Boolean),
+    [parents, allTasks],
   );
 
-  const childTasks = useMemo(() =>
-    children.map(id => allTasks.find(t => t.id === id)).filter(Boolean),
-    [children, allTasks]
+  const childTasks = useMemo(
+    () => children.map((id) => allTasks.find((t) => t.id === id)).filter(Boolean),
+    [children, allTasks],
   );
 
   const availableTasks = useMemo(() => {
     const excluded = new Set([...(typeof taskId === 'number' ? [taskId] : []), ...parents, ...children]);
     return allTasks
-      .filter(t => !excluded.has(t.id))
-      .filter(t => !search || t.title.toLowerCase().includes(search.toLowerCase()) || t.task_key?.toLowerCase().includes(search.toLowerCase()));
+      .filter((t) => !excluded.has(t.id))
+      .filter(
+        (t) =>
+          !search ||
+          t.title.toLowerCase().includes(search.toLowerCase()) ||
+          t.task_key?.toLowerCase().includes(search.toLowerCase()),
+      );
   }, [allTasks, taskId, parents, children, search]);
 
   // Close dropdown on outside click
@@ -80,9 +85,14 @@ export default function DependencySelector({ taskId, allTasks, dependencies, onA
       {hasAny && (
         <div className="space-y-1 mb-2">
           {/* Parents — "waits for" */}
-          {parentTasks.map(pt => (
-            <div key={pt.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-500/8 border border-blue-500/20 group">
-              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[pt.status] || STATUS_DOT.backlog}`} />
+          {parentTasks.map((pt) => (
+            <div
+              key={pt.id}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-500/8 border border-blue-500/20 group"
+            >
+              <div
+                className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[pt.status] || STATUS_DOT.backlog}`}
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-mono text-blue-400/70">{pt.task_key || `#${pt.id}`}</span>
@@ -104,18 +114,21 @@ export default function DependencySelector({ taskId, allTasks, dependencies, onA
           ))}
 
           {/* Children — "blocks" */}
-          {childTasks.map(ct => (
-            <div key={ct.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface-800/40 border border-surface-700/30">
-              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[ct.status] || STATUS_DOT.backlog}`} />
+          {childTasks.map((ct) => (
+            <div
+              key={ct.id}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface-800/40 border border-surface-700/30"
+            >
+              <div
+                className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[ct.status] || STATUS_DOT.backlog}`}
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-mono text-surface-500">{ct.task_key || `#${ct.id}`}</span>
                   <span className="text-[10px] text-surface-400 truncate">{ct.title}</span>
                 </div>
               </div>
-              <span className="text-[9px] text-surface-500 flex-shrink-0">
-                {t('taskModal.blocks')}
-              </span>
+              <span className="text-[9px] text-surface-500 flex-shrink-0">{t('taskModal.blocks')}</span>
             </div>
           ))}
         </div>
@@ -126,7 +139,11 @@ export default function DependencySelector({ taskId, allTasks, dependencies, onA
         {!open ? (
           <button
             type="button"
-            onClick={() => { setOpen(true); setCycleError(null); setTimeout(() => inputRef.current?.focus(), 50); }}
+            onClick={() => {
+              setOpen(true);
+              setCycleError(null);
+              setTimeout(() => inputRef.current?.focus(), 50);
+            }}
             className="flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg border border-dashed border-surface-700 text-[11px] text-surface-400 hover:text-claude hover:border-claude/40 transition-colors justify-center"
           >
             <Plus size={11} />
@@ -144,7 +161,15 @@ export default function DependencySelector({ taskId, allTasks, dependencies, onA
                 placeholder={t('taskModal.addDependency')}
                 className="flex-1 bg-transparent text-[11px] text-surface-200 placeholder-surface-500 focus:outline-none"
               />
-              <button type="button" onClick={() => { setOpen(false); setSearch(''); setCycleError(null); }} className="text-surface-500 hover:text-surface-300">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setSearch('');
+                  setCycleError(null);
+                }}
+                className="text-surface-500 hover:text-surface-300"
+              >
                 <X size={12} />
               </button>
             </div>
@@ -164,25 +189,28 @@ export default function DependencySelector({ taskId, allTasks, dependencies, onA
                   {search ? 'No matching tasks' : 'No available tasks'}
                 </div>
               ) : (
-                availableTasks.slice(0, 10).map(task => (
+                availableTasks.slice(0, 10).map((task) => (
                   <button
                     key={task.id}
                     type="button"
                     onClick={() => handleAdd(task.id)}
                     className="w-full text-left px-2.5 py-2 flex items-center gap-2 hover:bg-surface-700/50 transition-colors group/item"
                   >
-                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[task.status] || STATUS_DOT.backlog}`} />
+                    <div
+                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[task.status] || STATUS_DOT.backlog}`}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] text-surface-200 truncate">{task.title}</div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[9px] font-mono text-surface-500">{task.task_key || `#${task.id}`}</span>
-                        {task.task_type && (
-                          <span className="text-[9px] text-surface-600">{task.task_type}</span>
-                        )}
+                        {task.task_type && <span className="text-[9px] text-surface-600">{task.task_type}</span>}
                         <span className="text-[9px] text-surface-600 capitalize">{task.status?.replace('_', ' ')}</span>
                       </div>
                     </div>
-                    <Plus size={12} className="text-surface-600 group-hover/item:text-claude flex-shrink-0 transition-colors" />
+                    <Plus
+                      size={12}
+                      className="text-surface-600 group-hover/item:text-claude flex-shrink-0 transition-colors"
+                    />
                   </button>
                 ))
               )}

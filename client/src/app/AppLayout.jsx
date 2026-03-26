@@ -25,13 +25,33 @@ import ScanModal from '../features/scan/ScanModal';
 import SettingsModal from '../features/settings/SettingsModal';
 
 export default function AppLayout({
-  connected, projects, currentProject, tasks, filteredTasks, terminal,
-  selectedTask, activePanel, search, toasts, confirm, templates, roles,
-  modals, openModal, closeModal,
-  onClosePlanning, onOpenPlanning, onCloseTemplates, onCloseRoles,
-  onSearchChange, onSetActivePanel, onSetSelectedTask,
-  onNavigateToProject, onNavigateToDashboard,
-  taskActions, projectActions,
+  connected,
+  projects,
+  currentProject,
+  tasks,
+  filteredTasks,
+  terminal,
+  selectedTask,
+  activePanel,
+  search,
+  toasts,
+  confirm,
+  templates,
+  roles,
+  modals,
+  openModal,
+  closeModal,
+  onClosePlanning,
+  onOpenPlanning,
+  onCloseTemplates,
+  onCloseRoles,
+  onSearchChange,
+  onSetActivePanel,
+  onSetSelectedTask,
+  onNavigateToProject,
+  onNavigateToDashboard,
+  taskActions,
+  projectActions,
   onOpenAppSettings,
 }) {
   const editingTask = modals.task === true ? null : modals.task;
@@ -88,7 +108,12 @@ export default function AppLayout({
                 onViewDetail={(task) => openModal('detail', task)}
               />
             ) : (
-              <Dashboard projects={projects} onSelectProject={onNavigateToProject} onNewProject={() => openModal('project')} onOpenSettings={onOpenAppSettings} />
+              <Dashboard
+                projects={projects}
+                onSelectProject={onNavigateToProject}
+                onNewProject={() => openModal('project')}
+                onOpenSettings={onOpenAppSettings}
+              />
             )}
           </div>
 
@@ -126,10 +151,7 @@ export default function AppLayout({
       {modals.task && currentProject && (
         <TaskModal
           task={editingTask}
-          onSubmit={editingTask
-            ? (data) => taskActions.onUpdate(editingTask, data)
-            : taskActions.onCreate
-          }
+          onSubmit={editingTask ? (data) => taskActions.onUpdate(editingTask, data) : taskActions.onCreate}
           onClose={() => closeModal('task')}
           templates={templates || []}
           roles={roles || []}
@@ -139,24 +161,33 @@ export default function AppLayout({
       {modals.project && (
         <ProjectModal
           project={editingProject}
-          onSubmit={editingProject
-            ? (data) => projectActions.onUpdate(editingProject, data)
-            : projectActions.onCreate
-          }
+          onSubmit={editingProject ? (data) => projectActions.onUpdate(editingProject, data) : projectActions.onCreate}
           onClose={() => closeModal('project')}
         />
       )}
       {modals.claudeMd && currentProject && (
-        <ClaudeMdEditor projectId={currentProject.id} projectName={currentProject.name} onClose={() => closeModal('claudeMd')} />
+        <ClaudeMdEditor
+          projectId={currentProject.id}
+          projectName={currentProject.name}
+          onClose={() => closeModal('claudeMd')}
+        />
       )}
       {modals.snippets && currentProject && (
-        <SnippetsModal projectId={currentProject.id} projectName={currentProject.name} onClose={() => closeModal('snippets')} />
+        <SnippetsModal
+          projectId={currentProject.id}
+          projectName={currentProject.name}
+          onClose={() => closeModal('snippets')}
+        />
       )}
       {modals.templates && currentProject && (
         <TemplatesModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseTemplates} />
       )}
       {modals.webhooks && currentProject && (
-        <WebhooksModal projectId={currentProject.id} projectName={currentProject.name} onClose={() => closeModal('webhooks')} />
+        <WebhooksModal
+          projectId={currentProject.id}
+          projectName={currentProject.name}
+          onClose={() => closeModal('webhooks')}
+        />
       )}
       {modals.roles && currentProject && (
         <RolesModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseRoles} />
@@ -169,10 +200,14 @@ export default function AppLayout({
           onClose={() => closeModal('review')}
         />
       )}
-      {modals.detail && <TaskDetailModal task={modals.detail} onClose={() => closeModal('detail')} onStatusChange={taskActions.onStatusChange} />}
-      {modals.planning && currentProject && (
-        <PlanningModal projectId={currentProject.id} onClose={onClosePlanning} />
+      {modals.detail && (
+        <TaskDetailModal
+          task={modals.detail}
+          onClose={() => closeModal('detail')}
+          onStatusChange={taskActions.onStatusChange}
+        />
       )}
+      {modals.planning && currentProject && <PlanningModal projectId={currentProject.id} onClose={onClosePlanning} />}
       {modals.commands && <CommandsModal onClose={() => closeModal('commands')} />}
       {modals.skills && <SkillsModal onClose={() => closeModal('skills')} />}
       {modals.scan && currentProject && <ScanModal projectId={currentProject.id} onClose={() => closeModal('scan')} />}

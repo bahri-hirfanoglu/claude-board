@@ -17,8 +17,7 @@ export default function TokenEstimate({ title, description, acceptanceCriteria, 
   return (
     <div className="flex items-center gap-3 text-[11px] text-surface-500">
       <span className="flex items-center gap-1">
-        <Cpu size={10} />
-        ~{tokens.toLocaleString()} tokens
+        <Cpu size={10} />~{tokens.toLocaleString()} tokens
       </span>
       <span className="flex items-center gap-1">
         <Coins size={10} />

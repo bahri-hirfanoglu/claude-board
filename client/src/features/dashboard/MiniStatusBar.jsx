@@ -8,14 +8,17 @@ export function MiniStatusBar({ backlog, active, testing, done, total }) {
   ];
   return (
     <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-surface-700">
-      {segments.map((s, i) => s.count > 0 && (
-        <div
-          key={i}
-          className={`${s.color} transition-all duration-500`}
-          style={{ width: `${(s.count / total) * 100}%` }}
-          title={`${s.label}: ${s.count}`}
-        />
-      ))}
+      {segments.map(
+        (s, i) =>
+          s.count > 0 && (
+            <div
+              key={i}
+              className={`${s.color} transition-all duration-500`}
+              style={{ width: `${(s.count / total) * 100}%` }}
+              title={`${s.label}: ${s.count}`}
+            />
+          ),
+      )}
     </div>
   );
 }

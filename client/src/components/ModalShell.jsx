@@ -1,8 +1,19 @@
 import { X } from 'lucide-react';
 
-export default function ModalShell({ title, subtitle, icon: Icon, iconClass = 'text-claude', onClose, maxWidth = 'max-w-lg', children }) {
+export default function ModalShell({
+  title,
+  subtitle,
+  icon: Icon,
+  iconClass = 'text-claude',
+  onClose,
+  maxWidth = 'max-w-lg',
+  children,
+}) {
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
         className={`bg-surface-900 rounded-xl border border-surface-700 w-full ${maxWidth} shadow-2xl animate-slide-up max-h-[85vh] overflow-y-auto relative`}
         onClick={(e) => e.stopPropagation()}

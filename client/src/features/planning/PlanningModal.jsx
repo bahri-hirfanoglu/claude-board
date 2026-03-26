@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import {
-  X, Sparkles, CheckCircle2, StopCircle,
-  Loader2, RotateCcw, Check, ArrowRight,
-} from 'lucide-react';
+import { X, Sparkles, CheckCircle2, StopCircle, Loader2, RotateCcw, Check, ArrowRight } from 'lucide-react';
 import { api } from '../../lib/api';
 import { socket } from '../../lib/socket';
 import { tauriListen, IS_TAURI } from '../../lib/tauriEvents';
@@ -40,23 +37,42 @@ export default function PlanningModal({ projectId, onClose }) {
 
   // Save state to cache on every change
   useEffect(() => {
-    Object.assign(getCache(projectId), { phase, planPhase, logs, analysis, proposals, dependencies, stats, error, topic, context, model, effort, granularity });
+    Object.assign(getCache(projectId), {
+      phase,
+      planPhase,
+      logs,
+      analysis,
+      proposals,
+      dependencies,
+      stats,
+      error,
+      topic,
+      context,
+      model,
+      effort,
+      granularity,
+    });
   });
 
   // Resume active session
   useEffect(() => {
     let cancelled = false;
-    api.getPlanningStatus(projectId).then((data) => {
-      if (cancelled) return;
-      if (data.active) {
-        startTimeRef.current = Date.now() - (data.elapsed || 0);
-        setPhase('thinking');
-        setPlanPhase(data.phase || 'starting');
-      } else {
-        sessionStorage.removeItem('planning:active');
-      }
-    }).catch(() => {});
-    return () => { cancelled = true; };
+    api
+      .getPlanningStatus(projectId)
+      .then((data) => {
+        if (cancelled) return;
+        if (data.active) {
+          startTimeRef.current = Date.now() - (data.elapsed || 0);
+          setPhase('thinking');
+          setPlanPhase(data.phase || 'starting');
+        } else {
+          sessionStorage.removeItem('planning:active');
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
 
   // Elapsed timer — restore from cached elapsed on remount
@@ -140,7 +156,7 @@ export default function PlanningModal({ projectId, onClose }) {
         tauriListen('plan:completed', onCompleted),
         tauriListen('plan:cancelled', onCancelled),
       ];
-      return () => unsubs.forEach(fn => fn());
+      return () => unsubs.forEach((fn) => fn());
     } else {
       socket.on('plan:progress', onProgress);
       socket.on('plan:log', onLog);
@@ -158,7 +174,6 @@ export default function PlanningModal({ projectId, onClose }) {
       };
     }
   }, [projectId]);
-
 
   const handleStart = async () => {
     if (!topic.trim()) return;
@@ -181,7 +196,9 @@ export default function PlanningModal({ projectId, onClose }) {
   };
 
   const handleCancel = async () => {
-    try { await api.cancelPlanning(projectId); } catch {}
+    try {
+      await api.cancelPlanning(projectId);
+    } catch {}
     clearInterval(timerRef.current);
     setPhase('idle');
   };
@@ -189,9 +206,8 @@ export default function PlanningModal({ projectId, onClose }) {
   const handleRemoveProposal = (idx) => {
     setProposals((prev) => prev.filter((_, i) => i !== idx));
     // Adjust dependency indices: remove edges referencing idx, shift indices above idx
-    setDependencies((prev) => prev
-      .filter(([a, b]) => a !== idx && b !== idx)
-      .map(([a, b]) => [a > idx ? a - 1 : a, b > idx ? b - 1 : b])
+    setDependencies((prev) =>
+      prev.filter(([a, b]) => a !== idx && b !== idx).map(([a, b]) => [a > idx ? a - 1 : a, b > idx ? b - 1 : b]),
     );
   };
 
@@ -232,7 +248,10 @@ export default function PlanningModal({ projectId, onClose }) {
             <Sparkles size={16} className="text-claude" />
             <h2 className="text-sm font-semibold">{t('planning.title')}</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors"
+          >
             <X size={16} />
           </button>
         </div>
@@ -242,18 +261,25 @@ export default function PlanningModal({ projectId, onClose }) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4 min-h-0">
-
           {/* STEP 1: Define Phase (idle / error) */}
           {(phase === 'idle' || phase === 'error') && (
             <PlanPhaseDefine
-              topic={topic} setTopic={setTopic}
-              context={context} setContext={setContext}
-              model={model} setModel={setModel}
-              effort={effort} setEffort={setEffort}
-              granularity={granularity} setGranularity={setGranularity}
-              error={error} analysis={analysis}
-              showAnalysis={showAnalysis} setShowAnalysis={setShowAnalysis}
-              showContext={showContext} setShowContext={setShowContext}
+              topic={topic}
+              setTopic={setTopic}
+              context={context}
+              setContext={setContext}
+              model={model}
+              setModel={setModel}
+              effort={effort}
+              setEffort={setEffort}
+              granularity={granularity}
+              setGranularity={setGranularity}
+              error={error}
+              analysis={analysis}
+              showAnalysis={showAnalysis}
+              setShowAnalysis={setShowAnalysis}
+              showContext={showContext}
+              setShowContext={setShowContext}
               t={t}
             />
           )}
@@ -261,23 +287,36 @@ export default function PlanningModal({ projectId, onClose }) {
           {/* STEP 2: Analyze Phase (thinking) */}
           {isActive && (
             <PlanPhaseAnalyze
-              stats={stats} topic={topic} planPhase={planPhase}
-              logs={logs} analysis={analysis}
-              showAnalysis={showAnalysis} setShowAnalysis={setShowAnalysis}
-              isActive={isActive} t={t}
+              stats={stats}
+              topic={topic}
+              planPhase={planPhase}
+              logs={logs}
+              analysis={analysis}
+              showAnalysis={showAnalysis}
+              setShowAnalysis={setShowAnalysis}
+              isActive={isActive}
+              t={t}
             />
           )}
 
           {/* STEP 3: Review Phase */}
           {phase === 'review' && (
             <PlanPhaseReview
-              proposals={proposals} dependencies={dependencies}
-              stats={stats} logs={logs} analysis={analysis}
-              showAnalysis={showAnalysis} setShowAnalysis={setShowAnalysis}
-              showLogs={showLogs} setShowLogs={setShowLogs}
-              expandedTask={expandedTask} setExpandedTask={setExpandedTask}
-              showDag={showDag} setShowDag={setShowDag}
-              handleRemoveProposal={handleRemoveProposal} t={t}
+              proposals={proposals}
+              dependencies={dependencies}
+              stats={stats}
+              logs={logs}
+              analysis={analysis}
+              showAnalysis={showAnalysis}
+              setShowAnalysis={setShowAnalysis}
+              showLogs={showLogs}
+              setShowLogs={setShowLogs}
+              expandedTask={expandedTask}
+              setExpandedTask={setExpandedTask}
+              showDag={showDag}
+              setShowDag={setShowDag}
+              handleRemoveProposal={handleRemoveProposal}
+              t={t}
             />
           )}
 
@@ -290,9 +329,7 @@ export default function PlanningModal({ projectId, onClose }) {
               <h3 className="text-lg font-semibold text-surface-200 mb-2">
                 {t('planning.tasksCreated').replace('{count}', proposals.length)}
               </h3>
-              <p className="text-xs text-surface-500 text-center max-w-sm">
-                {t('planning.allCreated')}
-              </p>
+              <p className="text-xs text-surface-500 text-center max-w-sm">{t('planning.allCreated')}</p>
             </div>
           )}
         </div>
@@ -300,37 +337,62 @@ export default function PlanningModal({ projectId, onClose }) {
         {/* Footer */}
         <div className="flex gap-2 px-5 py-3 border-t border-surface-800 flex-shrink-0">
           {isActive ? (
-            <button onClick={handleCancel} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-colors">
+            <button
+              onClick={handleCancel}
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-colors"
+            >
               <StopCircle size={14} /> {t('planning.cancelBtn')}
             </button>
           ) : phase === 'review' ? (
             <>
-              <button onClick={handleRevise} className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-xl transition-colors">
+              <button
+                onClick={handleRevise}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-xl transition-colors"
+              >
                 <RotateCcw size={14} /> {t('planning.revise')}
               </button>
-              <button onClick={handleApprove} disabled={proposals.length === 0 || approving}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-xl transition-colors">
+              <button
+                onClick={handleApprove}
+                disabled={proposals.length === 0 || approving}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-xl transition-colors"
+              >
                 {approving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                 {approving ? t('planning.creating') : t('planning.approveCreate').replace('{count}', proposals.length)}
               </button>
             </>
           ) : phase === 'approved' ? (
             <>
-              <button onClick={() => { setPhase('idle'); setProposals([]); setLogs([]); setAnalysis(''); }}
-                className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-xl transition-colors">
+              <button
+                onClick={() => {
+                  setPhase('idle');
+                  setProposals([]);
+                  setLogs([]);
+                  setAnalysis('');
+                }}
+                className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-xl transition-colors"
+              >
                 {t('planning.planAgain')}
               </button>
-              <button onClick={onClose} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-colors">
+              <button
+                onClick={onClose}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-colors"
+              >
                 <ArrowRight size={14} /> {t('planning.doneViewBoard')}
               </button>
             </>
           ) : (
             <>
-              <button onClick={onClose} className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-xl transition-colors">
+              <button
+                onClick={onClose}
+                className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-xl transition-colors"
+              >
                 {t('planning.cancelBtn')}
               </button>
-              <button onClick={handleStart} disabled={!topic.trim()}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-claude hover:bg-claude-light disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors">
+              <button
+                onClick={handleStart}
+                disabled={!topic.trim()}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-claude hover:bg-claude-light disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors"
+              >
                 <Sparkles size={14} /> {t('planning.startPlanning')}
               </button>
             </>

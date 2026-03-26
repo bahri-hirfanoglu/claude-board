@@ -10,7 +10,8 @@ export default function CommandsModal({ onClose }) {
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    api.listCustomCommands()
+    api
+      .listCustomCommands()
       .then(setCommands)
       .catch(() => setCommands([]))
       .finally(() => setLoading(false));
@@ -27,7 +28,9 @@ export default function CommandsModal({ onClose }) {
           <div className="flex items-center gap-2">
             <Terminal size={16} className="text-cyan-400" />
             <h2 className="text-sm font-medium">{t('commands.title')}</h2>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-800 text-surface-500">~/.claude/commands/</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-800 text-surface-500">
+              ~/.claude/commands/
+            </span>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors">
             <X size={18} />
@@ -76,7 +79,9 @@ export default function CommandsModal({ onClose }) {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-surface-200">/{selected.name}</h3>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-800 text-surface-500">{selected.scope}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-800 text-surface-500">
+                        {selected.scope}
+                      </span>
                       <span className="text-[10px] text-surface-600">{(selected.size / 1024).toFixed(1)}KB</span>
                     </div>
                     <pre className="text-xs text-surface-400 whitespace-pre-wrap bg-surface-800/50 rounded-lg p-3 border border-surface-700/50 leading-relaxed">

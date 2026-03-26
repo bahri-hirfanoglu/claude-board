@@ -8,7 +8,10 @@ export function MarkdownContent({ content }) {
   }
   return (
     <div data-color-mode="dark" className="md-preview-compact">
-      <MDEditor.Markdown source={content} style={{ backgroundColor: 'transparent', color: '#a8a29e', fontSize: '12px', lineHeight: '1.6' }} />
+      <MDEditor.Markdown
+        source={content}
+        style={{ backgroundColor: 'transparent', color: '#a8a29e', fontSize: '12px', lineHeight: '1.6' }}
+      />
     </div>
   );
 }

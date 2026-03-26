@@ -1,22 +1,49 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  Square, Cpu, Clock, Zap, Coins, Eye, FileText, Pencil, Terminal,
-  Search, FolderOpen, Globe, Layers, Hash, ArrowRight, FlaskConical,
+  Square,
+  Cpu,
+  Clock,
+  Zap,
+  Coins,
+  Eye,
+  FileText,
+  Pencil,
+  Terminal,
+  Search,
+  FolderOpen,
+  Globe,
+  Layers,
+  Hash,
+  ArrowRight,
+  FlaskConical,
 } from 'lucide-react';
 import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, MODEL_COSTS } from '../../lib/constants';
 import { IS_TAURI, tauriListen } from '../../lib/tauriEvents';
 
 const TOOL_ICONS = {
-  Read: Eye, Write: FileText, Edit: Pencil, Bash: Terminal,
-  Grep: Search, Glob: FolderOpen, WebFetch: Globe, WebSearch: Globe,
-  Agent: Zap, Task: Layers,
+  Read: Eye,
+  Write: FileText,
+  Edit: Pencil,
+  Bash: Terminal,
+  Grep: Search,
+  Glob: FolderOpen,
+  WebFetch: Globe,
+  WebSearch: Globe,
+  Agent: Zap,
+  Task: Layers,
 };
 
 const TOOL_COLORS = {
-  Read: 'text-sky-400', Write: 'text-emerald-400', Edit: 'text-yellow-400',
-  Bash: 'text-amber-400', Grep: 'text-cyan-400', Glob: 'text-teal-400',
-  WebFetch: 'text-blue-400', WebSearch: 'text-blue-400', Agent: 'text-violet-400',
+  Read: 'text-sky-400',
+  Write: 'text-emerald-400',
+  Edit: 'text-yellow-400',
+  Bash: 'text-amber-400',
+  Grep: 'text-cyan-400',
+  Glob: 'text-teal-400',
+  WebFetch: 'text-blue-400',
+  WebSearch: 'text-blue-400',
+  Agent: 'text-violet-400',
 };
 
 function formatElapsed(ms) {
@@ -103,8 +130,8 @@ export default function AgentCard({ task, onStop, onViewLogs }) {
   }, [task.id]);
 
   const totalTokens = liveUsage.input + liveUsage.output;
-  const ToolIcon = lastTool ? (TOOL_ICONS[lastTool.name] || Zap) : null;
-  const toolColor = lastTool ? (TOOL_COLORS[lastTool.name] || 'text-surface-400') : '';
+  const ToolIcon = lastTool ? TOOL_ICONS[lastTool.name] || Zap : null;
+  const toolColor = lastTool ? TOOL_COLORS[lastTool.name] || 'text-surface-400' : '';
 
   // Token progress visual (rough estimate based on typical task ~200K tokens)
   const tokenProgress = Math.min(100, (totalTokens / 200000) * 100);
@@ -120,21 +147,25 @@ export default function AgentCard({ task, onStop, onViewLogs }) {
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 mb-0.5">
-            {isTesting
-              ? <FlaskConical size={11} className="text-purple-400 animate-pulse flex-shrink-0" />
-              : <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${typeColor?.dot || 'bg-blue-400'}`} />
-            }
+            {isTesting ? (
+              <FlaskConical size={11} className="text-purple-400 animate-pulse flex-shrink-0" />
+            ) : (
+              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${typeColor?.dot || 'bg-blue-400'}`} />
+            )}
             <span className="text-xs font-medium text-surface-200 truncate">{task.title}</span>
             {isTesting && (
-              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400">Testing</span>
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400">
+                Testing
+              </span>
             )}
           </div>
-          {task.task_key && (
-            <span className="text-[10px] text-surface-500 font-mono">{task.task_key}</span>
-          )}
+          {task.task_key && <span className="text-[10px] text-surface-500 font-mono">{task.task_key}</span>}
         </div>
         <button
-          onClick={(e) => { e.stopPropagation(); onStop?.(task); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onStop?.(task);
+          }}
           className="p-1 rounded hover:bg-red-500/20 text-surface-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
           title="Stop"
         >
@@ -195,11 +226,7 @@ export default function AgentCard({ task, onStop, onViewLogs }) {
       )}
 
       {/* Last claude text */}
-      {lastText && !lastTool && (
-        <div className="text-[9px] text-surface-500 truncate px-1 italic">
-          {lastText}
-        </div>
-      )}
+      {lastText && !lastTool && <div className="text-[9px] text-surface-500 truncate px-1 italic">{lastText}</div>}
     </div>
   );
 }

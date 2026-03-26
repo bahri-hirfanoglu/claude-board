@@ -25,7 +25,10 @@ export default function SessionReplay({ taskId }) {
 
   useEffect(() => {
     if (!IS_TAURI || !taskId) return;
-    api.getTaskEvents(taskId).then(setEvents).catch(() => {});
+    api
+      .getTaskEvents(taskId)
+      .then(setEvents)
+      .catch(() => {});
   }, [taskId]);
 
   const timeRange = useMemo(() => {
@@ -42,8 +45,11 @@ export default function SessionReplay({ taskId }) {
   useEffect(() => {
     if (!playing || events.length === 0) return;
     const interval = setInterval(() => {
-      setPlayIndex(prev => {
-        if (prev >= events.length - 1) { setPlaying(false); return prev; }
+      setPlayIndex((prev) => {
+        if (prev >= events.length - 1) {
+          setPlaying(false);
+          return prev;
+        }
         setSelectedEvent(events[prev + 1]);
         return prev + 1;
       });
@@ -66,7 +72,10 @@ export default function SessionReplay({ taskId }) {
       <div className="px-4 py-3 border-b border-surface-800">
         <div className="flex items-center gap-2 mb-2">
           <button
-            onClick={() => { setPlaying(!playing); if (!playing && playIndex >= events.length - 1) setPlayIndex(0); }}
+            onClick={() => {
+              setPlaying(!playing);
+              if (!playing && playIndex >= events.length - 1) setPlayIndex(0);
+            }}
             className="p-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-surface-300 transition-colors"
           >
             {playing ? <Pause size={14} /> : <Play size={14} />}
@@ -79,13 +88,14 @@ export default function SessionReplay({ taskId }) {
         </div>
 
         {/* Timeline bar */}
-        <div className="relative h-6 bg-surface-800 rounded-full overflow-hidden cursor-pointer"
+        <div
+          className="relative h-6 bg-surface-800 rounded-full overflow-hidden cursor-pointer"
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const ratio = (e.clientX - rect.left) / rect.width;
             const targetTime = timeRange.start + ratio * duration;
             const closest = events.reduce((prev, curr) =>
-              Math.abs(curr.timestampMs - targetTime) < Math.abs(prev.timestampMs - targetTime) ? curr : prev
+              Math.abs(curr.timestampMs - targetTime) < Math.abs(prev.timestampMs - targetTime) ? curr : prev,
             );
             setSelectedEvent(closest);
             setPlayIndex(events.indexOf(closest));
@@ -109,9 +119,11 @@ export default function SessionReplay({ taskId }) {
           <div
             className="absolute top-0 w-0.5 h-full bg-claude"
             style={{
-              left: `${duration > 0
-                ? (((selectedEvent?.timestampMs || timeRange.start) - timeRange.start) / duration) * 100
-                : 0}%`
+              left: `${
+                duration > 0
+                  ? (((selectedEvent?.timestampMs || timeRange.start) - timeRange.start) / duration) * 100
+                  : 0
+              }%`,
             }}
           />
         </div>
@@ -128,16 +140,17 @@ export default function SessionReplay({ taskId }) {
             return (
               <button
                 key={i}
-                onClick={() => { setSelectedEvent(evt); setPlayIndex(i); }}
+                onClick={() => {
+                  setSelectedEvent(evt);
+                  setPlayIndex(i);
+                }}
                 className={`w-full text-left px-3 py-2 flex items-center gap-2 text-[11px] border-b border-surface-800/50 transition-colors ${
                   isSelected ? 'bg-surface-800/80' : 'hover:bg-surface-800/40'
                 }`}
               >
                 <Icon size={12} className={colors.text} />
                 <div className="flex-1 min-w-0">
-                  <div className="text-surface-300 truncate">
-                    {evt.data?.toolName || evt.eventType}
-                  </div>
+                  <div className="text-surface-300 truncate">{evt.data?.toolName || evt.eventType}</div>
                   {evt.data?.input?.file && (
                     <div className="text-surface-500 truncate text-[10px]">{evt.data.input.file}</div>
                   )}
@@ -155,7 +168,9 @@ export default function SessionReplay({ taskId }) {
           {selectedEvent ? (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span className={`text-sm font-medium ${(EVENT_COLORS[selectedEvent.eventType] || EVENT_COLORS.tool_call).text}`}>
+                <span
+                  className={`text-sm font-medium ${(EVENT_COLORS[selectedEvent.eventType] || EVENT_COLORS.tool_call).text}`}
+                >
                   {selectedEvent.data?.toolName || selectedEvent.eventType}
                 </span>
                 <span className="text-[10px] text-surface-500 font-mono">

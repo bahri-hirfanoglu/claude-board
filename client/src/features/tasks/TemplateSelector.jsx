@@ -2,7 +2,15 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Layers, ChevronDown, X } from 'lucide-react';
 import { useTranslation } from '../../i18n/I18nProvider';
 
-export default function TemplateSelector({ templates, selectedTemplate, onSelect, onClear, templateVars, onVarChange, generatedDescription }) {
+export default function TemplateSelector({
+  templates,
+  selectedTemplate,
+  onSelect,
+  onClear,
+  templateVars,
+  onVarChange,
+  generatedDescription,
+}) {
   const { t } = useTranslation();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
@@ -18,8 +26,11 @@ export default function TemplateSelector({ templates, selectedTemplate, onSelect
 
   const parsedVars = useMemo(() => {
     if (!selectedTemplate?.variables) return [];
-    try { return JSON.parse(selectedTemplate.variables); }
-    catch { return []; }
+    try {
+      return JSON.parse(selectedTemplate.variables);
+    } catch {
+      return [];
+    }
   }, [selectedTemplate]);
 
   if (!templates.length) return null;
@@ -44,7 +55,10 @@ export default function TemplateSelector({ templates, selectedTemplate, onSelect
                   <button
                     key={tpl.id}
                     type="button"
-                    onClick={() => { onSelect(tpl); setShowMenu(false); }}
+                    onClick={() => {
+                      onSelect(tpl);
+                      setShowMenu(false);
+                    }}
                     className="w-full text-left px-3 py-2 text-xs hover:bg-surface-700 transition-colors"
                   >
                     <span className="text-surface-200 font-medium">{tpl.name}</span>
@@ -60,7 +74,11 @@ export default function TemplateSelector({ templates, selectedTemplate, onSelect
               <Layers size={12} />
               Template: <span className="font-medium">{selectedTemplate.name}</span>
             </span>
-            <button type="button" onClick={onClear} className="text-xs text-surface-400 hover:text-surface-200 transition-colors">
+            <button
+              type="button"
+              onClick={onClear}
+              className="text-xs text-surface-400 hover:text-surface-200 transition-colors"
+            >
               <X size={14} />
             </button>
           </div>

@@ -1,7 +1,5 @@
 import { useRef } from 'react';
-import {
-  Cpu, Zap, Shield, Paperclip, Image, FileText, Trash2,
-} from 'lucide-react';
+import { Cpu, Zap, Shield, Paperclip, Image, FileText, Trash2 } from 'lucide-react';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { MODEL_OPTIONS, EFFORT_OPTIONS } from '../../lib/constants';
 import DependencySelector from './DependencySelector';
@@ -10,7 +8,27 @@ import TagInput from './TagInput';
 const MODELS = MODEL_OPTIONS;
 const EFFORTS = EFFORT_OPTIONS;
 
-export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort, onEffortChange, roleId, onRoleChange, roles, acceptanceCriteria, onAcceptanceChange, attachedFiles, onFilesChange, taskId, allTasks, dependencies, onAddDependency, onRemoveDependency, tags, onTagsChange, tagSuggestions }) {
+export default function TaskOptionsPanel({
+  model,
+  onModelChange,
+  thinkingEffort,
+  onEffortChange,
+  roleId,
+  onRoleChange,
+  roles,
+  acceptanceCriteria,
+  onAcceptanceChange,
+  attachedFiles,
+  onFilesChange,
+  taskId,
+  allTasks,
+  dependencies,
+  onAddDependency,
+  onRemoveDependency,
+  tags,
+  onTagsChange,
+  tagSuggestions,
+}) {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
 
@@ -104,9 +122,7 @@ export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort,
                 type="button"
                 onClick={() => onRoleChange(r.id)}
                 className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all flex items-center gap-1 ${
-                  roleId === r.id
-                    ? 'ring-1 ring-current'
-                    : 'bg-surface-800 text-surface-500 hover:text-surface-300'
+                  roleId === r.id ? 'ring-1 ring-current' : 'bg-surface-800 text-surface-500 hover:text-surface-300'
                 }`}
                 style={roleId === r.id ? { backgroundColor: r.color + '20', color: r.color } : {}}
               >
@@ -121,8 +137,15 @@ export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort,
       {/* Tags */}
       {onTagsChange && (
         <div>
-          <label className="text-[10px] font-medium text-surface-500 uppercase tracking-wider mb-1.5 block">{t('task.tags')}</label>
-          <TagInput value={tags || []} onChange={onTagsChange} suggestions={tagSuggestions || []} placeholder={t('task.addTag')} />
+          <label className="text-[10px] font-medium text-surface-500 uppercase tracking-wider mb-1.5 block">
+            {t('task.tags')}
+          </label>
+          <TagInput
+            value={tags || []}
+            onChange={onTagsChange}
+            suggestions={tagSuggestions || []}
+            placeholder={t('task.addTag')}
+          />
         </div>
       )}
 
@@ -147,7 +170,7 @@ export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort,
           className="hidden"
           onChange={(e) => {
             const files = Array.from(e.target.files || []);
-            onFilesChange(prev => [...prev, ...files]);
+            onFilesChange((prev) => [...prev, ...files]);
             e.target.value = '';
           }}
         />
@@ -166,7 +189,7 @@ export default function TaskOptionsPanel({ model, onModelChange, thinkingEffort,
                   <span className="text-[10px] text-surface-600">{(file.size / 1024).toFixed(0)}KB</span>
                   <button
                     type="button"
-                    onClick={() => onFilesChange(prev => prev.filter((_, j) => j !== i))}
+                    onClick={() => onFilesChange((prev) => prev.filter((_, j) => j !== i))}
                     className="p-0.5 rounded hover:bg-surface-700 text-surface-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                   >
                     <Trash2 size={10} />

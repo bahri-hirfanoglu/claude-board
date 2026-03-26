@@ -196,9 +196,11 @@ export default {
   'projectModal.permAutoAcceptDesc': 'Full autonomy \u2014 all tools allowed',
   'projectModal.permAllowedToolsDesc': 'Only specified tools allowed',
   'projectModal.permDefaultDesc': "Claude's built-in permissions",
-  'projectModal.permWarning': 'Claude runs with --no-input flag. Ensure your configuration handles all permission prompts.',
+  'projectModal.permWarning':
+    'Claude runs with --no-input flag. Ensure your configuration handles all permission prompts.',
   'projectModal.allowedToolsPlaceholder': 'Bash, Read, Write, Edit, Glob, Grep',
-  'projectModal.availableTools': 'Available: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch, NotebookEdit',
+  'projectModal.availableTools':
+    'Available: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch, NotebookEdit',
   'projectModal.taskQueue': 'Task Queue',
   'projectModal.gitWorkflow': 'Git Workflow',
   'projectModal.autoQueueEnabled': 'Auto Queue Enabled',
@@ -220,7 +222,8 @@ export default {
   'review.sendBack': 'Send Back to Claude',
   'review.sending': 'Sending...',
   'review.feedbackLabel': 'What needs to change? (Revision #{num})',
-  'review.feedbackPlaceholder': 'Describe what needs to be fixed or improved. Be specific \u2014 Claude will use this feedback to revise the work...',
+  'review.feedbackPlaceholder':
+    'Describe what needs to be fixed or improved. Be specific \u2014 Claude will use this feedback to revise the work...',
 
   // ─── Stats Panel ───
   'stats.title': 'Project Statistics',
@@ -255,7 +258,8 @@ export default {
   // ─── Planning ───
   'planning.title': 'Planning Mode',
   'planning.whatToBuild': 'What do you want to build?',
-  'planning.topicPlaceholder': 'e.g. Build an authentication system with OAuth2, JWT tokens, role-based access control, and password reset flow',
+  'planning.topicPlaceholder':
+    'e.g. Build an authentication system with OAuth2, JWT tokens, role-based access control, and password reset flow',
   'planning.context': 'Additional context',
   'planning.contextPlaceholder': 'e.g. Express.js backend, React frontend, PostgreSQL with Prisma ORM',
   'planning.taskBreakdown': 'Task breakdown',
@@ -299,7 +303,8 @@ export default {
   'planning.analysis': 'Analysis',
   'planning.activityLog': 'Activity Log',
   'planning.edges': 'edges',
-  'planning.allCreated': 'All tasks have been created and added to your backlog. You can now assign them and start working.',
+  'planning.allCreated':
+    'All tasks have been created and added to your backlog. You can now assign them and start working.',
 
   // ─── Snippets ───
   'snippets.title': 'Context Snippets',
@@ -308,7 +313,7 @@ export default {
   'snippets.content': 'Content',
   'snippets.contentPlaceholder': 'e.g. Always use Tailwind for styling. Use Vitest for tests.',
   'snippets.noSnippets': 'No snippets yet',
-  'snippets.noSnippetsDesc': 'Add context snippets that will be injected into Claude\'s prompt',
+  'snippets.noSnippetsDesc': "Add context snippets that will be injected into Claude's prompt",
   'snippets.addSnippet': 'Add Snippet',
 
   // ─── Templates ───
@@ -330,7 +335,7 @@ export default {
   'roles.description': 'Description',
   'roles.descPlaceholder': 'e.g. Experienced in Node.js, databases, and API design',
   'roles.prompt': 'Prompt Instructions',
-  'roles.promptSub': 'injected into Claude\'s prompt',
+  'roles.promptSub': "injected into Claude's prompt",
   'roles.promptPlaceholder': 'You are a senior backend developer...',
   'roles.color': 'Color',
   'roles.globalRole': 'Shared across all projects',
@@ -433,19 +438,26 @@ export default {
 
   // ─── Onboarding Tour ───
   'onboarding.welcomeTitle': 'Welcome to Claude Board!',
-  'onboarding.welcomeDesc': 'Claude Board lets you orchestrate multiple AI agents to work on your codebase in parallel. Let\'s take a quick tour of the key features.',
+  'onboarding.welcomeDesc':
+    "Claude Board lets you orchestrate multiple AI agents to work on your codebase in parallel. Let's take a quick tour of the key features.",
   'onboarding.createProjectTitle': 'Project Selector',
-  'onboarding.createProjectDesc': 'Click here to switch between projects or create a new one. Each project connects to a local codebase directory where Claude agents will work.',
+  'onboarding.createProjectDesc':
+    'Click here to switch between projects or create a new one. Each project connects to a local codebase directory where Claude agents will work.',
   'onboarding.newTaskTitle': 'Create Tasks',
-  'onboarding.newTaskDesc': 'Click here (or press N) to create a new task. Describe what you want Claude to do — add features, fix bugs, refactor code, write tests, and more.',
+  'onboarding.newTaskDesc':
+    'Click here (or press N) to create a new task. Describe what you want Claude to do — add features, fix bugs, refactor code, write tests, and more.',
   'onboarding.boardViewsTitle': 'Multiple Views',
-  'onboarding.boardViewsDesc': 'Switch between views: Board (Kanban), List (table), Pipeline (queue), Orchestration (dependency graph + timeline + live agents), and Analytics (cost & performance).',
+  'onboarding.boardViewsDesc':
+    'Switch between views: Board (Kanban), List (table), Pipeline (queue), Orchestration (dependency graph + timeline + live agents), and Analytics (cost & performance).',
   'onboarding.planningTitle': 'AI Planning Mode',
-  'onboarding.planningDesc': 'Let Claude analyze your codebase and break down complex goals into a structured set of tasks with dependencies. Approve the plan and tasks are created automatically.',
+  'onboarding.planningDesc':
+    'Let Claude analyze your codebase and break down complex goals into a structured set of tasks with dependencies. Approve the plan and tasks are created automatically.',
   'onboarding.settingsTitle': 'Project Settings',
-  'onboarding.settingsDesc': 'Click the project name to access settings: auto-queue, max concurrent agents, auto-test, permissions, context snippets, roles, templates, and more.',
-  'onboarding.doneTitle': 'You\'re All Set!',
-  'onboarding.doneDesc': 'Start by creating a project, add some tasks, and let Claude agents handle the work. Enable auto-queue in project settings for fully autonomous execution.',
+  'onboarding.settingsDesc':
+    'Click the project name to access settings: auto-queue, max concurrent agents, auto-test, permissions, context snippets, roles, templates, and more.',
+  'onboarding.doneTitle': "You're All Set!",
+  'onboarding.doneDesc':
+    'Start by creating a project, add some tasks, and let Claude agents handle the work. Enable auto-queue in project settings for fully autonomous execution.',
   'onboarding.skip': 'Skip tour',
   'onboarding.back': 'Back',
   'onboarding.next': 'Next',

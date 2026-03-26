@@ -1,12 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Wand2, Download, Trash2, Github, FolderOpen, ArrowLeft, Check, Loader2, ExternalLink, Search } from 'lucide-react';
+import {
+  X,
+  Wand2,
+  Download,
+  Trash2,
+  Github,
+  FolderOpen,
+  ArrowLeft,
+  Check,
+  Loader2,
+  ExternalLink,
+  Search,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
 
 const POPULAR_REPOS = [
-  { repo: 'sickn33/antigravity-awesome-skills', label: 'Antigravity Awesome Skills', desc: '500+ categorized skills with search & filter' },
-  { repo: 'ComposioHQ/awesome-claude-skills', label: 'Composio Skills', desc: 'Curated skill collection by ComposioHQ' },
-  { repo: 'affaan-m/everything-claude-code', label: 'Everything Claude Code', desc: 'Comprehensive skills, agents, and tools' },
+  {
+    repo: 'sickn33/antigravity-awesome-skills',
+    label: 'Antigravity Awesome Skills',
+    desc: '500+ categorized skills with search & filter',
+  },
+  {
+    repo: 'ComposioHQ/awesome-claude-skills',
+    label: 'Composio Skills',
+    desc: 'Curated skill collection by ComposioHQ',
+  },
+  {
+    repo: 'affaan-m/everything-claude-code',
+    label: 'Everything Claude Code',
+    desc: 'Comprehensive skills, agents, and tools',
+  },
 ];
 
 export default function SkillsModal({ onClose }) {
@@ -18,18 +42,21 @@ export default function SkillsModal({ onClose }) {
 
   const loadSkills = useCallback(() => {
     setLoading(true);
-    api.listCustomSkills()
+    api
+      .listCustomSkills()
       .then(setSkills)
       .catch(() => setSkills([]))
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { loadSkills(); }, [loadSkills]);
+  useEffect(() => {
+    loadSkills();
+  }, [loadSkills]);
 
   const handleDelete = async (name) => {
     try {
       await api.deleteCustomSkill(name);
-      setSkills(prev => prev.filter(s => s.name !== name));
+      setSkills((prev) => prev.filter((s) => s.name !== name));
       if (selected?.name === name) setSelected(null);
     } catch {}
   };
@@ -44,14 +71,19 @@ export default function SkillsModal({ onClose }) {
         <div className="flex items-center justify-between px-5 py-3 border-b border-surface-800 flex-shrink-0">
           <div className="flex items-center gap-2">
             {view === 'import' && (
-              <button onClick={() => setView('browse')} className="p-1 rounded hover:bg-surface-800 text-surface-400 mr-1">
+              <button
+                onClick={() => setView('browse')}
+                className="p-1 rounded hover:bg-surface-800 text-surface-400 mr-1"
+              >
                 <ArrowLeft size={14} />
               </button>
             )}
             <Wand2 size={16} className="text-violet-400" />
             <h2 className="text-sm font-medium">{view === 'import' ? 'Import Skills' : t('skills.title')}</h2>
             {view === 'browse' && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-800 text-surface-500">~/.claude/skills/</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-800 text-surface-500">
+                ~/.claude/skills/
+              </span>
             )}
           </div>
           <div className="flex items-center gap-1">
@@ -64,7 +96,10 @@ export default function SkillsModal({ onClose }) {
                 Import
               </button>
             )}
-            <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors ml-1">
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors ml-1"
+            >
               <X size={18} />
             </button>
           </div>
@@ -83,7 +118,10 @@ export default function SkillsModal({ onClose }) {
         ) : (
           <ImportView
             installedSkills={skills}
-            onInstalled={() => { loadSkills(); setView('browse'); }}
+            onInstalled={() => {
+              loadSkills();
+              setView('browse');
+            }}
           />
         )}
 
@@ -143,7 +181,10 @@ function BrowseView({ skills, loading, selected, onSelect, onDelete, t }) {
             <Wand2 size={12} className="flex-shrink-0" />
             <span className="truncate font-medium flex-1">{skill.name}</span>
             <button
-              onClick={(e) => { e.stopPropagation(); onDelete(skill.name); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(skill.name);
+              }}
               className="p-0.5 rounded hover:bg-red-500/20 text-surface-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
               title="Delete"
             >
@@ -189,7 +230,7 @@ function ImportView({ installedSkills, onInstalled }) {
   const [browsingPath, setBrowsingPath] = useState(null);
   const [pathHistory, setPathHistory] = useState([]);
 
-  const installedNames = new Set(installedSkills.map(s => s.name));
+  const installedNames = new Set(installedSkills.map((s) => s.name));
 
   const fetchRepo = async (url, path) => {
     setFetching(true);
@@ -201,7 +242,7 @@ function ImportView({ installedSkills, onInstalled }) {
       setResult(data);
       if (path) {
         setBrowsingPath(path);
-        setPathHistory(prev => [...prev, browsingPath].filter(Boolean));
+        setPathHistory((prev) => [...prev, browsingPath].filter(Boolean));
       }
     } catch (e) {
       setError(e.message || 'Failed to fetch');
@@ -231,7 +272,7 @@ function ImportView({ installedSkills, onInstalled }) {
   };
 
   const handleInstall = async (skill) => {
-    setInstalling(prev => new Set(prev).add(skill.name));
+    setInstalling((prev) => new Set(prev).add(skill.name));
     try {
       // Fetch content if not already loaded
       let content = previewSkill?.name === skill.name ? previewContent : null;
@@ -240,16 +281,20 @@ function ImportView({ installedSkills, onInstalled }) {
       }
       if (content) {
         await api.saveCustomSkill(skill.name, content);
-        setInstalled(prev => new Set(prev).add(skill.name));
+        setInstalled((prev) => new Set(prev).add(skill.name));
       }
     } catch {}
-    setInstalling(prev => { const n = new Set(prev); n.delete(skill.name); return n; });
+    setInstalling((prev) => {
+      const n = new Set(prev);
+      n.delete(skill.name);
+      return n;
+    });
   };
 
   const goBack = () => {
     if (pathHistory.length > 0) {
       const prev = pathHistory[pathHistory.length - 1];
-      setPathHistory(h => h.slice(0, -1));
+      setPathHistory((h) => h.slice(0, -1));
       fetchRepo(repoUrl, prev);
     } else {
       fetchRepo(repoUrl, '');
@@ -258,7 +303,7 @@ function ImportView({ installedSkills, onInstalled }) {
   };
 
   // Filter skills by search and category
-  const filteredSkills = (result?.skills || []).filter(s => {
+  const filteredSkills = (result?.skills || []).filter((s) => {
     if (selectedCategory && s.category !== selectedCategory) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -279,7 +324,10 @@ function ImportView({ installedSkills, onInstalled }) {
             {POPULAR_REPOS.map((repo) => (
               <button
                 key={repo.repo}
-                onClick={() => { setRepoUrl(repo.repo); fetchRepo(repo.repo); }}
+                onClick={() => {
+                  setRepoUrl(repo.repo);
+                  fetchRepo(repo.repo);
+                }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-800/50 hover:bg-surface-800 border border-surface-700/30 hover:border-surface-700 text-left transition-colors group"
               >
                 <Github size={16} className="text-surface-400 flex-shrink-0" />
@@ -331,9 +379,7 @@ function ImportView({ installedSkills, onInstalled }) {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-xs text-red-400">
-          {error}
-        </div>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-xs text-red-400">{error}</div>
       )}
 
       {/* Results */}
@@ -342,14 +388,27 @@ function ImportView({ installedSkills, onInstalled }) {
           {/* Header: repo + back */}
           <div className="flex items-center gap-2 text-[11px]">
             <button
-              onClick={() => { setResult(null); setBrowsingPath(null); setPathHistory([]); setPreviewSkill(null); setSearchQuery(''); setSelectedCategory(null); }}
+              onClick={() => {
+                setResult(null);
+                setBrowsingPath(null);
+                setPathHistory([]);
+                setPreviewSkill(null);
+                setSearchQuery('');
+                setSelectedCategory(null);
+              }}
               className="text-surface-500 hover:text-surface-300"
             >
-              <ArrowLeft size={10} className="inline mr-0.5" />Back
+              <ArrowLeft size={10} className="inline mr-0.5" />
+              Back
             </button>
             <span className="text-violet-400 font-mono">{result.repo}</span>
             <span className="text-surface-600">{result.skills?.length || 0} skills</span>
-            <a href={`https://github.com/${result.repo}`} target="_blank" rel="noopener noreferrer" className="ml-auto text-surface-600 hover:text-surface-400">
+            <a
+              href={`https://github.com/${result.repo}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto text-surface-600 hover:text-surface-400"
+            >
               <ExternalLink size={11} />
             </a>
           </div>
@@ -373,7 +432,11 @@ function ImportView({ installedSkills, onInstalled }) {
                   className="px-2 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs text-surface-300 focus:outline-none focus:ring-1 focus:ring-violet-500"
                 >
                   <option value="">All categories</option>
-                  {result.categories.map(c => <option key={c} value={c}>{c}</option>)}
+                  {result.categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>
@@ -400,7 +463,8 @@ function ImportView({ installedSkills, onInstalled }) {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-surface-400">
-                  {filteredSkills.length}{filteredSkills.length !== (result.skills?.length || 0) ? ` / ${result.skills.length}` : ''} skills
+                  {filteredSkills.length}
+                  {filteredSkills.length !== (result.skills?.length || 0) ? ` / ${result.skills.length}` : ''} skills
                 </span>
               </div>
               <div className="space-y-1 max-h-[45vh] overflow-y-auto pr-1">
@@ -412,7 +476,9 @@ function ImportView({ installedSkills, onInstalled }) {
                     <div key={skill.name}>
                       <div
                         className={`flex items-start gap-2.5 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                          isPreview ? 'bg-violet-500/10 border border-violet-500/20' : 'bg-surface-800/30 hover:bg-surface-800 border border-transparent'
+                          isPreview
+                            ? 'bg-violet-500/10 border border-violet-500/20'
+                            : 'bg-surface-800/30 hover:bg-surface-800 border border-transparent'
                         }`}
                         onClick={() => handlePreview(skill)}
                       >
@@ -421,7 +487,9 @@ function ImportView({ installedSkills, onInstalled }) {
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-medium text-surface-200">{skill.name}</span>
                             {skill.category && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-700 text-surface-400">{skill.category}</span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-700 text-surface-400">
+                                {skill.category}
+                              </span>
                             )}
                           </div>
                           {skill.description && (
@@ -434,7 +502,10 @@ function ImportView({ installedSkills, onInstalled }) {
                           </span>
                         ) : (
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleInstall(skill); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleInstall(skill);
+                            }}
                             disabled={isInstalling}
                             className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-violet-300 bg-violet-500/15 hover:bg-violet-500/25 disabled:opacity-50 rounded-lg transition-colors flex-shrink-0"
                           >

@@ -7,7 +7,7 @@ import '../commands/index';
 describe('commandRegistry', () => {
   it('registers all built-in commands', () => {
     const commands = getAllCommands();
-    const ids = commands.map(c => c.id);
+    const ids = commands.map((c) => c.id);
     expect(ids).toContain('create_task');
     expect(ids).toContain('list_tasks');
     expect(ids).toContain('change_status');

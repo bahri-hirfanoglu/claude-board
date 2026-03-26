@@ -1,5 +1,16 @@
 import { useMemo } from 'react';
-import { Activity, CheckCircle, Clock, Cpu, Coins, AlertCircle, BarChart3, Zap, TrendingUp, FlaskConical } from 'lucide-react';
+import {
+  Activity,
+  CheckCircle,
+  Clock,
+  Cpu,
+  Coins,
+  AlertCircle,
+  BarChart3,
+  Zap,
+  TrendingUp,
+  FlaskConical,
+} from 'lucide-react';
 import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, COLUMNS, MODEL_DOT_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
@@ -40,8 +51,13 @@ export default function SummaryView({ tasks }) {
     const byType = {};
     const byPriority = { 0: 0, 1: 0, 2: 0, 3: 0 };
     const byModel = {};
-    let totalTokens = 0, totalCost = 0, totalTurns = 0, running = 0, testing = 0;
-    let inputTokens = 0, outputTokens = 0;
+    let totalTokens = 0,
+      totalCost = 0,
+      totalTurns = 0,
+      running = 0,
+      testing = 0;
+    let inputTokens = 0,
+      outputTokens = 0;
 
     for (const t of tasks) {
       byStatus[t.status] = (byStatus[t.status] || 0) + 1;
@@ -65,7 +81,7 @@ export default function SummaryView({ tasks }) {
     const completionRate = total > 0 ? ((completed / total) * 100).toFixed(0) : 0;
 
     // Avg duration for completed tasks
-    const completedTasks = tasks.filter(t => t.started_at && t.completed_at);
+    const completedTasks = tasks.filter((t) => t.started_at && t.completed_at);
     let avgMinutes = 0;
     if (completedTasks.length > 0) {
       const totalMs = completedTasks.reduce((sum, t) => {
@@ -77,15 +93,33 @@ export default function SummaryView({ tasks }) {
 
     // Top cost tasks
     const topCost = [...tasks]
-      .filter(t => t.total_cost > 0)
+      .filter((t) => t.total_cost > 0)
       .sort((a, b) => b.total_cost - a.total_cost)
       .slice(0, 5);
 
     // Cost per task average
-    const tasksWithCost = tasks.filter(t => t.total_cost > 0);
+    const tasksWithCost = tasks.filter((t) => t.total_cost > 0);
     const avgCost = tasksWithCost.length > 0 ? totalCost / tasksWithCost.length : 0;
 
-    return { byStatus, byType, byPriority, byModel, totalTokens, inputTokens, outputTokens, totalCost, totalTurns, running, testing, completed, total, completionRate, avgMinutes, topCost, avgCost };
+    return {
+      byStatus,
+      byType,
+      byPriority,
+      byModel,
+      totalTokens,
+      inputTokens,
+      outputTokens,
+      totalCost,
+      totalTurns,
+      running,
+      testing,
+      completed,
+      total,
+      completionRate,
+      avgMinutes,
+      topCost,
+      avgCost,
+    };
   }, [tasks]);
 
   const formatMinutes = (m) => {
@@ -109,31 +143,64 @@ export default function SummaryView({ tasks }) {
       {/* Top stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard icon={BarChart3} label={t('summary.totalTasks')} value={stats.total} />
-        <StatCard icon={CheckCircle} label={t('summary.completed')} value={`${stats.completionRate}%`} sublabel={`${stats.completed} of ${stats.total}`} color="text-emerald-400" />
-        <StatCard icon={Activity} label={t('summary.running')} value={stats.running} color={stats.running > 0 ? 'text-amber-400' : 'text-surface-200'} />
+        <StatCard
+          icon={CheckCircle}
+          label={t('summary.completed')}
+          value={`${stats.completionRate}%`}
+          sublabel={`${stats.completed} of ${stats.total}`}
+          color="text-emerald-400"
+        />
+        <StatCard
+          icon={Activity}
+          label={t('summary.running')}
+          value={stats.running}
+          color={stats.running > 0 ? 'text-amber-400' : 'text-surface-200'}
+        />
         {stats.testing > 0 && (
           <StatCard icon={FlaskConical} label={t('status.testing')} value={stats.testing} color="text-purple-400" />
         )}
         {(stats.byStatus['failed'] || 0) > 0 && (
-          <StatCard icon={AlertCircle} label={t('status.failed')} value={stats.byStatus['failed']} color="text-red-400" />
+          <StatCard
+            icon={AlertCircle}
+            label={t('status.failed')}
+            value={stats.byStatus['failed']}
+            color="text-red-400"
+          />
         )}
         <StatCard icon={Clock} label={t('summary.avgDuration')} value={formatMinutes(stats.avgMinutes)} />
       </div>
 
       {/* Usage stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={Cpu} label={t('summary.totalTokens')} value={formatTokens(stats.totalTokens)} sublabel={`In: ${formatTokens(stats.inputTokens)} / Out: ${formatTokens(stats.outputTokens)}`} />
-        <StatCard icon={Coins} label={t('summary.totalCost')} value={stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '-'} sublabel={stats.avgCost > 0 ? `Avg: $${stats.avgCost.toFixed(4)}/task` : undefined} />
+        <StatCard
+          icon={Cpu}
+          label={t('summary.totalTokens')}
+          value={formatTokens(stats.totalTokens)}
+          sublabel={`In: ${formatTokens(stats.inputTokens)} / Out: ${formatTokens(stats.outputTokens)}`}
+        />
+        <StatCard
+          icon={Coins}
+          label={t('summary.totalCost')}
+          value={stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '-'}
+          sublabel={stats.avgCost > 0 ? `Avg: $${stats.avgCost.toFixed(4)}/task` : undefined}
+        />
         <StatCard icon={Activity} label={t('summary.totalTurns')} value={stats.totalTurns || '-'} />
-        <StatCard icon={TrendingUp} label="Throughput" value={stats.completed > 0 && stats.avgMinutes > 0 ? `${(60 / stats.avgMinutes).toFixed(1)}/hr` : '-'} color="text-blue-400" />
+        <StatCard
+          icon={TrendingUp}
+          label="Throughput"
+          value={stats.completed > 0 && stats.avgMinutes > 0 ? `${(60 / stats.avgMinutes).toFixed(1)}/hr` : '-'}
+          color="text-blue-400"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Status Distribution */}
         <div>
-          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">{t('summary.statusDist')}</h3>
+          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">
+            {t('summary.statusDist')}
+          </h3>
           <div className="h-3 rounded-full bg-surface-800 overflow-hidden flex mb-3">
-            {COLUMNS.map(col => {
+            {COLUMNS.map((col) => {
               const count = stats.byStatus[col.id] || 0;
               const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
               if (pct === 0) return null;
@@ -148,7 +215,7 @@ export default function SummaryView({ tasks }) {
             })}
           </div>
           <div className="space-y-1.5">
-            {COLUMNS.map(col => (
+            {COLUMNS.map((col) => (
               <MiniBar
                 key={col.id}
                 label={t('status.' + col.id)}
@@ -162,20 +229,32 @@ export default function SummaryView({ tasks }) {
 
         {/* Priority Distribution */}
         <div>
-          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">Priority Distribution</h3>
+          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">
+            Priority Distribution
+          </h3>
           <div className="h-3 rounded-full bg-surface-800 overflow-hidden flex mb-3">
-            {[0, 1, 2, 3].map(pri => {
+            {[0, 1, 2, 3].map((pri) => {
               const count = stats.byPriority[pri] || 0;
               const pct = stats.total > 0 ? (count / stats.total) * 100 : 0;
               if (pct === 0) return null;
               return (
-                <div key={pri} className={`${priorityColors[pri]} transition-all duration-500`} style={{ width: `${pct}%` }} />
+                <div
+                  key={pri}
+                  className={`${priorityColors[pri]} transition-all duration-500`}
+                  style={{ width: `${pct}%` }}
+                />
               );
             })}
           </div>
           <div className="space-y-1.5">
-            {[0, 1, 2, 3].map(pri => (
-              <MiniBar key={pri} label={priorityLabels[pri]} count={stats.byPriority[pri] || 0} total={stats.total} color={priorityColors[pri]} />
+            {[0, 1, 2, 3].map((pri) => (
+              <MiniBar
+                key={pri}
+                label={priorityLabels[pri]}
+                count={stats.byPriority[pri] || 0}
+                total={stats.total}
+                color={priorityColors[pri]}
+              />
             ))}
           </div>
         </div>
@@ -184,14 +263,20 @@ export default function SummaryView({ tasks }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Type Distribution */}
         <div>
-          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">{t('summary.typeDist')}</h3>
+          <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">
+            {t('summary.typeDist')}
+          </h3>
           <div className="grid grid-cols-2 gap-2">
-            {Object.entries(stats.byType).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
-              <div key={type} className="flex items-center gap-2 bg-surface-800/30 rounded-lg px-3 py-2">
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[type] || ''}`}>{type}</span>
-                <span className="text-sm font-semibold text-surface-200 ml-auto">{count}</span>
-              </div>
-            ))}
+            {Object.entries(stats.byType)
+              .sort((a, b) => b[1] - a[1])
+              .map(([type, count]) => (
+                <div key={type} className="flex items-center gap-2 bg-surface-800/30 rounded-lg px-3 py-2">
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[type] || ''}`}>
+                    {type}
+                  </span>
+                  <span className="text-sm font-semibold text-surface-200 ml-auto">{count}</span>
+                </div>
+              ))}
           </div>
         </div>
 
@@ -199,14 +284,21 @@ export default function SummaryView({ tasks }) {
         <div>
           <h3 className="text-xs font-semibold text-surface-400 mb-3 uppercase tracking-wider">Model Usage</h3>
           <div className="space-y-2">
-            {Object.entries(stats.byModel).sort((a, b) => b[1] - a[1]).map(([model, count]) => (
-              <div key={model} className="flex items-center gap-3 bg-surface-800/30 rounded-lg px-3 py-2.5">
-                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: MODEL_DOT_COLORS[model] || '#94a3b8' }} />
-                <span className="text-xs text-surface-300 capitalize flex-1">{model}</span>
-                <span className="text-sm font-semibold text-surface-200">{count}</span>
-                <span className="text-[10px] text-surface-500">{stats.total > 0 ? ((count / stats.total) * 100).toFixed(0) : 0}%</span>
-              </div>
-            ))}
+            {Object.entries(stats.byModel)
+              .sort((a, b) => b[1] - a[1])
+              .map(([model, count]) => (
+                <div key={model} className="flex items-center gap-3 bg-surface-800/30 rounded-lg px-3 py-2.5">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: MODEL_DOT_COLORS[model] || '#94a3b8' }}
+                  />
+                  <span className="text-xs text-surface-300 capitalize flex-1">{model}</span>
+                  <span className="text-sm font-semibold text-surface-200">{count}</span>
+                  <span className="text-[10px] text-surface-500">
+                    {stats.total > 0 ? ((count / stats.total) * 100).toFixed(0) : 0}%
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
       </div>
@@ -222,7 +314,9 @@ export default function SummaryView({ tasks }) {
               <div key={task.id} className="flex items-center gap-3 bg-surface-800/30 rounded-lg px-3 py-2">
                 <span className="text-[10px] text-surface-500 font-mono w-8">{task.task_key || `#${task.id}`}</span>
                 <span className="text-xs text-surface-300 flex-1 truncate">{task.title}</span>
-                <span className="text-[10px] text-surface-500">{formatTokens((task.input_tokens || 0) + (task.output_tokens || 0))}</span>
+                <span className="text-[10px] text-surface-500">
+                  {formatTokens((task.input_tokens || 0) + (task.output_tokens || 0))}
+                </span>
                 <span className="text-xs font-semibold text-amber-400">${task.total_cost.toFixed(4)}</span>
               </div>
             ))}

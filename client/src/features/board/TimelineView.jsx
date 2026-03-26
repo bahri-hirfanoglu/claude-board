@@ -11,8 +11,12 @@ const STATUS_COLORS = {
 };
 
 const TYPE_DOTS = {
-  feature: '#3b82f6', bugfix: '#ef4444', refactor: '#a855f7',
-  docs: '#22c55e', test: '#eab308', chore: '#6b7280',
+  feature: '#3b82f6',
+  bugfix: '#ef4444',
+  refactor: '#a855f7',
+  docs: '#22c55e',
+  test: '#eab308',
+  chore: '#6b7280',
 };
 
 const ROW_H = 36;
@@ -25,11 +29,11 @@ function computeTimeScale(tasks, containerWidth) {
   const chartW = containerWidth - LABEL_W;
   if (chartW <= 0) return null;
 
-  const withTime = tasks.filter(t => t.started_at);
+  const withTime = tasks.filter((t) => t.started_at);
   if (withTime.length === 0) return null;
 
-  const starts = withTime.map(t => new Date(t.started_at).getTime());
-  const ends = withTime.map(t => {
+  const starts = withTime.map((t) => new Date(t.started_at).getTime());
+  const ends = withTime.map((t) => {
     if (t.completed_at) return new Date(t.completed_at).getTime();
     if (t.work_duration_ms && t.started_at) return new Date(t.started_at).getTime() + t.work_duration_ms;
     return Date.now();
@@ -38,7 +42,8 @@ function computeTimeScale(tasks, containerWidth) {
   let minT = Math.min(...starts);
   let maxT = Math.max(...ends, Date.now());
   const range = maxT - minT;
-  if (range < 60000) { // min 1 minute range
+  if (range < 60000) {
+    // min 1 minute range
     minT -= 30000;
     maxT += 30000;
   }
@@ -53,7 +58,7 @@ function computeTimeScale(tasks, containerWidth) {
   const targetTicks = Math.max(4, Math.min(12, Math.floor(chartW / 80)));
   const msPerTick = totalMs / targetTicks;
   const intervals = [60000, 300000, 600000, 1800000, 3600000, 7200000, 14400000, 28800000, 86400000];
-  const interval = intervals.find(i => i >= msPerTick) || intervals[intervals.length - 1];
+  const interval = intervals.find((i) => i >= msPerTick) || intervals[intervals.length - 1];
 
   const ticks = [];
   let t = Math.ceil(minT / interval) * interval;
@@ -80,7 +85,7 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
 
   // Live clock for running tasks
   useEffect(() => {
-    const hasRunning = tasks.some(t => t.status === 'in_progress' || t.is_running);
+    const hasRunning = tasks.some((t) => t.status === 'in_progress' || t.is_running);
     if (!hasRunning) return;
     const iv = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(iv);
@@ -90,7 +95,7 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const obs = new ResizeObserver(entries => {
+    const obs = new ResizeObserver((entries) => {
       for (const e of entries) setContainerWidth(e.contentRect.width);
     });
     obs.observe(el);
@@ -106,7 +111,7 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
     if (waves && waves.length > 0) {
       waves.forEach((wave, wi) => {
         waveLabels.push({ label: `Wave ${wi}`, y });
-        wave.forEach(task => {
+        wave.forEach((task) => {
           if (task) rows.push({ task, y });
           y += ROW_H;
         });
@@ -119,7 +124,7 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
         const sb = b.started_at ? new Date(b.started_at).getTime() : Infinity;
         return sa - sb;
       });
-      sorted.forEach(task => {
+      sorted.forEach((task) => {
         rows.push({ task, y });
         y += ROW_H;
       });
@@ -134,9 +139,7 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
 
   if (!scale || rows.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center text-surface-500 text-sm">
-        {t('timeline.noData')}
-      </div>
+      <div className="h-full flex items-center justify-center text-surface-500 text-sm">{t('timeline.noData')}</div>
     );
   }
 
@@ -166,7 +169,9 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
         <g transform={`translate(0, ${HEADER_H})`}>
           {scale.ticks.map((tick, i) => {
             const x = LABEL_W + (tick - scale.minT) * scale.pxPerMs;
-            return <line key={i} x1={x} y1={0} x2={x} y2={totalH} stroke="#2a2520" strokeWidth={1} strokeDasharray="4,4" />;
+            return (
+              <line key={i} x1={x} y1={0} x2={x} y2={totalH} stroke="#2a2520" strokeWidth={1} strokeDasharray="4,4" />
+            );
           })}
         </g>
 
@@ -184,7 +189,10 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
           {rows.map(({ task, y }, i) => (
             <rect
               key={task.id}
-              x={0} y={y} width={containerWidth} height={ROW_H}
+              x={0}
+              y={y}
+              width={containerWidth}
+              height={ROW_H}
               fill={hoveredId === task.id ? '#2a2520' : i % 2 === 0 ? 'transparent' : '#1e1b18'}
               opacity={0.5}
             />
@@ -196,7 +204,8 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
           {rows.map(({ task, y }) => {
             const dotColor = TYPE_DOTS[task.task_type] || '#6b7280';
             return (
-              <g key={task.id}
+              <g
+                key={task.id}
                 onMouseEnter={() => setHoveredId(task.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 onClick={() => onTaskClick?.(task)}
@@ -224,18 +233,18 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
           {rows.map(({ task, y }) => {
             if (!task.started_at) {
               // Backlog: small dot
-              return (
-                <circle key={task.id} cx={LABEL_W + 12} cy={y + ROW_H / 2} r={3}
-                  fill="#4B5563" opacity={0.6}
-                />
-              );
+              return <circle key={task.id} cx={LABEL_W + 12} cy={y + ROW_H / 2} r={3} fill="#4B5563" opacity={0.6} />;
             }
 
             const startMs = new Date(task.started_at).getTime();
             const isRunning = task.status === 'in_progress' || task.is_running;
             const endMs = task.completed_at
               ? new Date(task.completed_at).getTime()
-              : isRunning ? now : (task.work_duration_ms ? startMs + task.work_duration_ms : startMs + 60000);
+              : isRunning
+                ? now
+                : task.work_duration_ms
+                  ? startMs + task.work_duration_ms
+                  : startMs + 60000;
 
             const x1 = LABEL_W + Math.max(0, (startMs - scale.minT) * scale.pxPerMs);
             const x2 = LABEL_W + Math.max(0, (endMs - scale.minT) * scale.pxPerMs);
@@ -246,24 +255,30 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
             const isHovered = hoveredId === task.id;
 
             return (
-              <g key={task.id}
+              <g
+                key={task.id}
                 onMouseEnter={() => setHoveredId(task.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 onClick={() => onTaskClick?.(task)}
                 className="cursor-pointer"
               >
                 {/* Bar shadow */}
-                <rect x={x1} y={barY + 1} width={barW} height={barH} rx={4}
-                  fill="black" opacity={0.2} />
+                <rect x={x1} y={barY + 1} width={barW} height={barH} rx={4} fill="black" opacity={0.2} />
                 {/* Main bar */}
-                <rect x={x1} y={barY} width={barW} height={barH} rx={4}
-                  fill={colors.bar} opacity={isHovered ? 1 : 0.85}
-                  stroke={isHovered ? colors.barLight : 'none'} strokeWidth={1.5}
+                <rect
+                  x={x1}
+                  y={barY}
+                  width={barW}
+                  height={barH}
+                  rx={4}
+                  fill={colors.bar}
+                  opacity={isHovered ? 1 : 0.85}
+                  stroke={isHovered ? colors.barLight : 'none'}
+                  strokeWidth={1.5}
                 />
                 {/* Running pulse overlay */}
                 {isRunning && (
-                  <rect x={x1} y={barY} width={barW} height={barH} rx={4}
-                    fill={colors.barLight} opacity={0.3}>
+                  <rect x={x1} y={barY} width={barW} height={barH} rx={4} fill={colors.barLight} opacity={0.3}>
                     <animate attributeName="opacity" values="0.1;0.4;0.1" dur="2s" repeatCount="indefinite" />
                   </rect>
                 )}
@@ -276,14 +291,24 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
                 {/* Token/cost on hover */}
                 {isHovered && (
                   <g>
-                    <rect x={x1} y={barY - 24} width={160} height={20} rx={4}
-                      fill="#1a1714" stroke="#3a3530" strokeWidth={1} />
+                    <rect
+                      x={x1}
+                      y={barY - 24}
+                      width={160}
+                      height={20}
+                      rx={4}
+                      fill="#1a1714"
+                      stroke="#3a3530"
+                      strokeWidth={1}
+                    />
                     <text x={x1 + 6} y={barY - 10} fill="#D1D5DB" fontSize={10}>
                       {[
                         formatTokens((task.input_tokens || 0) + (task.output_tokens || 0)) + ' tokens',
                         task.total_cost ? `$${task.total_cost.toFixed(3)}` : '',
                         task.model_used || task.model || '',
-                      ].filter(Boolean).join(' | ')}
+                      ]
+                        .filter(Boolean)
+                        .join(' | ')}
                     </text>
                   </g>
                 )}
@@ -294,23 +319,33 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
 
         {/* Now line */}
         <g>
-          <line x1={nowX} y1={HEADER_H} x2={nowX} y2={totalH + HEADER_H}
-            stroke="#ef4444" strokeWidth={1.5} strokeDasharray="4,3" opacity={0.7} />
-          <text x={nowX + 4} y={HEADER_H + 12} fill="#ef4444" fontSize={9} fontWeight={600}>NOW</text>
+          <line
+            x1={nowX}
+            y1={HEADER_H}
+            x2={nowX}
+            y2={totalH + HEADER_H}
+            stroke="#ef4444"
+            strokeWidth={1.5}
+            strokeDasharray="4,3"
+            opacity={0.7}
+          />
+          <text x={nowX + 4} y={HEADER_H + 12} fill="#ef4444" fontSize={9} fontWeight={600}>
+            NOW
+          </text>
         </g>
 
         {/* Dependency edges with conditional coloring */}
         {edges && edges.length > 0 && (
           <g transform={`translate(0, ${HEADER_H})`} opacity={0.4}>
             {edges.map((edge, i) => {
-              const fromRow = rows.find(r => r.task.id === edge.from);
-              const toRow = rows.find(r => r.task.id === edge.to);
+              const fromRow = rows.find((r) => r.task.id === edge.from);
+              const toRow = rows.find((r) => r.task.id === edge.to);
               if (!fromRow || !toRow) return null;
               if (!fromRow.task.started_at) return null;
 
               const conditionType = edge.conditionType || 'always';
-              const edgeColor = conditionType === 'on_success' ? '#10B981'
-                : conditionType === 'on_failure' ? '#EF4444' : '#6B7280';
+              const edgeColor =
+                conditionType === 'on_success' ? '#10B981' : conditionType === 'on_failure' ? '#EF4444' : '#6B7280';
 
               const fromEndMs = fromRow.task.completed_at
                 ? new Date(fromRow.task.completed_at).getTime()
@@ -326,22 +361,49 @@ export default function TimelineView({ tasks, waves, edges, onTaskClick }) {
 
               const midX = (fromX + toX) / 2;
               return (
-                <path key={i}
+                <path
+                  key={i}
                   d={`M${fromX},${fromY} C${midX},${fromY} ${midX},${toY} ${toX},${toY}`}
-                  fill="none" stroke={edgeColor} strokeWidth={1}
+                  fill="none"
+                  stroke={edgeColor}
+                  strokeWidth={1}
                   strokeDasharray={conditionType === 'always' ? '3,3' : '6,3'}
                   markerEnd={`url(#timeline-arrow-${conditionType})`}
                 />
               );
             })}
             <defs>
-              <marker id="timeline-arrow-always" viewBox="0 0 6 6" refX={5} refY={3} markerWidth={6} markerHeight={6} orient="auto">
+              <marker
+                id="timeline-arrow-always"
+                viewBox="0 0 6 6"
+                refX={5}
+                refY={3}
+                markerWidth={6}
+                markerHeight={6}
+                orient="auto"
+              >
                 <path d="M0,0 L6,3 L0,6 Z" fill="#6B7280" />
               </marker>
-              <marker id="timeline-arrow-on_success" viewBox="0 0 6 6" refX={5} refY={3} markerWidth={6} markerHeight={6} orient="auto">
+              <marker
+                id="timeline-arrow-on_success"
+                viewBox="0 0 6 6"
+                refX={5}
+                refY={3}
+                markerWidth={6}
+                markerHeight={6}
+                orient="auto"
+              >
                 <path d="M0,0 L6,3 L0,6 Z" fill="#10B981" />
               </marker>
-              <marker id="timeline-arrow-on_failure" viewBox="0 0 6 6" refX={5} refY={3} markerWidth={6} markerHeight={6} orient="auto">
+              <marker
+                id="timeline-arrow-on_failure"
+                viewBox="0 0 6 6"
+                refX={5}
+                refY={3}
+                markerWidth={6}
+                markerHeight={6}
+                orient="auto"
+              >
                 <path d="M0,0 L6,3 L0,6 Z" fill="#EF4444" />
               </marker>
             </defs>

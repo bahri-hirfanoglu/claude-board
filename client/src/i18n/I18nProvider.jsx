@@ -19,7 +19,7 @@ const LANGUAGES = [
   // { code: 'ja', label: '日本語', flag: '🇯🇵' },
 ];
 
-const SUPPORTED = LANGUAGES.map(l => l.code);
+const SUPPORTED = LANGUAGES.map((l) => l.code);
 const STORAGE_KEY = 'ui-lang';
 
 function detectLang() {
@@ -39,11 +39,14 @@ export function I18nProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, code);
   }, []);
 
-  const t = useCallback((key, params) => {
-    const str = locales[lang]?.[key] ?? locales.en[key] ?? key;
-    if (!params) return str;
-    return str.replace(/\{(\w+)\}/g, (_, k) => params[k] ?? `{${k}}`);
-  }, [lang]);
+  const t = useCallback(
+    (key, params) => {
+      const str = locales[lang]?.[key] ?? locales.en[key] ?? key;
+      if (!params) return str;
+      return str.replace(/\{(\w+)\}/g, (_, k) => params[k] ?? `{${k}}`);
+    },
+    [lang],
+  );
 
   const value = useMemo(() => ({ lang, setLang, t, languages: LANGUAGES }), [lang, setLang, t]);
 

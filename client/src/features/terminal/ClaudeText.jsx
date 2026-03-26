@@ -10,10 +10,18 @@ export function InlineText({ text }) {
     <span className="whitespace-pre-wrap break-words">
       {parts.map((p, i) => {
         if (p.startsWith('**') && p.endsWith('**')) {
-          return <strong key={i} className="text-surface-100 font-semibold">{p.slice(2, -2)}</strong>;
+          return (
+            <strong key={i} className="text-surface-100 font-semibold">
+              {p.slice(2, -2)}
+            </strong>
+          );
         }
         if (p.startsWith('`') && p.endsWith('`')) {
-          return <code key={i} className="px-1.5 py-0.5 rounded bg-surface-800 text-amber-300/80 text-[11px] font-mono">{p.slice(1, -1)}</code>;
+          return (
+            <code key={i} className="px-1.5 py-0.5 rounded bg-surface-800 text-amber-300/80 text-[11px] font-mono">
+              {p.slice(1, -1)}
+            </code>
+          );
         }
         return <span key={i}>{p}</span>;
       })}
@@ -34,7 +42,10 @@ export function ClaudeText({ message, time }) {
         if (part.startsWith('```')) {
           const inner = part.replace(/^```\w*\n?/, '').replace(/\n?```$/, '');
           return (
-            <pre key={i} className="my-1.5 rounded-md bg-surface-900/80 border border-surface-700/30 px-3 py-2 text-[11px] font-mono text-surface-300 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+            <pre
+              key={i}
+              className="my-1.5 rounded-md bg-surface-900/80 border border-surface-700/30 px-3 py-2 text-[11px] font-mono text-surface-300 overflow-x-auto whitespace-pre-wrap leading-relaxed"
+            >
               {inner}
             </pre>
           );

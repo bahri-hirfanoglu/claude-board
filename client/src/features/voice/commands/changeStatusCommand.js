@@ -17,7 +17,7 @@ registerCommand({
   id: 'change_status',
   patterns: CHANGE_STATUS_PATTERNS,
   flowStates: Object.values(FLOWS),
-  description: 'Changes a task\'s status',
+  description: "Changes a task's status",
   hint: 'Change status',
   icon: 'arrow-right',
 
@@ -37,10 +37,9 @@ registerCommand({
 
     if (flow === FLOWS.WHICH) {
       const lower = input.toLowerCase();
-      const match = tasks.find(task =>
-        task.title.toLowerCase().includes(lower) ||
-        task.task_key?.toLowerCase() === lower ||
-        `#${task.id}` === input
+      const match = tasks.find(
+        (task) =>
+          task.title.toLowerCase().includes(lower) || task.task_key?.toLowerCase() === lower || `#${task.id}` === input,
       );
 
       if (!match) {

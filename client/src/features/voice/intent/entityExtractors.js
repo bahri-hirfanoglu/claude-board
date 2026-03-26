@@ -9,7 +9,7 @@ import { t } from '../i18n/t';
 export function extractTaskType(text) {
   const lower = text.toLowerCase();
   for (const [type, keywords] of Object.entries(TYPE_MAP)) {
-    if (keywords.some(k => lower.includes(k))) return type;
+    if (keywords.some((k) => lower.includes(k))) return type;
   }
   return null;
 }
@@ -18,7 +18,7 @@ export function extractTaskType(text) {
 export function extractPriority(text) {
   const lower = text.toLowerCase();
   for (const [priority, keywords] of Object.entries(PRIORITY_MAP)) {
-    if (keywords.some(k => lower.includes(k))) return Number(priority);
+    if (keywords.some((k) => lower.includes(k))) return Number(priority);
   }
   return null;
 }
@@ -32,7 +32,7 @@ export function extractModel(text) {
     opus: ['opus'],
   };
   for (const [model, keywords] of Object.entries(MODEL_MAP)) {
-    if (keywords.some(k => lower.includes(k))) return model;
+    if (keywords.some((k) => lower.includes(k))) return model;
   }
   return null;
 }

@@ -6,8 +6,8 @@ export function useToast() {
 
   const addToast = useCallback((message, type = 'info') => {
     const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), TOAST_TIMEOUT_MS);
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), TOAST_TIMEOUT_MS);
   }, []);
 
   return { toasts, addToast };

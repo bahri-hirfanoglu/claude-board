@@ -21,10 +21,10 @@ export function useProjects() {
 
   // Initial load + URL slug resolution
   useEffect(() => {
-    loadProjects().then(data => {
+    loadProjects().then((data) => {
       const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
       if (path && data.length > 0) {
-        const match = data.find(p => p.slug === path);
+        const match = data.find((p) => p.slug === path);
         if (match) {
           setCurrentProject(match);
           window.history.replaceState({ slug: match.slug }, '', `/${match.slug}`);
@@ -39,7 +39,7 @@ export function useProjects() {
     const handlePopState = () => {
       const slug = window.location.pathname.replace(/^\/+|\/+$/g, '');
       if (slug) {
-        const match = projects.find(p => p.slug === slug);
+        const match = projects.find((p) => p.slug === slug);
         setCurrentProject(match || null);
       } else {
         setCurrentProject(null);
@@ -51,15 +51,18 @@ export function useProjects() {
 
   // Socket events
   useEffect(() => {
-    const onCreate = (project) => setProjects(prev => [...prev, project]);
+    const onCreate = (project) => setProjects((prev) => [...prev, project]);
     const onUpdate = (project) => {
-      setProjects(prev => prev.map(p => p.id === project.id ? project : p));
-      setCurrentProject(prev => prev?.id === project.id ? project : prev);
+      setProjects((prev) => prev.map((p) => (p.id === project.id ? project : p)));
+      setCurrentProject((prev) => (prev?.id === project.id ? project : prev));
     };
     const onDelete = ({ id }) => {
-      setProjects(prev => prev.filter(p => p.id !== id));
-      setCurrentProject(prev => {
-        if (prev?.id === id) { window.history.pushState({}, '', '/'); return null; }
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+      setCurrentProject((prev) => {
+        if (prev?.id === id) {
+          window.history.pushState({}, '', '/');
+          return null;
+        }
         return prev;
       });
     };
@@ -70,7 +73,7 @@ export function useProjects() {
         tauriListen('project:updated', onUpdate),
         tauriListen('project:deleted', onDelete),
       ];
-      return () => unsubs.forEach(fn => fn());
+      return () => unsubs.forEach((fn) => fn());
     } else {
       socket.on('project:created', onCreate);
       socket.on('project:updated', onUpdate);
@@ -94,8 +97,11 @@ export function useProjects() {
   }, []);
 
   return {
-    projects, currentProject, initialLoad,
-    navigateToProject, navigateToDashboard,
+    projects,
+    currentProject,
+    initialLoad,
+    navigateToProject,
+    navigateToDashboard,
     setCurrentProject,
   };
 }

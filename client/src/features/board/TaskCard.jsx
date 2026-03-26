@@ -1,13 +1,35 @@
 import { useState, useRef, useEffect } from 'react';
-import { Terminal, Pencil, Trash2, Activity, GripVertical, ChevronRight, Clock, Cpu, Coins, CheckCircle, RotateCcw, GitBranch, ArrowRight, AlertTriangle, FlaskConical } from 'lucide-react';
+import {
+  Terminal,
+  Pencil,
+  Trash2,
+  Activity,
+  GripVertical,
+  ChevronRight,
+  Clock,
+  Cpu,
+  Coins,
+  CheckCircle,
+  RotateCcw,
+  GitBranch,
+  ArrowRight,
+  AlertTriangle,
+  FlaskConical,
+} from 'lucide-react';
 import { formatDuration, formatTokens } from '../../lib/formatters';
-import { PRIORITY_COLORS as priorityColors, PRIORITY_LABELS as priorityLabels, TYPE_COLORS as typeColors, MODEL_COLORS as modelColors, COLUMNS } from '../../lib/constants';
+import {
+  PRIORITY_COLORS as priorityColors,
+  PRIORITY_LABELS as priorityLabels,
+  TYPE_COLORS as typeColors,
+  MODEL_COLORS as modelColors,
+  COLUMNS,
+} from '../../lib/constants';
 import { useStatusTransition } from './StatusTransitionContext';
 import StatusTransitionEffect from './StatusTransitionEffect';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { TagList } from './TagBadge';
 
-const STATUS_OPTIONS_RAW = COLUMNS.map(c => ({ id: c.id, dot: c.bg, color: c.color }));
+const STATUS_OPTIONS_RAW = COLUMNS.map((c) => ({ id: c.id, dot: c.bg, color: c.color }));
 
 // Status flow order for "next" transition
 const STATUS_FLOW = ['backlog', 'in_progress', 'testing', 'done'];
@@ -30,26 +52,36 @@ function MobileStatusTransition({ task, onStatusChange }) {
   const { t } = useTranslation();
   const [showAll, setShowAll] = useState(false);
   const currentIdx = STATUS_FLOW.indexOf(task.status);
-  const nextStatus = task.status === 'failed' ? FAILED_NEXT : (currentIdx >= 0 && currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null);
+  const nextStatus =
+    task.status === 'failed'
+      ? FAILED_NEXT
+      : currentIdx >= 0 && currentIdx < STATUS_FLOW.length - 1
+        ? STATUS_FLOW[currentIdx + 1]
+        : null;
   const prevStatus = currentIdx > 0 ? STATUS_FLOW[currentIdx - 1] : null;
   const flowLabelKey = FLOW_LABEL_KEYS[task.status];
-  const otherStatuses = STATUS_OPTIONS_RAW.filter(s => s.id !== task.status && s.id !== nextStatus);
+  const otherStatuses = STATUS_OPTIONS_RAW.filter((s) => s.id !== task.status && s.id !== nextStatus);
 
   return (
     <div className="flex md:hidden flex-col gap-2 mt-2.5 pt-2.5 border-t border-surface-700/50">
       {/* Flow indicator: current position in workflow */}
       <div className="flex items-center gap-1 px-0.5">
         {STATUS_FLOW.map((s, i) => {
-          const col = COLUMNS.find(c => c.id === s);
+          const col = COLUMNS.find((c) => c.id === s);
           const isCurrent = s === task.status;
           const isPast = i < currentIdx;
           return (
             <div key={s} className="flex items-center flex-1">
-              <div className={`flex items-center justify-center h-1.5 flex-1 rounded-full transition-colors ${
-                isCurrent ? col.bg : isPast ? `${col.bg} opacity-40` : 'bg-surface-700/50'
-              }`} />
+              <div
+                className={`flex items-center justify-center h-1.5 flex-1 rounded-full transition-colors ${
+                  isCurrent ? col.bg : isPast ? `${col.bg} opacity-40` : 'bg-surface-700/50'
+                }`}
+              />
               {i < STATUS_FLOW.length - 1 && (
-                <ChevronRight size={10} className={`flex-shrink-0 mx-0.5 ${isPast || isCurrent ? 'text-surface-400' : 'text-surface-700'}`} />
+                <ChevronRight
+                  size={10}
+                  className={`flex-shrink-0 mx-0.5 ${isPast || isCurrent ? 'text-surface-400' : 'text-surface-700'}`}
+                />
               )}
             </div>
           );
@@ -61,7 +93,10 @@ function MobileStatusTransition({ task, onStatusChange }) {
         {/* Back button */}
         {prevStatus && (
           <button
-            onClick={(e) => { e.stopPropagation(); onStatusChange?.(task.id, prevStatus); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onStatusChange?.(task.id, prevStatus);
+            }}
             className="flex items-center gap-1 text-[11px] px-2.5 py-2 rounded-lg bg-surface-700/60 active:bg-surface-600 text-surface-300 transition-colors"
           >
             <ArrowRight size={12} className="rotate-180" />
@@ -72,7 +107,10 @@ function MobileStatusTransition({ task, onStatusChange }) {
         {/* Main forward button */}
         {nextStatus && (
           <button
-            onClick={(e) => { e.stopPropagation(); onStatusChange?.(task.id, nextStatus); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onStatusChange?.(task.id, nextStatus);
+            }}
             className={`flex-1 flex items-center justify-center gap-1.5 text-[12px] font-semibold px-3 py-2.5 rounded-lg transition-colors ${NEXT_BG[nextStatus]}`}
           >
             {flowLabelKey ? t(flowLabelKey) : ''}
@@ -83,7 +121,10 @@ function MobileStatusTransition({ task, onStatusChange }) {
         {/* More options toggle */}
         {otherStatuses.length > 0 && (
           <button
-            onClick={(e) => { e.stopPropagation(); setShowAll(!showAll); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowAll(!showAll);
+            }}
             className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
               showAll ? 'bg-surface-600 text-surface-200' : 'bg-surface-700/60 text-surface-400 active:bg-surface-600'
             }`}
@@ -96,10 +137,14 @@ function MobileStatusTransition({ task, onStatusChange }) {
       {/* Expanded: all other statuses */}
       {showAll && (
         <div className="flex items-center gap-1.5">
-          {otherStatuses.map(s => (
+          {otherStatuses.map((s) => (
             <button
               key={s.id}
-              onClick={(e) => { e.stopPropagation(); setShowAll(false); onStatusChange?.(task.id, s.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAll(false);
+                onStatusChange?.(task.id, s.id);
+              }}
               className={`flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg bg-surface-700/50 active:bg-surface-600 ${s.color} transition-colors`}
             >
               <div className={`w-2 h-2 rounded-full ${s.dot}`} />
@@ -112,7 +157,19 @@ function MobileStatusTransition({ task, onStatusChange }) {
   );
 }
 
-export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onEdit, onDelete, onStatusChange, onReview, onViewDetail, onDepDrop, draggedTask }) {
+export default function TaskCard({
+  task,
+  onDragStart,
+  onDragEnd,
+  onViewLogs,
+  onEdit,
+  onDelete,
+  onStatusChange,
+  onReview,
+  onViewDetail,
+  onDepDrop,
+  draggedTask,
+}) {
   const { t } = useTranslation();
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
@@ -148,7 +205,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
   const modelDisplay = task.model_used || task.model || 'sonnet';
   const modelColorClass = modelColors[modelDisplay] || modelColors[task.model] || 'text-surface-400';
 
-  const moveTargets = STATUS_OPTIONS_RAW.filter(s => s.id !== (task.status || 'backlog'));
+  const moveTargets = STATUS_OPTIONS_RAW.filter((s) => s.id !== (task.status || 'backlog'));
 
   return (
     <>
@@ -159,7 +216,10 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           e.dataTransfer.setData('text/plain', task.id);
           onDragStart();
         }}
-        onDragEnd={() => { setDepDropHover(false); onDragEnd(); }}
+        onDragEnd={() => {
+          setDepDropHover(false);
+          onDragEnd();
+        }}
         onDragOver={(e) => {
           if (!isDepTarget || !e.altKey) return;
           e.preventDefault();
@@ -178,8 +238,11 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
         onClick={() => onViewDetail?.()}
         onContextMenu={handleContextMenu}
         className={`group relative bg-surface-800 rounded-lg p-3 border transition-all duration-150 hover:shadow-lg hover:shadow-black/20 ${
-          depDropHover ? 'border-blue-400 bg-blue-500/5 ring-1 ring-blue-400/30' : 'border-surface-700/50 hover:border-surface-600'
-        } ${task.priority > 0 ? `border-l-2 ${priorityColors[task.priority]}` : ''
+          depDropHover
+            ? 'border-blue-400 bg-blue-500/5 ring-1 ring-blue-400/30'
+            : 'border-surface-700/50 hover:border-surface-600'
+        } ${
+          task.priority > 0 ? `border-l-2 ${priorityColors[task.priority]}` : ''
         } ${transition ? 'animate-card-pop' : ''} ${isDepTarget ? 'cursor-pointer' : 'active:cursor-grabbing cursor-pointer'}`}
       >
         {transition && <StatusTransitionEffect from={transition.from} to={transition.to} />}
@@ -190,32 +253,38 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
                 {t('type.' + taskType)}
               </span>
               {task.priority > 0 && (
-                <span className="text-[9px] text-surface-500">{t('priority.' + ['none','low','medium','high'][task.priority])}</span>
+                <span className="text-[9px] text-surface-500">
+                  {t('priority.' + ['none', 'low', 'medium', 'high'][task.priority])}
+                </span>
               )}
-              <span className={`text-[9px] ${modelColorClass}`}>
-                {modelDisplay}
-              </span>
+              <span className={`text-[9px] ${modelColorClass}`}>{modelDisplay}</span>
               {task.revision_count > 0 && (
-                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400" title={`${task.revision_count} revision(s)`}>
+                <span
+                  className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400"
+                  title={`${task.revision_count} revision(s)`}
+                >
                   {t('card.rev')} {task.revision_count}
                 </span>
               )}
               <TagList tags={task.tags} max={2} size="xs" />
               {task.retry_count > 0 && (
-                <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
-                  task.retry_count > 2 ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'
-                }`}>
+                <span
+                  className={`text-[9px] font-medium px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                    task.retry_count > 2 ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'
+                  }`}
+                >
                   {task.retry_count > 2 ? <AlertTriangle size={8} /> : <RotateCcw size={8} />}
                   {task.retry_count > 2 ? t('card.failed') : `${t('card.retryCount')} ${task.retry_count}`}
                 </span>
               )}
             </div>
             <h3 className="text-sm font-medium text-surface-100 truncate">{task.title}</h3>
-            {task.description && (
-              <p className="text-xs text-surface-400 mt-1 line-clamp-2">{task.description}</p>
-            )}
+            {task.description && <p className="text-xs text-surface-400 mt-1 line-clamp-2">{task.description}</p>}
           </div>
-          <GripVertical size={14} className="text-surface-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5 hidden md:block" />
+          <GripVertical
+            size={14}
+            className="text-surface-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5 hidden md:block"
+          />
         </div>
 
         <div className="flex items-center justify-between mt-2.5">
@@ -239,15 +308,17 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
               </span>
             )}
             {hasUsage && (
-              <span className="flex items-center gap-1 text-[10px] text-surface-500" title={`${(task.input_tokens || 0).toLocaleString()} in / ${(task.output_tokens || 0).toLocaleString()} out`}>
+              <span
+                className="flex items-center gap-1 text-[10px] text-surface-500"
+                title={`${(task.input_tokens || 0).toLocaleString()} in / ${(task.output_tokens || 0).toLocaleString()} out`}
+              >
                 <Cpu size={9} />
                 {formatTokens(totalTokens)}
               </span>
             )}
             {task.total_cost > 0 && (
               <span className="flex items-center gap-1 text-[10px] text-surface-500">
-                <Coins size={9} />
-                ${task.total_cost.toFixed(4)}
+                <Coins size={9} />${task.total_cost.toFixed(4)}
               </span>
             )}
           </div>
@@ -255,7 +326,10 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           <div className="flex items-center gap-0.5 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             {task.status === 'testing' && onReview && (
               <button
-                onClick={(e) => { e.stopPropagation(); onReview(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReview();
+                }}
                 className="p-1 rounded hover:bg-emerald-500/20 text-surface-400 hover:text-emerald-400 transition-colors"
                 title={t('card.reviewTask')}
               >
@@ -263,21 +337,30 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
               </button>
             )}
             <button
-              onClick={(e) => { e.stopPropagation(); onViewLogs(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewLogs();
+              }}
               className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-claude transition-colors"
               title={t('card.viewLogs')}
             >
               <Terminal size={13} />
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
               className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors"
               title={t('common.edit')}
             >
               <Pencil size={13} />
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
               className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-red-400 transition-colors"
               title={t('common.delete')}
             >
@@ -296,9 +379,7 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
               <span>{(task.input_tokens || 0).toLocaleString()} in</span>
               <span>{(task.output_tokens || 0).toLocaleString()} out</span>
               {task.num_turns > 0 && <span>{task.num_turns} turns</span>}
-              {task.rate_limit_hits > 0 && (
-                <span className="text-amber-500">{task.rate_limit_hits} rate limits</span>
-              )}
+              {task.rate_limit_hits > 0 && <span className="text-amber-500">{task.rate_limit_hits} rate limits</span>}
             </div>
           </div>
         )}
@@ -306,7 +387,10 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
         <div className="flex items-center gap-2 text-[10px] text-surface-600 mt-1.5">
           <span>{task.task_key || `#${task.id}`}</span>
           {task.branch_name && (
-            <span className="flex items-center gap-0.5 text-violet-400/60 truncate max-w-[160px]" title={task.branch_name}>
+            <span
+              className="flex items-center gap-0.5 text-violet-400/60 truncate max-w-[160px]"
+              title={task.branch_name}
+            >
               <GitBranch size={9} />
               {task.branch_name}
             </span>
@@ -320,11 +404,16 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           style={{ left: menuPos.x, top: menuPos.y }}
           className="fixed z-50 bg-surface-800 border border-surface-700 rounded-lg py-1 shadow-xl min-w-[160px]"
         >
-          <div className="px-3 py-1.5 text-[10px] text-surface-500 font-medium uppercase tracking-wider">{t('card.moveTo')}</div>
-          {STATUS_OPTIONS_RAW.filter(s => s.id !== task.status).map(s => (
+          <div className="px-3 py-1.5 text-[10px] text-surface-500 font-medium uppercase tracking-wider">
+            {t('card.moveTo')}
+          </div>
+          {STATUS_OPTIONS_RAW.filter((s) => s.id !== task.status).map((s) => (
             <button
               key={s.id}
-              onClick={() => { setShowMenu(false); onStatusChange?.(task.id, s.id); }}
+              onClick={() => {
+                setShowMenu(false);
+                onStatusChange?.(task.id, s.id);
+              }}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-300 hover:bg-surface-700 transition-colors"
             >
               <div className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
@@ -335,7 +424,10 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
           <div className="border-t border-surface-700 my-1" />
           {task.status === 'testing' && onReview && (
             <button
-              onClick={() => { setShowMenu(false); onReview(); }}
+              onClick={() => {
+                setShowMenu(false);
+                onReview();
+              }}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-emerald-400 hover:bg-surface-700 transition-colors"
             >
               <CheckCircle size={11} />
@@ -343,21 +435,30 @@ export default function TaskCard({ task, onDragStart, onDragEnd, onViewLogs, onE
             </button>
           )}
           <button
-            onClick={() => { setShowMenu(false); onViewLogs(); }}
+            onClick={() => {
+              setShowMenu(false);
+              onViewLogs();
+            }}
             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-300 hover:bg-surface-700 transition-colors"
           >
             <Terminal size={11} />
             {t('card.viewLogs')}
           </button>
           <button
-            onClick={() => { setShowMenu(false); onEdit(); }}
+            onClick={() => {
+              setShowMenu(false);
+              onEdit();
+            }}
             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-300 hover:bg-surface-700 transition-colors"
           >
             <Pencil size={11} />
             {t('common.edit')}
           </button>
           <button
-            onClick={() => { setShowMenu(false); onDelete(); }}
+            onClick={() => {
+              setShowMenu(false);
+              onDelete();
+            }}
             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-surface-700 transition-colors"
           >
             <Trash2 size={11} />

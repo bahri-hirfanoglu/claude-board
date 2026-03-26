@@ -1,7 +1,12 @@
 // ─── Helpers ───
 export function fmtTime(d) {
   if (!d) return '';
-  return new Date(d).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return new Date(d).toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 }
 
 export function fmtMs(ms) {
@@ -40,7 +45,13 @@ export function groupToolEntries(logs) {
     const log = logs[i];
 
     // Insert turn separator when Claude speaks after tool results
-    if (log.log_type === 'claude' && lastType && lastType !== 'claude' && lastType !== 'system' && lastType !== 'info') {
+    if (
+      log.log_type === 'claude' &&
+      lastType &&
+      lastType !== 'claude' &&
+      lastType !== 'system' &&
+      lastType !== 'info'
+    ) {
       turnNumber++;
       entries.push({ type: 'turn_separator', turn: turnNumber, time: log.created_at });
     }
@@ -61,7 +72,7 @@ export function groupToolEntries(logs) {
     } else if (log.log_type === 'tool_result' && log.meta) {
       // Skip if already consumed by a group
       const toolId = log.meta.toolId;
-      const alreadyGrouped = entries.some(e => e.type === 'tool_group' && e.result?.meta?.toolId === toolId);
+      const alreadyGrouped = entries.some((e) => e.type === 'tool_group' && e.result?.meta?.toolId === toolId);
       if (!alreadyGrouped) {
         entries.push({ type: 'tool_group', call: null, result: log, index: i });
       }

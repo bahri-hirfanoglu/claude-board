@@ -17,7 +17,7 @@ registerCommand({
     }
 
     const byStatus = {};
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       byStatus[task.status] = (byStatus[task.status] || 0) + 1;
     });
 

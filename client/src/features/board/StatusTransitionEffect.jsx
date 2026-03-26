@@ -35,7 +35,7 @@ function SparkEffect() {
   const sparks = useMemo(() => generateParticles(12, '#fbbf24', 100), []);
   return (
     <div className="absolute inset-0 pointer-events-none overflow-visible z-10">
-      {sparks.map(s => (
+      {sparks.map((s) => (
         <div
           key={s.id}
           className="absolute left-1/2 top-1/2"
@@ -57,7 +57,8 @@ function SparkEffect() {
         </div>
       ))}
       {/* Center glow pulse */}
-      <div className="absolute inset-0 rounded-lg animate-[glow-pulse_0.8s_ease-out_both]"
+      <div
+        className="absolute inset-0 rounded-lg animate-[glow-pulse_0.8s_ease-out_both]"
         style={{ boxShadow: '0 0 20px rgba(251,191,36,0.4), inset 0 0 20px rgba(251,191,36,0.1)' }}
       />
     </div>
@@ -71,15 +72,17 @@ function ShimmerEffect() {
     <div className="absolute inset-0 pointer-events-none overflow-visible z-10">
       {/* Shimmer wave */}
       <div className="absolute inset-0 rounded-lg overflow-hidden">
-        <div className="absolute inset-0 animate-[shimmer-wave_1s_ease-out_both]"
+        <div
+          className="absolute inset-0 animate-[shimmer-wave_1s_ease-out_both]"
           style={{
-            background: 'linear-gradient(90deg, transparent, rgba(217,119,6,0.15), rgba(217,119,6,0.3), rgba(217,119,6,0.15), transparent)',
+            background:
+              'linear-gradient(90deg, transparent, rgba(217,119,6,0.15), rgba(217,119,6,0.3), rgba(217,119,6,0.15), transparent)',
             backgroundSize: '200% 100%',
           }}
         />
       </div>
       {/* Floating dots */}
-      {dots.map(d => (
+      {dots.map((d) => (
         <div
           key={d.id}
           className="absolute left-1/2 top-1/2"
@@ -100,7 +103,8 @@ function ShimmerEffect() {
         </div>
       ))}
       {/* Border glow */}
-      <div className="absolute inset-0 rounded-lg animate-[glow-pulse_0.8s_ease-out_both]"
+      <div
+        className="absolute inset-0 rounded-lg animate-[glow-pulse_0.8s_ease-out_both]"
         style={{ boxShadow: '0 0 16px rgba(217,119,6,0.3), inset 0 0 16px rgba(217,119,6,0.08)' }}
       />
     </div>
@@ -112,7 +116,7 @@ function ConfettiEffect() {
   const confetti = useMemo(() => generateConfetti(24), []);
   return (
     <div className="absolute inset-0 pointer-events-none overflow-visible z-10">
-      {confetti.map(c => (
+      {confetti.map((c) => (
         <div
           key={c.id}
           className="absolute left-1/2 top-1/2"
@@ -144,7 +148,8 @@ function ConfettiEffect() {
         </div>
       ))}
       {/* Success glow */}
-      <div className="absolute inset-0 rounded-lg animate-[glow-pulse_1s_ease-out_both]"
+      <div
+        className="absolute inset-0 rounded-lg animate-[glow-pulse_1s_ease-out_both]"
         style={{ boxShadow: '0 0 24px rgba(52,211,153,0.5), inset 0 0 24px rgba(52,211,153,0.1)' }}
       />
       {/* Checkmark flash */}
@@ -160,14 +165,16 @@ function RewindEffect() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-visible z-10">
       <div className="absolute inset-0 rounded-lg overflow-hidden">
-        <div className="absolute inset-0 animate-[rewind-sweep_0.6s_ease-out_both]"
+        <div
+          className="absolute inset-0 animate-[rewind-sweep_0.6s_ease-out_both]"
           style={{
             background: 'linear-gradient(270deg, transparent, rgba(148,163,184,0.2), transparent)',
             backgroundSize: '200% 100%',
           }}
         />
       </div>
-      <div className="absolute inset-0 rounded-lg animate-[glow-pulse_0.5s_ease-out_both]"
+      <div
+        className="absolute inset-0 rounded-lg animate-[glow-pulse_0.5s_ease-out_both]"
         style={{ boxShadow: '0 0 12px rgba(148,163,184,0.2), inset 0 0 12px rgba(148,163,184,0.05)' }}
       />
     </div>

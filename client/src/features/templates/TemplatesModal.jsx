@@ -287,99 +287,115 @@ export default function TemplatesModal({ projectId, projectName, onClose }) {
   });
 
   return (
-    <ModalShell title="Prompt Templates" subtitle={`${projectName} — reusable prompts with variables`} icon={Layers} onClose={onClose} maxWidth="max-w-2xl">
+    <ModalShell
+      title="Prompt Templates"
+      subtitle={`${projectName} — reusable prompts with variables`}
+      icon={Layers}
+      onClose={onClose}
+      maxWidth="max-w-2xl"
+    >
       <div className="px-5 py-4">
-        {crud.loading ? <Spinner /> : (
-            <>
-              {/* Template list */}
-              {crud.items.length > 0 && !crud.editing && (
-                <div className="space-y-2 mb-4">
-                  {crud.items.map((t) => {
-                    let vars = [];
-                    try {
-                      vars = JSON.parse(t.variables || '[]');
-                    } catch {}
-                    return (
-                      <div key={t.id} className="bg-surface-800/50 rounded-lg px-4 py-3 border border-surface-700/50">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-medium text-surface-200">{t.name}</h3>
-                            {vars.length > 0 && (
-                              <span className="flex items-center gap-0.5 text-[10px] text-surface-500 bg-surface-700/50 px-1.5 py-0.5 rounded">
-                                <Variable size={10} />
-                                {vars.length}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-surface-600 mr-1">
-                              {t.task_type} / {t.model}
+        {crud.loading ? (
+          <Spinner />
+        ) : (
+          <>
+            {/* Template list */}
+            {crud.items.length > 0 && !crud.editing && (
+              <div className="space-y-2 mb-4">
+                {crud.items.map((t) => {
+                  let vars = [];
+                  try {
+                    vars = JSON.parse(t.variables || '[]');
+                  } catch {}
+                  return (
+                    <div key={t.id} className="bg-surface-800/50 rounded-lg px-4 py-3 border border-surface-700/50">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-medium text-surface-200">{t.name}</h3>
+                          {vars.length > 0 && (
+                            <span className="flex items-center gap-0.5 text-[10px] text-surface-500 bg-surface-700/50 px-1.5 py-0.5 rounded">
+                              <Variable size={10} />
+                              {vars.length}
                             </span>
-                            <button
-                              onClick={() => crud.setEditing(t)}
-                              className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors"
-                              title="Edit"
-                            >
-                              <Pencil size={13} />
-                            </button>
-                            <button
-                              onClick={() => crud.setDeleting(t.id)}
-                              className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-red-400 transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
+                          )}
                         </div>
-                        {t.description && <p className="text-xs text-surface-500 mb-1">{t.description}</p>}
-                        <p className="text-xs text-surface-400 whitespace-pre-wrap line-clamp-2 font-mono">
-                          {t.template}
-                        </p>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-surface-600 mr-1">
+                            {t.task_type} / {t.model}
+                          </span>
+                          <button
+                            onClick={() => crud.setEditing(t)}
+                            className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-surface-200 transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button
+                            onClick={() => crud.setDeleting(t.id)}
+                            className="p-1 rounded hover:bg-surface-700 text-surface-400 hover:text-red-400 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                      {t.description && <p className="text-xs text-surface-500 mb-1">{t.description}</p>}
+                      <p className="text-xs text-surface-400 whitespace-pre-wrap line-clamp-2 font-mono">
+                        {t.template}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
-              {crud.items.length === 0 && !crud.editing && (
-                <EmptyState icon={Layers} title={t('templates.noTemplates')} description={"Create reusable prompts with {{variable}} placeholders"} />
-              )}
+            {crud.items.length === 0 && !crud.editing && (
+              <EmptyState
+                icon={Layers}
+                title={t('templates.noTemplates')}
+                description={'Create reusable prompts with {{variable}} placeholders'}
+              />
+            )}
 
-              {/* Edit/Create form */}
-              {crud.editing && (
-                <div className="bg-surface-800/30 rounded-lg p-4 border border-surface-700/50">
-                  <h3 className="text-xs font-medium text-surface-400 mb-3 flex items-center gap-1.5">
-                    {crud.editing !== 'new' && (
-                      <button onClick={() => crud.setEditing(null)} className="hover:text-surface-200 transition-colors">
-                        <ChevronLeft size={14} />
-                      </button>
-                    )}
-                    {crud.editing === 'new' ? 'New Template' : `Edit: ${crud.editing.name}`}
-                  </h3>
-                  <TemplateForm
-                    template={crud.editing === 'new' ? null : crud.editing}
-                    onSave={crud.handleSave}
-                    onCancel={() => crud.setEditing(null)}
-                  />
-                </div>
-              )}
+            {/* Edit/Create form */}
+            {crud.editing && (
+              <div className="bg-surface-800/30 rounded-lg p-4 border border-surface-700/50">
+                <h3 className="text-xs font-medium text-surface-400 mb-3 flex items-center gap-1.5">
+                  {crud.editing !== 'new' && (
+                    <button onClick={() => crud.setEditing(null)} className="hover:text-surface-200 transition-colors">
+                      <ChevronLeft size={14} />
+                    </button>
+                  )}
+                  {crud.editing === 'new' ? 'New Template' : `Edit: ${crud.editing.name}`}
+                </h3>
+                <TemplateForm
+                  template={crud.editing === 'new' ? null : crud.editing}
+                  onSave={crud.handleSave}
+                  onCancel={() => crud.setEditing(null)}
+                />
+              </div>
+            )}
 
-              {/* Add button */}
-              {!crud.editing && (
-                <button
-                  onClick={() => crud.setEditing('new')}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-dashed border-surface-700 text-xs text-surface-400 hover:text-claude hover:border-claude/50 transition-colors"
-                >
-                  <Plus size={14} />
-                  {t('templates.addTemplate')}
-                </button>
-              )}
-            </>
-          )}
-        </div>
+            {/* Add button */}
+            {!crud.editing && (
+              <button
+                onClick={() => crud.setEditing('new')}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border border-dashed border-surface-700 text-xs text-surface-400 hover:text-claude hover:border-claude/50 transition-colors"
+              >
+                <Plus size={14} />
+                {t('templates.addTemplate')}
+              </button>
+            )}
+          </>
+        )}
+      </div>
 
       {crud.deleting && (
-        <InlineDeleteConfirm message="Delete this template?" onConfirm={() => crud.handleDelete(crud.deleting)} onCancel={() => crud.setDeleting(null)} />
+        <InlineDeleteConfirm
+          message="Delete this template?"
+          onConfirm={() => crud.handleDelete(crud.deleting)}
+          onCancel={() => crud.setDeleting(null)}
+        />
       )}
     </ModalShell>
   );

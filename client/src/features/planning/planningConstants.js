@@ -1,6 +1,15 @@
 import {
-  Eye, FileCode, Pencil, Terminal, Search, FolderOpen, Globe, Zap,
-  Loader2, Brain, ListChecks,
+  Eye,
+  FileCode,
+  Pencil,
+  Terminal,
+  Search,
+  FolderOpen,
+  Globe,
+  Zap,
+  Loader2,
+  Brain,
+  ListChecks,
 } from 'lucide-react';
 
 export const GRANULARITIES = [
@@ -32,6 +41,26 @@ export const SUB_PHASES = [
   { key: 'done', label: 'Finalizing' },
 ];
 
-export const TOOL_ICONS = { Read: Eye, Write: FileCode, Edit: Pencil, Bash: Terminal, Grep: Search, Glob: FolderOpen, WebFetch: Globe, WebSearch: Globe, Agent: Zap };
+export const TOOL_ICONS = {
+  Read: Eye,
+  Write: FileCode,
+  Edit: Pencil,
+  Bash: Terminal,
+  Grep: Search,
+  Glob: FolderOpen,
+  WebFetch: Globe,
+  WebSearch: Globe,
+  Agent: Zap,
+};
 
-export const TOOL_COLORS = { Read: 'text-sky-400', Write: 'text-emerald-400', Edit: 'text-yellow-400', Bash: 'text-amber-400', Grep: 'text-cyan-400', Glob: 'text-teal-400', WebFetch: 'text-blue-400', WebSearch: 'text-blue-400', Agent: 'text-violet-400' };
+export const TOOL_COLORS = {
+  Read: 'text-sky-400',
+  Write: 'text-emerald-400',
+  Edit: 'text-yellow-400',
+  Bash: 'text-amber-400',
+  Grep: 'text-cyan-400',
+  Glob: 'text-teal-400',
+  WebFetch: 'text-blue-400',
+  WebSearch: 'text-blue-400',
+  Agent: 'text-violet-400',
+};

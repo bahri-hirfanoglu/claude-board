@@ -1,9 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  X, GitCommit, GitPullRequest, Clock, Cpu, Coins, Activity,
-  RotateCcw, FileText, Paperclip,
-  ChevronDown, FlaskConical,
-  Layers, Link2,
+  X,
+  GitCommit,
+  GitPullRequest,
+  Clock,
+  Cpu,
+  Coins,
+  Activity,
+  RotateCcw,
+  FileText,
+  Paperclip,
+  ChevronDown,
+  FlaskConical,
+  Layers,
+  Link2,
 } from 'lucide-react';
 import { TagList } from '../board/TagBadge';
 import { api } from '../../lib/api';
@@ -35,11 +45,22 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
   const [addDepDirection, setAddDepDirection] = useState('parent'); // parent = "this depends on X"
 
   useEffect(() => {
-    api.getTaskDetail(task.id)
-      .then((d) => { setDetail(d); setAttachments(d.attachments || []); setLoading(false); })
+    api
+      .getTaskDetail(task.id)
+      .then((d) => {
+        setDetail(d);
+        setAttachments(d.attachments || []);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
-    api.getTaskDependencies(task.id).then(setDeps).catch(() => {});
-    api.getTasks(task.project_id).then(setAllTasks).catch(() => {});
+    api
+      .getTaskDependencies(task.id)
+      .then(setDeps)
+      .catch(() => {});
+    api
+      .getTasks(task.project_id)
+      .then(setAllTasks)
+      .catch(() => {});
   }, [task.id, task.project_id]);
 
   useEffect(() => {
@@ -78,30 +99,45 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
     { id: 'revisions', label: t('detail.revisions'), icon: RotateCcw, show: hasRevisions },
     { id: 'dependencies', label: t('detail.dependencies') || 'Dependencies', icon: Link2, always: true },
     { id: 'replay', label: t('detail.replay'), icon: Activity, always: true },
-  ].filter(tab => tab.always || tab.show);
+  ].filter((tab) => tab.always || tab.show);
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-2xl shadow-2xl animate-slide-up max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface-900 rounded-xl border border-surface-700 w-full max-w-2xl shadow-2xl animate-slide-up max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header — always visible */}
         <div className="flex items-start justify-between px-5 py-4 border-b border-surface-800 flex-shrink-0">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[d.task_type] || ''}`}>{d.task_type}</span>
+              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_COLORS[d.task_type] || ''}`}>
+                {d.task_type}
+              </span>
               <div className="relative" ref={statusMenuRef}>
-                <button onClick={() => setShowStatusMenu(!showStatusMenu)}
-                  className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded hover:bg-surface-800 transition-colors ${STATUS_COLORS[currentStatus]}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${COLUMNS.find(c => c.id === currentStatus)?.bg || ''}`} />
+                <button
+                  onClick={() => setShowStatusMenu(!showStatusMenu)}
+                  className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded hover:bg-surface-800 transition-colors ${STATUS_COLORS[currentStatus]}`}
+                >
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${COLUMNS.find((c) => c.id === currentStatus)?.bg || ''}`}
+                  />
                   {currentStatus?.replace('_', ' ')}
                   <ChevronDown size={10} />
                 </button>
                 {showStatusMenu && (
                   <div className="absolute top-full left-0 mt-1 bg-surface-800 border border-surface-700 rounded-lg py-1 shadow-xl min-w-[140px] z-10">
-                    {COLUMNS.filter(c => c.id !== currentStatus).map(c => (
-                      <button key={c.id} onClick={() => handleStatusChange(c.id)}
-                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-300 hover:bg-surface-700 transition-colors">
-                        <div className={`w-1.5 h-1.5 rounded-full ${c.bg}`} />{c.label}
+                    {COLUMNS.filter((c) => c.id !== currentStatus).map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => handleStatusChange(c.id)}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-300 hover:bg-surface-700 transition-colors"
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full ${c.bg}`} />
+                        {c.label}
                       </button>
                     ))}
                   </div>
@@ -109,7 +145,9 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
               </div>
               <span className="text-[10px] text-surface-600 font-mono">{d.task_key || `#${d.id}`}</span>
               {d.revision_count > 0 && (
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">Rev {d.revision_count}</span>
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400">
+                  Rev {d.revision_count}
+                </span>
               )}
               <TagList tags={d.tags} max={5} size="sm" />
             </div>
@@ -122,14 +160,17 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
 
         {/* Tab bar */}
         <div className="flex items-center gap-0.5 px-5 pt-2 pb-0 border-b border-surface-800 flex-shrink-0 overflow-x-auto">
-          {TABS.map(tab => {
+          {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
                   isActive ? 'border-claude text-claude' : 'border-transparent text-surface-500 hover:text-surface-300'
-                }`}>
+                }`}
+              >
                 <Icon size={12} />
                 {tab.label}
               </button>
@@ -145,26 +186,17 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
             </div>
           ) : (
             <div className="px-5 py-4">
+              {activeTab === 'overview' && <TaskOverviewTab d={d} detail={detail} task={task} />}
 
-              {activeTab === 'overview' && (
-                <TaskOverviewTab d={d} detail={detail} task={task} />
-              )}
+              {activeTab === 'git' && <TaskGitTab d={d} detail={detail} task={task} hasGit={hasGit} />}
 
-              {activeTab === 'git' && (
-                <TaskGitTab d={d} detail={detail} task={task} hasGit={hasGit} />
-              )}
-
-              {activeTab === 'test' && (
-                <TaskTestTab d={d} />
-              )}
+              {activeTab === 'test' && <TaskTestTab d={d} />}
 
               {activeTab === 'attachments' && (
                 <TaskAttachmentsTab attachments={attachments} setAttachments={setAttachments} />
               )}
 
-              {activeTab === 'revisions' && (
-                <TaskRevisionsTab revisions={revisions} />
-              )}
+              {activeTab === 'revisions' && <TaskRevisionsTab revisions={revisions} />}
 
               {activeTab === 'lifecycle' && (
                 <div className="space-y-4">
@@ -197,7 +229,6 @@ export default function TaskDetailModal({ task, onClose, onStatusChange }) {
                   <SessionReplay taskId={task.id} />
                 </div>
               )}
-
             </div>
           )}
         </div>

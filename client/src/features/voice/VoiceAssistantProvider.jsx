@@ -70,7 +70,23 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
     if (stored) return stored;
     // Sync with app UI language
     const uiLang = localStorage.getItem('ui-lang') || navigator.language?.split('-')[0] || 'en';
-    const langMap = { en: 'en-US', tr: 'tr-TR', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', pt: 'pt-BR', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL', ru: 'ru-RU', ja: 'ja-JP', ko: 'ko-KR', zh: 'zh-CN', ar: 'ar-SA', hi: 'hi-IN' };
+    const langMap = {
+      en: 'en-US',
+      tr: 'tr-TR',
+      de: 'de-DE',
+      fr: 'fr-FR',
+      es: 'es-ES',
+      pt: 'pt-BR',
+      it: 'it-IT',
+      nl: 'nl-NL',
+      pl: 'pl-PL',
+      ru: 'ru-RU',
+      ja: 'ja-JP',
+      ko: 'ko-KR',
+      zh: 'zh-CN',
+      ar: 'ar-SA',
+      hi: 'hi-IN',
+    };
     return langMap[uiLang] || 'en-US';
   });
 
@@ -88,11 +104,21 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
   const voiceLangRef = useRef(voiceLang);
   const voiceRef = useRef(null); // ref to useVoiceInput return, updated below
 
-  useEffect(() => { stateRef.current = state; }, [state]);
-  useEffect(() => { tasksRef.current = tasks; }, [tasks]);
-  useEffect(() => { projectRef.current = currentProject; }, [currentProject]);
-  useEffect(() => { handlersRef.current = { onCreateTask, onStatusChange }; }, [onCreateTask, onStatusChange]);
-  useEffect(() => { voiceLangRef.current = voiceLang; }, [voiceLang]);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+  useEffect(() => {
+    projectRef.current = currentProject;
+  }, [currentProject]);
+  useEffect(() => {
+    handlersRef.current = { onCreateTask, onStatusChange };
+  }, [onCreateTask, onStatusChange]);
+  useEffect(() => {
+    voiceLangRef.current = voiceLang;
+  }, [voiceLang]);
 
   // ─── Process input ───
   const processInput = useCallback(async (rawText) => {
@@ -131,9 +157,7 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
     if (!result) {
       result = {
         flow: cur.flow === 'idle' ? 'idle' : cur.flow,
-        message: cur.flow === 'idle'
-          ? t('fallback.idle', lang)
-          : t('fallback.active', lang),
+        message: cur.flow === 'idle' ? t('fallback.idle', lang) : t('fallback.active', lang),
       };
     }
 
@@ -182,9 +206,7 @@ export function VoiceAssistantProvider({ children, tasks, currentProject, onCrea
   }, [voice.isListening]);
 
   // ─── Flow label ───
-  const flowLabel = state.flow !== 'idle'
-    ? t('flow.' + state.flow, voiceLang)
-    : null;
+  const flowLabel = state.flow !== 'idle' ? t('flow.' + state.flow, voiceLang) : null;
 
   const value = {
     state,

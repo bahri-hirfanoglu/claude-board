@@ -10,7 +10,7 @@ export function tauriListen(eventName, callback) {
 
   tauriListenRaw(eventName, (event) => {
     callback(event.payload);
-  }).then(fn => {
+  }).then((fn) => {
     if (cancelled) fn();
     else unlisten = fn;
   });

@@ -1,7 +1,20 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
-  X, ChevronRight, ChevronLeft, Sparkles, LayoutGrid, Plus, Brain, Settings,
-  Rocket, Zap, GitBranch, FlaskConical, Workflow, Terminal, ArrowRight,
+  X,
+  ChevronRight,
+  ChevronLeft,
+  Sparkles,
+  LayoutGrid,
+  Plus,
+  Brain,
+  Settings,
+  Rocket,
+  Zap,
+  GitBranch,
+  FlaskConical,
+  Workflow,
+  Terminal,
+  ArrowRight,
 } from 'lucide-react';
 import { useTranslation } from '../../i18n/I18nProvider';
 
@@ -11,56 +24,75 @@ const STORAGE_KEY = 'onboarding:completed';
 function getSteps(t, hasProject) {
   const steps = [
     {
-      id: 'welcome', position: 'center', target: null,
-      icon: Rocket, accent: 'from-violet-500 to-blue-500',
+      id: 'welcome',
+      position: 'center',
+      target: null,
+      icon: Rocket,
+      accent: 'from-violet-500 to-blue-500',
       title: t('onboarding.welcomeTitle'),
       description: t('onboarding.welcomeDesc'),
       illustration: 'welcome',
     },
     {
-      id: 'create-project', position: 'bottom-left',
+      id: 'create-project',
+      position: 'bottom-left',
       target: '[data-tour="project-selector"]',
-      icon: Plus, accent: 'from-blue-500 to-cyan-400',
+      icon: Plus,
+      accent: 'from-blue-500 to-cyan-400',
       title: t('onboarding.createProjectTitle'),
       description: t('onboarding.createProjectDesc'),
     },
     {
-      id: 'new-task', position: 'bottom-left',
-      target: '[data-tour="new-task"]', requireProject: true,
-      icon: Zap, accent: 'from-amber-500 to-orange-400',
+      id: 'new-task',
+      position: 'bottom-left',
+      target: '[data-tour="new-task"]',
+      requireProject: true,
+      icon: Zap,
+      accent: 'from-amber-500 to-orange-400',
       title: t('onboarding.newTaskTitle'),
       description: t('onboarding.newTaskDesc'),
     },
     {
-      id: 'board-views', position: 'bottom-left',
-      target: '[data-tour="view-tabs"]', requireProject: true,
-      icon: LayoutGrid, accent: 'from-emerald-500 to-teal-400',
+      id: 'board-views',
+      position: 'bottom-left',
+      target: '[data-tour="view-tabs"]',
+      requireProject: true,
+      icon: LayoutGrid,
+      accent: 'from-emerald-500 to-teal-400',
       title: t('onboarding.boardViewsTitle'),
       description: t('onboarding.boardViewsDesc'),
     },
     {
-      id: 'planning', position: 'bottom-left',
-      target: '[data-tour="planning-btn"]', requireProject: true,
-      icon: Brain, accent: 'from-purple-500 to-pink-400',
+      id: 'planning',
+      position: 'bottom-left',
+      target: '[data-tour="planning-btn"]',
+      requireProject: true,
+      icon: Brain,
+      accent: 'from-purple-500 to-pink-400',
       title: t('onboarding.planningTitle'),
       description: t('onboarding.planningDesc'),
     },
     {
-      id: 'settings', position: 'bottom-right',
+      id: 'settings',
+      position: 'bottom-right',
       target: '[data-tour="project-selector"]',
-      icon: Settings, accent: 'from-slate-400 to-zinc-500',
+      icon: Settings,
+      accent: 'from-slate-400 to-zinc-500',
       title: t('onboarding.settingsTitle'),
       description: t('onboarding.settingsDesc'),
     },
     {
-      id: 'done', position: 'center', target: null,
-      icon: Sparkles, accent: 'from-amber-400 to-rose-400',
+      id: 'done',
+      position: 'center',
+      target: null,
+      icon: Sparkles,
+      accent: 'from-amber-400 to-rose-400',
       title: t('onboarding.doneTitle'),
       description: t('onboarding.doneDesc'),
       illustration: 'done',
     },
   ];
-  return hasProject ? steps : steps.filter(s => !s.requireProject);
+  return hasProject ? steps : steps.filter((s) => !s.requireProject);
 }
 
 function getTooltipPos(targetEl, position, tipWidth) {
@@ -73,11 +105,16 @@ function getTooltipPos(targetEl, position, tipWidth) {
   const centerLeft = r.left + r.width / 2 - w / 2;
   const clampedLeft = Math.min(Math.max(pad, centerLeft), window.innerWidth - w - pad);
   switch (position) {
-    case 'bottom-left': return { top: r.bottom + gap, left: clampedLeft };
-    case 'bottom-right': return { top: r.bottom + gap, left: clampedLeft };
-    case 'top-left': return { bottom: window.innerHeight - r.top + gap, left: clampedLeft };
-    case 'top-right': return { bottom: window.innerHeight - r.top + gap, left: clampedLeft };
-    default: return { top: r.bottom + gap, left: clampedLeft };
+    case 'bottom-left':
+      return { top: r.bottom + gap, left: clampedLeft };
+    case 'bottom-right':
+      return { top: r.bottom + gap, left: clampedLeft };
+    case 'top-left':
+      return { bottom: window.innerHeight - r.top + gap, left: clampedLeft };
+    case 'top-right':
+      return { bottom: window.innerHeight - r.top + gap, left: clampedLeft };
+    default:
+      return { top: r.bottom + gap, left: clampedLeft };
   }
 }
 
@@ -87,33 +124,44 @@ export function useOnboarding() {
   return {
     showOnboarding: active,
     startOnboarding: useCallback(() => setActive(true), []),
-    completeOnboarding: useCallback(() => { localStorage.setItem(STORAGE_KEY, 'true'); setActive(false); }, []),
-    resetOnboarding: useCallback(() => { localStorage.removeItem(STORAGE_KEY); setActive(true); }, []),
+    completeOnboarding: useCallback(() => {
+      localStorage.setItem(STORAGE_KEY, 'true');
+      setActive(false);
+    }, []),
+    resetOnboarding: useCallback(() => {
+      localStorage.removeItem(STORAGE_KEY);
+      setActive(true);
+    }, []),
   };
 }
 
 // ─── Animated particles for welcome/done screens ───
 function Particles({ count = 20, colors }) {
-  const particles = useMemo(() =>
-    Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: 2 + Math.random() * 4,
-      dur: 3 + Math.random() * 4,
-      delay: Math.random() * 3,
-      color: colors[i % colors.length],
-    })), [count, colors]);
+  const particles = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 2 + Math.random() * 4,
+        dur: 3 + Math.random() * 4,
+        delay: Math.random() * 3,
+        color: colors[i % colors.length],
+      })),
+    [count, colors],
+  );
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map(p => (
+      {particles.map((p) => (
         <div
           key={p.id}
           className="absolute rounded-full opacity-0"
           style={{
-            left: `${p.x}%`, top: `${p.y}%`,
-            width: p.size, height: p.size,
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
             backgroundColor: p.color,
             animation: `onb-float ${p.dur}s ease-in-out ${p.delay}s infinite`,
           }}
@@ -134,9 +182,11 @@ function FeatureGrid() {
   return (
     <div className="grid grid-cols-4 gap-2 mt-4">
       {features.map((f, i) => (
-        <div key={i}
+        <div
+          key={i}
           className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.04] opacity-0"
-          style={{ animation: `onb-pop 0.4s ease-out ${0.3 + i * 0.1}s forwards` }}>
+          style={{ animation: `onb-pop 0.4s ease-out ${0.3 + i * 0.1}s forwards` }}
+        >
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${f.color}`}>
             <f.icon size={15} />
           </div>
@@ -174,18 +224,28 @@ export default function OnboardingTour({ active, onComplete, hasProject }) {
     update();
     window.addEventListener('resize', update);
     window.addEventListener('scroll', update, true);
-    return () => { window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true); };
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
   }, [active, step, cur]);
 
   const go = (delta) => {
     setDir(delta);
-    setAnimKey(k => k + 1);
-    if (delta > 0 && step >= steps.length - 1) { onComplete(); setStep(0); return; }
+    setAnimKey((k) => k + 1);
+    if (delta > 0 && step >= steps.length - 1) {
+      onComplete();
+      setStep(0);
+      return;
+    }
     if (delta < 0 && step <= 0) return;
-    setStep(s => s + delta);
+    setStep((s) => s + delta);
   };
 
-  const skip = () => { onComplete(); setStep(0); };
+  const skip = () => {
+    onComplete();
+    setStep(0);
+  };
 
   if (!active || !cur) return null;
 
@@ -218,90 +278,103 @@ export default function OnboardingTour({ active, onComplete, hasProject }) {
       )}
 
       {/* Tooltip card — outer div for position, inner for animation */}
-      <div
-        className={`absolute z-[62] ${isCenter ? 'w-[420px]' : 'w-[360px]'}`}
-        style={tipStyle}
-      >
-      <div
-        key={animKey}
-        style={{ animation: `${dir > 0 ? 'onb-enter-right' : 'onb-enter-left'} 0.35s cubic-bezier(0.16,1,0.3,1) both` }}
-      >
-        <div className="relative bg-[#111118]/95 backdrop-blur-xl border border-white/[0.08] rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden">
-          {/* Top gradient accent bar */}
-          <div className={`h-1 bg-gradient-to-r ${cur.accent}`} />
+      <div className={`absolute z-[62] ${isCenter ? 'w-[420px]' : 'w-[360px]'}`} style={tipStyle}>
+        <div
+          key={animKey}
+          style={{
+            animation: `${dir > 0 ? 'onb-enter-right' : 'onb-enter-left'} 0.35s cubic-bezier(0.16,1,0.3,1) both`,
+          }}
+        >
+          <div className="relative bg-[#111118]/95 backdrop-blur-xl border border-white/[0.08] rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden">
+            {/* Top gradient accent bar */}
+            <div className={`h-1 bg-gradient-to-r ${cur.accent}`} />
 
-          {/* Particles on center screens */}
-          {isCenter && (
-            <Particles count={15} colors={['#6366f1', '#818cf8', '#a78bfa', '#c4b5fd', '#3b82f6']} />
-          )}
+            {/* Particles on center screens */}
+            {isCenter && <Particles count={15} colors={['#6366f1', '#818cf8', '#a78bfa', '#c4b5fd', '#3b82f6']} />}
 
-          {/* Header */}
-          <div className="relative px-6 pt-5 pb-0">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                {isCenter && (
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cur.accent} flex items-center justify-center shadow-lg`}>
-                    <Icon size={18} className="text-white" />
-                  </div>
-                )}
-                <div>
-                  <h3 className="text-[15px] font-semibold text-white tracking-tight">{cur.title}</h3>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    {steps.map((_, i) => (
-                      <div key={i} className={`h-1 rounded-full transition-all duration-300 ${
-                        i < step ? 'w-3 bg-white/30' : i === step ? 'w-5 bg-white/70' : 'w-2 bg-white/10'
-                      }`} />
-                    ))}
+            {/* Header */}
+            <div className="relative px-6 pt-5 pb-0">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  {isCenter && (
+                    <div
+                      className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cur.accent} flex items-center justify-center shadow-lg`}
+                    >
+                      <Icon size={18} className="text-white" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-[15px] font-semibold text-white tracking-tight">{cur.title}</h3>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {steps.map((_, i) => (
+                        <div
+                          key={i}
+                          className={`h-1 rounded-full transition-all duration-300 ${
+                            i < step ? 'w-3 bg-white/30' : i === step ? 'w-5 bg-white/70' : 'w-2 bg-white/10'
+                          }`}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <button onClick={skip} className="p-1.5 rounded-lg hover:bg-white/[0.06] text-surface-500 hover:text-surface-300 transition-colors">
-                <X size={14} />
-              </button>
-            </div>
-          </div>
-
-          {/* Body */}
-          <div className="px-6 py-4">
-            <p className="text-[13px] text-surface-400 leading-[1.7]">{cur.description}</p>
-            {cur.illustration === 'welcome' && <FeatureGrid />}
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.05]">
-            <button onClick={skip} className="text-[11px] text-surface-600 hover:text-surface-400 transition-colors">
-              {t('onboarding.skip')}
-            </button>
-            <div className="flex items-center gap-2">
-              {!isFirst && (
-                <button onClick={() => go(-1)}
-                  className="flex items-center gap-1 px-3.5 py-2 text-[12px] text-surface-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] rounded-xl transition-all">
-                  <ChevronLeft size={13} />
-                  {t('onboarding.back')}
+                <button
+                  onClick={skip}
+                  className="p-1.5 rounded-lg hover:bg-white/[0.06] text-surface-500 hover:text-surface-300 transition-colors"
+                >
+                  <X size={14} />
                 </button>
-              )}
-              <button onClick={() => go(1)}
-                className={`flex items-center gap-1.5 px-5 py-2 text-[12px] font-semibold text-white rounded-xl transition-all shadow-lg bg-gradient-to-r ${cur.accent} hover:brightness-110 active:scale-[0.97]`}>
-                {isLast ? t('onboarding.finish') : t('onboarding.next')}
-                {isLast ? <Sparkles size={13} /> : <ArrowRight size={13} />}
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-4">
+              <p className="text-[13px] text-surface-400 leading-[1.7]">{cur.description}</p>
+              {cur.illustration === 'welcome' && <FeatureGrid />}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.05]">
+              <button onClick={skip} className="text-[11px] text-surface-600 hover:text-surface-400 transition-colors">
+                {t('onboarding.skip')}
               </button>
+              <div className="flex items-center gap-2">
+                {!isFirst && (
+                  <button
+                    onClick={() => go(-1)}
+                    className="flex items-center gap-1 px-3.5 py-2 text-[12px] text-surface-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] rounded-xl transition-all"
+                  >
+                    <ChevronLeft size={13} />
+                    {t('onboarding.back')}
+                  </button>
+                )}
+                <button
+                  onClick={() => go(1)}
+                  className={`flex items-center gap-1.5 px-5 py-2 text-[12px] font-semibold text-white rounded-xl transition-all shadow-lg bg-gradient-to-r ${cur.accent} hover:brightness-110 active:scale-[0.97]`}
+                >
+                  {isLast ? t('onboarding.finish') : t('onboarding.next')}
+                  {isLast ? <Sparkles size={13} /> : <ArrowRight size={13} />}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Arrow */}
-        {!isCenter && cur.position?.startsWith('bottom') && hlStyle && (
-          <div className="absolute -top-[7px] w-3.5 h-3.5 rotate-45 bg-[#111118]/95 border-l border-t border-white/[0.08]"
-            style={{ left: Math.max(16, (hlStyle.left + hlStyle.width / 2) - (tipStyle.left || 0)) }}
-          />
-        )}
-        {!isCenter && cur.position?.startsWith('top') && hlStyle && (
-          <div className="absolute -bottom-[7px] w-3.5 h-3.5 rotate-45 bg-[#111118]/95 border-r border-b border-white/[0.08]"
-            style={{ left: Math.max(16, (hlStyle.left + hlStyle.width / 2) - (tipStyle.left || 0)) }}
-          />
-        )}
-      </div>{/* end animation wrapper */}
-      </div>{/* end position wrapper */}
+          {/* Arrow */}
+          {!isCenter && cur.position?.startsWith('bottom') && hlStyle && (
+            <div
+              className="absolute -top-[7px] w-3.5 h-3.5 rotate-45 bg-[#111118]/95 border-l border-t border-white/[0.08]"
+              style={{ left: Math.max(16, hlStyle.left + hlStyle.width / 2 - (tipStyle.left || 0)) }}
+            />
+          )}
+          {!isCenter && cur.position?.startsWith('top') && hlStyle && (
+            <div
+              className="absolute -bottom-[7px] w-3.5 h-3.5 rotate-45 bg-[#111118]/95 border-r border-b border-white/[0.08]"
+              style={{ left: Math.max(16, hlStyle.left + hlStyle.width / 2 - (tipStyle.left || 0)) }}
+            />
+          )}
+        </div>
+        {/* end animation wrapper */}
+      </div>
+      {/* end position wrapper */}
 
       {/* Global onboarding keyframes (injected once) */}
       <style>{`

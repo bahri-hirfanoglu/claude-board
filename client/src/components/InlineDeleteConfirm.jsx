@@ -7,7 +7,10 @@ export default function InlineDeleteConfirm({ message = 'Delete this item?', onC
           <button onClick={onCancel} className="px-3 py-1.5 text-xs text-surface-400 hover:text-surface-200">
             Cancel
           </button>
-          <button onClick={onConfirm} className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30">
+          <button
+            onClick={onConfirm}
+            className="px-3 py-1.5 text-xs bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
+          >
             Delete
           </button>
         </div>

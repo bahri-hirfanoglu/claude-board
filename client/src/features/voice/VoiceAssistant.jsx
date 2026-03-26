@@ -10,7 +10,8 @@ import ChatPanel from './components/ChatPanel';
  * All logic lives in VoiceAssistantProvider.
  */
 export default function VoiceAssistant() {
-  const { state, dispatch, processInput, voice, flowLabel, getAnalyser, commands, voiceLang, changeLang } = useVoiceAssistant();
+  const { state, dispatch, processInput, voice, flowLabel, getAnalyser, commands, voiceLang, changeLang } =
+    useVoiceAssistant();
 
   // Welcome message on first open
   useEffect(() => {
@@ -31,8 +32,12 @@ export default function VoiceAssistant() {
     key: 'v',
     mode: 'toggle',
     enabled: state.open,
-    onActivate: () => { if (!voice.isListening) voice.start(); },
-    onDeactivate: () => { if (voice.isListening) voice.stop(); },
+    onActivate: () => {
+      if (!voice.isListening) voice.start();
+    },
+    onDeactivate: () => {
+      if (voice.isListening) voice.stop();
+    },
   });
 
   return (

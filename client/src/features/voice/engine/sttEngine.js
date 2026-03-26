@@ -31,7 +31,7 @@ export async function startAudioCapture() {
 /** Stop capturing and release the microphone stream */
 export function stopAudioCapture() {
   if (_stream) {
-    _stream.getTracks().forEach(t => t.stop());
+    _stream.getTracks().forEach((t) => t.stop());
     _stream = null;
   }
   if (_audioCtx) {

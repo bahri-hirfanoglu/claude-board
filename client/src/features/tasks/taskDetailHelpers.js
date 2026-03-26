@@ -8,15 +8,18 @@ export const TYPE_COLORS = {
 };
 
 export const STATUS_COLORS = {
-  backlog: 'text-surface-400', in_progress: 'text-amber-400',
-  testing: 'text-claude', done: 'text-emerald-400',
+  backlog: 'text-surface-400',
+  in_progress: 'text-amber-400',
+  testing: 'text-claude',
+  done: 'text-emerald-400',
   failed: 'text-red-400',
 };
 
 export function getDiffLineClass(line) {
   if (line.startsWith('+++') || line.startsWith('---')) return 'text-surface-300 font-semibold px-4 py-0';
   if (line.startsWith('@@')) return 'text-cyan-400 bg-cyan-500/5 px-4 py-0.5';
-  if (line.startsWith('diff --git')) return 'text-surface-200 font-semibold bg-surface-800/80 px-4 py-1 border-t border-surface-700/50';
+  if (line.startsWith('diff --git'))
+    return 'text-surface-200 font-semibold bg-surface-800/80 px-4 py-1 border-t border-surface-700/50';
   if (line.startsWith('+')) return 'text-emerald-400 bg-emerald-500/5 px-4 py-0';
   if (line.startsWith('-')) return 'text-red-400 bg-red-500/5 px-4 py-0';
   return 'text-surface-500 px-4 py-0';

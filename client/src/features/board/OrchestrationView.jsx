@@ -17,7 +17,9 @@ function loadPositions(projectId) {
   try {
     const raw = localStorage.getItem(STORAGE_KEY + projectId);
     return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function savePositions(projectId, positions) {
@@ -38,15 +40,18 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
 
   useEffect(() => {
     if (!tagDropdownOpen) return;
-    const close = (e) => { if (tagDropdownRef.current && !tagDropdownRef.current.contains(e.target)) setTagDropdownOpen(false); };
+    const close = (e) => {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(e.target)) setTagDropdownOpen(false);
+    };
     window.addEventListener('mousedown', close);
     return () => window.removeEventListener('mousedown', close);
   }, [tagDropdownOpen]);
 
   const loadGraph = useCallback(() => {
     if (!IS_TAURI || !projectId) return;
-    api.getDependencyGraph(projectId)
-      .then(data => setGraphData(data))
+    api
+      .getDependencyGraph(projectId)
+      .then((data) => setGraphData(data))
       .catch(() => {});
   }, [projectId]);
 
@@ -72,54 +77,70 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
   // Tag filter
   const { activeTags, tagCounts } = useMemo(() => {
     const counts = {};
-    tasks.forEach(t => parseTags(t.tags).forEach(tag => { counts[tag] = (counts[tag] || 0) + 1; }));
+    tasks.forEach((t) =>
+      parseTags(t.tags).forEach((tag) => {
+        counts[tag] = (counts[tag] || 0) + 1;
+      }),
+    );
     return { activeTags: Object.keys(counts).sort((a, b) => counts[b] - counts[a]), tagCounts: counts };
   }, [tasks]);
 
   const filteredTasks = useMemo(() => {
     if (tagFilter.length === 0) return tasks;
-    return tasks.filter(t => {
+    return tasks.filter((t) => {
       const tags = parseTags(t.tags);
-      return tagFilter.some(f => tags.includes(f));
+      return tagFilter.some((f) => tags.includes(f));
     });
   }, [tasks, tagFilter]);
 
-  const filteredIds = useMemo(() => new Set(filteredTasks.map(t => t.id)), [filteredTasks]);
+  const filteredIds = useMemo(() => new Set(filteredTasks.map((t) => t.id)), [filteredTasks]);
 
-  const runningTasks = filteredTasks.filter(t => t.status === 'in_progress' || t.is_running);
-  const waves = (graphData.waves || []).map(w => {
-    return (w.taskIds || []).map(id => filteredTasks.find(t => t.id === id)).filter(Boolean);
+  const runningTasks = filteredTasks.filter((t) => t.status === 'in_progress' || t.is_running);
+  const waves = (graphData.waves || []).map((w) => {
+    return (w.taskIds || []).map((id) => filteredTasks.find((t) => t.id === id)).filter(Boolean);
   });
 
   // Filter graph edges to only show filtered tasks
   const filteredEdges = useMemo(() => {
     if (tagFilter.length === 0) return graphData.edges || [];
-    return (graphData.edges || []).filter(e => filteredIds.has(e.from) && filteredIds.has(e.to));
+    return (graphData.edges || []).filter((e) => filteredIds.has(e.from) && filteredIds.has(e.to));
   }, [graphData.edges, filteredIds, tagFilter]);
 
   const filteredGraphTasks = useMemo(() => {
     if (tagFilter.length === 0) return graphData.tasks || [];
-    return (graphData.tasks || []).filter(t => filteredIds.has(t.id));
+    return (graphData.tasks || []).filter((t) => filteredIds.has(t.id));
   }, [graphData.tasks, filteredIds, tagFilter]);
 
   const handleStop = useCallback((task) => {
     api.stopTask(task.id).catch(() => {});
   }, []);
 
-  const handleAddDependency = useCallback((taskId, dependsOnId) => {
-    if (!IS_TAURI) return;
-    api.addDependency(taskId, dependsOnId).then(() => loadGraph()).catch(() => {});
-  }, [loadGraph]);
+  const handleAddDependency = useCallback(
+    (taskId, dependsOnId) => {
+      if (!IS_TAURI) return;
+      api
+        .addDependency(taskId, dependsOnId)
+        .then(() => loadGraph())
+        .catch(() => {});
+    },
+    [loadGraph],
+  );
 
-  const handlePositionsChange = useCallback((positions) => {
-    setSavedPositions(positions);
-    savePositions(projectId, positions);
-  }, [projectId]);
+  const handlePositionsChange = useCallback(
+    (positions) => {
+      setSavedPositions(positions);
+      savePositions(projectId, positions);
+    },
+    [projectId],
+  );
 
-  const handleStartTask = useCallback((task) => {
-    if (!onStatusChange) return;
-    onStatusChange(task.id, 'in_progress');
-  }, [onStatusChange]);
+  const handleStartTask = useCallback(
+    (task) => {
+      if (!onStatusChange) return;
+      onStatusChange(task.id, 'in_progress');
+    },
+    [onStatusChange],
+  );
 
   return (
     <div className="h-full flex flex-col gap-3 p-4 overflow-auto">
@@ -131,10 +152,14 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
         {/* Tag filter dropdown */}
         {activeTags.length > 0 && (
           <div className="relative" ref={tagDropdownRef}>
-            <button onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
+            <button
+              onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                tagFilter.length > 0 ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'
-              }`}>
+                tagFilter.length > 0
+                  ? 'bg-claude/15 text-claude'
+                  : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'
+              }`}
+            >
               <Tag size={12} />
               {t('task.tags')}
               {tagFilter.length > 0 && (
@@ -145,23 +170,34 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
             {tagDropdownOpen && (
               <div className="absolute top-full right-0 mt-1 bg-surface-800 border border-surface-700 rounded-lg py-1 shadow-xl z-20 min-w-[280px] max-h-[320px] overflow-y-auto">
                 {tagFilter.length > 0 && (
-                  <button onClick={() => { setTagFilter([]); setTagDropdownOpen(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-700 border-b border-surface-700/50">
+                  <button
+                    onClick={() => {
+                      setTagFilter([]);
+                      setTagDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-surface-500 hover:bg-surface-700 border-b border-surface-700/50"
+                  >
                     <X size={10} /> {t('common.clearAll')}
                   </button>
                 )}
-                {activeTags.map(tag => {
+                {activeTags.map((tag) => {
                   const isActive = tagFilter.includes(tag);
                   const color = getTagColor(tag);
                   return (
-                    <button key={tag}
-                      onClick={() => setTagFilter(prev => isActive ? prev.filter(t => t !== tag) : [...prev, tag])}
+                    <button
+                      key={tag}
+                      onClick={() =>
+                        setTagFilter((prev) => (isActive ? prev.filter((t) => t !== tag) : [...prev, tag]))
+                      }
                       className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
                         isActive ? 'bg-surface-700/50 text-surface-200' : 'text-surface-400 hover:bg-surface-700/30'
-                      }`}>
-                      <div className={`w-3 h-3 rounded border flex items-center justify-center ${
-                        isActive ? 'bg-claude border-claude' : 'border-surface-600'
-                      }`}>
+                      }`}
+                    >
+                      <div
+                        className={`w-3 h-3 rounded border flex items-center justify-center ${
+                          isActive ? 'bg-claude border-claude' : 'border-surface-600'
+                        }`}
+                      >
                         {isActive && <span className="text-[8px] text-white font-bold">✓</span>}
                       </div>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded ${color}`}>{tag}</span>
@@ -226,12 +262,7 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
                   onPositionsChange={handlePositionsChange}
                 />
               ) : (
-                <TimelineView
-                  tasks={filteredTasks}
-                  waves={waves}
-                  edges={filteredEdges}
-                  onTaskClick={onViewDetail}
-                />
+                <TimelineView tasks={filteredTasks} waves={waves} edges={filteredEdges} onTaskClick={onViewDetail} />
               )}
             </div>
 
@@ -241,13 +272,8 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
                 <div className="text-[11px] font-medium text-surface-400 uppercase tracking-wider px-1">
                   {t('orchestration.liveAgents')} ({runningTasks.length})
                 </div>
-                {runningTasks.map(task => (
-                  <AgentCard
-                    key={task.id}
-                    task={task}
-                    onStop={handleStop}
-                    onViewLogs={onViewLogs}
-                  />
+                {runningTasks.map((task) => (
+                  <AgentCard key={task.id} task={task} onStop={handleStop} onViewLogs={onViewLogs} />
                 ))}
               </div>
             )}

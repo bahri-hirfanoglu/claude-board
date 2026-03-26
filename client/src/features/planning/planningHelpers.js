@@ -19,12 +19,12 @@ export function computeWaves(proposals, deps) {
     const wave = [];
     for (let i = 0; i < n; i++) {
       if (assigned.has(i)) continue;
-      const allMet = [...parents[i]].every(p => assigned.has(p));
+      const allMet = [...parents[i]].every((p) => assigned.has(p));
       if (allMet) wave.push(i);
     }
     if (wave.length === 0) break; // remaining tasks form a cycle — skip
     for (const id of wave) assigned.add(id);
-    waves.push(wave.map(id => ({ id })));
+    waves.push(wave.map((id) => ({ id })));
   }
   // Any unassigned (cyclic) tasks go into last wave
   const remaining = [];
@@ -69,6 +69,21 @@ export function getStepIndex(phase) {
 // Persist planning state across modal open/close
 const planCache = {};
 export function getCache(pid) {
-  if (!planCache[pid]) planCache[pid] = { phase: 'idle', planPhase: 'starting', logs: [], analysis: '', proposals: [], dependencies: [], stats: { elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 }, error: null, topic: '', context: '', model: 'sonnet', effort: 'medium', granularity: 'balanced' };
+  if (!planCache[pid])
+    planCache[pid] = {
+      phase: 'idle',
+      planPhase: 'starting',
+      logs: [],
+      analysis: '',
+      proposals: [],
+      dependencies: [],
+      stats: { elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 },
+      error: null,
+      topic: '',
+      context: '',
+      model: 'sonnet',
+      effort: 'medium',
+      granularity: 'balanced',
+    };
   return planCache[pid];
 }

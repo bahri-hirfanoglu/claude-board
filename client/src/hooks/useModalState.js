@@ -4,11 +4,11 @@ export function useModalState(initial = {}) {
   const [modals, setModals] = useState(initial);
 
   const openModal = useCallback((name, data = true) => {
-    setModals(prev => ({ ...prev, [name]: data }));
+    setModals((prev) => ({ ...prev, [name]: data }));
   }, []);
 
   const closeModal = useCallback((name) => {
-    setModals(prev => ({ ...prev, [name]: null }));
+    setModals((prev) => ({ ...prev, [name]: null }));
   }, []);
 
   return { modals, openModal, closeModal };
