@@ -108,7 +108,7 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
 
   const handleAddDependency = useCallback((taskId, dependsOnId) => {
     if (!IS_TAURI) return;
-    api.addDependency(taskId, dependsOnId).then(() => loadGraph());
+    api.addDependency(taskId, dependsOnId).then(() => loadGraph()).catch(() => {});
   }, [loadGraph]);
 
   const handlePositionsChange = useCallback((positions) => {

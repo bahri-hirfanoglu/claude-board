@@ -110,11 +110,14 @@ pub fn cleanup_all() {
 fn kill_process(pid: u32) {
     #[cfg(target_os = "windows")]
     {
-        Command::new("taskkill")
+        if let Err(e) = Command::new("taskkill")
             .args(["/pid", &pid.to_string(), "/T", "/F"])
             .stdout(Stdio::null()).stderr(Stdio::null())
             .creation_flags(CREATE_NO_WINDOW)
-            .spawn().ok();
+            .spawn()
+        {
+            log::warn!("Failed to kill process {}: {}", pid, e);
+        }
     }
     #[cfg(not(target_os = "windows"))]
     {

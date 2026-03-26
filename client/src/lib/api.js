@@ -7,17 +7,17 @@ if (IS_TAURI) {
 }
 
 // MCP HTTP port (used by Tauri backend for Claude runner)
-const MCP_PORT = 4000;
+const MCP_PORT = parseInt(import.meta.env.VITE_MCP_PORT || '4000', 10);
 
 // ─── HTTP fallback (web mode / dev) ───
-const BASE = import.meta.env.DEV ? 'http://localhost:4000' : '';
+const BASE = import.meta.env.DEV ? `http://localhost:${MCP_PORT}` : '';
 
 const errorListeners = new Set();
 export function onApiError(fn) {
   errorListeners.add(fn);
   return () => errorListeners.delete(fn);
 }
-function notifyError(msg) {
+export function notifyError(msg) {
   errorListeners.forEach((fn) => fn(msg));
 }
 
@@ -35,7 +35,7 @@ async function request(path, options = {}) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     const msg = err.error || `Request failed (${res.status})`;
-    if (res.status >= 500) notifyError(msg);
+    if (res.status >= 400) notifyError(msg);
     throw new Error(msg);
   }
   return res.json();

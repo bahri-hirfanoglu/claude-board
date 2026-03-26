@@ -68,9 +68,11 @@ export default function PlanningModal({ projectId, onClose }) {
       timerRef.current = setInterval(() => {
         setStats((s) => ({ ...s, elapsed: Date.now() - startTimeRef.current }));
       }, 1000);
+    } else {
+      startTimeRef.current = null;
     }
     return () => clearInterval(timerRef.current);
-  }, [phase]);
+  }, [phase, stats.elapsed]);
 
   // Events
   useEffect(() => {

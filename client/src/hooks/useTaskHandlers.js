@@ -1,6 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { api } from '../lib/api';
 import { emitStatusTransition } from '../features/board/StatusTransitionContext';
+
+// Track in-flight status updates to prevent socket events from overriding optimistic state
+export const pendingUpdates = new Set();
 
 export function useTaskHandlers({ tasks, setTasks, addToast, t, setConfirm, terminal, setSelectedTask, setActivePanel, openModal, closeModal, currentProject }) {
 
@@ -16,6 +19,7 @@ export function useTaskHandlers({ tasks, setTasks, addToast, t, setConfirm, term
         onConfirm: async () => {
           setConfirm(null);
           emitStatusTransition(taskId, fromStatus, newStatus);
+          pendingUpdates.add(taskId);
           setTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: newStatus } : x));
           try {
             const updated = await api.updateStatus(taskId, newStatus);
@@ -24,7 +28,7 @@ export function useTaskHandlers({ tasks, setTasks, addToast, t, setConfirm, term
           } catch (e) {
             setTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: fromStatus } : x));
             addToast(e.message, 'error');
-          }
+          } finally { pendingUpdates.delete(taskId); }
         },
         onCancel: () => setConfirm(null),
       });
@@ -32,6 +36,7 @@ export function useTaskHandlers({ tasks, setTasks, addToast, t, setConfirm, term
     }
 
     emitStatusTransition(taskId, fromStatus, newStatus);
+    pendingUpdates.add(taskId);
     setTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: newStatus } : x));
     try {
       const updated = await api.updateStatus(taskId, newStatus);
@@ -39,7 +44,7 @@ export function useTaskHandlers({ tasks, setTasks, addToast, t, setConfirm, term
     } catch (e) {
       setTasks(prev => prev.map(x => x.id === taskId ? { ...x, status: fromStatus } : x));
       addToast(e.message, 'error');
-    }
+    } finally { pendingUpdates.delete(taskId); }
   }, [tasks, addToast, t, setTasks, setConfirm]);
 
   const onCreate = useCallback(async (data) => {
