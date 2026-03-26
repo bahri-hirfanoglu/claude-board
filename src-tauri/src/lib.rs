@@ -166,7 +166,6 @@ pub fn run() {
                 .resizable(false)
                 .center()
                 .decorations(false)
-                .transparent(true)
                 .build()?;
             }
 
