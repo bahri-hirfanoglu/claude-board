@@ -202,6 +202,8 @@ pub fn request_changes(app: AppHandle, id: i64, feedback: String, mcp_port: u16)
         &format!("Revision #{}: {}", rev_num, task.title),
         Some(&serde_json::json!({"feedback": feedback.trim()}).to_string()));
     crate::services::notification::notify_revision_requested(&app, &crate::services::notification::TaskNotification::new(&task.title, task.task_key.as_deref()));
+    crate::services::webhook::fire(task.project_id, "revision_requested", &format!("Revision #{}: {}", rev_num, task.title),
+        serde_json::json!({"taskId": id, "taskKey": task.task_key, "title": task.title, "revision": rev_num, "feedback": feedback.trim()}));
     let mut final_task = tq::get_by_id(&db, id).ok_or("Task not found")?;
     final_task.is_running = runner::is_running(id);
     app.emit("task:updated", &final_task).ok();

@@ -69,6 +69,8 @@ pub fn startup_recovery(app: &AppHandle) {
                     std::thread::sleep(std::time::Duration::from_secs(1));
                 }
                 let db = db::get_db();
+                // Enforce task timeouts before starting new tasks
+                runner::enforce_timeouts(&app_handle);
                 let pids = tasks::get_auto_queue_project_ids(&db);
                 for pid in pids {
                     if shutdown.load(Ordering::SeqCst) { return; }
@@ -130,6 +132,8 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
         activity::add(db, project_id, Some(task.id), "queue_auto_started",
             &format!("Auto-started: {}", task.title), None);
         crate::services::notification::notify_queue_started(app, &crate::services::notification::TaskNotification::new(&task.title, task.task_key.as_deref()));
+        crate::services::webhook::fire(project_id, "queue_auto_started", &format!("Auto-started: {}", task.title),
+            serde_json::json!({"taskId": task.id, "taskKey": task.task_key, "title": task.title}));
 
         if let Ok(mut val) = serde_json::to_value(&updated) {
             if let Some(obj) = val.as_object_mut() {

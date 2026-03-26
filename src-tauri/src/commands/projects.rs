@@ -49,6 +49,7 @@ pub fn update_project(
     auto_queue: Option<bool>, max_concurrent: Option<i64>,
     auto_branch: Option<bool>, auto_pr: Option<bool>, pr_base_branch: Option<String>,
     auto_test: Option<bool>, test_prompt: Option<String>,
+    task_timeout_minutes: Option<i64>,
 ) -> Result<pq::Project, String> {
     let db = db::get_db();
     let project = pq::get_by_id(&db, id).ok_or("Project not found")?;
@@ -72,6 +73,9 @@ pub fn update_project(
         pq::update_test_settings(&db, id,
             auto_test.unwrap_or(project.auto_test.unwrap_or(0) == 1),
             test_prompt.as_deref().unwrap_or(project.test_prompt.as_deref().unwrap_or("")));
+    }
+    if let Some(timeout) = task_timeout_minutes {
+        pq::update_timeout(&db, id, timeout);
     }
     if auto_branch.is_some() || auto_pr.is_some() || pr_base_branch.is_some() {
         pq::update_git_settings(&db, id,

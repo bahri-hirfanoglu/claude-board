@@ -243,6 +243,8 @@ pub fn run_migrations(conn: &Connection) {
         ("tasks", "tags", "ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT '[]'"),
         // Lifecycle summary
         ("tasks", "lifecycle_summary", "ALTER TABLE tasks ADD COLUMN lifecycle_summary TEXT"),
+        // Task timeout
+        ("projects", "task_timeout_minutes", "ALTER TABLE projects ADD COLUMN task_timeout_minutes INTEGER DEFAULT 0"),
     ];
 
     for (table, col, sql) in migrations {
