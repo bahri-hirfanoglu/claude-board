@@ -1,0 +1,41 @@
+---
+title: "Diff Görüntüleyici"
+description: "Tamamlanan görevlerin yaptığı kod değişikliklerini görüntüleyin"
+icon: "file-diff"
+---
+
+Yerleşik diff görüntüleyici ile görev yürütme sırasında yapılan kod değişikliklerini tam olarak inceleyin.
+
+## Diff Görüntüleyiciye Erişim
+
+1. Tamamlanmış bir göreve (Test Ediliyor veya Tamamlandı durumunda) tıklayarak **Görev Detayı**'nı açın
+2. **Dosya Değişiklikleri** bölümü bir özet gösterir (git diff istatistiği)
+3. Tam birleştirilmiş diff'i genişletmek için **Tam Diff'i Görüntüle**'ye tıklayın
+
+## Diff Görünümü
+
+Görüntüleyici, sözdizimi vurgulu birleştirilmiş diff formatı kullanır:
+
+| Renk | Anlam |
+|------|-------|
+| **Yeşil** (+) | Eklenen satırlar |
+| **Kırmızı** (-) | Kaldırılan satırlar |
+| **Camgöbeği** (@@) | Bölüm başlıkları (satır aralıkları) |
+| **Kalın** | Dosya başlıkları (diff --git) |
+| **Gri** | Satır numaraları (sol sütun) |
+
+## Commit Aralığı
+
+Diff, görevin gerçek commit aralığını otomatik olarak kullanır:
+
+- **Birden fazla commit** — ilk commit'ten son commit'e kadar olan diff'i gösterir
+- **Tek commit** — o commit'in değişikliklerini gösterir
+- **Commit yok** — en son commit'e geri döner
+
+## Sınırlamalar
+
+- Maksimum diff boyutu: 200KB (daha büyük diff'ler kırpılır)
+- Yalnızca git commit'leri olan görevler için kullanılabilir
+- Projenin çalışma dizininin bir git deposu olması gerekir
+
+<Tip>Hem *neyin* değiştiğini hem de ajanın *bu değişiklikleri nasıl yaptığını* anlamak için diff görüntüleyiciyi Oturum Tekrarı ile birlikte kullanın.</Tip>

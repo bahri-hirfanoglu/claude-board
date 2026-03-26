@@ -1,0 +1,152 @@
+---
+title: "Claude Manager"
+description: "MCP sunucularını, eklentileri, ajanları, oturumları, izinleri, hook'ları ve ayarları tek bir yerden yönetin"
+icon: "sliders"
+---
+
+Claude Manager, Claude CLI ortamınızla ilgili her şey için merkezi bir kontrol panelidir. Yapılandırma dosyalarına manuel olarak dokunmadan MCP sunucularını yapılandırmak, eklenti yüklemek, ajan oturumlarını incelemek, izin kurallarını düzenlemek, hook'ları yönetmek ve ayarları güncellemek için kenar çubuğundan erişebilirsiniz.
+
+<Frame><img src="/images/feature-claude-manager.svg" alt="Claude Manager Dashboard" /></Frame>
+
+## MCP Sunucu Yönetimi
+
+Claude'un yeteneklerini harici araçlar ve veri kaynaklarıyla genişleten [Model Context Protocol](https://modelcontextprotocol.io/) sunucularını ekleyin, kaldırın ve izleyin.
+
+### Sunucu Ekleme
+
+<Steps>
+  <Step title="Claude Manager'ı açın" icon="sliders">
+    Claude Manager içindeki MCP Servers sekmesine gidin.
+  </Step>
+  <Step title="Sunucu ekleyin" icon="plus">
+    **Add Server** butonuna tıklayın ve sunucu adını, komutunu ve gerekli argümanları veya ortam değişkenlerini sağlayın.
+  </Step>
+  <Step title="Bağlantıyı doğrulayın" icon="check">
+    Claude Manager sunucuya ping atar ve mevcut araçlarını görüntüler. Yeşil durum göstergesi sağlıklı bir bağlantıyı onaylar.
+  </Step>
+</Steps>
+
+### Sunucu İşlemleri
+
+| İşlem | Açıklama |
+|--------|-------------|
+| **Add** | Komut ve argümanlarıyla yeni bir MCP sunucusu kaydedin |
+| **Remove** | Bir sunucunun kaydını silin ve yapılandırmasını temizleyin |
+| **List** | Bağlantı durumuyla birlikte yapılandırılmış tüm sunucuları görüntüleyin |
+
+<Tip>MCP sunucuları Claude CLI yapılandırmanızda saklanır. Claude Manager'da yapılan değişiklikler anında CLI'ye yansır.</Tip>
+
+## Eklenti Yönetimi
+
+Claude'un iş akışına yeni özellikler ekleyen eklentileri yükleyin, kaldırın, etkinleştirin ve devre dışı bırakın.
+
+### Eklenti Yükleme
+
+Desteklenen pazaryerlerinden mevcut eklentilere göz atın veya doğrudan ada göre yükleyin. Her eklenti kartında açıklaması, sürümü ve uyumluluğu gösterilir.
+
+| İşlem | Açıklama |
+|--------|-------------|
+| **Install** | Bir pazaryerinden eklenti indirin ve kaydedin |
+| **Uninstall** | Bir eklentiyi ve ilişkili yapılandırmasını kaldırın |
+| **Enable** | Claude'un kullanabilmesi için yüklü bir eklentiyi etkinleştirin |
+| **Disable** | Bir eklentiyi kaldırmadan devre dışı bırakın |
+
+### Pazaryerleri
+
+Claude Manager, topluluk pazaryerlerinden eklentilere göz atmayı destekler. Kategoriye göre filtreleyin, popülerliğe göre sıralayın ve yüklemeden önce açıklamaları okuyun.
+
+<Info>Eklentiler makinenizde yerel olarak çalışır. Yüklemeden önce bir eklentinin kaynağını ve izinlerini inceleyin.</Info>
+
+## Ajan Görüntüleyicisi
+
+Projeleriniz genelindeki tüm Claude ajan örneklerini izleyin. Ajan Görüntüleyicisi şunları gösterir:
+
+- **Aktif ajanlar** — canlı durumla birlikte çalışmakta olan görevler
+- **Boştaki ajanlar** — oluşturulmuş ancak iş bekleyen ajanlar
+- **Ajan geçmişi** — süre ve sonuç bilgisiyle geçmiş ajan oturumları
+
+Her ajan kaydı, ilişkili görevine bağlantı içerir, böylece terminal çıktısına veya görev kartına doğrudan atlayabilirsiniz.
+
+## Oturum Geçmişi
+
+Claude CLI oturumlarının tam geçmişine göz atın. Her oturum kaydı şunları içerir:
+
+| Alan | Açıklama |
+|-------|-------------|
+| **Timestamp** | Oturumun başlangıç ve bitiş zamanı |
+| **Duration** | Toplam oturum süresi |
+| **Model** | Hangi Claude modelinin kullanıldığı |
+| **Turns** | Konuşma tur sayısı |
+| **Tokens** | Giriş ve çıkış token sayıları |
+| **Cost** | Oturum için tahmini API maliyeti |
+
+Geçmiş çalışmaları denetlemek, sorunları ayıklamak veya Claude'un belirli bir görevde ne yaptığını incelemek için oturum geçmişini kullanın.
+
+## İzin Kuralları
+
+Claude'un otomatik mod davranışını kontrol eden izin kurallarını görüntüleyin ve yönetin. İzin kuralları, Claude'un onay istemeden hangi araç çağrılarını yürütebileceğini belirler.
+
+### Kural Yapısı
+
+Her kural şunları tanımlar:
+
+- **Tool** — kontrol edilen araç veya komut (ör. `bash`, `edit`, `write`)
+- **Pattern** — eşleştirilecek isteğe bağlı yol veya komut kalıbı
+- **Action** — `allow` veya `deny`
+
+### Kuralları Düzenleme
+
+Tablo görünümünden doğrudan kural ekleyin, değiştirin veya kaldırın. Değişiklikler bir sonraki ajan oturumunda geçerli olur. Görüntüleyici, aktif kuralları vurgular ve hangilerinin global, hangilerinin proje düzeyindeki yapılandırmadan devralındığını gösterir.
+
+<Warning>Aşırı izin veren kurallar, Claude'un onay almadan komut yürütmesine olanak tanır. Özellikle `bash` komutları için kuralları dikkatli bir şekilde inceleyin.</Warning>
+
+## Hook Düzenleyicisi
+
+Claude ajan yaşam döngüsünün belirli noktalarında özel betikler çalıştıran hook'ları yapılandırın. Hook'lar, Claude Board'u mevcut araç zincirinizle entegre etmenizi sağlar.
+
+### Mevcut Hook Noktaları
+
+| Hook | Tetiklenme Zamanı |
+|------|--------------|
+| **PreToolUse** | Claude bir aracı çağırmadan önce |
+| **PostToolUse** | Bir araç çağrısı tamamlandıktan sonra |
+| **Notification** | Claude bir bildirim olayı gönderdiğinde |
+| **Stop** | Bir ajan oturumu sona erdiğinde |
+
+### Hook'ları Düzenleme
+
+Hook betiklerini doğrudan Claude Manager'da yerleşik düzenleyiciyi kullanarak yazın. Her hook yapılandırması olay türünü, bir eşleştirici kalıbını ve çalıştırılacak komutu içerir.
+
+<Tip>Hook'lar, dosya düzenlemelerinden sonra linter çalıştırmak, özel bildirimler göndermek veya proje konvansiyonlarını otomatik olarak uygulamak için kullanışlıdır.</Tip>
+
+## Ayarlar Düzenleyicisi
+
+JSON dosyalarını manuel olarak düzenlemeden Claude CLI ayarlarını düzenleyin. Ayarlar Düzenleyicisi tüm yapılandırma seçenekleri için form tabanlı bir arayüz sunar:
+
+- **Default model** — yeni görevler için tercih edilen modeli ayarlayın
+- **Max tokens** — çıkış token limitlerini yapılandırın
+- **Theme** — açık, koyu veya sistem görünümü arasında seçim yapın
+- **API configuration** — API anahtarlarını ve uç noktaları yönetin
+- **Telemetry** — kullanım verisi toplamayı etkinleştirin veya devre dışı bırakın
+
+Değişiklikler kaydedilmeden önce doğrulanır ve anında uygulanır.
+
+## Hesap ve CLI Güncellemeleri
+
+Claude hesabınızı yönetin ve CLI'yi Claude Manager içinden güncel tutun.
+
+### Hesap
+
+- Mevcut planınızı ve kullanım limitlerini görüntüleyin
+- API anahtarı durumunu ve son kullanma tarihini kontrol edin
+- Hesaplar veya kuruluşlar arasında geçiş yapın
+
+### CLI Güncellemeleri
+
+Claude Manager, yeni Claude CLI sürümlerini otomatik olarak kontrol eder. Bir güncelleme mevcut olduğunda:
+
+1. Claude Manager kenar çubuğu simgesinde bir rozet görünür
+2. Yeni sürüm detaylarını görmek için Hesap sekmesini açın
+3. En son CLI sürümünü yüklemek için **Update** butonuna tıklayın
+
+<Info>CLI güncellemeleri Claude Board masaüstü uygulaması sürümünü etkilemez. Board güncellemeleri, uygulamanın otomatik güncelleme sistemi aracılığıyla ayrı olarak yönetilir.</Info>

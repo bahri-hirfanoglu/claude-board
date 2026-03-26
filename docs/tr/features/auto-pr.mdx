@@ -1,0 +1,62 @@
+---
+title: "Otomatik PR"
+description: "Görevler tamamlandığında otomatik pull request oluşturma"
+icon: "code-pull-request"
+---
+
+Etkinleştirildiğinde, Claude Board bir görev başarıyla tamamlandığında otomatik olarak bir GitHub pull request'i oluşturur. Manuel `git push` veya PR oluşturma gerekmez.
+
+## Kurulum
+
+<Steps>
+  <Step title="GitHub CLI'yi Kurun" icon="github">
+    [`gh`](https://cli.github.com/) kurulumunu yapın ve kimlik doğrulaması gerçekleştirin:
+    ```bash
+    gh auth login
+    ```
+  </Step>
+  <Step title="Otomatik PR'yi Etkinleştirin" icon="toggle-on">
+    **Proje Ayarları > Git** bölümünde **Otomatik PR**'yi etkinleştirin ve **Temel Dal**'ınızı ayarlayın (varsayılan: `main`).
+  </Step>
+  <Step title="Hazır" icon="check">
+    Artık tamamlanan her görev otomatik olarak dalını push edecek ve bir PR oluşturacaktır.
+  </Step>
+</Steps>
+
+## Nasıl Çalışır
+
+Bir görev başarıyla tamamlandığında:
+
+<Steps>
+  <Step title="Dalı push et" icon="upload">
+    Dal origin'e push edilir: `git push -u origin <branch>`
+  </Step>
+  <Step title="PR oluştur" icon="code-pull-request">
+    `gh pr create` ile PR oluşturulur:
+    - **Başlık**: `{task_type}: {task_title}` (örn. "feat: Add JWT auth")
+    - **İçerik**: Görev açıklaması, görev anahtarı, türü ve kullanılan model
+    - **Base**: Projenin yapılandırılmış temel dalı
+    - **Head**: Görevin özellik dalı
+  </Step>
+  <Step title="Bağlantı kaydedilir" icon="link">
+    PR URL'si göreve kaydedilir ve Görev Detayı modalında görüntülenebilir.
+  </Step>
+</Steps>
+
+## Dal Temizliği
+
+| Otomatik PR | Dal Davranışı |
+|-------------|---------------|
+| **Etkin** | PR'lerin işlevsel kalması için dallar korunur |
+| **Devre Dışı** | Tamamlanan görev dalları otomatik olarak silinir (yerel + uzak) |
+
+## Gereksinimler
+
+<Accordion title="Gereksinimler kontrol listesi">
+  - `gh` CLI kurulu ve kimlik doğrulaması yapılmış (`gh auth status` ile doğrulayın)
+  - Deponun bir GitHub uzak bağlantısı var (`git remote -v` bir GitHub URL'si göstermelidir)
+  - Otomatik dal etkin (görevin kendi dalını oluşturmuş olması gerekir)
+  - Görev başarıyla tamamlanmış (başarısız görevler PR oluşturmaz)
+</Accordion>
+
+<Info>Otomatik PR, [orkestrasyon motoru](/features/orchestration) ile uyumlu çalışır. Görevler dalgalar halinde tamamlandığında, her görev bağımsız olarak kendi PR'sini oluşturur.</Info>

@@ -1,0 +1,70 @@
+---
+title: "Bağlam Parçacıkları"
+description: "Her Claude komutuna proje kuralları ve bağlam ekleyin"
+icon: "puzzle-piece"
+---
+
+Bağlam parçacıkları, bir proje için her Claude komutuna enjekte edilen yeniden kullanılabilir metin bloklarıdır. Kodlama standartlarını, mimari kararları veya projeye özel kuralları uygulamak için kullanın.
+
+<Frame><img src="/images/feature-snippets.svg" alt="Context Snippets" /></Frame>
+
+## Parçacıklar Nasıl Çalışır
+
+Bir Claude ajanı başladığında, proje için tüm **etkinleştirilmiş** parçacıklar birleştirilir ve sistem komutuna dahil edilir. Claude bunları uyması gereken proje kuralları olarak görür.
+
+<Steps>
+  <Step title="Parçacık oluşturun">
+    Proje ayarlarına gidin ve bir ad ile içerik belirleyerek bağlam parçacığı ekleyin.
+  </Step>
+  <Step title="Etkinleştirin veya devre dışı bırakın">
+    Parçacıkları açın veya kapatın. Devre dışı bırakılan parçacıklar kaydedilir ancak komutlara dahil edilmez.
+  </Step>
+  <Step title="Claude bunları okur">
+    Her ajan oturumu, tüm aktif parçacıkları bağlam olarak içerir.
+  </Step>
+</Steps>
+
+## Örnek Parçacıklar
+
+<Tabs>
+  <Tab title="Kod Stili">
+    ```
+    Code Style Rules:
+    - Use TypeScript strict mode
+    - Prefer functional components with hooks
+    - Use named exports, not default exports
+    - Maximum file length: 300 lines
+    ```
+  </Tab>
+  <Tab title="Mimari">
+    ```
+    Architecture Rules:
+    - All API routes go in /src/routes/
+    - Business logic belongs in /src/services/
+    - Database queries go in /src/repositories/
+    - Never import from a sibling module's internals
+    ```
+  </Tab>
+  <Tab title="Git Konvansiyonları">
+    ```
+    Git Rules:
+    - Use conventional commit messages (feat:, fix:, refactor:)
+    - One logical change per commit
+    - Never commit .env files or secrets
+    ```
+  </Tab>
+</Tabs>
+
+## Etkinleştirme/Devre Dışı Bırakma Düğmesi
+
+Her parçacığın bağımsız bir düğmesi vardır. Bu sayede:
+
+- Bir kuralı silmeden geçici olarak devre dışı bırakabilirsiniz
+- Bir parçacık kütüphanesi tutup yalnızca ilgili olanları etkinleştirebilirsiniz
+- Farklı görev çalıştırmalarında farklı talimatları A/B test edebilirsiniz
+
+<Info>Parçacıklar [CLAUDE.md](/configuration/claude-md) dosyasından farklıdır. Parçacıklar arayüzde yönetilir ve Claude Board tarafından enjekte edilir. CLAUDE.md ise deponuzdaki bir dosyadır ve Claude tarafından doğrudan okunur.</Info>
+
+## Parçacıkları Yönetme
+
+Proje ayarları veya [Snippets API](/api/snippets) aracılığıyla parçacık oluşturun, düzenleyin ve silin.

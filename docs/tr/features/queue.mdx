@@ -1,0 +1,74 @@
+---
+title: "Pipeline ve Otomatik Kuyruk"
+description: "Cokme kurtarma, periyodik yoklama ve akilli zamanlama destekli DAG-duyarli otomatik kuyruk"
+icon: "bolt"
+---
+
+Pipeline sistemi, bagimlilik takibi, otomatik yeniden deneme, cokme kurtarma ve surekli kuyruk izleme ile gorev yurutmeyi yonetir. Proje bazinda otomatik kuyrugu etkinlestirin, gerisini Claude Board halletsin.
+
+## Nasil Calisir
+
+<Steps>
+  <Step title="Otomatik kuyrugu etkinlestirin">
+    Proje ayarlarini acin ve **Auto-Queue** secenegini aktif hale getirin. **max concurrent agents** (1-5) degerini ayarlayin.
+  </Step>
+  <Step title="Gorevleri backlog'a ekleyin">
+    Gorevleri her zamanki gibi olusturun. Her yeni backlog gorevi otomatik olarak yurutme icin degerlendirmeye alinir.
+  </Step>
+  <Step title="Surekli yurutme">
+    Kuyruk, her 15 saniyede bos slotlari surekli izler ve hazir gorevleri baslatir. Bir gorev tamamlandiginda, bagimli alt gorevler hemen baslar.
+  </Step>
+</Steps>
+
+## Cokme Kurtarma
+
+Gorevler calisirken uygulama cokerse veya kapanirsa:
+
+1. **Yeniden baslatmada**, sahipsiz kalan tum `in_progress` gorevler otomatik olarak `backlog` durumuna sifirlanir
+2. `testing` durumundaki gorevler (otomatik test calisiyordu), otomatik test etkinse yeniden test edilir
+3. Otomatik kuyruk hemen yeniden degerlendirme yapar ve hazir gorevleri baslatir
+4. Manuel mudahale gerekmez
+
+<Info>Kurtarma sistemi, yalnizca veritabani durumuna degil, gercek surec durumuna bakar. Bu, zombi gorevlerin kuyruk slotlarini engellemesini onler.</Info>
+
+## Akilli Zamanlama
+
+Kuyruk, slot sayimi icin yalnizca veritabani durumunu degil, **gercek surec durumunu** kullanir. Bu su anlama gelir:
+
+- Zombi gorevler (coken surecler) slotlari engellemez
+- Slot hesaplama: `available = max_concurrent - actually_running_processes`
+- `awaiting_subtasks` isaretli gorevler, Claude surecleri sona erdikten sonra slot isgal etmis sayilmaz
+
+## DAG-Duyarli Yurutme
+
+Gorevlerin [bagimliliklari](/features/dependencies) oldugunda, kuyruk kosullu is akislari dahil tam bagimlilik grafini dikkate alir:
+
+- **Always/On Success** — Ust gorev `done` veya `testing` durumuna ulasmalidir
+- **On Failure** — Ust gorev kalici olarak basarisiz olmalidir (yeniden denemeler tukenmis)
+- Eslesiklik sinirlari dahilinde dalga tabanli paralel yurutme
+
+## Yeniden Deneme Mantigi
+
+Proje bazinda `max_retries` degerini yapilandirin. Bir gorev basarisiz oldugunda:
+
+1. Yeniden deneme hakki varsa: gorev, artirilmis yeniden deneme sayisi ile backlog'a doner
+2. Yeniden denemeler tukendiyse: gorev kalici olarak basarisiz isaretlenir
+3. **On Failure** bagimli gorevleri artik engeli kalkmis olur ve baslatilabilir
+
+## Alt Gorev Farkindiligi
+
+Bir ust gorev alt gorevler olusturdugunda:
+
+1. Ust gorevin Claude sureci tamamlanir ancak gorev `in_progress` (bekleme) durumunda kalir
+2. Alt gorevler kuyruga alinir ve normal sekilde yurutulur
+3. Tum alt gorevler tamamlandiginda, ust gorev otomatik olarak `testing`/`done` durumuna gecer
+4. Otomatik test ve bagimli zincirleme normal sekilde devam eder
+
+## Oncelik Siralama
+
+Gorevler backlog'dan su siraya gore secilir:
+1. **Oncelik** — High (3) -> Medium (2) -> Low (1) -> None (0)
+2. **Kuyruk konumu** — Manuel surukle-birak sirasi
+3. **Olusturulma zamani** — Eski gorevler once (FIFO)
+
+<Warning>Bagimliliklar kuyruk konumunu gecersiz kilar. Bir gorev 1 numarali konumda olsa bile, tum ust bagimliliklari karsilanana kadar baslamaz.</Warning>

@@ -1,0 +1,57 @@
+---
+title: "Dosya Ekleri"
+description: "Claude'un referans alması için görevlere dosya ekleyin"
+icon: "paperclip"
+---
+
+Dosya ekleri, doğrudan bir göreve dosya yüklemenizi sağlar. Bu dosyalar, ek bağlam olarak Claude'un komutuna dahil edilir.
+
+<Frame><img src="/images/feature-attachments.svg" alt="File Attachments" /></Frame>
+
+## Kullanım Senaryoları
+
+<Columns cols={2}>
+  <Card title="Tasarım Belgeleri" icon="image">
+    Claude'un arayüz oluştururken referans alması için maketler, tel çerçeveler veya ekran görüntüleri ekleyin.
+  </Card>
+  <Card title="Veri Örnekleri" icon="table">
+    CSV dosyaları, JSON örnekleri veya API yanıt örneklerini dahil edin.
+  </Card>
+  <Card title="Dokümantasyon" icon="file">
+    Teknik şartname belgeleri, gereksinimler veya mimari diyagramlar ekleyin.
+  </Card>
+  <Card title="Hata Günlükleri" icon="bug">
+    Hata düzeltme görevleri için günlük dosyaları veya yığın izleri yükleyin.
+  </Card>
+</Columns>
+
+## Nasıl Çalışır
+
+<Steps>
+  <Step title="Bir görevi açın">
+    Detay görünümünü açmak için herhangi bir görev kartına tıklayın.
+  </Step>
+  <Step title="Dosya yükleyin">
+    Bir veya daha fazla dosya yüklemek için ek bölümünü kullanın. Dosyalar Claude Board'un veri dizininde saklanır.
+  </Step>
+  <Step title="Claude dosyaları alır">
+    Ajan başladığında, eklenen dosyalar komuta dahil edilir. Claude, görev bağlamının bir parçası olarak içeriklerini okuyabilir.
+  </Step>
+</Steps>
+
+## Desteklenen Dosyalar
+
+Ekler, Claude'un doğrudan okuyabildiği metin tabanlı dosyalarla en iyi şekilde çalışır:
+
+- Kaynak kod dosyaları (`.js`, `.py`, `.ts` vb.)
+- Veri dosyaları (`.json`, `.csv`, `.yaml`)
+- Belgeler (`.txt`, `.md`)
+- Görseller (`.png`, `.jpg`) — görsel bağlam olarak dahil edilir
+
+<Note>Büyük ikili dosyalar saklanır ancak komut bağlamı olarak kullanışlı olmayabilir. Ekleri odaklı ve görevle ilgili tutun.</Note>
+
+## Ekleri Yönetme
+
+- Görev oluştururken veya görev detay görünümünden dosya ekleyin
+- Her dosyanın yanındaki sil simgesine tıklayarak ekleri kaldırın
+- Görev silindiğinde ekler de silinir

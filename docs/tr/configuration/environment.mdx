@@ -1,0 +1,69 @@
+---
+title: "Yapilandirma"
+description: "Claude Board'u config.json ve ortam degiskenleri ile yapilandirma"
+icon: "sliders"
+---
+
+Claude Board yapilandirmasini uygulama veri dizini icindeki bir `config.json` dosyasinda saklar. Ayarlar, ilk baslatmada [kurulum sihirbazi](/desktop/setup) veya uygulama ici ayarlar menusu araciligiyla da degistirilebilir.
+
+## Yapilandirma Dosyasi Konumu
+
+| Platform | Varsayilan Yol |
+|----------|---------------|
+| Windows | `%APPDATA%/claude-board/config.json` |
+| macOS | `~/Library/Application Support/claude-board/config.json` |
+| Linux | `~/.config/claude-board/config.json` |
+
+## Mevcut Ayarlar
+
+| Ayar | Varsayilan | Aciklama |
+|------|-----------|----------|
+| `port` | `4000` | Claude runner entegrasyonu icin MCP HTTP sunucu portu |
+| `dataDir` | Isletim sistemine ozel | Veritabani ve yuklemeler icin dizin |
+
+## MCP Sunucu Portu
+
+Yerlesik MCP HTTP sunucusu, Claude Code runner'larinin Claude Board ile iletisim kurmasini saglar. Portu `config.json` icinde ayarlayin:
+
+```json
+{
+  "port": 8080
+}
+```
+
+<Note>Port kullanimda ise MCP sunucusu baslatilmaz. Mevcut bir port secin veya cakisan islemi durdurun.</Note>
+
+## Veri Dizini
+
+Claude Board'un SQLite veritabanini ve yuklenen dosya eklerini nerede saklayacagini kontrol eder:
+
+```json
+{
+  "dataDir": "/path/to/data"
+}
+```
+
+Platforma gore varsayilan konumlar:
+
+| Platform | Varsayilan Yol |
+|----------|---------------|
+| Windows | `%APPDATA%/claude-board/` |
+| macOS | `~/Library/Application Support/claude-board/` |
+| Linux | `~/.config/claude-board/` |
+
+Dizin su ogeleri icerir:
+
+- `claude-board.db` — SQLite veritabani (tum projeler, gorevler, ayarlar)
+- `uploads/` — dosya ekleri
+- `config.json` — uygulama yapilandirmasi
+
+<Warning>Veri dizinini duzeni olarak yedekleyin. Tum proje verilerinizi, gorev gecmisinizi ve gunluklerinizi icerir.</Warning>
+
+## Ortam Degiskenleri
+
+Gelismis kullanim senaryolari icin asagidaki ortam degiskenleri hala gecerlidir ve `config.json` degerlerini gecersiz kilar:
+
+| Degisken | Aciklama |
+|----------|----------|
+| `CLAUDE_BOARD_DATA` | Veri dizini yolunu gecersiz kilar |
+| `PORT` | MCP sunucu portunu gecersiz kilar |

@@ -1,0 +1,96 @@
+---
+title: "Stats API"
+description: "Proje istatistikleri, aktivite akışı ve Claude kullanım verileri"
+icon: "chart-mixed"
+---
+
+## Proje İstatistikleri
+
+```http
+GET /api/projects/:projectId/stats
+```
+
+Bir proje için toplu istatistikleri döndürür.
+
+```json
+{
+  "statusCounts": {
+    "backlog": 5,
+    "in_progress": 2,
+    "testing": 1,
+    "done": 12
+  },
+  "typeCounts": {
+    "feature": 8,
+    "bugfix": 5,
+    "refactor": 3,
+    "docs": 2,
+    "test": 1,
+    "chore": 1
+  },
+  "priorityCounts": {
+    "0": 3,
+    "1": 10,
+    "2": 5,
+    "3": 2
+  },
+  "totalTasks": 20,
+  "avgDuration": 845000,
+  "completedToday": 3
+}
+```
+
+| Alan | Açıklama |
+|------|----------|
+| `statusCounts` | Durum sütununa göre görev sayıları |
+| `typeCounts` | Türe göre görev sayıları |
+| `priorityCounts` | Öncelik seviyesine göre görev sayıları |
+| `totalTasks` | Toplam görev sayısı |
+| `avgDuration` | Milisaniye cinsinden ortalama tamamlanma süresi |
+| `completedToday` | Bugün Tamamlandı durumuna taşınan görevler |
+
+## Aktivite Akışı
+
+```http
+GET /api/projects/:projectId/activity
+```
+
+Son görev olaylarını kronolojik sırada döndürür. Proje zaman çizelgesi oluşturmak için kullanışlıdır.
+
+```json
+[
+  {
+    "taskId": 5,
+    "taskTitle": "Add login page",
+    "event": "status_change",
+    "from": "in_progress",
+    "to": "testing",
+    "timestamp": "2025-01-15T14:30:00Z"
+  }
+]
+```
+
+## Claude Kullanımı
+
+```http
+GET /api/projects/:projectId/claude-usage
+```
+
+Tüm görevler genelinde toplu Claude API kullanımını döndürür.
+
+```json
+{
+  "totalInputTokens": 125000,
+  "totalOutputTokens": 48000,
+  "totalCacheRead": 30000,
+  "totalCacheCreation": 15000,
+  "totalCost": 12.50,
+  "byModel": {
+    "sonnet": { "tasks": 10, "inputTokens": 80000, "outputTokens": 30000, "cost": 5.20 },
+    "opus": { "tasks": 3, "inputTokens": 40000, "outputTokens": 15000, "cost": 6.80 },
+    "haiku": { "tasks": 7, "inputTokens": 5000, "outputTokens": 3000, "cost": 0.50 }
+  }
+}
+```
+
+<Info>Maliyet tahminleri yayınlanmış Claude API fiyatlandırmasından hesaplanır. Gerçek maliyetler faturalandırma planınıza göre farklılık gösterebilir.</Info>

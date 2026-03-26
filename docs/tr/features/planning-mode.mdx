@@ -1,0 +1,209 @@
+---
+title: "Planlama Modu"
+description: "Adim adim sihirbaz, bagimlilik olusturma ve canli ilerleme ile yapay zeka destekli gorev parcalama"
+icon: "sparkles"
+---
+
+Planlama Modu, bir konuyu analiz etmek ve otomatik olarak tahtanizda yapilandirilmis, eyleme donusturulebilir gorevlere ayirmak icin Claude'u kullanir. Ne insa etmek istediginizi tanimlayin; Claude kod tabaninizi kesfeder, yaklasimi arastirir ve bagimlilik iliskilerine sahip eksiksiz bir gorev dokumu olusturur.
+
+<Frame><img src="/images/feature-planning.svg" alt="Planning Mode Workflow" /></Frame>
+
+## Adim Adim Sihirbaz
+
+Planlama Modu, ustte gorsel bir ilerleme gostergesi ile 4 adimli bir sihirbaz akisi izler:
+
+```
+  Define ──────── Analyze ──────── Review ──────── Complete
+```
+
+Her adim numarali dairelerle gosterilir. Tamamlanan adimlar yesil bir onay isareti gosterir, aktif adim Claude vurgu rengiyle titresir ve gelecek adimlar soluk gosterilir.
+
+## Adim 1: Define
+
+Claude'un ne planlamasini istediginizi yapilandirin:
+
+<Steps>
+  <Step title="Topic" icon="pen">
+    Ne insa etmek istediginizi tanimlayin. Bu ana giristir — mumkun oldugunca spesifik olun.
+  </Step>
+  <Step title="Additional Context" icon="circle-info">
+    Istege bagli olarak teknoloji yigini, kisitlamalar veya tercihler gibi ek baglam bilgisi saglayabilirsiniz. Varsayilan olarak kapalidir.
+  </Step>
+  <Step title="Configuration" icon="sliders">
+    Duzenlenmis ayar kartlarinda ayrintilik, model ve dusunme eforu secimi yapin.
+  </Step>
+</Steps>
+
+### Gorev Ayrintilik Duzeyi
+
+Claude'un isi nasil parcalayacagini kontrol edin:
+
+| Duzey | Gorev Sayisi | Yaklasim |
+|-------|-------|-------|
+| **High-level** | 3-5 | Alt adim kontrol listeleri iceren buyuk kilometre taslari |
+| **Balanced** | 5-10 | Ilgili degisiklikleri gruplayan anlamli birimler |
+| **Detailed** | 10-20 | Her biri tek oturumda tamamlanabilir atomik gorevler |
+
+### Model Secimi
+
+| Model | En Uygun Kullanim |
+|-------|----------|
+| **Haiku** | Basit ozelliklerin hizli parcalanmasi |
+| **Sonnet** | Dengeli hiz ve kalite (varsayilan) |
+| **Opus** | Karmasik mimari ve derin analiz |
+
+### Dusunme Eforu
+
+| Duzey | Davranis |
+|-------|----------|
+| **Low** | Hizli, yuzeysel analiz |
+| **Medium** | Dengeli derinlik (varsayilan) |
+| **High** | Derin arastirma ve kapsamli kesfetme |
+
+## Adim 2: Analyze
+
+Claude kod tabaninizi kesfeder ve gorev dokumunu olusturur. Analiz asamasi gercek zamanli ilerleme gosterir:
+
+### Canli Istatistik Cubugu
+
+Yatay bir metrik cubugu sunlari gosterir:
+- **Gecen sure** — Claude'un ne kadar suredir calistigi
+- **Token sayisi** — Giris ve cikis token kullanimi
+- **Arac cagrilari** — Dosya okuma, arama vb. sayisi
+- **Turlar** — Claude ile konusma turlari
+
+### Alt Asama Gostergesi
+
+Analiz, otomatik alt asamalar boyunca ilerler:
+
+| Alt Asama | Tetikleyici | Aciklama |
+|-----------|---------|-------------|
+| **Starting** | Surec baslatildi | Claude baslatiliyor |
+| **Exploring** | Ilk arac cagrisi | Claude dosyalari okuyor ve kod tabanini ariyor |
+| **Planning** | Kesfin ardindan metin ciktisi | Claude analizini yaziyor ve gorevler uretiyor |
+| **Finalizing** | Surec tamamlaniyor | Claude son ciktiyi bicimliyor |
+
+Asama gecisleri arka planda otomatik olarak algilanir ve gercek zamanli olaylar olarak yayinlanir.
+
+### Etkinlik Akisi
+
+Terminal tarzi bir gunluk, her arac cagrisini gerceklestigi anda gosterir:
+- Sonuclariyla gruplanan **arac cagrilari**
+- Arac turune gore renkle kodlanmis (Read, Write, Edit, Bash, Grep, Glob vb.)
+- Dosya yollarini ve cikti onizlemelerini gosteren genisletilebilir ayrintilar
+- Sonuc bekleyen araclar icin beklemede gostergeleri
+
+### Analiz Onizlemesi
+
+Claude'un akil yurutme metni, daraltilabilir bir bolumde gercek zamanli olarak akar. Claude'un kod tabani mimariniz hakkindaki bulgularini yazarken izleyin.
+
+## Adim 3: Review
+
+Analiz tamamlandiktan sonra, inceleme asamasi olusturulan plani sunar:
+
+### Ozet Cubugu
+
+Ustte sunlari gosteren hizli bir genel bakis:
+- **Toplam gorev sayisi**
+- **Tur dokumu** — Her gorev turu icin renkli rozetler (feature, bugfix, refactor vb.)
+- **Bagimlilik sayisi** — Bagimlilik kenarlarinin sayisi
+- **Gecen sure**
+
+### Gorev Kartlari
+
+Onerilen her gorev, genisletilebilir bir kart olarak gosterilir:
+
+- Numarali daire icinde **gorev numarasi**
+- **Tur rozeti** — Renkle kodlanmis (feature, bugfix, refactor, docs, test, chore)
+- **Oncelik rozeti** — Oncelik belirlendiginde (Low, Medium, High)
+- **Baslik** — Kisa, eyleme donusturulebilir aciklama
+- **Genisletilebilir ayrintilar**:
+  - **Aciklama** — Ayrintili uygulama talimatlari
+  - **Kabul Kriterleri** — Tamamlanma tanimi
+
+### Onerileri Duzenleme
+
+Onaylamadan once sunlari yapabilirsiniz:
+- **Gorevleri kaldirma** — Istenmeyen gorevleri silmek icin cop kutusu simgesine tiklayin. Bagimlilik dizinleri otomatik olarak ayarlanir.
+- **Bagimliliklari inceleme** — DAG'i gorsellestirmek icin Bagimlilik Grafi bolumunu acin
+
+### Bagimlilik Grafi
+
+Claude bagimlilik iliskileri olusturduysa, daraltilabilir bir bolum Orkestrasyon gorunumunde kullanilan ayni [Bagimlilik Grafi](/features/dependencies) bilesenini kullanarak tam DAG gorsellemesini gosterir.
+
+### Eylemler
+
+- **Revise** — Konunuz korunarak Adim 1'e geri donun. Konuyu veya ayarlari degistirip yeniden planlayin.
+- **Approve & Create N Tasks** — Tum onerilen gorevleri bagimlilik kenarlariyla birlikte veritabaninda olusturun.
+
+## Adim 4: Complete
+
+Onaydan sonra, gorevlerin olusturuldugunu dogrulayan bir basari ekrani gosterilir:
+
+- Buyuk onay isareti simgesi
+- Gorev sayisi ozeti
+- **Plan Again** — Yeni bir planlama oturumu baslatin
+- **Done — View Board** — Modali kapatin ve yeni gorevlerinizi tahtada gorun
+
+## Arka Plan Mimarisi
+
+### Planlama Istemi
+
+Arka plan, "senior software architect" roluyle yapilandirilmis bir istem kullanir:
+
+1. **Explore** — Kod tabani yapisini, giris noktalarini, konvansiyonlari inceleyin
+2. **Analyze** — Etkilenen bilesenleri, yeni kod ihtiyaclarini, riskleri belirleyin
+3. **Plan** — JSON gorev dokumunu uretin
+
+Istem sunlari icerir:
+- Gorev onceliklendirme yonergeleri (oncelik 0-3)
+- Paralel yurutme vurgusu
+- Otonom ajan yurutmesi icin kendi kendine yeterli aciklama gereksinimleri
+- Alan referansli ayrintili JSON format belirtimi
+
+### Asama Algilama
+
+Arka plan, asama gecislerini otomatik olarak algilar ve yayinlar:
+
+```
+starting → exploring (first tool_use event)
+exploring → writing (text output after 2+ tool calls)
+writing → done (process completes)
+```
+
+### Gorev Ayrıstirma
+
+Cikti ayristirici, saglamlik icin 3 stratejili bir yaklasim kullanir:
+
+1. **Markdown kod bloklari** — ```json bloklarini bulur, tumunu ters sirada dener
+2. **Ham JSON algilama** — Metni, ayrac derinligi eslestirmesi kullanarak `{"tasks":` icin tarar
+3. **Dizi yedegi** — Duz bir JSON dizisi olarak ayristirmayi dener (geriye uyumlu)
+
+## Oturum Kaliciligi
+
+Planlama oturumlari sayfa yenilemelerinde hayatta kalir. Planlama aktifken sayfayi yenilerseniz, pencere otomatik olarak yeniden acilir ve calisan oturuma yeniden baglanir.
+
+## Olusturulan Gorevler
+
+Olusturulan her gorev sunlari icerir:
+
+- **Title** — Kisa, emir kipi aciklama (80 karakterden kisa)
+- **Description** — Dosya yollari ve mantik iceren tam uygulama rehberi
+- **Type** — `feature`, `bugfix`, `refactor`, `docs`, `test` veya `chore`
+- **Priority** — 0 (en yuksek, temel calisma) ile 3 (en dusuk, ince ayar) arasi
+- **Acceptance Criteria** — Gorevin tamamlandigini kanitlayan test edilebilir kosul
+
+## Bagimlilik Olusturma
+
+Planlama Modu, gorevler arasinda [bagimlilik iliskileri](/features/dependencies) olusturur. Claude, B gorevinin once A gorevini gerektirdigini belirlediginde, bir bagimlilik kenari olusturur.
+
+Onaylanan planlar, tum gorevleri DAG yapilari bozulmadan olusturur:
+- Bagimliligi olmayan gorevler **Wave 0**'a duser ve hemen calistirilabilir
+- Bagimli gorevler kuyruga alinir ve ust gorevleri tamamlandiginda otomatik baslar
+- Tam bagimlilik grafini [Orkestrasyon Gorunumu](/features/orchestration)'nde gorun
+
+<Tip>Claude'un planlamasini yonlendirmek icin istege bagli alana baglam ekleyin. Ornegin: "Express.js backend, React frontend, Prisma ORM ile PostgreSQL" gibi bir aciklama, Claude'un daha uygun gorevler olusturmasina yardimci olur.</Tip>
+
+## API
+
+Planlama Modu, [Planning API](/api/planning) uzerinden de kullanilabilir.

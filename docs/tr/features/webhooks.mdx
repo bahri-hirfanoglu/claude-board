@@ -1,0 +1,88 @@
+---
+title: "Webhook'lar"
+description: "Görev olaylarını Slack, Discord, Teams veya özel uç noktalara gönderin"
+icon: "bell"
+---
+
+Webhook'lar, Claude Board'da olaylar gerçekleştiğinde harici servisleri bilgilendirir. Görevler başladığında, tamamlandığında veya inceleme gerektiğinde uyarı alın.
+
+<Frame><img src="/images/feature-webhooks.svg" alt="Webhook Bildirimleri" /></Frame>
+
+## Desteklenen Platformlar
+
+<Columns cols={2}>
+  <Card title="Slack" icon="hashtag">
+    Gelen webhook URL'si aracılığıyla bir Slack kanalına biçimlendirilmiş mesajlar gönderir.
+  </Card>
+  <Card title="Discord" icon="discord">
+    Bir Discord kanal webhook'una zengin gömülü mesajlar gönderir.
+  </Card>
+  <Card title="Microsoft Teams" icon="microsoft">
+    Bir Teams kanal bağlayıcısına uyarlanabilir kartlar iletir.
+  </Card>
+  <Card title="Özel" icon="globe">
+    Herhangi bir HTTP uç noktasına ham JSON yükleri gönderir.
+  </Card>
+</Columns>
+
+## Olay Filtreleme
+
+Hangi olayların webhook'u tetikleyeceğini seçin:
+
+| Olay | Açıklama |
+|------|----------|
+| `task:created` | Yeni bir görev eklendi |
+| `task:started` | Görev Devam Ediyor durumuna geçti |
+| `task:completed` | Ajan tamamladı, görev Test Ediliyor durumuna girdi |
+| `task:approved` | Görev onaylandı ve Tamamlandı durumuna geçti |
+| `task:changes_requested` | İnceleyici revizyon talep etti |
+
+<Tip>"Tamamlandığında bildir" kurulumu için yalnızca `task:completed` ve `task:approved` olaylarına abone olun.</Tip>
+
+## Platforma Özel Yükler
+
+Her platform, kendine özel bir yük formatı alır:
+
+<Tabs>
+  <Tab title="Slack">
+    Görev başlığı, durumu, modeli ve panoya bağlantı içeren Slack Block Kit kullanır.
+  </Tab>
+  <Tab title="Discord">
+    Renk kodlu durum, öncelik ve tür alanları içeren Discord embed formatı kullanır.
+  </Tab>
+  <Tab title="Teams">
+    Eylem düğmeleri içeren Adaptive Card şeması kullanır.
+  </Tab>
+  <Tab title="Özel">
+    Tüm görev alanları, olay türü ve zaman damgası içeren ham JSON.
+    ```json
+    {
+      "event": "task:completed",
+      "task": { "id": 1, "title": "...", "status": "testing" },
+      "project": { "id": 1, "name": "..." },
+      "timestamp": "2025-01-15T10:30:00Z"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Test Düğmesi
+
+Bir webhook oluşturduktan sonra, örnek bir yük göndermek için **Test**'e tıklayın. Bu, gerçek bir olay beklemeden URL'nizin ve kimlik doğrulamanızın doğru olduğunu doğrular.
+
+## Kurulum
+
+<Steps>
+  <Step title="Proje ayarları → Webhook'lar bölümüne gidin">
+    "Webhook Ekle"ye tıklayın.
+  </Step>
+  <Step title="Platform seçin ve URL girin">
+    Slack, Discord, Teams veya özel servisinizden webhook URL'nizi yapıştırın.
+  </Step>
+  <Step title="Olayları seçin">
+    Bu webhook'u hangi olayların tetiklemesi gerektiğini seçin.
+  </Step>
+  <Step title="Test edin ve kaydedin">
+    Doğrulamak için Test'e tıklayın, ardından Kaydet'e tıklayın.
+  </Step>
+</Steps>

@@ -1,0 +1,42 @@
+---
+title: "Oturum Tekrarı"
+description: "Görev yürütme sırasında Claude'un eylemlerinin zaman çizelgesi tabanlı tekrarı"
+icon: "clock-rotate-left"
+---
+
+Oturum Tekrarı, Claude'un bir görev sırasında gerçekleştirdiği her eylemi kaydeder ve zaman çizelgesi üzerinde tekrar oynatmanıza olanak tanır. Ne olduğunu anlamak, sorunları ayıklamak veya tamamlanmış çalışmaları gözden geçirmek için kullanışlıdır.
+
+## Oturum Tekrarına Erişim
+
+1. **Görev Detayı** modalını açmak için herhangi bir göreve tıklayın
+2. Sağ üst köşedeki **Oturum Tekrarı** düğmesine tıklayın
+3. Tekrar paneli modalın alt kısmında açılır
+
+## Olay Türleri
+
+Her olay zaman çizelgesinde renk koduyla gösterilir:
+
+| Olay | Renk | Açıklama |
+|------|------|----------|
+| **Tool Call** | Mavi | Claude bir araç çağırdı (Read, Edit, Bash, Grep vb.) |
+| **Tool Result** | Yeşil | Araç çalıştırmasından dönen sonuç, süre bilgisiyle |
+| **Usage Final** | Kehribar | Görev tamamlandığında son token/maliyet özeti |
+| **System** | Gri | Sistem mesajları (başlatma, durum değişiklikleri) |
+| **Rate Limit** | Kırmızı | API'den gelen hız sınırı olayları |
+
+## Zaman Çizelgesi Kontrolleri
+
+- **Oynat/Duraklat** — Olaylar arasında 300ms aralıklarla otomatik geçiş yapar
+- **Zaman çizelgesi çubuğuna tıklama** — Oturumdaki herhangi bir noktaya atlayın
+- **Olay işaretçilerine tıklama** — Zaman çizelgesinde belirli olayları seçin
+- **Olay listesi** — Sol tarafta kaydırılabilir liste; seçmek ve ayrıntıları görüntülemek için tıklayın
+
+## Olay Ayrıntıları
+
+Tam verilerini görmek için herhangi bir olayı seçin:
+
+- **Araç çağrıları**: Araç adı, giriş parametreleri (dosya yolu, komut, desen)
+- **Araç sonuçları**: Çıktı önizlemesi, hata durumu, milisaniye cinsinden yürütme süresi
+- **Kullanım**: Giriş/çıkış token sayıları, toplam maliyet, kullanılan model, tur sayısı
+
+<Info>Olaylar, görev yürütme sırasında gerçek zamanlı olarak kaydedilir ve `task_events` veritabanı tablosunda saklanır. Zaman çizelgesi, ilk olaydan itibaren geçen süreyi gösterir.</Info>

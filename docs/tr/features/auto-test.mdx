@@ -1,0 +1,76 @@
+---
+title: "Otomatik Test"
+description: "Tamamlanan görevlerin zengin terminal çıktısıyla otomatik doğrulanması"
+icon: "flask-conical"
+---
+
+Bir görev tamamlandığında **Test Ediliyor** durumuna geçer. Otomatik Test etkinleştirildiğinde, bir doğrulama ajanı normal görevlerle aynı zengin terminal çıktısını kullanarak çalışmayı otomatik olarak kontrol eder.
+
+## Nasıl Çalışır
+
+1. Görev tamamlanır ve **Test Ediliyor** durumuna geçer
+2. Bir doğrulama ajanı (Sonnet, düşük efor) otomatik olarak başlar
+3. Ajan derleme kontrolleri, testler, kod incelemesi ve kabul kriterleri doğrulaması gerçekleştirir
+4. **Başarılı** — görev otomatik olarak **Tamamlandı** durumuna geçer
+5. **Başarısız** — görev ayrıntılı geri bildirimle **Test Ediliyor** durumunda kalır
+
+## Otomatik Testi Etkinleştirme
+
+**Proje Ayarları > Otomasyon** bölümünü açın ve **Otomatik Test**'i açık konuma getirin. İsteğe bağlı olarak özel test talimatları ekleyebilirsiniz.
+
+## Doğrulama Adımları
+
+Ajan bu kontrolleri **sıralı olarak** gerçekleştirir (zincirleme hataları önlemek için asla paralel değil):
+
+<Steps>
+  <Step title="Derleme Kontrolü">
+    Projenin derleme komutunu çalıştırır (npm run build, cargo check vb.). Başarı veya başarısızlık bildirir.
+  </Step>
+  <Step title="Test Paketi">
+    Bir test paketi olup olmadığını kontrol eder, ardından çalıştırır. Geçen/kalan sayılarını bildirir. Test paketi bulunamazsa atlanır.
+  </Step>
+  <Step title="Kod İncelemesi">
+    Değiştirilen dosyaları sözdizimi hataları, bozuk içe aktarmalar, güvenlik endişeleri ve eksik hata yönetimi açısından inceler.
+  </Step>
+  <Step title="Kabul Kriterleri">
+    Kabul kriterleri belirtilmişse, her kriter ayrı ayrı doğrulanır.
+  </Step>
+</Steps>
+
+## Zengin Terminal Çıktısı
+
+Otomatik test çıktısı, normal görev yürütmeyle **aynı olay sistemini** kullanır. Bu şu anlama gelir:
+
+- Genişletme/daraltma özellikli tam araç çağrısı gruplandırması
+- Her araç çağrısı için giriş parametreleri ve çıktı önizlemesi
+- Araç çağrısı başına süre takibi
+- Durum göstergeleri (çalışıyor, başarılı, hata)
+- Token kullanımı ve maliyet takibi
+
+## Test Raporu
+
+Sonuçlar, görev üzerinde yapılandırılmış bir JSON raporu olarak saklanır ve görev detay modalındaki **Test** sekmesinde görüntülenebilir:
+
+- **Karar başlığı** — Özet ile birlikte Başarılı (yeşil) veya Başarısız (kırmızı)
+- **Bireysel kontrol kartları** — PASS/FAIL/SKIP durumu ile Derleme, Testler, Kod İncelemesi, Kabul Kriterleri
+- **Geri bildirim bölümü** — Reddedildiğinde ayrıntılı geri bildirim
+
+## Çökme Kurtarma
+
+Otomatik test sırasında uygulama çökerse:
+
+- Yeniden başlatmada `testing` durumundaki görevler tespit edilir
+- Otomatik test etkinse, doğrulama 3 saniyelik başlatma gecikmesinden sonra **otomatik olarak yeniden tetiklenir**
+- Manuel müdahale gerekmez
+
+## Özel Talimatlar
+
+Projeye özgü doğrulama komutları ekleyin:
+
+```
+Run 'npm test' and verify all tests pass.
+Check TypeScript compilation with 'npx tsc --noEmit'.
+Ensure no console.log statements remain in production code.
+```
+
+<Note>Doğrulama ajanı, Windows'ta paralel araç çağrısı iptal hatalarını önlemek için komutları tek tek çalıştırır.</Note>

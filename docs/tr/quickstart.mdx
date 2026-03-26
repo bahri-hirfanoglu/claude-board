@@ -1,0 +1,95 @@
+---
+title: "Hizli Baslangic"
+description: "Ilk projenizi olusturun ve 5 dakikada bir gorev calistirin"
+icon: "rocket"
+---
+
+Bu rehber ilk projenizi olusturma, bir gorev calistirma ve sonucu inceleme adimlarinda size yol gosterir. 5 dakikadan kisa surede bir yapay zeka ajaninin kod yazmasini saglayacaksiniz.
+
+## 1. Proje olusturun
+
+<Steps>
+  <Step title="Claude Board'u acin">
+    Masaustu uygulamasini baslatin. Ilk kez calistiriyorsaniz kurulum sihirbazi sizi ilk yapilandirma boyunca yonlendirecektir.
+  </Step>
+  <Step title="'Yeni Proje' butonuna tiklayin">
+    Proje adi, slug ve **calisma dizini** girin — Claude'un kod okuyup yazacagi yerel dosya yolu.
+
+    <Tip>Calisma dizinini mevcut bir depoya yonlendirin, en iyi sonuclari boyle alirsiniz. Claude mevcut kod yapinizi okuyabildiginde cok daha verimli calisir.</Tip>
+  </Step>
+  <Step title="Izinleri yapilandirin">
+    Bir izin modu secin:
+
+    | Mod | Kime uygun | Aciklama |
+    |-----|------------|----------|
+    | **Auto Accept** | Cogu kullanici | Claude tum araclari sormadan kullanir |
+    | **Allowed Tools** | Guvenlik odakli | Yalnizca belirtilen arac kategorileri |
+    | **Default** | Ozel yapilandirmalar | Claude'un yerlesik ayarlarini kullanir |
+
+    <Warning>Claude `--no-input` parametresiyle calisir, bu nedenle etkilesimli olarak izin isteyemez. En iyi sonuclar icin "Auto Accept" modunu kullanin.</Warning>
+  </Step>
+</Steps>
+
+## 2. Gorev olusturun ve calistirin
+
+<Steps>
+  <Step title="'Yeni Gorev' butonuna tiklayin" icon="plus">
+    Acik ve ayrintili bir tanim yazin. Ne kadar cok detay verirseniz Claude o kadar iyi performans gosterir.
+
+    <Accordion title="Ornek: Iyi ve belirsiz gorev tanimlari">
+      **Iyi:**
+      ```
+      Title: Add JWT authentication middleware
+      Description: Implement login/register endpoints with JWT tokens.
+      Use bcrypt for password hashing. Add middleware for protected routes.
+      Follow the existing Express.js patterns in src/routes/.
+      ```
+
+      **Cok belirsiz:**
+      ```
+      Title: Add auth
+      Description: Make authentication work
+      ```
+    </Accordion>
+  </Step>
+  <Step title="Gorevi yapilandirin" icon="sliders">
+    | Ayar | Secenekler | Ne zaman kullanilmali |
+    |------|-----------|----------------------|
+    | **Model** | `opus` / `sonnet` / `haiku` | Karmasik isler icin Opus, dengeli isler icin Sonnet, basit isler icin Haiku |
+    | **Tur** | feature / bugfix / refactor / docs / test / chore | Gorevi kategorize eder ve [prompt sablonlari](/features/prompt-templates) ile eslestirir |
+    | **Oncelik** | low / medium / high / urgent | [Kuyruk siralamasini](/features/queue) etkiler |
+  </Step>
+  <Step title="Gorevi baslatin" icon="play">
+    Gorevi **Devam Ediyor** durumuna surukleyin veya sag tiklayip "Devam Ediyor" secenegini secin. Claude aninda baslar, bir dal olusturur ve kodlamaya gecer.
+  </Step>
+  <Step title="Canli terminali izleyin" icon="terminal">
+    Gorev kartindaki terminal simgesine tiklayarak Claude'un gercek zamanli calismasini izleyin. Su bilgileri goreceksiniz:
+    - **Read** — Claude'un inceledigi dosyalar
+    - **Write/Edit** — yapilan kod degisiklikleri
+    - **Bash** — calistirilan komutlar (testler, git vb.)
+  </Step>
+  <Step title="Sonucu inceleyin" icon="check">
+    Claude tamamladiginda gorev **Test** asamasina gecer. Inceleme butonuna tiklayarak:
+    - **Onayla** — Tamamlandi durumuna tasir, istege bagli olarak PR olusturur
+    - **Degisiklik Iste** — geri bildirim verin, Claude otomatik olarak uzerinde calisir
+  </Step>
+</Steps>
+
+## 3. Bir adim oteye
+
+Ilk gorevinizi calistirdiginiza gore, Claude Board'dan daha fazla verim almak icin su ozellikleri kesfedin:
+
+<Columns cols={2}>
+  <Card title="Orkestrasyon" icon="sitemap" href="/features/orchestration">
+    Bagimlilik grafikleri kurun ve gorevleri paralel dalgalar halinde calistirin.
+  </Card>
+  <Card title="Otomatik Kuyruk" icon="bolt" href="/features/queue">
+    Eszamanlilik sinirlari ile mudahalesiz yurutmeyi yapilandirin.
+  </Card>
+  <Card title="Baglam Parcaciklari" icon="file-lines" href="/features/snippets">
+    Her prompt'a proje kurallari ve kodlama standartlari ekleyin.
+  </Card>
+  <Card title="Git Otomasyonu" icon="code-branch" href="/features/git-automation">
+    Her gorev icin otomatik dal ve PR olusturma.
+  </Card>
+</Columns>

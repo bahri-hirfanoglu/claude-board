@@ -1,0 +1,66 @@
+---
+title: "Beceri İçe Aktarma"
+description: "GitHub depolarından beceri içe aktarın"
+icon: "download"
+---
+
+Uygulama içinden GitHub depolarındaki becerilere göz atın, önizleyin ve yükleyin. Beceriler, yapay zeka ajanının yeteneklerini özel talimatlarla genişleten markdown dosyalarıdır.
+
+## Beceri Yöneticisini Açma
+
+Beceriler penceresini açmak için **Project Menu > Skills** yolunu izleyin.
+
+## Yüklü Becerilere Göz Atma
+
+Varsayılan görünüm, `~/.claude/skills/` dizininde yüklü olan tüm becerileri gösterir:
+
+- Sol panelde yüklü beceriler listelenir
+- İçeriğini önizlemek için bir beceriye tıklayın
+- Üzerine geldiğinizde **sil** butonu görünür
+
+## GitHub'dan İçe Aktarma
+
+İçe aktarma görünümüne geçmek için **Import** butonuna (sağ üst) tıklayın.
+
+### Popüler Depolar
+
+Bilinen beceri koleksiyonlarına hızlı erişim butonları:
+
+| Depo | Açıklama |
+|------------|-------------|
+| **anthropics/claude-code** | Anthropic'ten resmi beceriler |
+| **eastlondoner/awesome-claude-code** | Topluluk tarafından derlenen koleksiyon |
+| **hesreallygood/claude-code-skills** | Pratik beceri şablonları |
+
+Mevcut becerileri çekmek için herhangi bir depoya tıklayın.
+
+### Özel Depo URL'si
+
+Giriş alanına herhangi bir GitHub URL'si yazın:
+
+```
+user/repo
+https://github.com/user/repo
+https://github.com/user/repo/tree/main/skills
+```
+
+### Depo İçeriğine Göz Atma
+
+Çekme işleminden sonra şunları yapabilirsiniz:
+
+- **Dizinlere göz atma** — daha derine inmek için klasörlere tıklayın
+- **Becerileri önizleme** — içeriğini görüntülemek için bir beceriye tıklayarak genişletin
+- **Tek tek yükleme** — herhangi bir becerinin yanındaki "Install" butonuna tıklayın
+- **Tümünü yükleme** — her şeyi bir seferde içe aktarmak için "Install All" butonuna tıklayın
+
+Zaten yüklü olan beceriler yeşil "Installed" rozeti gösterir.
+
+### Dizin Navigasyonu
+
+Dizinler arasında geri gitmek için üstteki breadcrumb yolunu kullanın. Geri oku üst klasöre döner.
+
+## Becerilerin Depolandığı Yer
+
+Tüm beceriler `~/.claude/skills/` dizinine `.md` dosyaları olarak kaydedilir. Dosya adı, yapay zeka ajanı tarafından kullanılan beceri adı olur.
+
+<Note>Yalnızca herkese açık GitHub depoları desteklenmektedir. Özel depolar, henüz uygulanmamış olan GitHub kimlik doğrulaması gerektirir.</Note>

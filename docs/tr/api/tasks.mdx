@@ -1,0 +1,208 @@
+---
+title: "Tasks API"
+description: "CRUD, durum değişiklikleri, ajan kontrolü, bağımlılıklar ve gözlemlenebilirlik"
+icon: "list-check"
+---
+
+## Görevleri Listele
+
+```http
+GET /api/projects/:projectId/tasks
+```
+
+Bir projeye ait tüm görevleri öncelik ve oluşturulma tarihine göre sıralı olarak döndürür.
+
+## Görev Getir
+
+```http
+GET /api/projects/:projectId/tasks/:id
+```
+
+Açıklama, günlükler ve kullanım istatistikleri dahil tam görev ayrıntılarını döndürür.
+
+## Görev Detayı Getir
+
+```http
+GET /api/projects/:projectId/tasks/:id/detail
+```
+
+Revizyon geçmişi, ekler ve tüm günlük kayıtlarını içeren genişletilmiş detay görünümü.
+
+## Görev Oluştur
+
+```http
+POST /api/projects/:projectId/tasks
+Content-Type: application/json
+```
+
+```json
+{
+  "title": "Add user authentication",
+  "description": "Implement JWT-based login and registration",
+  "type": "feature",
+  "priority": 2,
+  "model": "sonnet",
+  "thinkingEffort": "medium",
+  "parentTaskId": null
+}
+```
+
+| Alan | Zorunlu | Varsayılan | Açıklama |
+|------|---------|------------|----------|
+| `title` | Evet | — | Görev başlığı |
+| `description` | Hayır | — | Ayrıntılı talimatlar |
+| `type` | Hayır | `feature` | `feature`, `bugfix`, `refactor`, `docs`, `test`, `chore` |
+| `priority` | Hayır | `1` | 0 (düşük) ile 3 (acil) arası |
+| `model` | Hayır | `sonnet` | `opus`, `sonnet`, `haiku` |
+| `thinkingEffort` | Hayır | `medium` | `low`, `medium`, `high` |
+| `parentTaskId` | Hayır | `null` | Alt görev bağlantısı için üst görev kimliği |
+
+<Info>`parentTaskId` ayarlandığında, yeni görev bir alt görev haline gelir. Üst görev otomatik olarak "alt görevleri bekleme" moduna geçer ve tüm alt görevler tamamlandığında tamamlanır.</Info>
+
+## Görev Güncelle
+
+```http
+PUT /api/projects/:projectId/tasks/:id
+Content-Type: application/json
+```
+
+## Durum Değiştir
+
+```http
+PUT /api/projects/:projectId/tasks/:id/status
+Content-Type: application/json
+```
+
+```json
+{ "status": "in_progress" }
+```
+
+`in_progress` durumuna geçiş bir Claude ajanı başlatır. `done` durumuna geçiş çalışan ajanı durdurur.
+
+## Ajanı Durdur
+
+```http
+POST /api/projects/:projectId/tasks/:id/stop
+```
+
+## Ajanı Yeniden Başlat
+
+```http
+POST /api/projects/:projectId/tasks/:id/restart
+```
+
+## Değişiklik Talep Et
+
+```http
+POST /api/projects/:projectId/tasks/:id/request-changes
+Content-Type: application/json
+```
+
+```json
+{ "feedback": "Add input validation to the login endpoint" }
+```
+
+## Günlükleri Getir
+
+```http
+GET /api/projects/:projectId/tasks/:id/logs
+```
+
+## Görev Sil
+
+```http
+DELETE /api/projects/:projectId/tasks/:id
+```
+
+---
+
+## Bağımlılıklar (Tauri IPC)
+
+### Bağımlılık Ekle
+
+```javascript
+invoke('add_task_dependency', {
+  taskId: 5,
+  dependsOnId: 3,
+  conditionType: 'always' // 'always' | 'on_success' | 'on_failure'
+})
+```
+
+İsteğe bağlı bir koşul türüyle bağımlılık kenarı oluşturur. Döngü oluşturacaksa hata döndürür.
+
+### Bağımlılık Kaldır
+
+```javascript
+invoke('remove_task_dependency', { taskId: 5, dependsOnId: 3 })
+```
+
+### Görev Bağımlılıklarını Getir
+
+```javascript
+invoke('get_task_dependencies', { taskId: 5 })
+// → { parents: [3, 1], children: [8, 9] }
+```
+
+### Bağımlılık Grafiğini Getir
+
+```javascript
+invoke('get_dependency_graph', { projectId: 1 })
+// → { tasks: [...], edges: [{from: 3, to: 5, conditionType: "always"}, ...], waves: [...] }
+```
+
+### Yürütme Dalgalarını Getir
+
+```javascript
+invoke('get_execution_waves', { projectId: 1 })
+// → [[task1, task2], [task3], [task4, task5]]
+```
+
+---
+
+## Gözlemlenebilirlik (Tauri IPC)
+
+### Ajan Aktivitesini Getir
+
+```javascript
+invoke('get_agent_activity', { projectId: 1 })
+```
+
+Çalışan tüm ajanlar hakkında gerçek zamanlı veri döndürür:
+
+```json
+{
+  "agents": [
+    {
+      "taskId": 5,
+      "taskKey": "FTR-PRJ-1005",
+      "title": "Add authentication",
+      "model": "sonnet",
+      "elapsedSec": 120,
+      "inputTokens": 50000,
+      "outputTokens": 12000,
+      "totalCost": 0.33,
+      "toolCallCount": 45,
+      "recentTools": [...],
+      "activeFiles": ["src/auth.rs", "src/main.rs"],
+      "isRunning": true,
+      "awaitingSubtasks": false
+    }
+  ],
+  "fileMap": {
+    "src/auth.rs": [5],
+    "src/main.rs": [5, 8]
+  },
+  "conflicts": [
+    { "filePath": "src/main.rs", "taskIds": [5, 8] }
+  ]
+}
+```
+
+### Aktif Dosya Haritasını Getir
+
+```javascript
+invoke('get_active_file_map')
+// → { "src/auth.rs": [5], "src/main.rs": [5, 8] }
+```
+
+Dosya yollarının, o anda erişen görev kimliklerine eşlemesini döndürür.

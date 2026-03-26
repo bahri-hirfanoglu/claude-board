@@ -1,0 +1,90 @@
+---
+title: "Webhooks API"
+description: "Webhook yapılandırması için CRUD ve test uç noktaları"
+icon: "bell"
+---
+
+## Webhook'ları Listele
+
+```http
+GET /api/projects/:projectId/webhooks
+```
+
+Bir proje için yapılandırılmış tüm webhook'ları döndürür.
+
+```json
+[
+  {
+    "id": 1,
+    "projectId": 1,
+    "platform": "slack",
+    "url": "https://hooks.slack.com/services/...",
+    "events": ["task:completed", "task:approved"],
+    "enabled": true
+  }
+]
+```
+
+## Webhook Getir
+
+```http
+GET /api/projects/:projectId/webhooks/:id
+```
+
+## Webhook Oluştur
+
+```http
+POST /api/projects/:projectId/webhooks
+Content-Type: application/json
+```
+
+```json
+{
+  "platform": "slack",
+  "url": "https://hooks.slack.com/services/T00/B00/xxx",
+  "events": ["task:completed", "task:approved"],
+  "enabled": true
+}
+```
+
+| Alan | Zorunlu | Açıklama |
+|------|---------|----------|
+| `platform` | Evet | `slack`, `discord`, `teams`, `custom` |
+| `url` | Evet | Webhook uç nokta URL'si |
+| `events` | Evet | Abone olunacak olay türleri dizisi |
+| `enabled` | Hayır | Varsayılan `true` |
+
+### Kullanılabilir Olaylar
+
+| Olay | Tetikleyici |
+|------|-------------|
+| `task:created` | Yeni görev eklendi |
+| `task:started` | Görev Devam Ediyor durumuna taşındı |
+| `task:completed` | Ajan tamamladı, görev Test aşamasında |
+| `task:approved` | Görev onaylandı, Tamamlandı durumuna taşındı |
+| `task:changes_requested` | İncelemeci revizyon talep etti |
+
+## Webhook Güncelle
+
+```http
+PUT /api/projects/:projectId/webhooks/:id
+Content-Type: application/json
+```
+
+Oluşturma ile aynı alanları kabul eder.
+
+## Webhook Sil
+
+```http
+DELETE /api/projects/:projectId/webhooks/:id
+```
+
+## Webhook Test Et
+
+```http
+POST /api/projects/:projectId/webhooks/:id/test
+```
+
+Yapılandırılmış platform formatını kullanarak webhook URL'sine örnek bir yük gönderir. Hedef uç noktadan alınan HTTP durum kodunu döndürür.
+
+<Tip>URL ve kimlik doğrulamanın doğru olduğunu onaylamak için webhook'ları oluşturduktan sonra mutlaka test edin.</Tip>

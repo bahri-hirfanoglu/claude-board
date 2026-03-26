@@ -1,0 +1,67 @@
+---
+title: "Failed Durumu"
+description: "Kalici olarak basarisiz gorevler icin ozel durum sutunu"
+icon: "circle-xmark"
+---
+
+Tum yeniden deneme haklarini tuketen gorevler, ozel bir **Failed** durumuna tasinir. Bu, neyin yanlis gittigini net bir sekilde gormenizi ve kolay kurtarma secenekleri sunar.
+
+## Gorsel Gostergeler
+
+Failed durumu, her gorunumde kirmizi gostergelerle acikca isaretlenir:
+
+<Tabs>
+  <Tab title="Board View">
+    Kanban tahtasinda ozel bir kirmizi **Failed** sutunu gorunur. Kartlar yeniden deneme sayisini ve basarisizlik nedenini gosterir.
+  </Tab>
+  <Tab title="List View">
+    Basarisizlik ayrintilariyla kirmizi durum noktasi. Basarisizlik zamanina gore siralanabilir.
+  </Tab>
+  <Tab title="Graph View">
+    Bagimlilik DAG'inda kirmizi dolgulu ve kirmizi kenarli dugum. Alt gorevler engellenmis gostergesi gosterir.
+  </Tab>
+  <Tab title="Timeline View">
+    Son basarisizliktan once yeniden deneme girisimleri daha kucuk cubuklar olarak gorunen kirmizi cubuk segmenti.
+  </Tab>
+</Tabs>
+
+## Gorev Yasam Dongusu
+
+```
+Backlog ──▶ In Progress ──▶ Testing ──▶ Done
+                │               │
+                ▼               ▼
+             Failed ◀───────────┘
+                │
+                ▼ (manual action)
+             Backlog (retry count resets)
+```
+
+Bir gorev su durumlarda Failed durumuna ulasir:
+1. Ajan sureci coker veya hatayla sonlanir
+2. Gorev, yapilandirilmis tum [yeniden deneme haklarini](/features/retry-backoff) zaten kullanmistir
+3. Baska yeniden deneme hakki kalmamistir
+
+## Kurtarma
+
+<Steps>
+  <Step title="Basarisizligi inceleyin" icon="magnifying-glass">
+    Neyin yanlis gittigini anlamak icin gorevi acin ve terminal ciktisini inceleyin. Son arac cagrilarini ve hata mesajlarini kontrol edin.
+  </Step>
+  <Step title="Sorunu giderin" icon="wrench">
+    Yaygin cozumler: gorev aciklamasini daha fazla baglam bilgisiyle guncelleyin, karmasik gorevler icin modeli Opus olarak degistirin, bozuk bir bagimliligi duzelin veya bir git catismasini cozun.
+  </Step>
+  <Step title="Gorevi yeniden deneyin" icon="rotate">
+    Gorevi **Backlog** veya **In Progress** durumuna geri tasiyin. Yeniden deneme sayaci otomatik olarak 0'a sifirlanir.
+  </Step>
+</Steps>
+
+<Tip>Bir gorev surekli basarisiz oluyorsa, bagimliliklari olan daha kucuk alt gorevlere ayirmayi deneyin. Karmasik gorevler, parcalara ayrildıginda daha yuksek basari oranina sahiptir.</Tip>
+
+## Kosullu Bagimliliklar
+
+Basarisiz gorevler [on_failure bagimliklarini](/features/dependencies) tetikleyebilir. Bu, kurtarma is akislari olusturmanizi saglar:
+
+- Gorev A basarisiz olur → Gorev B (hata ayiklama/duzeltme gorevi) otomatik olarak baslar
+- Basarisizlik ayrintilariyla bildirim webhook'u tetiklenir
+- Farkli bir modelle gorevin daha basit bir surumu denenebilir

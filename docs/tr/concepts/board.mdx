@@ -1,0 +1,76 @@
+---
+title: "Pano ve Gorunumler"
+description: "Gorevlerinizi yonetmek icin gorsel duzenler"
+icon: "table-columns"
+---
+
+Claude Board, gorevlerinizi yonetmek icin birden fazla gorunum sunar. Ust arac cubugundaki gorunum degistiriciyi kullanarak aralarinda gecis yapabilirsiniz.
+
+## Gorunumler
+
+<Tabs>
+  <Tab title="Kanban Board">
+    Varsayilan gorunum. Gorevler duruma gore sutunlar halinde duzenlenir:
+
+    | Sutun | Aciklama |
+    |--------|-------------|
+    | **Backlog** | Baslamayi bekleyen siradaki gorevler |
+    | **In Progress** | Claude aktif olarak calisiyor |
+    | **Testing** | Tamamlandi, incelemenizi bekliyor |
+    | **Done** | Onaylandi ve tamamlandi |
+    | **Failed** | Tum yeniden denemelerden sonra kalici olarak basarisiz |
+
+    **Surukle ve Birak** — Gorevleri surukleyerek sutunlar arasinda tasiyabilirsiniz. **In Progress** sutununa birakmak otomatik olarak bir Claude ajansi baslatir. Suruklerken **Alt** tusunu basili tutarak iki gorev arasinda [baglanti](/features/dependencies) olusturabilirsiniz.
+  </Tab>
+  <Tab title="Liste Gorunumu">
+    Tum gorevleri siralanabilir sutunlarla gosteren kompakt bir tablo: baslik, durum, oncelik, model, tur, maliyet, sure ve olusturulma tarihi. Cok sayida gorevi olan buyuk projeler icin idealdir.
+  </Tab>
+  <Tab title="Ozet Gorunumu">
+    Asagidakileri iceren bir kontrol paneli tarzinda genel bakis:
+    - **Durum dagilimi** — sutun basina gorev sayilari
+    - **Oncelik dagilimi** — dusuk, orta, yuksek, acil
+    - **Son aktivite** — en son gorev guncellemeleri
+    - **Ajan kullanimi** — aktif ve bosta olan ajan yuvalari
+  </Tab>
+  <Tab title="Orkestrasyon">
+    Coklu ajan yurutmesi icin komut merkezi. Uc alt gorunum:
+    - **Graf** — Suruklenebilir dugumlerle etkilesimli bagimlilik DAG'i
+    - **Zaman Cizelgesi** — SIMDI isaretcili Gantt tarzi yurutme gorunumu
+    - **Canli** — Dosya catismasi algilamali gercek zamanli arac cagrisi akisi
+
+    Ayrintilar icin [Orkestrasyon Gorunumu](/features/orchestration) sayfasina bakin.
+  </Tab>
+</Tabs>
+
+## Gercek Zamanli Guncellemeler
+
+<Info>Tum gorunumler WebSocket araciligiyla gercek zamanli olarak guncellenir. Gorev durum degisiklikleri, terminal ciktisi, token kullanimi ve bagimlilik guncellemeleri aninda iletilir — sayfayi yenilemenize gerek kalmaz.</Info>
+
+## Arac Cubugu
+
+Pano arac cubugu asagidakilere hizli erisim saglar:
+
+| Ozellik | Aciklama |
+|---------|-------------|
+| **Gorunum degistirici** | Kanban, Liste, Ozet ve Orkestrasyon arasinda gecis yapin |
+| **Model filtresi** | Yalnizca belirli bir modele ait gorevleri gosterin (Opus/Sonnet/Haiku) |
+| **Yeni Gorev** | Hizli olusturma penceresiyle yeni bir gorev olusturun |
+| **Arama** | Gorevleri baslik veya aciklamaya gore filtreleyin |
+
+## Mobil Deneyim
+
+Claude Board tamamen duyarli tasarima sahiptir. Kucuk ekranlarda:
+
+- Kanban panosu yatay olarak kaydirilir
+- Hizli tasima dugmeleri surukle-birak yerine kullanilir
+- Terminal alt sayfa olarak acilir
+- Gorev olusturma tam ekran pencere kullanir
+
+<Columns cols={2}>
+  <Card title="Gorev Yasam Dongusu" icon="arrows-rotate" href="/concepts/tasks">
+    Gorevlerin her durumdan nasil gectigini ogrenin.
+  </Card>
+  <Card title="Orkestrasyon" icon="sitemap" href="/features/orchestration">
+    Bagimlilik grafi ve zaman cizelgesi gorunumlerini kesfedin.
+  </Card>
+</Columns>

@@ -1,0 +1,36 @@
+---
+title: "Durum Animasyonlari"
+description: "Gorevler durumlar arasinda gecis yaptiginda gorsel geri bildirim"
+icon: "sparkles"
+---
+
+Bir gorev durumlar arasinda hareket ettiginde — ister surukle-birak, ister buton tiklama, ister sesli komutla — Claude Board gorev kartinda bir gecis animasyonu oynatir.
+
+## Animasyon Turleri
+
+| Gecis | Efekt | Aciklama |
+|-------|-------|----------|
+| → **In Progress** | Kehribar kivilcimlar | 12 parlayan parcacik altin bir darbesiyle disa dogru ucar |
+| → **Testing** | Parlama dalgasi | Mor/kehribar degrade, yuzen noktalarla birlikte gecis yapar |
+| → **Done** | Konfeti patlamasi | 24 renkli parcacik, karisik sekillerle ve bir onay isareti pop'u |
+| ← **Geri** | Geri sarim surusu | Ters yonde hafif gri bir gecis |
+
+Tum gecisler ayrica su unsurlari icerir:
+- Hedef durum rengine uygun bir **parlama darbesi**
+- Bir **kart buyume** olcek animasyonu (kisa sureligine buyur, sonra yerine oturur)
+
+## Nasil Calisir
+
+Animasyon sistemi, son gecisleri izleyen bir React context'i (`StatusTransitionContext`) kullanir:
+
+1. `onStatusChange` tetiklendiginde, `emitStatusTransition(taskId, fromStatus, toStatus)` gecisi kaydeder
+2. Her `TaskCard` aktif gecisler icin context'i kontrol eder
+3. Gorevi icin bir gecis varsa, `StatusTransitionEffect` katmanini render eder
+4. Animasyonlar 2 saniye sonra otomatik olarak temizlenir
+
+## Teknik Detaylar
+
+- Tum efektler **saf CSS animasyonlari** kullanir — harici kutuphane yoktur
+- Parcaciklar, CSS `@keyframes` ile rastgele olusturulan `div` elementleridir
+- Konfeti 8 farkli renk ve karisik sekiller (daireler + dikdortgenler) kullanir
+- Efektler kisa omurlu oldugundan ve GPU hizlandirmali donusumler kullandigindan performans hafiftir

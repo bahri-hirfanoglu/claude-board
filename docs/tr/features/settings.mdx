@@ -1,0 +1,97 @@
+---
+title: "Uygulama Ayarlari"
+description: "Baslangic davranisi, bildirimler, varsayilanlar ve sistem tercihlerini yapilandirma"
+icon: "gear"
+---
+
+Uygulama Ayarlari, Claude Board icin merkezi bir yapilandirma paneli saglar. Panoya **disli simgesinden** veya proje acilir menusundeki **Uygulama Ayarlari** girdisinden erisin.
+
+## Ayarlara Erisim
+
+<Steps>
+  <Step title="Panodan" icon="grid-2">
+    Pano basliginin sag ust kosesindeki, dil secicisinin yanindaki disli simgesine tiklayin.
+  </Step>
+  <Step title="Proje Gorunumunden" icon="chevron-down">
+    Proje acilir menusunu acin ve 3x3 ayarlar izgarasinda **App Settings** secenegine tiklayin.
+  </Step>
+</Steps>
+
+## Genel Ayarlar
+
+### Baslangicta Ac
+
+Bilgisayariniz basladiginda Claude Board'u otomatik olarak acin. Isletim sisteminin yerel otomatik baslangic mekanizmasini kullanir:
+
+| Platform | Mekanizma |
+|----------|-----------|
+| **Windows** | Kayit defteri baslangic girdisi |
+| **macOS** | LaunchAgent |
+
+<Info>Bu ayar yalnizca Tauri masaustu uygulamasinda kullanilabilir, web modunda degil.</Info>
+
+### Tepsiye Kucult
+
+Etkinlestirildiginde, pencereyi kapatmak Claude Board'u cikis yapmak yerine **sistem tepsisine** gizler. Uygulama arka planda calismaya devam eder ve su sekillerde geri yuklenebilir:
+
+- Tepsi simgesine **tikla** (sol tiklama)
+- **Sag tiklama** → Tepsi baglam menusunden **Claude Board**
+- Tamamen cikmak icin: **Sag tiklama** → **Quit**
+
+<Warning>Bu yalnizca masaustu uygulamasina ozel bir ozelliktir. Uygulama calisirken sistem tepsisi simgesi her zaman gorunurdur.</Warning>
+
+### Silmeden Once Onayla
+
+Gorevleri veya projeleri silmeden once bir onay penceresi goster. Varsayilan olarak etkindir.
+
+### Terminali Otomatik Ac
+
+Bir gorev calistiginda terminal panelini otomatik olarak ac. Terminali manuel olarak acmayi tercih ediyorsaniz devre disi birakin.
+
+### Varsayilan Model
+
+Yeni gorevler icin varsayilan Claude modelini ayarlayin:
+
+| Model | Aciklama |
+|-------|----------|
+| **Haiku** | Hizli ve hafif |
+| **Sonnet** | Dengeli (varsayilan) |
+| **Opus** | En yetenekli |
+
+### Varsayilan Dusunme Eforu
+
+Yeni gorevler icin varsayilan dusunme eforu seviyesini ayarlayin:
+
+| Seviye | Aciklama |
+|--------|----------|
+| **Low** | Hizli, yuzeysel analiz |
+| **Medium** | Dengeli derinlik (varsayilan) |
+| **High** | Derin akil yurutme ve kesfetme |
+
+### Dil
+
+Uygulama gorunum dilini degistirin. Su anda desteklenen diller:
+
+- **English**
+- **Turkish** (Turkce)
+
+Dil degisikligi, bildirim mesajlari dahil tum arayuz ogelerinde aninda yururluge girer.
+
+## Ayar Depolama
+
+Ayarlar yerel SQLite veritabaninda (`app_settings` tablosu) anahtar-deger ciftleri olarak saklanir. Degisiklikler degistirildiginde aninda kaydedilir — ayri bir "Kaydet" butonu yoktur.
+
+## API
+
+Ayarlara API uzerinden erisilebilir:
+
+```
+GET  /api/settings          # Tum ayarlari getir
+PUT  /api/settings          # Ayarlari guncelle (kismi guncelleme)
+```
+
+Tauri masaustu icin:
+```javascript
+api.getAppSettings()
+api.updateAppSettings({ key: value })
+```
