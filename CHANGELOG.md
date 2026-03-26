@@ -1,5 +1,59 @@
 # Changelog
 
+## [1.5.15] - 2026-03-26
+
+### Features
+- **Setup Wizard Overhaul**: 6-step guided setup with system check (Claude CLI, Git, port), language selection (EN/TR), project configuration with collapsible details (permissions, auto-queue, git integration), default model/notification preferences, and animated summary with confetti
+- **Failed Status**: New dedicated board column for permanently failed tasks with red indicators across all views (Board, List, Pipeline, Timeline, DependencyGraph, Summary, StatusTransition)
+- **Exponential Backoff Retry**: Failed tasks wait before retrying (30s×2^n, max 10min, ±20% jitter). New `retry_after` DB field prevents premature restarts
+- **Auto-PR Creation**: Tasks automatically create GitHub PRs via `gh` CLI on completion when `auto_pr` is enabled. Pushes branch and includes task metadata in PR body
+- **Auto-Revision on Test Reject**: When auto-test rejects a task, creates revision record with test feedback and auto-restarts (max 3 revisions to prevent infinite loops)
+- **Drag-Drop Dependency**: Alt+drag task cards onto each other in Board view to create dependencies. Direction chooser dialog lets you pick parent/child relationship
+- **Dependencies Tab**: New tab in TaskDetailModal showing parent/child dependencies with add/remove UI. Dropdown task picker with direction selector (backlog tasks only)
+- **Prompt Template Activation**: Templates now inject into actual Claude system prompt via `build_prompt()`. Auto-matched by task_type — create a "bugfix" template and all bugfix tasks use it
+- **Webhook Wire-Up**: Connected webhook dispatch to all task lifecycle events (task_started, task_completed, task_failed, test_passed, test_failed, revision_requested, queue_auto_started, task_timeout)
+- **Task Timeout**: Per-project configurable timeout with auto-kill. Enforced every 15s via queue poll thread. Timed-out tasks follow retry policy
+- **Branch Cleanup**: Completed tasks auto-delete feature branches (local + remote). Skipped when auto_pr is active to preserve open PRs
+
+### Improvements
+- **Onboarding Redesign**: Glassmorphism cards with gradient accents, direction-aware slide animations, floating particles on welcome/done screens, feature grid with staggered pop-in, step dots progress indicator
+- **Testing Badge**: Purple FlaskConical badge always visible when task is in testing status. Animated when auto-test process is actively running
+- **Max Retries UI**: Configurable from project settings (0-10, default 2)
+- **is_running Fix**: All `task:updated` events now correctly set `is_running` flag via `emit_task_updated()` helper
+- **Dependency Graph Layout**: Done tasks align within dependency wave instead of separate left column
+
+### Engine Hardening (v1.5.12)
+- **TOCTOU Race Fix**: Atomic check-and-insert for STARTING_TASKS prevents duplicate task starts
+- **Panic-Free DB Layer**: Replaced ~100+ bare `.unwrap()` with `log::error!` + graceful fallbacks across entire database layer
+- **Poison-Free Mutexes**: Migrated from `std::sync::Mutex` to `parking_lot::Mutex` in runner and events
+- **Transaction Support**: `with_transaction()` helper + atomic `RETURNING` for task key generation
+- **Graceful Shutdown**: Queue poll thread responds to `AtomicBool` shutdown signal via `RunEvent::Exit`
+- **Memory Leak Fixes**: Per-task cleanup of active_tool_calls, file_access, task_usage on stop/completion
+- **HTTP API Cleanup**: All 20 bare `.unwrap()` in http_api.rs replaced with `to_json()` helper
+
+### Database
+- `retry_after DATETIME` column for backoff scheduling
+- `task_timeout_minutes INTEGER` column on projects
+- `language TEXT` column in config
+- Tasks table migration to support `failed` CHECK constraint with index recreation
+
+## [1.5.14] - 2026-03-26
+
+See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag/v1.5.14
+
+## [1.5.13] - 2026-03-25
+
+See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag/v1.5.13
+
+## [1.5.12] - 2026-03-25
+
+See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag/v1.5.12
+
+## [1.5.11] - 2026-03-25
+
+### Features
+- Onboarding tour, retry system, i18n improvements, lifecycle summary
+
 ## [1.5.7] - 2026-03-24
 
 ### Features

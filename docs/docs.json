@@ -52,7 +52,10 @@
               "features/orchestration",
               "features/dependencies",
               "features/queue",
-              "features/planning-mode"
+              "features/planning-mode",
+              "features/retry-backoff",
+              "features/failed-status",
+              "features/task-timeout"
             ]
           },
           {
@@ -71,6 +74,7 @@
             "icon": "code-branch",
             "pages": [
               "features/git-automation",
+              "features/auto-pr",
               "features/webhooks"
             ]
           },
@@ -90,6 +94,7 @@
             "icon": "file-lines",
             "pages": [
               "features/templates",
+              "features/prompt-templates",
               "features/snippets",
               "features/attachments"
             ]

@@ -162,10 +162,11 @@ pub fn run() {
                     tauri::WebviewUrl::App("setup.html".into()),
                 )
                 .title("Claude Board Setup")
-                .inner_size(520.0, 580.0)
+                .inner_size(620.0, 720.0)
                 .resizable(false)
                 .center()
                 .decorations(false)
+                .transparent(true)
                 .build()?;
             }
 
@@ -175,6 +176,8 @@ pub fn run() {
             // Setup
             setup::get_default_dir,
             setup::browse_folder,
+            setup::check_system,
+            setup::check_directory,
             setup::finish,
             setup::quit,
             // Projects

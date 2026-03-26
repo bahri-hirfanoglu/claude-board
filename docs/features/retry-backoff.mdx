@@ -1,0 +1,61 @@
+---
+title: Retry & Backoff
+description: Exponential backoff retry strategy for failed tasks
+---
+
+# Retry & Backoff
+
+When a task fails, Claude Board automatically retries it with increasing delays to avoid hammering rate limits.
+
+## How It Works
+
+Failed tasks follow an exponential backoff strategy:
+
+| Retry | Delay | With Jitter |
+|-------|-------|-------------|
+| 1st | 30s | 24-36s |
+| 2nd | 60s | 48-72s |
+| 3rd | 120s | 96-144s |
+| 4th | 240s | 192-288s |
+| 5th+ | 600s (max) | 480-600s |
+
+**Formula:** `delay = min(30s * 2^retry_count, 600s) + random_jitter(±20%)`
+
+## Configuration
+
+Set max retries per project in **Project Settings > Automation**:
+
+- **Max Retries**: 0 = default (2 retries), up to 10
+- Tasks exceeding max retries move to **Failed** status
+
+## Retry Flow
+
+```
+Task fails (exit code != 0)
+  |
+  v
+retry_count < max_retries?
+  |          |
+  YES        NO
+  |          |
+  v          v
+Backoff     Move to Failed status
+delay...    (permanently failed)
+  |
+  v
+Move to Backlog
+(retry_after timestamp set)
+  |
+  v
+Queue picks up after delay expires
+```
+
+## Database Fields
+
+- `retry_count` on tasks table — current retry attempt number
+- `retry_after` on tasks table — timestamp before which task won't be picked up
+- `max_retries` on projects table — per-project retry limit (0 = default 2)
+
+## Manual Reset
+
+Moving a failed task back to **Backlog** or **In Progress** resets the retry counter to 0.
