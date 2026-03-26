@@ -35,6 +35,11 @@ pub fn github_detect_repo(working_dir: String) -> Result<String, String> {
     }
 }
 
+/// Public access to gh token for other modules (e.g., auto-close on task done)
+pub fn get_gh_token_pub() -> Result<String, String> {
+    get_gh_token()
+}
+
 /// Get token from `gh auth token`
 fn get_gh_token() -> Result<String, String> {
     let output = Command::new("gh")

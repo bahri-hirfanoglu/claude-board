@@ -115,9 +115,36 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
     if status == "done" && task.completed_at.is_none() {
         tq::finalize_timer(&db, id);
         activity::add(&db, task.project_id, Some(id), "task_approved", &format!("Task approved: {}", task.title), None);
-        // Cleanup feature branch when task is manually approved
         if let Some(project) = pq::get_by_id(&db, task.project_id) {
-            runner::cleanup_task_branch(&task, &project.working_dir, &project);
+            // Auto-create PR if enabled and not already created
+            let fresh_task = tq::get_by_id(&db, id).unwrap_or(task.clone());
+            runner::auto_create_pr_public(&fresh_task, &project.working_dir, &project, &db, &app);
+            // Cleanup feature branch (skipped if auto_pr is on)
+            let after_pr = tq::get_by_id(&db, id).unwrap_or(fresh_task.clone());
+            runner::cleanup_task_branch(&after_pr, &project.working_dir, &project);
+
+            // Auto-close linked GitHub issue + add comment with PR link
+            if project.github_sync_enabled.unwrap_or(0) == 1 {
+                if let Some(issue_num) = fresh_task.github_issue_number {
+                    let repo = project.github_repo.as_deref().unwrap_or("");
+                    if !repo.is_empty() {
+                        let pr_url = after_pr.pr_url.as_deref().unwrap_or("");
+                        let task_key = fresh_task.task_key.as_deref().unwrap_or("");
+                        let comment_body = if !pr_url.is_empty() {
+                            format!("Completed via Claude Board task `{}`. PR: {}", task_key, pr_url)
+                        } else {
+                            format!("Completed via Claude Board task `{}`.", task_key)
+                        };
+                        // Close issue + add comment in background thread
+                        let repo_owned = repo.to_string();
+                        std::thread::spawn(move || {
+                            if let Ok(token) = crate::commands::github::get_gh_token_pub() {
+                                let _ = crate::services::github_sync::close_and_comment(&token, &repo_owned, issue_num, &comment_body);
+                            }
+                        });
+                    }
+                }
+            }
         }
     }
 

@@ -261,6 +261,11 @@ pub fn cleanup_task_branch(task: &tasks::Task, working_dir: &str, project: &proj
     log::info!("Cleaned up branch {} for task {}", branch, task.id);
 }
 
+/// Public wrapper for auto_create_pr (called from commands/tasks.rs on manual done transition)
+pub fn auto_create_pr_public(task: &tasks::Task, working_dir: &str, project: &projects::Project, db: &DbPool, app: &AppHandle) {
+    auto_create_pr(task, working_dir, project, db, app);
+}
+
 /// Auto-create a PR for the task's branch if auto_pr is enabled and no PR exists yet.
 fn auto_create_pr(task: &tasks::Task, working_dir: &str, project: &projects::Project, db: &DbPool, app: &AppHandle) {
     if project.auto_pr.unwrap_or(0) == 0 { return; }

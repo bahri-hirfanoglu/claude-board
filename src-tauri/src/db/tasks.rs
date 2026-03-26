@@ -46,6 +46,8 @@ pub struct Task {
     pub tags: Option<String>,
     pub lifecycle_summary: Option<String>,
     pub retry_after: Option<String>,
+    pub github_issue_number: Option<i64>,
+    pub github_issue_url: Option<String>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     #[serde(default)]
@@ -114,6 +116,8 @@ pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
         tags: row.get("tags").ok().flatten(),
         lifecycle_summary: row.get("lifecycle_summary").ok().flatten(),
         retry_after: row.get("retry_after").ok().flatten(),
+        github_issue_number: row.get("github_issue_number").ok().flatten(),
+        github_issue_url: row.get("github_issue_url").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         is_running: false,
