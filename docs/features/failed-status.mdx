@@ -1,0 +1,40 @@
+---
+title: Failed Status
+description: Dedicated status column for permanently failed tasks
+---
+
+# Failed Status
+
+Tasks that exhaust all retry attempts are moved to a dedicated **Failed** status instead of remaining hidden in Backlog.
+
+## Visual Indicators
+
+The Failed status has red indicators across all views:
+
+- **Board View**: Red column with task cards
+- **List View**: Red status dot
+- **Pipeline View**: Separate "Failed" section
+- **Dependency Graph**: Red node (fill + stroke)
+- **Timeline View**: Red bar
+- **Summary View**: Failed counter badge
+- **Task Card**: "Move to Backlog" quick action
+
+## Status Transitions
+
+```
+Backlog --> In Progress --> Testing --> Done
+                |              |
+                v              v
+             Failed <----------+
+                |
+                v (manual)
+             Backlog (retry count resets)
+```
+
+## Recovery
+
+To retry a failed task:
+1. Open the task or use the status menu
+2. Move to **Backlog** or **In Progress**
+3. Retry counter automatically resets to 0
+4. Task re-enters the queue and can be started again

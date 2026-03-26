@@ -1,0 +1,59 @@
+---
+title: Prompt Templates
+description: Customize Claude's system prompt per task type
+---
+
+# Prompt Templates
+
+Prompt templates let you define reusable instructions that are injected into Claude's system prompt when executing tasks.
+
+## How It Works
+
+1. Create a template in **Project > Templates**
+2. Set the **task_type** (feature, bugfix, refactor, etc.)
+3. Write your template content with `{{variable}}` placeholders
+4. When a task with that type runs, the template is automatically injected into the prompt
+
+## Template Matching
+
+Templates are matched by **task_type**:
+
+- Create a template with type `bugfix` -> all bugfix tasks in that project use it
+- Create a template with type `feature` -> all feature tasks use it
+- If no matching template exists, the default prompt is used
+
+## Template Variables
+
+Define variables with the `{{variable_name}}` syntax:
+
+```
+Review the {{component}} module for {{issue_type}} issues.
+Focus on {{specific_area}} and ensure {{quality_criteria}}.
+```
+
+Variables are filled in when creating a task from the template selector.
+
+## Prompt Injection Point
+
+The template content appears in the Claude prompt as:
+
+```
+## Role: ... (if role assigned)
+
+## Prompt Template: {template_name}
+{template_description}
+{template_content}
+
+# Task: {task_title}
+## Description
+...
+```
+
+Templates are injected after the role but before the task details, giving them high priority in Claude's attention.
+
+## Use Cases
+
+- **Code style enforcement**: "Always use TypeScript strict mode, prefer const over let"
+- **Framework-specific instructions**: "This is a Next.js 14 app using App Router"
+- **Review checklists**: "Check for: SQL injection, XSS, missing error handling"
+- **Testing patterns**: "Write tests using Vitest with React Testing Library"

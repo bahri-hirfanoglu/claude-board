@@ -1,0 +1,30 @@
+---
+title: Task Timeout
+description: Automatic task termination after configurable duration
+---
+
+# Task Timeout
+
+Prevent tasks from running indefinitely by setting a per-project timeout.
+
+## Configuration
+
+In **Project Settings > Automation**, set **Task Timeout** in minutes:
+
+- **0** (default): No timeout limit
+- **1-1440**: Auto-kill after this many minutes
+
+## How It Works
+
+The queue poll thread checks active processes every 15 seconds. When a task exceeds the timeout:
+
+1. Process is killed (SIGTERM on macOS, taskkill on Windows)
+2. Task follows the retry policy (retry with backoff, or move to Failed)
+3. Webhook notification fired (`task_timeout` event)
+4. Log entry added to task
+
+## Use Cases
+
+- **Rate limit loops**: Kill tasks stuck in rate limit wait cycles
+- **Infinite prompts**: Terminate tasks where Claude enters a loop
+- **Resource management**: Ensure no single task monopolizes an agent slot

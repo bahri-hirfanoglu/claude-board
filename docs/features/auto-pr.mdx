@@ -1,0 +1,39 @@
+---
+title: Auto PR
+description: Automatic pull request creation when tasks complete
+---
+
+# Auto PR
+
+When enabled, Claude Board automatically creates a GitHub pull request when a task finishes.
+
+## Setup
+
+1. Ensure `gh` CLI is installed and authenticated (`gh auth login`)
+2. In **Project Settings > Git**, enable **Auto PR**
+3. Set your **Base Branch** (default: `main`)
+
+## How It Works
+
+When a task completes successfully:
+
+1. Branch is pushed to origin (`git push -u origin <branch>`)
+2. PR created via `gh pr create` with:
+   - Title: `{task_type}: {task_title}`
+   - Body: Task description, task key, type, and model used
+   - Base: Project's configured base branch
+   - Head: Task's feature branch
+
+3. PR URL is saved to the task and visible in Task Detail
+
+## Branch Cleanup
+
+When Auto PR is **disabled**, completed task branches are automatically deleted (local + remote).
+
+When Auto PR is **enabled**, branches are preserved to keep PRs functional.
+
+## Requirements
+
+- `gh` CLI installed and authenticated
+- Repository has a GitHub remote
+- Task has a branch (auto-branch must be enabled)

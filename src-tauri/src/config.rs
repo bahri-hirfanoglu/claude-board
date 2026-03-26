@@ -10,7 +10,11 @@ pub struct AppConfig {
     #[serde(rename = "dataDir")]
     pub data_dir: String,
     pub port: u16,
+    #[serde(default = "default_lang")]
+    pub language: String,
 }
+
+fn default_lang() -> String { "en".into() }
 
 pub fn path(app: &tauri::App) -> PathBuf {
     app.path()
