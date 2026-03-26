@@ -3,13 +3,33 @@ use tauri::{AppHandle, Emitter};
 use crate::db;
 use crate::services::github;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+/// Run a command silently (no visible terminal window on Windows)
+fn silent_cmd(program: &str, args: &[&str]) -> std::io::Result<std::process::Output> {
+    let mut cmd = Command::new(program);
+    cmd.args(args)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    cmd.output()
+}
+
 /// Detect GitHub repo (owner/repo) from git remote in a working directory
 #[tauri::command]
 pub fn github_detect_repo(working_dir: String) -> Result<String, String> {
-    let output = Command::new("git")
-        .args(["remote", "get-url", "origin"])
+    let mut cmd = Command::new("git");
+    cmd.args(["remote", "get-url", "origin"])
         .current_dir(&working_dir)
-        .output()
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    let output = cmd.output()
         .map_err(|e| format!("Failed to run git: {}", e))?;
 
     if !output.status.success() {
@@ -42,9 +62,7 @@ pub fn get_gh_token_pub() -> Result<String, String> {
 
 /// Get token from `gh auth token`
 fn get_gh_token() -> Result<String, String> {
-    let output = Command::new("gh")
-        .args(["auth", "token"])
-        .output()
+    let output = silent_cmd("gh", &["auth", "token"])
         .map_err(|_| "GitHub CLI (gh) is not installed. Install from https://cli.github.com and run: gh auth login".to_string())?;
 
     if !output.status.success() {
@@ -66,7 +84,7 @@ fn get_gh_token() -> Result<String, String> {
 #[tauri::command]
 pub async fn github_check_status(repo: String) -> Result<serde_json::Value, String> {
     // 1. Check gh installed
-    let gh_installed = Command::new("gh").arg("--version").output().is_ok();
+    let gh_installed = silent_cmd("gh", &["--version"]).is_ok();
     if !gh_installed {
         return Ok(serde_json::json!({
             "status": "not_installed",
