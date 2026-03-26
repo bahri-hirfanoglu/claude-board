@@ -1,30 +1,30 @@
 ---
-title: "Masaustu Bildirimleri"
-description: "Gorev olaylari icin yerel isletim sistemi bildirimleri, olay bazli acma/kapama ve yerellestime destegi"
+title: "Masaüstü Bildirimleri"
+description: "Görev olayları için yerel işletim sistemi bildirimleri, olay bazlı açma/kapama ve yerelleştirme desteği"
 icon: "bell"
 ---
 
-Claude Board, onemli gorev olaylari gerceklestiginde **yerel masaustu bildirimleri** gonderir. Bildirimler isletim sisteminin bildirim sistemini kullanir — Windows bildirim penceresi ve macOS Bildirim Merkezi.
+Claude Board, önemli görev olayları gerçekleştiğinde **yerel masaüstü bildirimleri** gönderir. Bildirimler işletim sisteminin bildirim sistemini kullanır — Windows bildirim penceresi ve macOS Bildirim Merkezi.
 
 ## Desteklenen Olaylar
 
-Her olay turu, [Uygulama Ayarlari](/features/settings) icinde bagimsiz olarak etkinlestirilebilir veya devre disi birakilabilir:
+Her olay türü, [Uygulama Ayarları](/features/settings) içinde bağımsız olarak etkinleştirilebilir veya devre dışı bırakılabilir:
 
-| Olay | Varsayilan | Aciklama |
+| Olay | Varsayılan | Açıklama |
 |------|-----------|----------|
-| **Gorev Tamamlandi** | Acik | Claude bir gorev uzerinde calismayi bitirdi (Testing'e tasindi) |
-| **Gorev Basarisiz** | Acik | Bir gorev basarisiz oldu veya hatayla sonlandi |
-| **Gorev Basladi** | Kapali | Claude bir gorev uzerinde calismaya basladi |
-| **Revizyon Istendi** | Acik | Revizyon geri bildirimi Claude'a gonderildi |
-| **Kuyruk Otomatik Basladi** | Kapali | Bir gorev kuyruktan otomatik olarak baslatildi |
+| **Görev Tamamlandı** | Açık | Claude bir görev üzerinde çalışmayı bitirdi (Testing'e taşındı) |
+| **Görev Başarısız** | Açık | Bir görev başarısız oldu veya hatayla sonlandı |
+| **Görev Başladı** | Kapalı | Claude bir görev üzerinde çalışmaya başladı |
+| **Revizyon İstendi** | Açık | Revizyon geri bildirimi Claude'a gönderildi |
+| **Kuyrük Otomatik Başladı** | Kapalı | Bir görev kuyruktan otomatik olarak başlatıldı |
 
-Otomatik test sonuclari da bildirim tetikler:
-- **Test Basarili** Gorev Tamamlandi secenegini kullanir
-- **Test Basarisiz** Gorev Basarisiz secenegini kullanir
+Otomatik test sonuçları da bildirim tetikler:
+- **Test Başarılı** Görev Tamamlandı seçeneğini kullanır
+- **Test Başarısız** Görev Başarısız seçeneğini kullanır
 
-## Bildirim Formati
+## Bildirim Formatı
 
-Bildirimler kolay tanimlama icin **gorev anahtarini** icerir:
+Bildirimler kolay tanımlama için **görev anahtarını** içerir:
 
 ```
 Claude Board — Task Completed
@@ -34,45 +34,45 @@ Claude Board — Task Completed
 
 ### Olay Simgeleri
 
-Her olay turu ayirt edici bir sembol kullanir:
+Her olay türü ayırt edici bir sembol kullanır:
 
 | Olay | Sembol |
 |------|--------|
-| Basladi | ▶ |
-| Tamamlandi | ✔ |
-| Basarisiz | ✘ |
+| Başladı | ▶ |
+| Tamamlandı | ✔ |
+| Başarısız | ✘ |
 | Revizyon | ↻ |
-| Kuyruk | ⏵ |
+| Kuyrük | ⏵ |
 
-## Yerellestime
+## Yerelleştirme
 
-Bildirim basliklari ve mesajlari, Uygulama Ayarlari'ndaki **dil ayarini** takip eder. Turkce secildiginde bildirimler Turkce gorunur:
+Bildirim başlıkları ve mesajları, Uygulama Ayarları'ndaki **dil ayarını** takip eder. Türkçe seçildiğinde bildirimler Türkçe görünür:
 
 ```
-Claude Board — Gorev Tamamlandi
-[FTR-CB-1042] Login sayfasi
-✔ Tamamlandi — inceleme bekliyor
+Claude Board — Görev Tamamlandı
+[FTR-CB-1042] Login sayfası
+✔ Tamamlandı — inceleme bekliyor
 ```
 
 ## Uygulama Simgesi
 
-Claude Board uygulama simgesi her iki platformda da bildirimlerde goruntulenir. Windows'ta uygulama simgesi bildirim basliginda gorunur. macOS'ta bildirim gonderici simgesi olarak gorunur.
+Claude Board uygulama simgesi her iki platformda da bildirimlerde görüntülenir. Windows'ta uygulama simgesi bildirim başlığında görünür. macOS'ta bildirim gönderici simgesi olarak görünür.
 
-## Platform Destegi
+## Platform Desteği
 
 | Platform | Bildirim Sistemi | Uygulama Simgesi |
 |----------|-----------------|------------------|
 | **Windows 10/11** | Bildirim penceresi | Uygulama bildiriminden otomatik |
 | **macOS 10.15+** | UNUserNotificationCenter | Uygulama paketinden otomatik |
 
-<Info>Bildirim sesleri isletim sisteminizin bildirim ayarlari tarafindan kontrol edilir.</Info>
+<Info>Bildirim sesleri işletim sisteminizin bildirim ayarları tarafından kontrol edilir.</Info>
 
-## Yapilandirma
+## Yapılandırma
 
-Bildirimleri **Uygulama Ayarlari → Bildirimler** bolumunden acip kapatin:
+Bildirimleri **Uygulama Ayarları → Bildirimler** bölümünden açıp kapatın:
 
-1. Uygulama Ayarlari'ni acin (Panodaki disli simgesi)
-2. **Bildirimler** sekmesine tiklayin
-3. Bireysel olay turlerini acin/kapatin
+1. Uygulama Ayarları'nı açın (Panodaki dişli simgesi)
+2. **Bildirimler** sekmesine tıklayın
+3. Bireysel olay türlerini açın/kapatın
 
-Tum degisiklikler aninda yururluge girer.
+Tüm değişiklikler anında yürürlüğe girer.

@@ -1,81 +1,81 @@
 ---
 title: "Ajanlar"
-description: "Claude ajanlarinin nasil baslatildigi, calistigi ve kullanimi takip ettigi"
+description: "Claude ajanlarının nasıl başlatıldığı, çalıştığı ve kullanımı takip ettiği"
 icon: "robot"
 ---
 
-Bir gorev **In Progress** durumuna gectiginde, Claude Board yerel makinenizde bir Claude Code CLI sureci baslatir. Bu "ajan"dir — kod tabaninizi okur, dosyalara yazar, komutlar calistirir ve kod commit'ler.
+Bir görev **In Progress** durumuna geçtiğinde, Claude Board yerel makinenizde bir Claude Code CLI süreci başlatır. Bu "ajan"dır — kod tabanınızı okur, dosyalara yazar, komutlar çalıştırır ve kod commit'ler.
 
-## Ajanlarin Baslatilmasi
+## Ajanların Başlatılması
 
 <Steps>
-  <Step title="Gorev In Progress durumuna gecer" icon="play">
-    Sunucu, gorev aciklamasindan, proje [baglam parcalarindan](/features/snippets), [prompt sablonundan](/features/prompt-templates), [rolden](/features/roles) ve varsa [dosya eklerinden](/features/attachments) bir prompt olusturur.
+  <Step title="Görev In Progress durumuna geçer" icon="play">
+    Sunucu, görev açıklamasından, proje [bağlam parçalarından](/features/snippets), [prompt şablonundan](/features/prompt-templates), [rolden](/features/roles) ve varsa [dosya eklerinden](/features/attachments) bir prompt oluşturur.
   </Step>
-  <Step title="Dal olusturulur" icon="code-branch">
-    Git otomasyonu etkinse, temel daldan bir ozellik dali olusturulur (ornegin `feature/CB-101-add-auth`).
+  <Step title="Dal oluşturulur" icon="code-branch">
+    Git otomasyonu etkinse, temel daldan bir özellik dalı oluşturulur (örneğin `feature/CB-101-add-auth`).
   </Step>
-  <Step title="CLI sureci baslatilir" icon="terminal">
-    Claude Board, `claude` komutunu `--no-input` ve yapilandirilmis izin moduyla calistirir. Calisma dizini, projenin yapilandirilmis yoluna ayarlanir.
+  <Step title="CLI süreci başlatılır" icon="terminal">
+    Claude Board, `claude` komutunu `--no-input` ve yapılandırılmış izin moduyla çalıştırır. Çalışma dizini, projenin yapılandırılmış yoluna ayarlanır.
   </Step>
-  <Step title="Akis baslar" icon="signal">
-    Tum cikti yakalanir ve WebSocket araciligiyla bagli istemcilere aktarilir. Gunlukler, [oturum tekrari](/features/session-replay) icin veritabanina kaydedilir.
+  <Step title="Akış başlar" icon="signal">
+    Tüm çıktı yakalanır ve WebSocket aracılığıyla bağlı istemcilere aktarılır. Günlükler, [oturum tekrarı](/features/session-replay) için veritabanına kaydedilir.
   </Step>
-  <Step title="Ajan tamamlanir" icon="check">
-    CLI cikis yaptiginda, gorev otomatik olarak **Testing** durumuna gecer. [Otomatik test](/features/auto-test) etkinse, gecisten once testler calistirilir.
+  <Step title="Ajan tamamlanır" icon="check">
+    CLI çıkış yaptığında, görev otomatik olarak **Testing** durumuna geçer. [Otomatik test](/features/auto-test) etkinse, geçişten önce testler çalıştırılır.
   </Step>
 </Steps>
 
 ## Token Takibi
 
-Claude Board, gorev basina token kullanimini gercek zamanli olarak takip eder:
+Claude Board, görev başına token kullanımını gerçek zamanlı olarak takip eder:
 
-| Metrik | Aciklama |
+| Metrik | Açıklama |
 |--------|-------------|
-| **Girdi token'lari** | Claude'a gonderilen token'lar (prompt + baglam) |
-| **Cikti token'lari** | Claude tarafindan uretilen token'lar |
-| **Maliyet tahmini** | Model fiyatlandirmasindan hesaplanir (Opus/Sonnet/Haiku oranlari) |
-| **Onbellek okuma/olusturma** | Prompt onbelleginden sunulan veya eklenen token'lar |
+| **Girdi token'ları** | Claude'a gönderilen token'lar (prompt + bağlam) |
+| **Çıktı token'ları** | Claude tarafından üretilen token'lar |
+| **Maliyet tahmini** | Model fiyatlandırmasından hesaplanır (Opus/Sonnet/Haiku oranları) |
+| **Önbellek okuma/oluşturma** | Prompt önbelleğinden sunulan veya eklenen token'lar |
 
-Kullanim guncellemeleri `task:usage` WebSocket olayiyla yayilir ve gorev kartinda gorunur.
+Kullanım güncellemeleri `task:usage` WebSocket olayıyla yayılır ve görev kartında görünür.
 
-## Akilli Zamanlayici
+## Akıllı Zamanlayıcı
 
-Gorev zamanlayicisi, aktif ajan suresini dogru bir sekilde olcer:
+Görev zamanlayıcısı, aktif ajan süresini doğru bir şekilde ölçer:
 
-| Olay | Zamanlayici |
+| Olay | Zamanlayıcı |
 |-------|-------|
-| Gorev In Progress durumuna gecer | **Baslar** |
-| Gorev Testing durumuna gecer (inceleme bekliyor) | **Duraklar** |
-| Gorev In Progress durumuna doner (degisiklik istendi) | **Devam eder** |
-| Gorev Done durumuna gecer | **Durur** |
+| Görev In Progress durumuna geçer | **Başlar** |
+| Görev Testing durumuna geçer (inceleme bekliyor) | **Duraklar** |
+| Görev In Progress durumuna döner (değişiklik istendi) | **Devam eder** |
+| Görev Done durumuna geçer | **Durur** |
 
-<Info>Akilli zamanlayici, inceleme bekleme suresini haric tutarak Claude'un gercekte kodlamaya ne kadar zaman harcadiginin dogru bir resmini sunar.</Info>
+<Info>Akıllı zamanlayıcı, inceleme bekleme süresini hariç tutarak Claude'un gerçekte kodlamaya ne kadar zaman harcadığının doğru bir resmini sunar.</Info>
 
-## Eszamanlilik
+## Eşzamanlılık
 
-Ayni anda en fazla **5 ajan** calistirabilirsiniz. [Otomatik kuyruk](/features/queue) ozelligi, proje basina eszamanlilik siniri belirlemenize olanak tanir.
+Aynı anda en fazla **5 ajan** çalıştırabilirsiniz. [Otomatik kuyruk](/features/queue) özelliği, proje başına eşzamanlılık sınırı belirlemenize olanak tanır.
 
-| Ajan Sayisi | En Uygun Kullanim |
+| Ajan Sayısı | En Uygun Kullanım |
 |--------|----------|
-| **1** | Sirali gorevler, basit projeler |
-| **2-3** | Dusuk catisma riskiyle orta duzeyde paralellik |
-| **4-5** | [Bagimlilik yonetimi](/features/dependencies) ile maksimum verimlilik |
+| **1** | Sıralı görevler, basit projeler |
+| **2-3** | Düşük çatışma riskiyle orta düzeyde paralellik |
+| **4-5** | [Bağımlılık yönetimi](/features/dependencies) ile maksimum verimlilik |
 
-<Warning>Ayni projede birden fazla ajan calistirmak dosya catismalarina neden olabilir. Her ajanin hangi dosyalara eristigi koordine etmek icin [gorev bagimliliklarini](/features/dependencies) kullanin. [Canli gorunum](/features/orchestration) catismalari gercek zamanli olarak tespit eder.</Warning>
+<Warning>Aynı projede birden fazla ajan çalıştırmak dosya çatışmalarına neden olabilir. Her ajanın hangi dosyalara eriştiği koordine etmek için [görev bağımlılıklarını](/features/dependencies) kullanın. [Canlı görünüm](/features/orchestration) çatışmaları gerçek zamanlı olarak tespit eder.</Warning>
 
-## Ajan Yasam Dongusu Olaylari
+## Ajan Yaşam Döngüsü Olayları
 
-Her ajan, izleyebileceginiz olaylar yayar:
+Her ajan, izleyebileceğiniz olaylar yayar:
 
 | Olay | Ne Zaman |
 |-------|------|
-| `task:started` | Ajan sureci baslatildiginda |
-| `task:output` | Terminal cikti parcasi |
-| `task:usage` | Token/maliyet guncellemesi |
-| `task:tool_call` | Bireysel arac cagrisi (Read, Write, Edit, Bash) |
-| `task:completed` | Ajan basariyla cikis yaptiginda |
-| `task:failed` | Ajan hatayla cikis yaptiginda |
-| `agent:file_conflict` | Iki ajan ayni dosyaya eristiginde |
+| `task:started` | Ajan süreci başlatıldığında |
+| `task:output` | Terminal çıktı parçası |
+| `task:usage` | Token/maliyet güncellemesi |
+| `task:tool_call` | Bireysel araç çağrısı (Read, Write, Edit, Bash) |
+| `task:completed` | Ajan başarıyla çıkış yaptığında |
+| `task:failed` | Ajan hatayla çıkış yaptığında |
+| `agent:file_conflict` | İki ajan aynı dosyaya eriştiğinde |
 
-WebSocket abonelik ayrintilari icin [Events API](/api/events) sayfasina bakin.
+WebSocket abonelik ayrıntıları için [Events API](/api/events) sayfasına bakın.

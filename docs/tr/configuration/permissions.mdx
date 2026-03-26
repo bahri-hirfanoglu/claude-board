@@ -1,62 +1,62 @@
 ---
-title: "Izinler"
-description: "Claude ajanlarinin hangi araclari kullanabilecegini kontrol etme"
+title: "İzinler"
+description: "Claude ajanlarının hangi araçları kullanabileceğini kontrol etme"
 icon: "shield-halved"
 ---
 
-Izin modlari, Claude'un sisteminizle nasil etkilestigini belirler. Claude Board `--no-input` (etkilesimli istem yok) ile calistigi icin, izin yapilandirmasi kritik oneme sahiptir.
+İzin modları, Claude'un sisteminizle nasıl etkileştiğini belirler. Claude Board `--no-input` (etkileşimli istem yok) ile çalıştığı için, izin yapılandırması kritik öneme sahiptir.
 
-## Izin Modlari
+## İzin Modları
 
 <Tabs>
   <Tab title="Auto Accept">
-    Claude izin istemeden **tum** araclari kullanabilir. Bu en verimli moddur — Claude onay bekleyerek takilmaz.
+    Claude izin istemeden **tüm** araçları kullanabilir. Bu en verimli moddur — Claude onay bekleyerek takılmaz.
 
     ```
     claude --no-input --dangerously-skip-permissions
     ```
 
-    <Warning>Bu, Claude'a proje dizininizdeki dosyalari okuma, yazma ve komut calistirma icin tam erisim verir. Yalnizca guvenilir kod tabanlari veya yalitilmis ortamlarda kullanin.</Warning>
+    <Warning>Bu, Claude'a proje dizininizdeki dosyaları okuma, yazma ve komut çalıştırma için tam erişim verir. Yalnızca güvenilir kod tabanları veya yalıtılmış ortamlarda kullanın.</Warning>
   </Tab>
   <Tab title="Allowed Tools">
-    Yalnizca belirlediginiz arac kategorilerine izin verilir. Claude bunlari serbestce kullanabilir ancak baska hicbir seye erisemez.
+    Yalnızca belirlediğiniz araç kategorilerine izin verilir. Claude bunları serbestçe kullanabilir ancak başka hiçbir şeye erişemez.
 
     ```
     claude --no-input --allowedTools "Read,Edit,Write,Bash"
     ```
 
-    Bu iyi bir orta yoldur — Claude'u otonom tutarken etki alanini siz kontrol edersiniz.
+    Bu iyi bir orta yoldur — Claude'u otonom tutarken etki alanını siz kontrol edersiniz.
   </Tab>
   <Tab title="Default">
-    Claude CLI'in yerlesik izin sistemini kullanir. Etkilesimli onay gerektiren bir araca ihtiyac duyulursa ajanlarin takilmasina neden olabilir.
+    Claude CLI'ın yerleşik izin sistemini kullanır. Etkileşimli onay gerektiren bir araca ihtiyaç duyulursa ajanların takılmasına neden olabilir.
 
-    <Note>`--no-input` etkilesimli izin istemlerini engellediginden Claude Board icin onerilmez.</Note>
+    <Note>`--no-input` etkileşimli izin istemlerini engellediğinden Claude Board için önerilmez.</Note>
   </Tab>
 </Tabs>
 
-## Arac Kategorileri
+## Araç Kategorileri
 
-Allowed Tools modunu kullanirken, herhangi bir kombinasyona izin verebilirsiniz:
+Allowed Tools modunu kullanırken, herhangi bir kombinasyona izin verebilirsiniz:
 
-| Arac | Ne Yapar |
+| Araç | Ne Yapar |
 |------|----------|
-| `Read` | Diskten dosya iceriklerini okur |
-| `Edit` | Mevcut dosyalari degistirir |
-| `Write` | Yeni dosyalar olusturur |
-| `Bash` | Kabuk komutlari calistirir |
-| `Glob` | Desene gore dosya arar |
-| `Grep` | Regex ile dosya icerigi arar |
+| `Read` | Diskten dosya içeriklerini okur |
+| `Edit` | Mevcut dosyaları değiştirir |
+| `Write` | Yeni dosyalar oluşturur |
+| `Bash` | Kabuk komutları çalıştırır |
+| `Glob` | Desene göre dosya arar |
+| `Grep` | Regex ile dosya içeriği arar |
 
-## Oneriler
+## Öneriler
 
 <AccordionGroup>
-  <Accordion title="Baslangic">
-    Ajanlarin takilmasini onlemek icin **Auto Accept** kullanin. Sonuclari gormenin en hizli yoludur.
+  <Accordion title="Başlangıç">
+    Ajanların takılmasını önlemek için **Auto Accept** kullanın. Sonuçları görmenin en hızlı yoludur.
   </Accordion>
-  <Accordion title="Uretim projeleri">
-    Acik kontrol ile tam islevsellik icin `Read,Edit,Write,Bash,Glob,Grep` ile birlikte **Allowed Tools** kullanin.
+  <Accordion title="Üretim projeleri">
+    Açık kontrol ile tam işlevsellik için `Read,Edit,Write,Bash,Glob,Grep` ile birlikte **Allowed Tools** kullanın.
   </Accordion>
   <Accordion title="Salt okunur analiz">
-    Claude'un degisiklik yapmadan kodu analiz etmesini istiyorsaniz yalnizca `Read,Glob,Grep` ile **Allowed Tools** kullanin.
+    Claude'un değişiklik yapmadan kodu analiz etmesini istiyorsanız yalnızca `Read,Glob,Grep` ile **Allowed Tools** kullanın.
   </Accordion>
 </AccordionGroup>

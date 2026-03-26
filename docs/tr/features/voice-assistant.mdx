@@ -1,106 +1,106 @@
 ---
 title: "Sesli Asistan"
-description: "Konusma tanima ile eller serbest gorev yonetimi"
+description: "Konuşma tanıma ile eller serbest görev yönetimi"
 icon: "microphone"
 ---
 
-Claude Board, sesli komutlar kullanarak gorev olusturmanizi, durum kontrolu yapmanizi ve board'unuzu yonetmenizi saglayan yerlesik bir sesli asistan icerir.
+Claude Board, sesli komutlar kullanarak görev oluşturmanızı, durum kontrolü yapmanızı ve board'unuzu yönetmenizi sağlayan yerleşik bir sesli asistan içerir.
 
 <Frame><img src="/images/feature-voice.svg" alt="Voice Assistant" /></Frame>
 
-## Baslarken
+## Başlarken
 
-Asistan panelini acmak icin sag alt kosedeki **mikrofon butonuna** (kayan eylem butonu) tiklayin. Panel acikken mikrofonu acip kapatmak icin **Alt+V** tusuna da basabilirsiniz.
+Asistan panelini açmak için sağ alt köşedeki **mikrofon butonuna** (kayan eylem butonu) tıklayın. Panel açıkken mikrofonu açıp kapatmak için **Alt+V** tuşuna da basabilirsiniz.
 
 ## Mevcut Komutlar
 
 | Komut | Ne yapar |
 |-------|----------|
-| **"Create task"** | Yeni bir gorev olusturmak icin cok adimli bir akis baslatir |
-| **"List tasks"** | Duruma gore gorev sayilarini bildirir |
-| **"Change status"** | Bir gorevi yeni bir duruma tasima surecinde size rehberlik eder |
-| **"Help"** | Mevcut tum komutlari listeler |
-| **"Cancel"** | Aktif herhangi bir islemi durdurur |
+| **"Create task"** | Yeni bir görev oluşturmak için çok adımlı bir akış başlatır |
+| **"List tasks"** | Duruma göre görev sayılarını bildirir |
+| **"Change status"** | Bir görevi yeni bir duruma taşıma sürecinde size rehberlik eder |
+| **"Help"** | Mevcut tüm komutları listeler |
+| **"Cancel"** | Aktif herhangi bir işlemi durdurur |
 
-## Gorev Olusturma Akisi
+## Görev Oluşturma Akışı
 
-"Create task" dediginizde, asistan sizi su adimlardan gecirir:
+"Create task" dediğinizde, asistan sizi şu adımlardan geçirir:
 
-1. **Baslik** — "Gorev basligi ne olmali?"
-2. **Aciklama** — "Bir aciklama eklemek ister misiniz?" (atlamak icin "skip" deyin)
-3. **Tur** — "Tur ne? Feature, bugfix, refactor, docs, test veya chore."
-4. **Oncelik** — "Oncelik? None, low, medium veya high."
-5. **Onay** — "Olusturayim mi?" ("yes" veya "no" deyin)
+1. **Başlık** — "Görev başlığı ne olmalı?"
+2. **Açıklama** — "Bir açıklama eklemek ister mısınız?" (atlamak için "skip" deyin)
+3. **Tür** — "Tür ne? Feature, bugfix, refactor, docs, test veya chore."
+4. **Öncelik** — "Öncelik? None, low, medium veya high."
+5. **Onay** — "Oluşturayım mı?" ("yes" veya "no" deyin)
 
-## Ozellikler
+## Özellikler
 
-### Metinden Konusmaya
-Asistan yanItlarini sesli olarak okur. Sesi kapatmak/acmak icin panel basligindaki hoparlor simgesini degistirin.
+### Metinden Konuşmaya
+Asistan yanıtlarını sesli olarak okur. Sesi kapatmak/açmak için panel başlığındaki hoparlör simgesini değiştirin.
 
-### Ses Gorsellestiricisi
-Mikrofon aktifken panelde, ses giris seviyelerini gosteren gercek zamanli bir dalga formu gorsellestiricisi gorunur.
+### Ses Görselleştiricisi
+Mikrofon aktifken panelde, ses giriş seviyelerini gösteren gerçek zamanlı bir dalga formu görselleştiricisi görünür.
 
 ### Ses Efektleri
-- Dinleme basladiginda **yukselen bip**
-- Dinleme durdurulanda **alcalan bip**
+- Dinleme başladığında **yükselen bip**
+- Dinleme durduğunda **alçalan bip**
 
-### Komut Ipuclari
-Asistan bosta oldugunda, yaygin komutlara hizli erisim icin tiklanabilir oneri yongalari gorunur.
+### Komut İpuçları
+Asistan boşta olduğunda, yaygın komutlara hızlı erişim için tıklanabilir öneri yongaları görünür.
 
-### Metin Girisi
-Panel'in altindaki metin giris alanina komutlari da yazabilirsiniz. Sesli ve metin girisi ayni sekilde calisir.
+### Metin Girişi
+Panel'in altındaki metin giriş alanına komutları da yazabilirsiniz. Sesli ve metin girişi aynı şekilde çalışır.
 
-### Klavye Kisayolu
-Tiklamadan mikrofonu acmak/kapatmak icin **Alt+V** tusuna basin.
+### Klavye Kısayolu
+Tıklamadan mikrofonu açmak/kapatmak için **Alt+V** tuşuna basın.
 
 ## Mimari
 
-Sesli asistan moduler bir eklenti mimarisi kullanir:
+Sesli asistan modüler bir eklenti mimarisi kullanır:
 
 ```
 features/voice/
-├── VoiceAssistant.jsx           # Ince UI kapligi (FAB + panel)
+├── VoiceAssistant.jsx           # İnce UI kaplaği (FAB + panel)
 ├── VoiceAssistantProvider.jsx   # React context + durum makinesi
 ├── engine/
-│   ├── ttsEngine.js             # Metinden konusmaya (Web Speech API)
-│   ├── sttEngine.js             # Dalga formu icin ses analizcisi
+│   ├── ttsEngine.js             # Metinden konuşmaya (Web Speech API)
+│   ├── sttEngine.js             # Dalga formu için ses analizcisi
 │   └── soundEffects.js          # Web Audio API bip efektleri
 ├── intent/
-│   ├── intentParser.js          # Desen tabanli niyet algilama
-│   └── entityExtractors.js      # Tur, oncelik, model cikarimi
+│   ├── intentParser.js          # Desen tabanlı niyet algılama
+│   └── entityExtractors.js      # Tür, öncelik, model çıkarımı
 ├── commands/
-│   ├── commandRegistry.js       # Eklenti kayit defteri
-│   ├── createTaskCommand.js     # "Create task" akisi
+│   ├── commandRegistry.js       # Eklenti kayıt defteri
+│   ├── createTaskCommand.js     # "Create task" akışı
 │   ├── listTasksCommand.js      # "List tasks"
-│   ├── changeStatusCommand.js   # "Change status" akisi
+│   ├── changeStatusCommand.js   # "Change status" akışı
 │   ├── helpCommand.js           # "Help"
 │   └── cancelCommand.js         # "Cancel"
 └── components/
     ├── ChatPanel.jsx            # Mesaj listesi + kontroller
     ├── AudioVisualizer.jsx      # Canvas dalga formu
-    └── CommandHints.jsx         # Oneri yongalari
+    └── CommandHints.jsx         # Öneri yongaları
 ```
 
-### Ozel Komut Ekleme
+### Özel Komut Ekleme
 
-Yeni bir sesli komut eklemek icin:
+Yeni bir sesli komut eklemek için:
 
-1. `commands/` klasorunde yeni bir dosya olusturun (orn. `myCommand.js`)
-2. Desenler, akis durumlari ve bir calistirma fonksiyonu ile `registerCommand()` kullanin
-3. Dosyayi `commands/index.js` icinde ice aktarin
+1. `commands/` klasöründe yeni bir dosya oluşturun (örn. `myCommand.js`)
+2. Desenler, akış durumları ve bir çalıştırma fonksiyonu ile `registerCommand()` kullanın
+3. Dosyayı `commands/index.js` içinde ice aktarın
 
-Baska hicbir dosyanin degismesine gerek yoktur — kayit defteri yeni komutlari otomatik olarak kesfeder.
+Başka hiçbir dosyanın değişmesine gerek yoktur — kayıt defteri yeni komutları otomatik olarak keşfeder.
 
-## Tarayici Destegi
+## Tarayıcı Desteği
 
-Sesli asistan, [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) icin tarayici destegi gerektirir:
+Sesli asistan, [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) için tarayıcı desteği gerektirir:
 
-- **Chrome / Edge** — Tam destek (tanima + sentez)
-- **Safari** — Yalnizca sentez (tanima yok)
-- **Firefox** — Sinirli destek
+- **Chrome / Edge** — Tam destek (tanıma + sentez)
+- **Safari** — Yalnızca sentez (tanıma yok)
+- **Firefox** — Sınırlı destek
 
-Konusma tanima mevcut degilse, mikrofon butonu devre disi birakilir ancak metin girisi yine de calisir.
+Konuşma tanıma mevcut değilse, mikrofon butonu devre dışı bırakılır ancak metin girişi yine de çalışır.
 
-## Gorev Penceresinde Sesle Yazim
+## Görev Penceresinde Sesle Yazım
 
-Asistandan bagimsiz olarak, gorev olusturma penceresi de dogrudan sesle yazim icin **baslik** ve **aciklama** alanlarinda mikrofon butonlarina sahiptir. Bunlar bagimsiz calisir ve form alanlarini hizlica doldurmak icin kullanislidir.
+Asistandan bağımsız olarak, görev oluşturma penceresi de doğrudan sesle yazım için **başlık** ve **açıklama** alanlarında mikrofon butonlarına sahiptir. Bunlar bağımsız çalışır ve form alanlarını hızlıca doldurmak için kullanışlıdır.

@@ -1,19 +1,19 @@
 ---
-title: "CLAUDE.md Duzenleyici"
-description: "Projenizin CLAUDE.md yapilandirmasini arayuzden duzenleme"
+title: "CLAUDE.md Düzenleyici"
+description: "Projenizin CLAUDE.md yapılandırmasını arayüzden düzenleme"
 icon: "file-code"
 ---
 
-`CLAUDE.md`, Claude'un bir proje uzerinde calismaya basladiginda otomatik olarak okudugu ozel bir dosyadir. Projeye ozel talimatlar, kurallar ve baglam bilgisi icerir. Claude Board bu dosyayi yonetmek icin yerlesik bir duzenleyici icerir.
+`CLAUDE.md`, Claude'un bir proje üzerinde çalışmaya başladığında otomatik olarak okuduğu özel bir dosyadır. Projeye özel talimatlar, kurallar ve bağlam bilgisi içerir. Claude Board bu dosyayı yönetmek için yerleşik bir düzenleyici içerir.
 
 ## CLAUDE.md Nedir?
 
-Projenizin kokunde bulunan bir `CLAUDE.md` dosyasi Claude'a sunlari soyler:
+Projenizin kökünde bulunan bir `CLAUDE.md` dosyası Claude'a şunları söyler:
 
-- Projenin nasil yapilandirildigini
-- Hangi kurallara uyulmasi gerektigini
-- Derleme ve test icin hangi komutlarin kullanilacagini
-- Onemli mimari kararlari
+- Projenin nasıl yapılandırıldığını
+- Hangi kurallara uyulması gerektiğini
+- Derleme ve test için hangi komutların kullanılacağını
+- Önemli mimari kararları
 
 ```markdown
 # Project: My API
@@ -34,29 +34,29 @@ Projenizin kokunde bulunan bir `CLAUDE.md` dosyasi Claude'a sunlari soyler:
 - Write integration tests for every new endpoint
 ```
 
-## Yerlesik Duzenleyici
+## Yerleşik Düzenleyici
 
-Claude Board, `CLAUDE.md` dosyasini goruntulemek ve duzenlemek icin proje ayarlarinda bir metin duzenleyici sunar. Degisiklikler dogrudan projenizin calisma dizinindeki dosyaya kaydedilir.
+Claude Board, `CLAUDE.md` dosyasını görüntülemek ve düzenlemek için proje ayarlarında bir metin düzenleyici sunar. Değişiklikler doğrudan projenizin çalışma dizinindeki dosyaya kaydedilir.
 
 <Steps>
-  <Step title="Proje ayarlarini acin">
-    Proje panonuzdaki disli simgesine tiklayin.
+  <Step title="Proje ayarlarını açın">
+    Proje panonuzdaki dişli simgesine tıklayın.
   </Step>
   <Step title="CLAUDE.md sekmesine gidin">
-    CLAUDE.md bolumunu secin.
+    CLAUDE.md bölümünü seçin.
   </Step>
-  <Step title="Duzenleyin ve kaydedin">
-    Icerigi degistirin ve Kaydet'e tiklayin. Dosya projenizin calisma dizinine yazilir.
+  <Step title="Düzenleyin ve kaydedin">
+    İçeriği değiştirin ve Kaydet'e tıklayın. Dosya projenizin çalışma dizinine yazılır.
   </Step>
 </Steps>
 
-## CLAUDE.md ile Baglam Parcalari Karsilastirmasi
+## CLAUDE.md ile Bağlam Parçaları Karşılaştırması
 
-| Ozellik | CLAUDE.md | Baglam Parcalari |
+| Özellik | CLAUDE.md | Bağlam Parçaları |
 |---------|-----------|-----------------|
-| **Konum** | Deponuzdaki dosya | Claude Board'un veritabaninda saklanir |
-| **Surumlendirme** | Evet, git'e commit edilir | Hayir |
-| **Acma/Kapama** | Her zaman aktif | Tek tek etkinlestirilebilir/devre disi birakilabilir |
-| **Kapsam** | Claude CLI tarafindan dogrudan okunur | Claude Board tarafindan prompt'a enjekte edilir |
+| **Konum** | Deponuzdaki dosya | Claude Board'un veritabanında saklanır |
+| **Sürümlendirme** | Evet, git'e commit edilir | Hayır |
+| **Açma/Kapama** | Her zaman aktif | Tek tek etkinleştirilebilir/devre dışı bırakılabilir |
+| **Kapsam** | Claude CLI tarafından doğrudan okunur | Claude Board tarafından prompt'a enjekte edilir |
 
-<Tip>Depoda kalmasi gereken kararli proje kurallari icin `CLAUDE.md` kullanin. Sik degisen gecici kurallar veya talimatlar icin baglam parcalari kullanin.</Tip>
+<Tip>Depoda kalması gereken kararlı proje kuralları için `CLAUDE.md` kullanın. Sık değişen geçici kurallar veya talimatlar için bağlam parçaları kullanın.</Tip>

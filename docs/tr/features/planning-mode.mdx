@@ -1,169 +1,169 @@
 ---
 title: "Planlama Modu"
-description: "Adim adim sihirbaz, bagimlilik olusturma ve canli ilerleme ile yapay zeka destekli gorev parcalama"
+description: "Adım adım sihirbaz, bağımlılık oluşturma ve canlı ilerleme ile yapay zeka destekli görev parçalama"
 icon: "sparkles"
 ---
 
-Planlama Modu, bir konuyu analiz etmek ve otomatik olarak tahtanizda yapilandirilmis, eyleme donusturulebilir gorevlere ayirmak icin Claude'u kullanir. Ne insa etmek istediginizi tanimlayin; Claude kod tabaninizi kesfeder, yaklasimi arastirir ve bagimlilik iliskilerine sahip eksiksiz bir gorev dokumu olusturur.
+Planlama Modu, bir konuyu analiz etmek ve otomatik olarak tahtanızda yapılandırılmış, eyleme dönüştürülebilir görevlere ayırmak için Claude'u kullanır. Ne inşa etmek istediğinizi tanımlayın; Claude kod tabanınızı keşfeder, yaklaşımı araştırır ve bağımlılık ilişkilerine sahip eksiksiz bir görev dökümü oluşturur.
 
 <Frame><img src="/images/feature-planning.svg" alt="Planning Mode Workflow" /></Frame>
 
-## Adim Adim Sihirbaz
+## Adım Adım Sihirbaz
 
-Planlama Modu, ustte gorsel bir ilerleme gostergesi ile 4 adimli bir sihirbaz akisi izler:
+Planlama Modu, üstte görsel bir ilerleme göstergesi ile 4 adımlı bir sihirbaz akışı izler:
 
 ```
   Define ──────── Analyze ──────── Review ──────── Complete
 ```
 
-Her adim numarali dairelerle gosterilir. Tamamlanan adimlar yesil bir onay isareti gosterir, aktif adim Claude vurgu rengiyle titresir ve gelecek adimlar soluk gosterilir.
+Her adım numaralı dairelerle gösterilir. Tamamlanan adımlar yeşil bir onay işareti gösterir, aktif adım Claude vurgu rengiyle titreşir ve gelecek adımlar soluk gösterilir.
 
-## Adim 1: Define
+## Adım 1: Define
 
-Claude'un ne planlamasini istediginizi yapilandirin:
+Claude'un ne planlamasını istediğinizi yapılandırın:
 
 <Steps>
   <Step title="Topic" icon="pen">
-    Ne insa etmek istediginizi tanimlayin. Bu ana giristir — mumkun oldugunca spesifik olun.
+    Ne inşa etmek istediğinizi tanımlayın. Bu ana giriştir — mümkün olduğunca spesifik olun.
   </Step>
   <Step title="Additional Context" icon="circle-info">
-    Istege bagli olarak teknoloji yigini, kisitlamalar veya tercihler gibi ek baglam bilgisi saglayabilirsiniz. Varsayilan olarak kapalidir.
+    İsteğe bağlı olarak teknoloji yığını, kısıtlamalar veya tercihler gibi ek bağlam bilgisi sağlayabilirsiniz. Varsayılan olarak kapalıdır.
   </Step>
   <Step title="Configuration" icon="sliders">
-    Duzenlenmis ayar kartlarinda ayrintilik, model ve dusunme eforu secimi yapin.
+    Düzenlenmiş ayar kartlarında ayrıntılık, model ve düşünme eforu seçimi yapın.
   </Step>
 </Steps>
 
-### Gorev Ayrintilik Duzeyi
+### Görev Ayrıntılık Düzeyi
 
-Claude'un isi nasil parcalayacagini kontrol edin:
+Claude'un işi nasıl parçalayacağını kontrol edin:
 
-| Duzey | Gorev Sayisi | Yaklasim |
+| Düzey | Görev Sayısı | Yaklaşım |
 |-------|-------|-------|
-| **High-level** | 3-5 | Alt adim kontrol listeleri iceren buyuk kilometre taslari |
-| **Balanced** | 5-10 | Ilgili degisiklikleri gruplayan anlamli birimler |
-| **Detailed** | 10-20 | Her biri tek oturumda tamamlanabilir atomik gorevler |
+| **High-level** | 3-5 | Alt adım kontrol listeleri içeren büyük kilometre taşları |
+| **Balanced** | 5-10 | İlgili değişiklikleri gruplayan anlamlı birimler |
+| **Detailed** | 10-20 | Her biri tek oturumda tamamlanabilir atomik görevler |
 
-### Model Secimi
+### Model Seçimi
 
-| Model | En Uygun Kullanim |
+| Model | En Uygun Kullanım |
 |-------|----------|
-| **Haiku** | Basit ozelliklerin hizli parcalanmasi |
-| **Sonnet** | Dengeli hiz ve kalite (varsayilan) |
-| **Opus** | Karmasik mimari ve derin analiz |
+| **Haiku** | Basit özelliklerin hızlı parçalanması |
+| **Sonnet** | Dengeli hız ve kalite (varsayılan) |
+| **Opus** | Karmaşık mimari ve derin analiz |
 
-### Dusunme Eforu
+### Düşünme Eforu
 
-| Duzey | Davranis |
+| Düzey | Davranış |
 |-------|----------|
-| **Low** | Hizli, yuzeysel analiz |
-| **Medium** | Dengeli derinlik (varsayilan) |
-| **High** | Derin arastirma ve kapsamli kesfetme |
+| **Low** | Hızlı, yüzeysel analiz |
+| **Medium** | Dengeli derinlik (varsayılan) |
+| **High** | Derin araştırma ve kapsamlı keşfetme |
 
-## Adim 2: Analyze
+## Adım 2: Analyze
 
-Claude kod tabaninizi kesfeder ve gorev dokumunu olusturur. Analiz asamasi gercek zamanli ilerleme gosterir:
+Claude kod tabanınızı keşfeder ve görev dökümünü oluşturur. Analiz aşaması gerçek zamanlı ilerleme gösterir:
 
-### Canli Istatistik Cubugu
+### Canlı İstatistik Çubuğu
 
-Yatay bir metrik cubugu sunlari gosterir:
-- **Gecen sure** — Claude'un ne kadar suredir calistigi
-- **Token sayisi** — Giris ve cikis token kullanimi
-- **Arac cagrilari** — Dosya okuma, arama vb. sayisi
-- **Turlar** — Claude ile konusma turlari
+Yatay bir metrik çubuğu şunları gösterir:
+- **Geçen süre** — Claude'un ne kadar süredir çalıştığı
+- **Token sayısı** — Giriş ve çıkış token kullanımı
+- **Araç çağrıları** — Dosya okuma, arama vb. sayısı
+- **Turlar** — Claude ile konuşma turları
 
-### Alt Asama Gostergesi
+### Alt Aşama Göstergesi
 
-Analiz, otomatik alt asamalar boyunca ilerler:
+Analiz, otomatik alt aşamalar boyunca ilerler:
 
-| Alt Asama | Tetikleyici | Aciklama |
+| Alt Aşama | Tetikleyici | Açıklama |
 |-----------|---------|-------------|
-| **Starting** | Surec baslatildi | Claude baslatiliyor |
-| **Exploring** | Ilk arac cagrisi | Claude dosyalari okuyor ve kod tabanini ariyor |
-| **Planning** | Kesfin ardindan metin ciktisi | Claude analizini yaziyor ve gorevler uretiyor |
-| **Finalizing** | Surec tamamlaniyor | Claude son ciktiyi bicimliyor |
+| **Starting** | Süreç başlatıldı | Claude başlatılıyor |
+| **Exploring** | İlk araç çağrısı | Claude dosyaları okuyor ve kod tabanını arıyor |
+| **Planning** | Keşfin ardından metin çıktısı | Claude analizini yazıyor ve görevler üretiyor |
+| **Finalizing** | Süreç tamamlanıyor | Claude son çıktıyı biçimliyor |
 
-Asama gecisleri arka planda otomatik olarak algilanir ve gercek zamanli olaylar olarak yayinlanir.
+Aşama geçişleri arka planda otomatik olarak algılanır ve gerçek zamanlı olaylar olarak yayınlanır.
 
-### Etkinlik Akisi
+### Etkinlik Akışı
 
-Terminal tarzi bir gunluk, her arac cagrisini gerceklestigi anda gosterir:
-- Sonuclariyla gruplanan **arac cagrilari**
-- Arac turune gore renkle kodlanmis (Read, Write, Edit, Bash, Grep, Glob vb.)
-- Dosya yollarini ve cikti onizlemelerini gosteren genisletilebilir ayrintilar
-- Sonuc bekleyen araclar icin beklemede gostergeleri
+Terminal tarzı bir günlük, her araç çağrısını gerçekleştiği anda gösterir:
+- Sonuçlarıyla gruplanan **araç çağrıları**
+- Araç türüne göre renkle kodlanmış (Read, Write, Edit, Bash, Grep, Glob vb.)
+- Dosya yollarını ve çıktı önizlemelerini gösteren genişletilebilir ayrıntılar
+- Sonuç bekleyen araçlar için beklemede göstergeleri
 
-### Analiz Onizlemesi
+### Analiz Önizlemesi
 
-Claude'un akil yurutme metni, daraltilabilir bir bolumde gercek zamanli olarak akar. Claude'un kod tabani mimariniz hakkindaki bulgularini yazarken izleyin.
+Claude'un akıl yürütme metni, daraltılabilir bir bölümde gerçek zamanlı olarak akar. Claude'un kod tabanı mimariniz hakkındaki bulgularını yazarken izleyin.
 
-## Adim 3: Review
+## Adım 3: Review
 
-Analiz tamamlandiktan sonra, inceleme asamasi olusturulan plani sunar:
+Analiz tamamlandıktan sonra, inceleme aşaması oluşturulan planı sunar:
 
-### Ozet Cubugu
+### Özet Çubuğu
 
-Ustte sunlari gosteren hizli bir genel bakis:
-- **Toplam gorev sayisi**
-- **Tur dokumu** — Her gorev turu icin renkli rozetler (feature, bugfix, refactor vb.)
-- **Bagimlilik sayisi** — Bagimlilik kenarlarinin sayisi
-- **Gecen sure**
+Üstte şunları gösteren hızlı bir genel bakış:
+- **Toplam görev sayısı**
+- **Tür dökümü** — Her görev türü için renkli rozetler (feature, bugfix, refactor vb.)
+- **Bağımlılık sayısı** — Bağımlılık kenarlarının sayısı
+- **Geçen süre**
 
-### Gorev Kartlari
+### Görev Kartları
 
-Onerilen her gorev, genisletilebilir bir kart olarak gosterilir:
+Önerilen her görev, genişletilebilir bir kart olarak gösterilir:
 
-- Numarali daire icinde **gorev numarasi**
-- **Tur rozeti** — Renkle kodlanmis (feature, bugfix, refactor, docs, test, chore)
-- **Oncelik rozeti** — Oncelik belirlendiginde (Low, Medium, High)
-- **Baslik** — Kisa, eyleme donusturulebilir aciklama
-- **Genisletilebilir ayrintilar**:
-  - **Aciklama** — Ayrintili uygulama talimatlari
-  - **Kabul Kriterleri** — Tamamlanma tanimi
+- Numaralı daire içinde **görev numarası**
+- **Tür rozeti** — Renkle kodlanmış (feature, bugfix, refactor, docs, test, chore)
+- **Öncelik rozeti** — Öncelik belirlendiğinde (Low, Medium, High)
+- **Başlık** — Kısa, eyleme dönüştürülebilir açıklama
+- **Genişletilebilir ayrıntılar**:
+  - **Açıklama** — Ayrıntılı uygulama talimatları
+  - **Kabul Kriterleri** — Tamamlanma tanımı
 
-### Onerileri Duzenleme
+### Önerileri Düzenleme
 
-Onaylamadan once sunlari yapabilirsiniz:
-- **Gorevleri kaldirma** — Istenmeyen gorevleri silmek icin cop kutusu simgesine tiklayin. Bagimlilik dizinleri otomatik olarak ayarlanir.
-- **Bagimliliklari inceleme** — DAG'i gorsellestirmek icin Bagimlilik Grafi bolumunu acin
+Onaylamadan önce şunları yapabilirsiniz:
+- **Görevleri kaldırma** — İstenmeyen görevleri silmek için çöp kutusu simgesine tıklayın. Bağımlılık dizinleri otomatik olarak ayarlanır.
+- **Bağımlılıkları inceleme** — DAG'ı görselleştirmek için Bağımlılık Grafı bölümünü açın
 
-### Bagimlilik Grafi
+### Bağımlılık Grafı
 
-Claude bagimlilik iliskileri olusturduysa, daraltilabilir bir bolum Orkestrasyon gorunumunde kullanilan ayni [Bagimlilik Grafi](/features/dependencies) bilesenini kullanarak tam DAG gorsellemesini gosterir.
+Claude bağımlılık ilişkileri oluşturduysa, daraltılabilir bir bölüm Orkestrasyon görünümünde kullanılan aynı [Bağımlılık Grafı](/features/dependencies) bileşenini kullanarak tam DAG görsellemesini gösterir.
 
 ### Eylemler
 
-- **Revise** — Konunuz korunarak Adim 1'e geri donun. Konuyu veya ayarlari degistirip yeniden planlayin.
-- **Approve & Create N Tasks** — Tum onerilen gorevleri bagimlilik kenarlariyla birlikte veritabaninda olusturun.
+- **Revise** — Konunuz korunarak Adım 1'e geri dönün. Konuyu veya ayarları değiştirip yeniden planlayın.
+- **Approve & Create N Tasks** — Tüm önerilen görevleri bağımlılık kenarlarıyla birlikte veritabanında oluşturun.
 
-## Adim 4: Complete
+## Adım 4: Complete
 
-Onaydan sonra, gorevlerin olusturuldugunu dogrulayan bir basari ekrani gosterilir:
+Onaydan sonra, görevlerin oluşturulduğunu doğrulayan bir başarı ekranı gösterilir:
 
-- Buyuk onay isareti simgesi
-- Gorev sayisi ozeti
-- **Plan Again** — Yeni bir planlama oturumu baslatin
-- **Done — View Board** — Modali kapatin ve yeni gorevlerinizi tahtada gorun
+- Büyük onay işareti simgesi
+- Görev sayısı özeti
+- **Plan Again** — Yeni bir planlama oturumu başlatın
+- **Done — View Board** — Modalı kapatın ve yeni görevlerinizi tahtada görün
 
 ## Arka Plan Mimarisi
 
-### Planlama Istemi
+### Planlama İstemi
 
-Arka plan, "senior software architect" roluyle yapilandirilmis bir istem kullanir:
+Arka plan, "senior software architect" rolüyle yapılandırılmış bir istem kullanır:
 
-1. **Explore** — Kod tabani yapisini, giris noktalarini, konvansiyonlari inceleyin
-2. **Analyze** — Etkilenen bilesenleri, yeni kod ihtiyaclarini, riskleri belirleyin
-3. **Plan** — JSON gorev dokumunu uretin
+1. **Explore** — Kod tabanı yapısını, giriş noktalarını, konvansiyonları inceleyin
+2. **Analyze** — Etkilenen bileşenleri, yeni kod ihtiyaçlarını, riskleri belirleyin
+3. **Plan** — JSON görev dökümünü üretin
 
-Istem sunlari icerir:
-- Gorev onceliklendirme yonergeleri (oncelik 0-3)
-- Paralel yurutme vurgusu
-- Otonom ajan yurutmesi icin kendi kendine yeterli aciklama gereksinimleri
-- Alan referansli ayrintili JSON format belirtimi
+İstem şunları içerir:
+- Görev önceliklendirme yönergeleri (öncelik 0-3)
+- Paralel yürütme vurgusu
+- Otonom ajan yürütmesi için kendi kendine yeterli açıklama gereksinimleri
+- Alan referanslı ayrıntılı JSON format belirtimi
 
-### Asama Algilama
+### Aşama Algılama
 
-Arka plan, asama gecislerini otomatik olarak algilar ve yayinlar:
+Arka plan, aşama geçişlerini otomatik olarak algılar ve yayınlar:
 
 ```
 starting → exploring (first tool_use event)
@@ -171,39 +171,39 @@ exploring → writing (text output after 2+ tool calls)
 writing → done (process completes)
 ```
 
-### Gorev Ayrıstirma
+### Görev Ayrıştırma
 
-Cikti ayristirici, saglamlik icin 3 stratejili bir yaklasim kullanir:
+Çıktı ayrıştırıcı, sağlamlık için 3 stratejili bir yaklaşım kullanır:
 
-1. **Markdown kod bloklari** — ```json bloklarini bulur, tumunu ters sirada dener
-2. **Ham JSON algilama** — Metni, ayrac derinligi eslestirmesi kullanarak `{"tasks":` icin tarar
-3. **Dizi yedegi** — Duz bir JSON dizisi olarak ayristirmayi dener (geriye uyumlu)
+1. **Markdown kod blokları** — ```json bloklarını bulur, tümünü ters sırada dener
+2. **Ham JSON algılama** — Metni, ayraç derinliği eşleştirmesi kullanarak `{"tasks":` için tarar
+3. **Dizi yedeği** — Düz bir JSON dizisi olarak ayrıştırmayı dener (geriye uyumlu)
 
-## Oturum Kaliciligi
+## Oturum Kalıcılığı
 
-Planlama oturumlari sayfa yenilemelerinde hayatta kalir. Planlama aktifken sayfayi yenilerseniz, pencere otomatik olarak yeniden acilir ve calisan oturuma yeniden baglanir.
+Planlama oturumları sayfa yenilemelerinde hayatta kalır. Planlama aktifken sayfayı yenilerseniz, pencere otomatik olarak yeniden açılır ve çalışan oturuma yeniden bağlanır.
 
-## Olusturulan Gorevler
+## Oluşturulan Görevler
 
-Olusturulan her gorev sunlari icerir:
+Oluşturulan her görev şunları içerir:
 
-- **Title** — Kisa, emir kipi aciklama (80 karakterden kisa)
-- **Description** — Dosya yollari ve mantik iceren tam uygulama rehberi
+- **Title** — Kısa, emir kipi açıklama (80 karakterden kısa)
+- **Description** — Dosya yolları ve mantık içeren tam uygulama rehberi
 - **Type** — `feature`, `bugfix`, `refactor`, `docs`, `test` veya `chore`
-- **Priority** — 0 (en yuksek, temel calisma) ile 3 (en dusuk, ince ayar) arasi
-- **Acceptance Criteria** — Gorevin tamamlandigini kanitlayan test edilebilir kosul
+- **Priority** — 0 (en yüksek, temel çalışma) ile 3 (en düşük, ince ayar) arası
+- **Acceptance Criteria** — Görevin tamamlandığını kanıtlayan test edilebilir koşul
 
-## Bagimlilik Olusturma
+## Bağımlılık Oluşturma
 
-Planlama Modu, gorevler arasinda [bagimlilik iliskileri](/features/dependencies) olusturur. Claude, B gorevinin once A gorevini gerektirdigini belirlediginde, bir bagimlilik kenari olusturur.
+Planlama Modu, görevler arasında [bağımlılık ilişkileri](/features/dependencies) oluşturur. Claude, B görevinin önce A görevini gerektirdiğini belirlediğinde, bir bağımlılık kenarı oluşturur.
 
-Onaylanan planlar, tum gorevleri DAG yapilari bozulmadan olusturur:
-- Bagimliligi olmayan gorevler **Wave 0**'a duser ve hemen calistirilabilir
-- Bagimli gorevler kuyruga alinir ve ust gorevleri tamamlandiginda otomatik baslar
-- Tam bagimlilik grafini [Orkestrasyon Gorunumu](/features/orchestration)'nde gorun
+Onaylanan planlar, tüm görevleri DAG yapıları bozulmadan oluşturur:
+- Bağımlılığı olmayan görevler **Wave 0**'a düşer ve hemen çalıştırılabilir
+- Bağımlı görevler kuyruğa alınır ve üst görevleri tamamlandığında otomatik başlar
+- Tam bağımlılık grafını [Orkestrasyon Görünümü](/features/orchestration)'nde görün
 
-<Tip>Claude'un planlamasini yonlendirmek icin istege bagli alana baglam ekleyin. Ornegin: "Express.js backend, React frontend, Prisma ORM ile PostgreSQL" gibi bir aciklama, Claude'un daha uygun gorevler olusturmasina yardimci olur.</Tip>
+<Tip>Claude'un planlamasını yönlendirmek için isteğe bağlı alana bağlam ekleyin. Örneğin: "Express.js backend, React frontend, Prisma ORM ile PostgreSQL" gibi bir açıklama, Claude'un daha uygun görevler oluşturmasına yardımcı olur.</Tip>
 
 ## API
 
-Planlama Modu, [Planning API](/api/planning) uzerinden de kullanilabilir.
+Planlama Modu, [Planning API](/api/planning) üzerinden de kullanılabilir.

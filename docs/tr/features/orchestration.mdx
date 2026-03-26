@@ -1,48 +1,48 @@
 ---
-title: "Orkestrasyon Gorunumu"
-description: "Coklu ajan paralel yurutme icin DAG grafi, zaman cizelgesi ve canli gozlemlenebilirlik sunan komuta merkezi"
+title: "Orkestrasyon Görünümü"
+description: "Çoklu ajan paralel yürütme için DAG grafı, zaman çizelgesi ve canlı gözlemlenebilirlik sunan komuta merkezi"
 icon: "sitemap"
 ---
 
-Orkestrasyon Gorunumu, paralel olarak calisan birden fazla Claude ajanini yonetmek icin komuta merkezinizdir. Uc goruntuleme modu sunar: bagimlilik grafi, yurutme zaman cizelgesi ve canli gozlemlenebilirlik panosu.
+Orkestrasyon Görünümü, paralel olarak çalışan birden fazla Claude ajanını yönetmek için komuta merkezinizdir. Üç görüntüleme modu sunar: bağımlılık grafı, yürütme zaman çizelgesi ve canlı gözlemlenebilirlik panosu.
 
-## Goruntuleme Modlari
+## Görüntüleme Modları
 
-Orkestrasyon gorunumunun sag ust kosesindeki gecis dugmelerini kullanarak modlar arasinda gecis yapin.
+Orkestrasyon görünümünün sağ üst köşesindeki geçiş düğmelerini kullanarak modlar arasında geçiş yapın.
 
 <Tabs>
   <Tab title="Graph">
-    Gorevleri dugum, bagimliliklari ise yonlu kenar olarak gosteren etkilesimli SVG bagimlilik grafi. Dugumler duruma gore renklendirilir: gri (backlog), kehribar (devam ediyor), yesil (tamamlandi). Calisan gorevler animasyonlu bir ilerleme cubuguyla titresir.
+    Görevleri düğüm, bağımlılıkları ise yönlü kenar olarak gösteren etkileşimli SVG bağımlılık grafı. Düğümler duruma göre renklendirilir: gri (backlog), kehribar (devam ediyor), yeşil (tamamlandı). Çalışan görevler animasyonlu bir ilerleme çubuğuyla titreşir.
 
-    **Kosullu kenarlar** renkle kodlanir:
-    - **Gri duz cizgi** — Always (varsayilan bagimlilik)
-    - **Yesil kesikli cizgi** — On Success (yalnizca ust gorev basarili olursa calisir)
-    - **Kirmizi kesikli cizgi** — On Failure (yalnizca ust gorev basarisiz olursa calisir)
+    **Koşullu kenarlar** renkle kodlanır:
+    - **Gri düz çizgi** — Always (varsayılan bağımlılık)
+    - **Yeşil kesikli çizgi** — On Success (yalnızca üst görev başarılı olursa çalışır)
+    - **Kırmızı kesikli çizgi** — On Failure (yalnızca üst görev başarısız olursa çalışır)
   </Tab>
   <Tab title="Timeline">
-    Her gorevin ne zaman basladigini, ne kadar sure calistigini ve dalga gruplamasini gosteren Gantt tarzi yatay zaman cizelgesi. Ozellikler:
-    - Otomatik olceklenen zaman ekseni (dakika/saat/gun)
-    - "NOW" isaretcisi (kirmizi kesikli cizgi)
-    - Titresim animasyonlu calisan gorev cubuklari
-    - Token/maliyet/model bilgisi iceren fareyle uzerine gelme ipuclari
-    - Kosullu renklendirmeli bagimlilik kenar katmanlari
+    Her görevin ne zaman başladığını, ne kadar süre çalıştığını ve dalga gruplamasını gösteren Gantt tarzı yatay zaman çizelgesi. Özellikler:
+    - Otomatik ölçeklenen zaman ekseni (dakika/saat/gün)
+    - "NOW" işaretçisi (kırmızı kesikli çizgi)
+    - Titreşim animasyonlu çalışan görev çubukları
+    - Token/maliyet/model bilgisi içeren fareyle üzerine gelme ipuçları
+    - Koşullu renklendirmeli bağımlılık kenar katmanları
   </Tab>
   <Tab title="Live">
-    Tum aktif ajanlari, dosya erisim kaliplarini ve canli etkinlik akisini gosteren gercek zamanli gozlemlenebilirlik panosu.
+    Tüm aktif ajanları, dosya erişim kalıplarını ve canlı etkinlik akışını gösteren gerçek zamanlı gözlemlenebilirlik panosu.
 
-    **Ajan Etkinlik Kartlari** — Calisan her ajan sunlari gosterir: gorev basligi, model, gecen sure, arac cagrisi sayisi, token kullanimi, maliyet ve erisilen aktif dosyalar.
+    **Ajan Etkinlik Kartları** — Çalışan her ajan şunları gösterir: görev başlığı, model, geçen süre, araç çağrısı sayısı, token kullanımı, maliyet ve erişilen aktif dosyalar.
 
-    **Dosya Isi Haritasi** — Hangi dosyalara hangi ajanlar tarafindan erisildigi gorsel haritasi. Catismalar (ayni dosyaya birden fazla ajanin erismesi) kirmizi ile vurgulanir.
+    **Dosya Isı Haritası** — Hangi dosyalara hangi ajanlar tarafından erişildiği görsel haritası. Çatışmalar (aynı dosyaya birden fazla ajanın erişmesi) kırmızı ile vurgulanır.
 
-    **Canli Akis** — Tum ajanlar genelinde tum arac cagrilarinin zaman damgali, arac adli ve dosya yollu kronolojik akisi. Duraklatma dugmesi icerir.
+    **Canlı Akış** — Tüm ajanlar genelinde tüm araç çağrılarının zaman damgalı, araç adlı ve dosya yollu kronolojik akışı. Duraklatma düğmesi içerir.
 
-    **Istatistik Cubugu** — Toplam calisan ajan, arac cagrisi, token, maliyet ve catisma sayisi.
+    **İstatistik Çubuğu** — Toplam çalışan ajan, araç çağrısı, token, maliyet ve çatışma sayısı.
   </Tab>
 </Tabs>
 
-## Dalga Yurutme
+## Dalga Yürütme
 
-Gorevler, bagimlilik yapilarina gore **dalgalar** halinde gruplanir:
+Görevler, bağımlılık yapılarına göre **dalgalar** halinde gruplanır:
 
 ```
 Wave 0: [Tasks with no dependencies]     → run in parallel
@@ -50,35 +50,35 @@ Wave 1: [Tasks depending on Wave 0]      → start when Wave 0 completes
 Wave 2: [Tasks depending on Wave 0 + 1]  → start when deps complete
 ```
 
-## Canli Ajan Kartlari
+## Canlı Ajan Kartları
 
-Calisan her Claude ajani, kenar cubugunda (Graph/Timeline modlari) sunlari gosteren bir kart alir:
+Çalışan her Claude ajanı, kenar çubuğunda (Graph/Timeline modları) şunları gösteren bir kart alır:
 
-- Gorev basligi ve anahtari
-- Model (Haiku/Sonnet/Opus) ve gecen sure
-- Canli token kullanimi (giris/cikis dokumu)
-- Gercek zamanli maliyet tahmini
-- Dosya yolunu iceren son arac cagrisi
-- Tur sayisi
-- Token ilerleme cubugu
+- Görev başlığı ve anahtarı
+- Model (Haiku/Sonnet/Opus) ve geçen süre
+- Canlı token kullanımı (giriş/çıkış dökümü)
+- Gerçek zamanlı maliyet tahmini
+- Dosya yolunu içeren son araç çağrısı
+- Tur sayısı
+- Token ilerleme çubuğu
 
-## Dosya Catismasi Algilama
+## Dosya Çatışması Algılama
 
-Birden fazla ajan ayni anda ayni dosyaya eristiginde, Claude Board olasi catismalari tespit eder:
+Birden fazla ajan aynı anda aynı dosyaya eriştiğinde, Claude Board olası çatışmaları tespit eder:
 
-- **Write/Edit catismalari** bir `agent:file_conflict` olayini tetikler
-- Live gorunumu catisma iceren dosyalari kirmizi ile vurgular
-- Ajan kartlari catisma uyarilari gosterir
+- **Write/Edit çatışmaları** bir `agent:file_conflict` olayını tetikler
+- Live görünümü çatışma içeren dosyaları kırmızı ile vurgular
+- Ajan kartları çatışma uyarıları gösterir
 
-<Tip>Maksimum eslesik ajan sayisini 2-3 olarak ayarlayin ve ajanlarin ayni anda cakisan dosyalari duzenlemesini onlemek icin gorev bagimliklarini kullanin.</Tip>
+<Tip>Maksimum eşleşik ajan sayısını 2-3 olarak ayarlayın ve ajanların aynı anda çakışan dosyaları düzenlemesini önlemek için görev bağımlılıklarını kullanın.</Tip>
 
-## Graf Etkilesimi
+## Graf Etkileşimi
 
-- **Fareyle uzerine gelin** — Bagimlilk kenarlarini vurgulamak icin bir dugumun uzerine gelin
-- **Tiklayin** — Gorev ayrintilarina acmak icin bir dugume tiklayin
-- **Shift+surukleme** — Bagimlilik kenari olusturmak icin bir dugumden digerine Shift+surukleme yapin
-- **Surukleme** — Dugumleri yeniden konumlandirmak icin surukleyin (konumlar kaydedilir)
+- **Fareyle üzerine gelin** — Bağımlılık kenarlarını vurgulamak için bir düğümün üzerine gelin
+- **Tıklayın** — Görev ayrıntılarına açmak için bir düğüme tıklayın
+- **Shift+sürükleme** — Bağımlılık kenarı oluşturmak için bir düğümden diğerine Shift+sürükleme yapın
+- **Sürükleme** — Düğümleri yeniden konumlandırmak için sürükleyin (konumlar kaydedilir)
 
 ## Otomatik Yenileme
 
-Gorunum, `task:updated` olaylarinda otomatik olarak yenilenir — gorevler durum degistirdiginde, bagimliliklar degistirildiginde veya yeni gorevler olusturuldugunda aninda guncellenir.
+Görünüm, `task:updated` olaylarında otomatik olarak yenilenir — görevler durum değiştirdiğinde, bağımlılıklar değiştirildiğinde veya yeni görevler oluşturulduğunda anında güncellenir.

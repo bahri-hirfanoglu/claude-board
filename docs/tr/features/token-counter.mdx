@@ -1,31 +1,31 @@
 ---
-title: "Token Sayaci"
-description: "Gorev olusturmada gercek zamanli token tahmini ve maliyet on izlemesi"
+title: "Token Sayacı"
+description: "Görev oluşturmada gerçek zamanlı token tahmini ve maliyet ön izlemesi"
 icon: "coins"
 ---
 
-Token sayaci, gorev aciklamanizi yazarken tahmini token sayisini ve giris maliyetini gosterir. Bir gorevi calistirmadan once API maliyetlerini tahmin etmenize yardimci olur.
+Token sayacı, görev açıklamanızı yazarken tahmini token sayısını ve giriş maliyetini gösterir. Bir görevi çalıştırmadan önce API maliyetlerini tahmin etmenize yardımcı olur.
 
-## Nasil Calisir
+## Nasıl Çalışır
 
-Gorev olusturma penceresinde yazarken sayac su hesaplamalari yapar:
+Görev oluşturma penceresinde yazarken sayaç şu hesaplamaları yapar:
 
-- **Token tahmini** — Karakter sayisina dayali yaklasik token sayisi (~4 karakter/token)
-- **Giris maliyeti** — Secilen modelin fiyatlandirmasina gore tahmini maliyet
-- **Karakter sayisi** — Prompt'unuzun ham karakter uzunlugu
+- **Token tahmini** — Karakter sayısına dayalı yaklaşık token sayısı (~4 karakter/token)
+- **Giriş maliyeti** — Seçilen modelin fiyatlandırmasına göre tahmini maliyet
+- **Karakter sayısı** — Prompt'unuzun ham karakter uzunluğu
 
-Sayac, icerik 10 tokeni astiktan sonra aciklama alaninin altinda gorunur.
+Sayaç, içerik 10 tokeni aştıktan sonra açıklama alanının altında görünür.
 
-## Model Fiyatlandirmasi
+## Model Fiyatlandırması
 
-Maliyet tahminleri, gorev seceneklerinde secilen modele dayanir:
+Maliyet tahminleri, görev seçeneklerinde seçilen modele dayanır:
 
-| Model | Giris Maliyeti (1M token basina) |
+| Model | Giriş Maliyeti (1M token başına) |
 |-------|----------------------------------|
 | **Haiku** | $0.25 |
 | **Sonnet** | $3.00 |
 | **Opus** | $15.00 |
 
-<Info>Bunlar yalnizca giris token tahminleridir. Gercek gorev maliyeti, gorev karmasikligina gore degisen cikis tokenleri, onbellek tokenleri ve arac kullanimini icerir.</Info>
+<Info>Bunlar yalnızca giriş token tahminleridir. Gerçek görev maliyeti, görev karmaşıklığına göre değişen çıkış tokenleri, önbellek tokenleri ve araç kullanımını içerir.</Info>
 
-<Tip>Asiri uzun prompt'lari tespit etmek icin token sayacini kullanin. Kisa ve odakli bir prompt, genellikle uzun olandan daha iyi sonuclar uretir.</Tip>
+<Tip>Aşırı uzun prompt'ları tespit etmek için token sayacını kullanın. Kısa ve odaklı bir prompt, genellikle uzun olandan daha iyi sonuçlar üretir.</Tip>

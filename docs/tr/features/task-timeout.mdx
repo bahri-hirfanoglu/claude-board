@@ -1,52 +1,52 @@
 ---
-title: "Gorev Zaman Asimi"
-description: "Yapilandirmali sure sonrasinda otomatik gorev sonlandirma"
+title: "Görev Zaman Aşımı"
+description: "Yapılandırmalı süre sonrasında otomatik görev sonlandırma"
 icon: "hourglass-end"
 ---
 
-Proje bazinda zaman asimi ayarlayarak gorevlerin suresiz calismasini onleyin. Bir gorev siniri astiginda, otomatik olarak sonlandirilir ve [yeniden deneme politikasini](/features/retry-backoff) izler.
+Proje bazında zaman aşımı ayarlayarak görevlerin süresiz çalışmasını önleyin. Bir görev sınırı aştığında, otomatik olarak sonlandırılır ve [yeniden deneme politikasını](/features/retry-backoff) izler.
 
-## Yapilandirma
+## Yapılandırma
 
-**Project Settings > Automation** bolumunde **Task Timeout** degerini dakika cinsinden ayarlayin:
+**Project Settings > Automation** bölümünde **Task Timeout** değerini dakika cinsinden ayarlayın:
 
-| Deger | Davranis |
+| Değer | Davranış |
 |-------|----------|
-| **0** (varsayilan) | Zaman asimi yok — gorevler tamamlanana kadar calisir |
-| **1–1440** | Bu kadar dakika sonra otomatik sonlandirma (maksimum 24 saat) |
+| **0** (varsayılan) | Zaman aşımı yok — görevler tamamlanana kadar çalışır |
+| **1–1440** | Bu kadar dakika sonra otomatik sonlandırma (maksimum 24 saat) |
 
-<Tip>Genis bir zaman asimiyla baslayin (30–60 dakika) ve tipik gorev surenize gore asagi dogru ayarlayin. Ortalama gorev surelerini gormek icin [Analytics](/features/analytics) sayfasini kontrol edin.</Tip>
+<Tip>Geniş bir zaman aşımıyla başlayın (30–60 dakika) ve tipik görev sürenize göre aşağı doğru ayarlayın. Ortalama görev sürelerini görmek için [Analytics](/features/analytics) sayfasını kontrol edin.</Tip>
 
-## Nasil Calisir
+## Nasıl Çalışır
 
 <Steps>
-  <Step title="Gorev baslar" icon="play">
-    Ajan sureci baslatildiginda bir zamanlayici baslar.
+  <Step title="Görev başlar" icon="play">
+    Ajan süreci başlatıldığında bir zamanlayıcı başlar.
   </Step>
-  <Step title="Izleme" icon="eye">
-    Kuyruk yoklama isi, aktif surecleri her 15 saniyede zaman asimina karsi kontrol eder.
+  <Step title="İzleme" icon="eye">
+    Kuyruk yoklama işi, aktif süreçleri her 15 saniyede zaman aşımına karşı kontrol eder.
   </Step>
-  <Step title="Zaman asimi tetiklenir" icon="hourglass-end">
-    Bir gorev siniri astiginda:
-    1. Surec sonlandirilir (macOS/Linux'ta `SIGTERM`, Windows'ta `taskkill`)
-    2. Gorev yeniden deneme politikasini izler — geri cekilmeyle yeniden dene veya Failed durumuna tasi
-    3. Webhook bildirimi tetiklenir (`task_timeout` olayi)
-    4. Zaman asimi gorev gecmisine kaydedilir
+  <Step title="Zaman aşımı tetiklenir" icon="hourglass-end">
+    Bir görev sınırı aştığında:
+    1. Süreç sonlandırılır (macOS/Linux'ta `SIGTERM`, Windows'ta `taskkill`)
+    2. Görev yeniden deneme politikasını izler — geri çekilmeyle yeniden dene veya Failed durumuna taşı
+    3. Webhook bildirimi tetiklenir (`task_timeout` olayı)
+    4. Zaman aşımı görev geçmişine kaydedilir
   </Step>
 </Steps>
 
-## Kullanim Alanlari
+## Kullanım Alanları
 
 <Columns cols={3}>
-  <Card title="Hiz Siniri Donguleri" icon="rotate">
-    Aksi takdirde sonsuza kadar calisacak hiz siniri bekleme dongulerine takilan gorevleri sonlandirin.
+  <Card title="Hız Sınırı Döngüleri" icon="rotate">
+    Aksi takdirde sonsuza kadar çalışacak hız sınırı bekleme döngülerine takılan görevleri sonlandırın.
   </Card>
-  <Card title="Sonsuz Donguler" icon="infinity">
-    Claude'un bir akil yurutme veya duzenleme dongusune girdigi gorevleri sonlandirin.
+  <Card title="Sonsuz Döngüler" icon="infinity">
+    Claude'un bir akıl yürütme veya düzenleme döngüsüne girdiği görevleri sonlandırın.
   </Card>
-  <Card title="Kaynak Yonetimi" icon="gauge">
-    Tek bir gorevin ajan slotunu tekeline almasini onleyerek kuyrugun saglikli kalmasini saglayin.
+  <Card title="Kaynak Yönetimi" icon="gauge">
+    Tek bir görevin ajan slotunu tekeline almasını önleyerek kuyruğun sağlıklı kalmasını sağlayın.
   </Card>
 </Columns>
 
-<Warning>Zaman asimina ugrayan gorev bir basarisizlik olarak sayilir ve bir yeniden deneme hakki tuketir. Tum yeniden denemeler tukenirse, gorev [Failed durumuna](/features/failed-status) gecer.</Warning>
+<Warning>Zaman aşımına uğrayan görev bir başarısızlık olarak sayılır ve bir yeniden deneme hakkı tüketir. Tüm yeniden denemeler tükenirse, görev [Failed durumuna](/features/failed-status) geçer.</Warning>

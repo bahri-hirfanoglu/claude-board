@@ -1,18 +1,18 @@
 ---
-title: "Yeniden Deneme ve Geri Cekilme"
-description: "Basarisiz gorevler icin ustel geri cekilme yeniden deneme stratejisi"
+title: "Yeniden Deneme ve Geri Çekilme"
+description: "Başarısız görevler için üstel geri çekilme yeniden deneme stratejisi"
 icon: "rotate"
 ---
 
-Bir gorev basarisiz oldugunda, Claude Board hiz sinirlarini zorlamaktan kacinmak ve gecici sorunlarin cozulmesi icin zaman tanimak amaciyla artan gecikmelerle otomatik olarak yeniden dener.
+Bir görev başarısız olduğunda, Claude Board hız sınırlarını zorlamaktan kaçınmak ve geçici sorunların çözülmesi için zaman tanımak amacıyla artan gecikmelerle otomatik olarak yeniden dener.
 
-## Nasil Calisir
+## Nasıl Çalışır
 
-Basarisiz gorevler, titresim (jitter) iceren ustel geri cekilme stratejisi izler:
+Başarısız görevler, titreşim (jitter) içeren üstel geri çekilme stratejisi izler:
 
 <Tabs>
   <Tab title="Delay Schedule">
-    | Yeniden Deneme | Temel Gecikme | Titresimli (±20%) |
+    | Yeniden Deneme | Temel Gecikme | Titreşimli (±20%) |
     |-------|-----------|---------------------|
     | 1. | 30s | 24–36s |
     | 2. | 60s | 48–72s |
@@ -25,49 +25,49 @@ Basarisiz gorevler, titresim (jitter) iceren ustel geri cekilme stratejisi izler
     delay = min(30s × 2^retry_count, 600s) + random_jitter(±20%)
     ```
 
-    Titresim, birden fazla basarisiz gorevin tam olarak ayni anda yeniden denenmesini onler (thundering herd problemi).
+    Titreşim, birden fazla başarısız görevin tam olarak aynı anda yeniden denenmesini önler (thundering herd problemi).
   </Tab>
 </Tabs>
 
-## Yeniden Deneme Akisi
+## Yeniden Deneme Akışı
 
 <Steps>
-  <Step title="Gorev basarisiz olur" icon="xmark">
-    Claude sureci sifir olmayan bir cikis kodu ile sonlanir (cokme, hiz siniri, zaman asimi vb.)
+  <Step title="Görev başarısız olur" icon="xmark">
+    Claude süreci sıfır olmayan bir çıkış kodu ile sonlanır (çökme, hız sınırı, zaman aşımı vb.)
   </Step>
-  <Step title="Yeniden deneme kontrolu" icon="rotate">
-    Claude Board, `retry_count < max_retries` kosulunu kontrol eder. Eger evet ise, gorev `retry_after` zaman damgasiyla **Backlog** durumuna geri tasinir.
+  <Step title="Yeniden deneme kontrolü" icon="rotate">
+    Claude Board, `retry_count < max_retries` koşulunu kontrol eder. Eğer evet ise, görev `retry_after` zaman damgasıyla **Backlog** durumuna geri taşınır.
   </Step>
-  <Step title="Geri cekilme gecikmesi" icon="clock">
-    Kuyruk yoklayicisi, `retry_after` zaman damgasi dolana kadar gorevi atlar.
+  <Step title="Geri çekilme gecikmesi" icon="clock">
+    Kuyruk yoklayıcısı, `retry_after` zaman damgası dolana kadar görevi atlar.
   </Step>
-  <Step title="Otomatik yeniden baslatma" icon="play">
-    Gecikme sona erdiginde, kuyruk gorevi alir ve yeni bir ajan baslatir.
+  <Step title="Otomatik yeniden başlatma" icon="play">
+    Gecikme sona erdiğinde, kuyruk görevi alır ve yeni bir ajan başlatır.
   </Step>
 </Steps>
 
-Tum yeniden denemeler tukenirse, gorev kalici olarak [**Failed** durumuna](/features/failed-status) gecer.
+Tüm yeniden denemeler tükenirse, görev kalıcı olarak [**Failed** durumuna](/features/failed-status) geçer.
 
-## Yapilandirma
+## Yapılandırma
 
-**Project Settings > Automation** bolumunde proje bazinda maksimum yeniden deneme sayisini ayarlayin:
+**Project Settings > Automation** bölümünde proje bazında maksimum yeniden deneme sayısını ayarlayın:
 
-| Ayar | Varsayilan | Aralik | Aciklama |
+| Ayar | Varsayılan | Aralık | Açıklama |
 |---------|---------|-------|-------------|
-| Max Retries | 2 | 0–10 | Kalici basarisizliktan onceki yeniden deneme sayisi |
+| Max Retries | 2 | 0–10 | Kalıcı başarısızlıktan önceki yeniden deneme sayısı |
 
-<Tip>Otomatik yeniden denemeyi devre disi birakmak icin max retries degerini **0** olarak ayarlayin. Basarisiz gorevler dogrudan Failed durumuna gecer.</Tip>
+<Tip>Otomatik yeniden denemeyi devre dışı bırakmak için max retries değerini **0** olarak ayarlayın. Başarısız görevler doğrudan Failed durumuna geçer.</Tip>
 
-## Manuel Sifirlama
+## Manuel Sıfırlama
 
-Basarisiz bir gorevi **Backlog** veya **In Progress** durumuna geri tasimak, yeniden deneme sayacini 0'a sifirlar ve goreve temiz bir baslangic verir.
+Başarısız bir görevi **Backlog** veya **In Progress** durumuna geri taşımak, yeniden deneme sayacını 0'a sıfırlar ve göreve temiz bir başlangıç verir.
 
 ## Yeniden Deneme Ne Zaman Tetiklenir
 
-Yeniden denemeler, bir gorev su nedenlerle basarisiz oldugunda devreye girer:
-- **Hiz sinirlamasi** — Claude API 429 hatasi dondurur
-- **Surec cokmesi** — beklenmeyen cikis kodu
-- **Zaman asimi** — gorev [yapilandirilmis zaman asimini](/features/task-timeout) asar
-- **Otomatik test reddi** — testler basarisiz olur ve otomatik revizyon etkindir
+Yeniden denemeler, bir görev şu nedenlerle başarısız olduğunda devreye girer:
+- **Hız sınırlaması** — Claude API 429 hatası döndürür
+- **Süreç çökmesi** — beklenmeyen çıkış kodu
+- **Zaman aşımı** — görev [yapılandırılmış zaman aşımını](/features/task-timeout) aşar
+- **Otomatik test reddi** — testler başarısız olur ve otomatik revizyon etkindir
 
-<Info>Basariyla tamamlanan ancak otomatik test sirasinda basarisiz olan gorevler, yeniden deneme dongusune girmeden once ayri bir [otomatik revizyon](/features/auto-test) akisini izler.</Info>
+<Info>Başarıyla tamamlanan ancak otomatik test sırasında başarısız olan görevler, yeniden deneme döngüsüne girmeden önce ayrı bir [otomatik revizyon](/features/auto-test) akışını izler.</Info>

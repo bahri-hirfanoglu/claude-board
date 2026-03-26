@@ -1,43 +1,43 @@
 ---
-title: "Hizli Baslangic"
-description: "Ilk projenizi olusturun ve 5 dakikada bir gorev calistirin"
+title: "Hızlı Başlangıç"
+description: "İlk projenizi oluşturun ve 5 dakikada bir görev çalıştırın"
 icon: "rocket"
 ---
 
-Bu rehber ilk projenizi olusturma, bir gorev calistirma ve sonucu inceleme adimlarinda size yol gosterir. 5 dakikadan kisa surede bir yapay zeka ajaninin kod yazmasini saglayacaksiniz.
+Bu rehber ilk projenizi oluşturma, bir görev çalıştırma ve sonucu inceleme adımlarında size yol gösterir. 5 dakikadan kısa sürede bir yapay zeka ajanının kod yazmasını sağlayacaksınız.
 
-## 1. Proje olusturun
+## 1. Proje oluşturun
 
 <Steps>
-  <Step title="Claude Board'u acin">
-    Masaustu uygulamasini baslatin. Ilk kez calistiriyorsaniz kurulum sihirbazi sizi ilk yapilandirma boyunca yonlendirecektir.
+  <Step title="Claude Board'u açın">
+    Masaüstü uygulamasını başlatın. İlk kez çalıştırıyorsanız kurulum sihirbazı sizi ilk yapılandırma boyunca yönlendirecektir.
   </Step>
-  <Step title="'Yeni Proje' butonuna tiklayin">
-    Proje adi, slug ve **calisma dizini** girin — Claude'un kod okuyup yazacagi yerel dosya yolu.
+  <Step title="'Yeni Proje' butonuna tıklayın">
+    Proje adı, slug ve **çalışma dizini** girin — Claude'un kod okuyup yazacağı yerel dosya yolu.
 
-    <Tip>Calisma dizinini mevcut bir depoya yonlendirin, en iyi sonuclari boyle alirsiniz. Claude mevcut kod yapinizi okuyabildiginde cok daha verimli calisir.</Tip>
+    <Tip>Çalışma dizinini mevcut bir depoya yönlendirin, en iyi sonuçları böyle alırsınız. Claude mevcut kod yapınızı okuyabildiğinde çok daha verimli çalışır.</Tip>
   </Step>
-  <Step title="Izinleri yapilandirin">
-    Bir izin modu secin:
+  <Step title="İzinleri yapılandırın">
+    Bir izin modu seçin:
 
-    | Mod | Kime uygun | Aciklama |
+    | Mod | Kime uygun | Açıklama |
     |-----|------------|----------|
-    | **Auto Accept** | Cogu kullanici | Claude tum araclari sormadan kullanir |
-    | **Allowed Tools** | Guvenlik odakli | Yalnizca belirtilen arac kategorileri |
-    | **Default** | Ozel yapilandirmalar | Claude'un yerlesik ayarlarini kullanir |
+    | **Auto Accept** | Çoğu kullanıcı | Claude tüm araçları sormadan kullanır |
+    | **Allowed Tools** | Güvenlik odaklı | Yalnızca belirtilen araç kategorileri |
+    | **Default** | Özel yapılandırmalar | Claude'un yerleşik ayarlarını kullanır |
 
-    <Warning>Claude `--no-input` parametresiyle calisir, bu nedenle etkilesimli olarak izin isteyemez. En iyi sonuclar icin "Auto Accept" modunu kullanin.</Warning>
+    <Warning>Claude `--no-input` parametresiyle çalışır, bu nedenle etkileşimli olarak izin isteyemez. En iyi sonuçlar için "Auto Accept" modunu kullanın.</Warning>
   </Step>
 </Steps>
 
-## 2. Gorev olusturun ve calistirin
+## 2. Görev oluşturun ve çalıştırın
 
 <Steps>
-  <Step title="'Yeni Gorev' butonuna tiklayin" icon="plus">
-    Acik ve ayrintili bir tanim yazin. Ne kadar cok detay verirseniz Claude o kadar iyi performans gosterir.
+  <Step title="'Yeni Görev' butonuna tıklayın" icon="plus">
+    Açık ve ayrıntılı bir tanım yazın. Ne kadar çok detay verirseniz Claude o kadar iyi performans gösterir.
 
-    <Accordion title="Ornek: Iyi ve belirsiz gorev tanimlari">
-      **Iyi:**
+    <Accordion title="Örnek: İyi ve belirsiz görev tanımları">
+      **İyi:**
       ```
       Title: Add JWT authentication middleware
       Description: Implement login/register endpoints with JWT tokens.
@@ -45,51 +45,51 @@ Bu rehber ilk projenizi olusturma, bir gorev calistirma ve sonucu inceleme adiml
       Follow the existing Express.js patterns in src/routes/.
       ```
 
-      **Cok belirsiz:**
+      **Çok belirsiz:**
       ```
       Title: Add auth
       Description: Make authentication work
       ```
     </Accordion>
   </Step>
-  <Step title="Gorevi yapilandirin" icon="sliders">
-    | Ayar | Secenekler | Ne zaman kullanilmali |
+  <Step title="Görevi yapılandırın" icon="sliders">
+    | Ayar | Seçenekler | Ne zaman kullanılmalı |
     |------|-----------|----------------------|
-    | **Model** | `opus` / `sonnet` / `haiku` | Karmasik isler icin Opus, dengeli isler icin Sonnet, basit isler icin Haiku |
-    | **Tur** | feature / bugfix / refactor / docs / test / chore | Gorevi kategorize eder ve [prompt sablonlari](/features/prompt-templates) ile eslestirir |
-    | **Oncelik** | low / medium / high / urgent | [Kuyruk siralamasini](/features/queue) etkiler |
+    | **Model** | `opus` / `sonnet` / `haiku` | Karmaşık işler için Opus, dengeli işler için Sonnet, basit işler için Haiku |
+    | **Tür** | feature / bugfix / refactor / docs / test / chore | Görevi kategorize eder ve [prompt şablonları](/features/prompt-templates) ile eşleştirir |
+    | **Öncelik** | low / medium / high / urgent | [Kuyrük sıralamasını](/features/queue) etkiler |
   </Step>
-  <Step title="Gorevi baslatin" icon="play">
-    Gorevi **Devam Ediyor** durumuna surukleyin veya sag tiklayip "Devam Ediyor" secenegini secin. Claude aninda baslar, bir dal olusturur ve kodlamaya gecer.
+  <Step title="Görevi başlatın" icon="play">
+    Görevi **Devam Ediyor** durumuna sürükleyin veya sağ tıklayıp "Devam Ediyor" seçeneğini seçin. Claude anında başlar, bir dal oluşturur ve kodlamaya geçer.
   </Step>
-  <Step title="Canli terminali izleyin" icon="terminal">
-    Gorev kartindaki terminal simgesine tiklayarak Claude'un gercek zamanli calismasini izleyin. Su bilgileri goreceksiniz:
-    - **Read** — Claude'un inceledigi dosyalar
-    - **Write/Edit** — yapilan kod degisiklikleri
-    - **Bash** — calistirilan komutlar (testler, git vb.)
+  <Step title="Canlı terminali izleyin" icon="terminal">
+    Görev kartındaki terminal simgesine tıklayarak Claude'un gerçek zamanlı çalışmasını izleyin. Şu bilgileri göreceksiniz:
+    - **Read** — Claude'un incelediği dosyalar
+    - **Write/Edit** — yapılan kod değişiklikleri
+    - **Bash** — çalıştırılan komutlar (testler, git vb.)
   </Step>
   <Step title="Sonucu inceleyin" icon="check">
-    Claude tamamladiginda gorev **Test** asamasina gecer. Inceleme butonuna tiklayarak:
-    - **Onayla** — Tamamlandi durumuna tasir, istege bagli olarak PR olusturur
-    - **Degisiklik Iste** — geri bildirim verin, Claude otomatik olarak uzerinde calisir
+    Claude tamamladığında görev **Test** aşamasına geçer. İnceleme butonuna tıklayarak:
+    - **Onayla** — Tamamlandı durumuna taşır, isteğe bağlı olarak PR oluşturur
+    - **Değişiklik İste** — geri bildirim verin, Claude otomatik olarak üzerinde çalışır
   </Step>
 </Steps>
 
-## 3. Bir adim oteye
+## 3. Bir adım öteye
 
-Ilk gorevinizi calistirdiginiza gore, Claude Board'dan daha fazla verim almak icin su ozellikleri kesfedin:
+İlk görevinizi çalıştırdığınıza göre, Claude Board'dan daha fazla verim almak için şu özellikleri keşfedin:
 
 <Columns cols={2}>
   <Card title="Orkestrasyon" icon="sitemap" href="/features/orchestration">
-    Bagimlilik grafikleri kurun ve gorevleri paralel dalgalar halinde calistirin.
+    Bağımlılık grafikleri kurun ve görevleri paralel dalgalar halinde çalıştırın.
   </Card>
-  <Card title="Otomatik Kuyruk" icon="bolt" href="/features/queue">
-    Eszamanlilik sinirlari ile mudahalesiz yurutmeyi yapilandirin.
+  <Card title="Otomatik Kuyrük" icon="bolt" href="/features/queue">
+    Eşzamanlılık sınırları ile müdahalesiz yürütmeyi yapılandırın.
   </Card>
-  <Card title="Baglam Parcaciklari" icon="file-lines" href="/features/snippets">
-    Her prompt'a proje kurallari ve kodlama standartlari ekleyin.
+  <Card title="Bağlam Parçacıkları" icon="file-lines" href="/features/snippets">
+    Her prompt'a proje kuralları ve kodlama standartları ekleyin.
   </Card>
   <Card title="Git Otomasyonu" icon="code-branch" href="/features/git-automation">
-    Her gorev icin otomatik dal ve PR olusturma.
+    Her görev için otomatik dal ve PR oluşturma.
   </Card>
 </Columns>
