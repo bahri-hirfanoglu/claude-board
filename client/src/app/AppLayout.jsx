@@ -100,6 +100,7 @@ export default function AppLayout({
               <Board
                 tasks={filteredTasks}
                 projectId={currentProject.id}
+                project={currentProject}
                 onStatusChange={taskActions.onStatusChange}
                 onViewLogs={taskActions.onViewLogs}
                 onEditTask={(task) => openModal('task', task)}

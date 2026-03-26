@@ -14,10 +14,15 @@ import {
   FlaskConical,
   Timer,
   RotateCcw,
+  Github,
+  CheckCircle2,
+  XCircle,
+  Loader2,
 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
+import { api } from '../../lib/api';
 
 const PERMISSION_MODES = [
   {
@@ -51,6 +56,7 @@ const TABS = [
   { id: 'general', label: 'General', icon: Settings },
   { id: 'permissions', label: 'Permissions', icon: Shield },
   { id: 'automation', label: 'Automation', icon: Workflow },
+  { id: 'github', label: 'GitHub', icon: Github },
 ];
 
 export default function ProjectModal({ project, onSubmit, onClose }) {
@@ -72,6 +78,11 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
   const [testPrompt, setTestPrompt] = useState(project?.test_prompt || '');
   const [taskTimeoutMinutes, setTaskTimeoutMinutes] = useState(project?.task_timeout_minutes || 0);
   const [maxRetries, setMaxRetries] = useState(project?.max_retries || 0);
+  const [githubRepo, setGithubRepo] = useState(project?.github_repo || '');
+  const [githubSyncEnabled, setGithubSyncEnabled] = useState(!!project?.github_sync_enabled);
+  const [githubValidating, setGithubValidating] = useState(false);
+  const [githubValid, setGithubValid] = useState(null);
+  const [githubDetecting, setGithubDetecting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [autoSlug, setAutoSlug] = useState(!project);
   const nameRef = useRef(null);
@@ -79,6 +90,19 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
   useEffect(() => {
     if (tab === 'general') nameRef.current?.focus();
   }, [tab]);
+
+  // Auto-detect GitHub repo when switching to GitHub tab with empty repo
+  useEffect(() => {
+    if (tab !== 'github' || githubRepo || !workingDir) return;
+    setGithubDetecting(true);
+    api
+      .githubDetectRepo(workingDir)
+      .then((repo) => {
+        if (repo) setGithubRepo(typeof repo === 'string' ? repo : repo.toString());
+      })
+      .catch(() => {})
+      .finally(() => setGithubDetecting(false));
+  }, [tab, workingDir]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const generateSlug = (text) =>
     text
@@ -118,8 +142,10 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         prBaseBranch: prBaseBranch.trim() || 'main',
         autoTest: !!autoTest,
         testPrompt: testPrompt.trim(),
-        task_timeout_minutes: taskTimeoutMinutes || 0,
-        max_retries: maxRetries || 0,
+        taskTimeoutMinutes: taskTimeoutMinutes || 0,
+        maxRetries: maxRetries || 0,
+        githubRepo: githubRepo,
+        githubSyncEnabled: githubSyncEnabled ? 1 : 0,
       });
     } catch (err) {
       console.error(err);
@@ -477,6 +503,127 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                     How many times to auto-retry failed tasks before marking as permanently failed.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* GitHub Tab */}
+            {tab === 'github' && (
+              <div className="space-y-3">
+                {/* Enable GitHub Sync */}
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5">
+                    <Github size={12} />
+                    GitHub Issues Sync
+                  </label>
+                  <ToggleRow
+                    enabled={githubSyncEnabled}
+                    onToggle={() => setGithubSyncEnabled(!githubSyncEnabled)}
+                    label={githubSyncEnabled ? 'Sync enabled' : 'Sync disabled'}
+                    desc="Automatically sync GitHub issues as tasks"
+                    activeColor="violet"
+                  />
+                </div>
+
+                {githubSyncEnabled && (
+                  <>
+                    {/* Repository */}
+                    <div>
+                      <label className="block text-[10px] text-surface-500 mb-1">Repository</label>
+                      <div className="flex gap-2">
+                        <input
+                          value={githubRepo}
+                          onChange={(e) => {
+                            setGithubRepo(e.target.value);
+                            setGithubValid(null);
+                          }}
+                          placeholder="owner/repo"
+                          className="flex-1 px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 font-mono"
+                        />
+                        <button
+                          type="button"
+                          disabled={githubDetecting || !workingDir.trim()}
+                          onClick={async () => {
+                            setGithubDetecting(true);
+                            try {
+                              const repo = await api.githubDetectRepo(workingDir);
+                              if (repo) {
+                                setGithubRepo(typeof repo === 'string' ? repo : repo.toString());
+                                setGithubValid(null);
+                              }
+                            } catch {}
+                            setGithubDetecting(false);
+                          }}
+                          className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium rounded-lg bg-surface-800 border border-surface-700 text-surface-400 hover:text-surface-100 hover:bg-surface-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                          title="Detect from git remote"
+                        >
+                          {githubDetecting ? <Loader2 size={10} className="animate-spin" /> : <GitBranch size={10} />}
+                          Detect
+                        </button>
+                      </div>
+                      <p className="text-[9px] text-surface-600 mt-1">Auto-detect from git remote or enter manually</p>
+                    </div>
+
+                    {/* gh CLI Status */}
+                    {githubValid !== null && (
+                      <div
+                        className={`flex items-center gap-2 p-2.5 rounded-lg border ${
+                          githubValid === 'ready'
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+                            : githubValid === 'not_installed'
+                              ? 'bg-red-500/10 border-red-500/20 text-red-300'
+                              : githubValid === 'not_authenticated'
+                                ? 'bg-amber-500/10 border-amber-500/20 text-amber-300'
+                                : 'bg-red-500/10 border-red-500/20 text-red-300'
+                        }`}
+                      >
+                        {githubValid === 'ready' ? (
+                          <CheckCircle2 size={12} />
+                        ) : githubValid === 'not_authenticated' ? (
+                          <Info size={12} />
+                        ) : (
+                          <XCircle size={12} />
+                        )}
+                        <span className="text-[10px] font-medium">
+                          {githubValid === 'ready' && 'Connected — using gh CLI authentication'}
+                          {githubValid === 'not_installed' &&
+                            'GitHub CLI (gh) not installed. Install from cli.github.com'}
+                          {githubValid === 'not_authenticated' && 'Not logged in. Run: gh auth login'}
+                          {githubValid === 'no_access' && 'Cannot access this repository'}
+                          {githubValid === 'authenticated' && 'Authenticated — enter a repository'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={githubValidating || !githubRepo.trim()}
+                        onClick={async () => {
+                          setGithubValidating(true);
+                          setGithubValid(null);
+                          try {
+                            const result = await api.githubCheckStatus(githubRepo);
+                            setGithubValid(result?.status || 'error');
+                          } catch {
+                            setGithubValid('error');
+                          } finally {
+                            setGithubValidating(false);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-800 border border-surface-700 text-surface-300 hover:text-surface-100 hover:bg-surface-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {githubValidating ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                        Check Connection
+                      </button>
+                    </div>
+
+                    <p className="text-[9px] text-surface-600">
+                      Uses <code className="text-surface-500">gh</code> CLI authentication. After saving, use the{' '}
+                      <strong>Issues</strong> button in the board toolbar to browse and import issues as tasks.
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>

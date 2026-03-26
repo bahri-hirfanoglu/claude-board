@@ -247,6 +247,11 @@ pub fn run_migrations(conn: &Connection) {
         ("projects", "task_timeout_minutes", "ALTER TABLE projects ADD COLUMN task_timeout_minutes INTEGER DEFAULT 0"),
         // Retry backoff: timestamp after which task can be retried
         ("tasks", "retry_after", "ALTER TABLE tasks ADD COLUMN retry_after DATETIME"),
+        // GitHub Issues sync
+        ("projects", "github_repo", "ALTER TABLE projects ADD COLUMN github_repo TEXT DEFAULT ''"),
+        ("projects", "github_sync_enabled", "ALTER TABLE projects ADD COLUMN github_sync_enabled INTEGER DEFAULT 0"),
+        ("tasks", "github_issue_number", "ALTER TABLE tasks ADD COLUMN github_issue_number INTEGER"),
+        ("tasks", "github_issue_url", "ALTER TABLE tasks ADD COLUMN github_issue_url TEXT"),
     ];
 
     for (table, col, sql) in migrations {

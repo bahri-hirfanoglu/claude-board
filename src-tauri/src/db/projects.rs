@@ -24,6 +24,8 @@ pub struct Project {
     pub auto_test: Option<i64>,
     pub test_prompt: Option<String>,
     pub task_timeout_minutes: Option<i64>,
+    pub github_repo: Option<String>,
+    pub github_sync_enabled: Option<i64>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
@@ -63,6 +65,8 @@ fn row_to_project(row: &rusqlite::Row) -> rusqlite::Result<Project> {
         auto_test: row.get("auto_test")?,
         test_prompt: row.get("test_prompt")?,
         task_timeout_minutes: row.get("task_timeout_minutes").ok().flatten(),
+        github_repo: row.get("github_repo").ok().flatten(),
+        github_sync_enabled: row.get("github_sync_enabled").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -184,6 +188,14 @@ pub fn update_timeout(db: &DbPool, id: i64, timeout_minutes: i64) {
         "UPDATE projects SET task_timeout_minutes=?1,updated_at=datetime('now','localtime') WHERE id=?2",
         params![timeout_minutes, id],
     ) { log::error!("update_timeout: {}", e); }
+}
+
+pub fn update_github_settings(db: &DbPool, id: i64, github_repo: &str, github_sync_enabled: bool) {
+    let conn = db.lock();
+    if let Err(e) = conn.execute(
+        "UPDATE projects SET github_repo=?1,github_sync_enabled=?2,updated_at=datetime('now','localtime') WHERE id=?3",
+        params![github_repo, github_sync_enabled as i64, id],
+    ) { log::error!("update_github_settings: {}", e); }
 }
 
 pub fn delete(db: &DbPool, id: i64) {

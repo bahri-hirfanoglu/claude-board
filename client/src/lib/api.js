@@ -183,6 +183,23 @@ export const api = {
   getAppSettings: () => call('get_app_settings', 'GET', '/api/settings'),
   updateAppSettings: (data) => call('update_app_settings', 'PUT', '/api/settings', { data }, data),
 
+  // ─── GitHub Issues sync ───
+  githubDetectRepo: (workingDir) =>
+    call('github_detect_repo', 'POST', '/api/github/detect-repo', { workingDir }, { workingDir }),
+  githubCheckStatus: (repo) => call('github_check_status', 'POST', '/api/github/check-status', { repo }, { repo }),
+  githubFetchIssues: (projectId) =>
+    call('github_fetch_issues', 'POST', `/api/projects/${projectId}/github/issues`, { projectId }, {}),
+  githubImportIssues: (projectId, issueNumbers) =>
+    call(
+      'github_import_issues',
+      'POST',
+      `/api/projects/${projectId}/github/import`,
+      { projectId, issueNumbers },
+      { issueNumbers },
+    ),
+  githubCloseIssue: (projectId, taskId) =>
+    call('github_close_issue', 'POST', `/api/projects/${projectId}/github/close`, { projectId, taskId }, { taskId }),
+
   // ─── Tauri-only: Claude Manager & extended features ───
   ...(IS_TAURI
     ? {

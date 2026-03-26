@@ -152,8 +152,12 @@ export function useTaskHandlers({
       setTasks((prev) => prev.map((x) => (x.id === updated.id ? { ...x, ...updated } : x)));
       closeModal('review');
       addToast(t('toast.taskApproved'), 'success');
+      // Auto-close linked GitHub issue when task is approved
+      if (updated.github_issue_number && currentProject?.github_sync_enabled) {
+        api.githubCloseIssue(currentProject.id, taskId).catch(() => {});
+      }
     },
-    [addToast, t, setTasks, closeModal],
+    [addToast, t, setTasks, closeModal, currentProject],
   );
 
   const onRequestChanges = useCallback(
