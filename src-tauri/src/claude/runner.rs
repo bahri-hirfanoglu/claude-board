@@ -633,10 +633,7 @@ fn handle_process_lifecycle(
     if status == 0 {
         scan_git_info(working_dir, task_id, db);
 
-        // Auto-create PR if enabled
-        if let (Some(task_snap), Some(proj)) = (tasks::get_by_id(db, task_id), projects::get_by_id(db, project_id)) {
-            auto_create_pr(&task_snap, working_dir, &proj, db, app);
-        }
+        // PR creation moved to change_task_status (done transition) — not here
 
         // Generate context summary for Agent Context Handoff
         generate_context_summary(task_id, task_title, db);
