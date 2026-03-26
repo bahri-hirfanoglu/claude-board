@@ -6,6 +6,7 @@ import PipelineView from './PipelineView';
 import OrchestrationView from './OrchestrationView';
 import AnalyticsView from './AnalyticsView';
 import { COLUMNS, MODELS, MODEL_COLORS, MODEL_DOT_COLORS, MODEL_BG_ACTIVE, getTagColor } from '../../lib/constants';
+import { notifyError } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { parseTags } from './TagBadge';
 import { api } from '../../lib/api';
@@ -47,7 +48,7 @@ export default function Board({ tasks, projectId, onStatusChange, onViewLogs, on
         // "to" depends on "from" (from must complete first)
         await api.addDependency(to.id, from.id);
       }
-    } catch {}
+    } catch (e) { notifyError(e.message || 'Failed to create dependency'); }
     setDepDialog(null);
   }, [depDialog]);
 

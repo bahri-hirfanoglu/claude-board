@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 import { socket } from '../lib/socket';
 import { tauriListen, IS_TAURI } from '../lib/tauriEvents';
+import { pendingUpdates } from './useTaskHandlers';
 
 export function useTasks(currentProject, addToast) {
   const [tasks, setTasks] = useState([]);
@@ -26,6 +27,8 @@ export function useTasks(currentProject, addToast) {
       }
     };
     const onUpdate = (task) => {
+      // Skip socket updates for tasks with in-flight API calls to prevent race conditions
+      if (pendingUpdates.has(task.id)) return;
       setTasks(prev => prev.map(t => t.id === task.id ? { ...t, ...task } : t));
     };
     const onUsage = (usage) => {
