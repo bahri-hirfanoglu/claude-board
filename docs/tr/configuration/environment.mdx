@@ -1,14 +1,14 @@
 ---
-title: "Yapilandirma"
-description: "Claude Board'u config.json ve ortam degiskenleri ile yapilandirma"
+title: "Yapılandırma"
+description: "Claude Board'u config.json ve ortam değişkenleri ile yapılandırma"
 icon: "sliders"
 ---
 
-Claude Board yapilandirmasini uygulama veri dizini icindeki bir `config.json` dosyasinda saklar. Ayarlar, ilk baslatmada [kurulum sihirbazi](/desktop/setup) veya uygulama ici ayarlar menusu araciligiyla da degistirilebilir.
+Claude Board yapılandırmasını uygulama veri dizini içindeki bir `config.json` dosyasında saklar. Ayarlar, ilk başlatmada [kurulum sihirbazı](/desktop/setup) veya uygulama içi ayarlar menüsü aracılığıyla da değiştirilebilir.
 
-## Yapilandirma Dosyasi Konumu
+## Yapılandırma Dosyası Konumu
 
-| Platform | Varsayilan Yol |
+| Platform | Varsayılan Yol |
 |----------|---------------|
 | Windows | `%APPDATA%/claude-board/config.json` |
 | macOS | `~/Library/Application Support/claude-board/config.json` |
@@ -16,14 +16,14 @@ Claude Board yapilandirmasini uygulama veri dizini icindeki bir `config.json` do
 
 ## Mevcut Ayarlar
 
-| Ayar | Varsayilan | Aciklama |
+| Ayar | Varsayılan | Açıklama |
 |------|-----------|----------|
-| `port` | `4000` | Claude runner entegrasyonu icin MCP HTTP sunucu portu |
-| `dataDir` | Isletim sistemine ozel | Veritabani ve yuklemeler icin dizin |
+| `port` | `4000` | Claude runner entegrasyonu için MCP HTTP sunucu portu |
+| `dataDir` | İşletim sistemine özel | Veritabanı ve yüklemeler için dizin |
 
 ## MCP Sunucu Portu
 
-Yerlesik MCP HTTP sunucusu, Claude Code runner'larinin Claude Board ile iletisim kurmasini saglar. Portu `config.json` icinde ayarlayin:
+Yerleşik MCP HTTP sunucusu, Claude Code runner'larının Claude Board ile iletişim kurmasını sağlar. Portu `config.json` içinde ayarlayın:
 
 ```json
 {
@@ -31,11 +31,11 @@ Yerlesik MCP HTTP sunucusu, Claude Code runner'larinin Claude Board ile iletisim
 }
 ```
 
-<Note>Port kullanimda ise MCP sunucusu baslatilmaz. Mevcut bir port secin veya cakisan islemi durdurun.</Note>
+<Note>Port kullanımda ise MCP sunucusu başlatılmaz. Mevcut bir port seçin veya çakışan işlemi durdurun.</Note>
 
 ## Veri Dizini
 
-Claude Board'un SQLite veritabanini ve yuklenen dosya eklerini nerede saklayacagini kontrol eder:
+Claude Board'un SQLite veritabanını ve yüklenen dosya eklerini nerede saklayacağını kontrol eder:
 
 ```json
 {
@@ -43,27 +43,27 @@ Claude Board'un SQLite veritabanini ve yuklenen dosya eklerini nerede saklayacag
 }
 ```
 
-Platforma gore varsayilan konumlar:
+Platforma göre varsayılan konumlar:
 
-| Platform | Varsayilan Yol |
+| Platform | Varsayılan Yol |
 |----------|---------------|
 | Windows | `%APPDATA%/claude-board/` |
 | macOS | `~/Library/Application Support/claude-board/` |
 | Linux | `~/.config/claude-board/` |
 
-Dizin su ogeleri icerir:
+Dizin şu öğeleri içerir:
 
-- `claude-board.db` — SQLite veritabani (tum projeler, gorevler, ayarlar)
+- `claude-board.db` — SQLite veritabanı (tüm projeler, görevler, ayarlar)
 - `uploads/` — dosya ekleri
-- `config.json` — uygulama yapilandirmasi
+- `config.json` — uygulama yapılandırması
 
-<Warning>Veri dizinini duzeni olarak yedekleyin. Tum proje verilerinizi, gorev gecmisinizi ve gunluklerinizi icerir.</Warning>
+<Warning>Veri dizinini düzenli olarak yedekleyin. Tüm proje verilerinizi, görev geçmişinizi ve günlüklerinizi içerir.</Warning>
 
-## Ortam Degiskenleri
+## Ortam Değişkenleri
 
-Gelismis kullanim senaryolari icin asagidaki ortam degiskenleri hala gecerlidir ve `config.json` degerlerini gecersiz kilar:
+Gelişmiş kullanım senaryoları için aşağıdaki ortam değişkenleri hala geçerlidir ve `config.json` değerlerini geçersiz kılar:
 
-| Degisken | Aciklama |
+| Değişken | Açıklama |
 |----------|----------|
-| `CLAUDE_BOARD_DATA` | Veri dizini yolunu gecersiz kilar |
-| `PORT` | MCP sunucu portunu gecersiz kilar |
+| `CLAUDE_BOARD_DATA` | Veri dizini yolunu geçersiz kılar |
+| `PORT` | MCP sunucu portunu geçersiz kılar |

@@ -1,66 +1,66 @@
 ---
-title: "Masaustu Kurulumu"
-description: "6 adimli kurulum sihirbazi, sistem dogrulamasi ve ilk proje yapilandirmasi"
+title: "Masaüstü Kurulumu"
+description: "6 adımlı kurulum sihirbazı, sistem doğrulaması ve ilk proje yapılandırması"
 icon: "desktop"
 ---
 
-Claude Board masaustu uygulamasi, Tauri v2 ve Rust arka ucu ile olusturulmus yerel bir uygulamadir. Ilk baslatmada, rehberli bir kurulum sihirbazi sizi sistem yapilandirmasindan gecirir ve ilk projenizi olusturur.
+Claude Board masaüstü uygulaması, Tauri v2 ve Rust arka ucu ile oluşturulmuş yerel bir uygulamadır. İlk başlatmada, rehberli bir kurulum sihirbazı sizi sistem yapılandırmasından geçirir ve ilk projenizi oluşturur.
 
-## Kurulum Sihirbazi
+## Kurulum Sihirbazı
 
-Kurulum sihirbazi, sistem dogrulamasi, dil secimi ve proje yapilandirmasi iceren 6 adimdan olusur:
+Kurulum sihirbazı, sistem doğrulaması, dil seçimi ve proje yapılandırması içeren 6 adımdan oluşur:
 
 <Steps>
-  <Step title="Hos Geldiniz" icon="hand-wave">
-    Rust arka ucu baslatilirken animasyonlu logo ve yukleme gostergesi ile acilis ekrani.
+  <Step title="Hoş Geldiniz" icon="hand-wave">
+    Rust arka ucu başlatılırken animasyonlu logo ve yükleme göstergesi ile açılış ekranı.
   </Step>
-  <Step title="Dil Secimi" icon="globe">
-    Tercih ettiginiz dili secin (English veya Turkish). Bu, tum uygulama icin arayuz dilini belirler.
+  <Step title="Dil Seçimi" icon="globe">
+    Tercih ettiğiniz dili seçin (English veya Turkish). Bu, tüm uygulama için arayüz dilini belirler.
   </Step>
-  <Step title="Sistem Kontrolu" icon="check-circle">
-    Ortaminizin otomatik dogrulamasi:
-    - **Claude CLI** — `claude`'un kurulu oldugunu ve PATH'te erisilebilir oldugunu dogrular
-    - **Node.js** — Node.js 18+ uyumlulugunu kontrol eder
-    - **Git** — Dal otomasyonu icin git'in mevcut oldugunu onaylar
-    - **Port kullanilabilirligi** — MCP sunucu portunun (varsayilan 4000) gecerliliginini kontrol eder
+  <Step title="Sistem Kontrolü" icon="check-circle">
+    Ortamınızın otomatik doğrulaması:
+    - **Claude CLI** — `claude`'un kurulu olduğunu ve PATH'te erişilebilir olduğunu doğrular
+    - **Node.js** — Node.js 18+ uyumluluğunu kontrol eder
+    - **Git** — Dal otomasyonu için git'in mevcut olduğunu onaylar
+    - **Port kullanılabilirliği** — MCP sunucu portunun (varsayılan 4000) geçerliliğini kontrol eder
   </Step>
   <Step title="Veri Dizini" icon="folder">
-    Claude Board'un SQLite veritabanini, yuklemeleri ve yapilandirmayi nerede saklayacagini secin. Varsayilan olarak isletim sistemine ozel uygulama veri yolunu kullanir.
+    Claude Board'un SQLite veritabanını, yüklemeleri ve yapılandırmayı nerede saklayacağını seçin. Varsayılan olarak işletim sistemine özel uygulama veri yolunu kullanır.
   </Step>
   <Step title="MCP Sunucu Portu" icon="plug">
-    Claude runner entegrasyonu tarafindan kullanilan yerlesik MCP HTTP sunucusunun portunu yapilandirin. Sihirbaz, devam etmeden once portun kullanilabilir oldugunu dogrular.
+    Claude runner entegrasyonu tarafından kullanılan yerleşik MCP HTTP sunucusunun portunu yapılandırın. Sihirbaz, devam etmeden önce portun kullanılabilir olduğunu doğrular.
   </Step>
-  <Step title="Ilk Proje" icon="rocket">
-    Bir ad ve calisma dizini ile ilk projenizi olusturun. Bu proje, kurulum tamamlandiginda board'unuzda hemen gorunur.
+  <Step title="İlk Proje" icon="rocket">
+    Bir ad ve çalışma dizini ile ilk projenizi oluşturun. Bu proje, kurulum tamamlandığında board'unuzda hemen görünür.
   </Step>
 </Steps>
 
-## Acilis Ekrani
+## Açılış Ekranı
 
-Rust arka ucu baslatilirken, Claude Board logosunu ortam animasyonlari ve yukleme gostergesi ile birlikte gosteren bir acilis ekrani goruntulenir. Arka uc hazir oldugunda ana pencere acilir.
+Rust arka ucu başlatılırken, Claude Board logosunu ortam animasyonları ve yükleme göstergesi ile birlikte gösteren bir açılış ekranı görüntülenir. Arka uç hazır olduğunda ana pencere açılır.
 
-## Tekil Ornek Kilidi
+## Tekil Örnek Kilidi
 
-Ayni anda yalnizca bir Claude Board ornegi calisabilir. Ikinci bir ornegi acmaya calistiginizda:
+Aynı anda yalnızca bir Claude Board örneği çalışabilir. İkinci bir örneği açmaya çalıştığınızda:
 
-- Mevcut pencere on plana getirilir
-- Ikinci ornek sessizce kapanir
+- Mevcut pencere ön plana getirilir
+- İkinci örnek sessizce kapanır
 
-<Info>Bu, ayni veri dizinine erisen birden fazla islemden kaynaklanabilecek veritabani kilitleme sorunlarini onler.</Info>
+<Info>Bu, aynı veri dizinine erişen birden fazla işlemden kaynaklanabilecek veritabanı kilitleme sorunlarını önler.</Info>
 
 ## Sistem Tepsisi
 
-Masaustu uygulamasi sistem tepsisine kucultulur. Secenekler icin tepsi simgesine sag tiklayin:
+Masaüstü uygulaması sistem tepsisine küçültülür. Seçenekler için tepsi simgesine sağ tıklayın:
 
-- **Show** — pencereyi on plana getir
-- **Quit** — arka ucu durdur ve cik
+- **Show** — pencereyi ön plana getir
+- **Quit** — arka ucu durdur ve çık
 
-## Kurulumdan Sonra Ayarlari Degistirme
+## Kurulumdan Sonra Ayarları Değiştirme
 
-Ilk kurulumdan sonra veri dizinini veya MCP sunucu portunu yeniden yapilandirmak icin:
+İlk kurulumdan sonra veri dizinini veya MCP sunucu portunu yeniden yapılandırmak için:
 
-1. Menudan uygulamanin ayarlarini acin
-2. Degerleri guncelleyin
-3. Degisikliklerin yururluge girmesi icin uygulamayi yeniden baslatin
+1. Menüden uygulamanın ayarlarını açın
+2. Değerleri güncelleyin
+3. Değişikliklerin yürürlüğe girmesi için uygulamayı yeniden başlatın
 
-<Note>Veri dizinini degistirmek mevcut verileri tasimaz. Gerekirse veritabanini ve uploads klasorunu manuel olarak kopyalayin.</Note>
+<Note>Veri dizinini değiştirmek mevcut verileri taşımaz. Gerekirse veritabanını ve uploads klasörünü manuel olarak kopyalayın.</Note>

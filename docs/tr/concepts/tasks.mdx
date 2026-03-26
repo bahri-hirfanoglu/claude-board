@@ -1,60 +1,60 @@
 ---
-title: "Gorevler"
-description: "Gorev yasam dongusu, alanlari ve yapilandirmasi"
+title: "Görevler"
+description: "Görev yaşam döngüsü, alanları ve yapılandırması"
 icon: "list-check"
 ---
 
-Gorevler, Claude Board'daki temel is birimidir. Her gorev, bir Claude ajaninin tamamlamasi gereken bir isi temsil eder.
+Görevler, Claude Board'daki temel iş birimidir. Her görev, bir Claude ajanının tamamlaması gereken bir işi temsil eder.
 
-## Yasam Dongusu
+## Yaşam Döngüsü
 
 <Steps>
   <Step title="Backlog" icon="inbox">
-    Gorev olusturulmustur ve beklemektedir. Herhangi bir ajan calismiyordur. Basligi, aciklamayi veya ayarlari serbestce duzenleyebilirsiniz.
+    Görev oluşturulmuştur ve beklemektedir. Herhangi bir ajan çalışmıyordur. Başlığı, açıklamayı veya ayarları serbestçe düzenleyebilirsiniz.
   </Step>
   <Step title="In Progress" icon="play">
-    Bir Claude ajani baslatilir ve calismaya baslar. Canli terminal, ciktiyi gercek zamanli olarak aktarir. Akilli zamanlayici, aktif kodlama suresini takip eder.
+    Bir Claude ajanı başlatılır ve çalışmaya başlar. Canlı terminal, çıktıyı gerçek zamanlı olarak aktarır. Akıllı zamanlayıcı, aktif kodlama süresini takip eder.
   </Step>
   <Step title="Testing" icon="flask">
-    Claude islemi tamamlamistir. Zamanlayici duraklar. Degisiklikleri inceleyin — tamamlandi olarak isaretlemek icin onaylayin veya Claude'u tekrar calismaya gondermek icin degisiklik isteyin.
+    Claude işlemi tamamlamıştır. Zamanlayıcı duraklar. Değişiklikleri inceleyin — tamamlandı olarak işaretlemek için onaylayın veya Claude'u tekrar çalışmaya göndermek için değişiklik isteyin.
   </Step>
   <Step title="Done" icon="check">
-    Gorev tamamlanmistir. Token kullanimi, sure ve gunlukler referans icin saklanir.
+    Görev tamamlanmıştır. Token kullanımı, süre ve günlükler referans için saklanır.
   </Step>
 </Steps>
 
-## Gorev Alanlari
+## Görev Alanları
 
-| Alan | Aciklama |
+| Alan | Açıklama |
 |-------|-------------|
-| **Baslik** | Isin kisa ozeti |
-| **Aciklama** | Claude icin ayrintili talimatlar |
-| **Tur** | `feature`, `bugfix`, `refactor`, `docs`, `test`, `chore` |
-| **Oncelik** | 0 (dusuk) ile 3 (acil) arasi — sira sirasini etkiler |
+| **Başlık** | İşin kısa özeti |
+| **Açıklama** | Claude için ayrıntılı talimatlar |
+| **Tür** | `feature`, `bugfix`, `refactor`, `docs`, `test`, `chore` |
+| **Öncelik** | 0 (düşük) ile 3 (acil) arası — sıra sırasını etkiler |
 | **Model** | `opus`, `sonnet` veya `haiku` |
-| **Dusunme Eforu** | Claude'un akil yurutme derinligini kontrol eder: `low`, `medium`, `high` |
+| **Düşünme Eforu** | Claude'un akıl yürütme derinliğini kontrol eder: `low`, `medium`, `high` |
 
-## Model Secimi
+## Model Seçimi
 
 <Tabs>
   <Tab title="Opus">
-    Karmasik, coklu dosya iceren ozellikler icin en uygunudur. En yuksek token kullanimi ve maliyet, ancak en guclu akil yurutme yetenegine sahiptir.
+    Karmaşık, çoklu dosya içeren özellikler için en uygunudur. En yüksek token kullanımı ve maliyet, ancak en güçlü akıl yürütme yeteneğine sahiptir.
   </Tab>
   <Tab title="Sonnet">
-    Cogu gorev icin dengeli bir secimdir. Makul maliyetle iyi akil yurutme saglar. **Onerilen varsayilan.**
+    Çoğu görev için dengeli bir seçimdir. Makul maliyetle iyi akıl yürütme sağlar. **Önerilen varsayılan.**
   </Tab>
   <Tab title="Haiku">
-    Hizli ve ekonomiktir. Basit duzeltmeler, dokumantasyon guncellemeleri veya sablon kod uretimi icin kullanin.
+    Hızlı ve ekonomiktir. Basit düzeltmeler, dokümantasyon güncellemeleri veya şablon kod üretimi için kullanın.
   </Tab>
 </Tabs>
 
-## Oncelik Seviyeleri
+## Öncelik Seviyeleri
 
-[Otomatik kuyruk](/features/queue) etkinlestirildiginde, daha yuksek oncelikli gorevler once baslar:
+[Otomatik kuyruk](/features/queue) etkinleştirildiğinde, daha yüksek öncelikli görevler önce başlar:
 
-- **Urgent (3)** — bir yuva musaitse hemen calisir
-- **High (2)** — siradaki
-- **Medium (1)** — varsayilan
-- **Low (0)** — en son calisir
+- **Urgent (3)** — bir yuva müsaitse hemen çalışır
+- **High (2)** — sıradaki
+- **Medium (1)** — varsayılan
+- **Low (0)** — en son çalışır
 
-<Tip>Bir gorev hala backlog'dayken modelini, turunu ve onceligini degistirebilirsiniz. In Progress durumuna gectikten sonra yalnizca aciklama guncellenebilir (revizyon geri bildirimi icin).</Tip>
+<Tip>Bir görev hala backlog'dayken modelini, türünü ve önceliğini değiştirebilirsiniz. In Progress durumuna geçtikten sonra yalnızca açıklama güncellenebilir (revizyon geri bildirimi için).</Tip>

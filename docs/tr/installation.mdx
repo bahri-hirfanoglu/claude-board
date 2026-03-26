@@ -4,29 +4,29 @@ description: "Claude Board'u indirin veya kaynak koddan derleyin"
 icon: "download"
 ---
 
-## Onkosuller
+## Önkoşullar
 
-Claude Board'u kurmadan once asagidakilerin hazir oldugundan emin olun:
+Claude Board'u kurmadan önce aşağıdakilerin hazır olduğundan emin olun:
 
 <Steps>
   <Step title="Claude Code CLI" icon="terminal">
-    [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) aracini kurun ve kimlik dogrulamasi yapin. Dogrulamak icin `claude --version` komutunu calistirin.
+    [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) aracını kurun ve kimlik doğrulaması yapın. Doğrulamak için `claude --version` komutunu çalıştırın.
   </Step>
   <Step title="Git" icon="code-branch">
-    Dal otomasyonu ve commit takibi icin Git kurulu olmalidir. Dogrulamak icin `git --version` komutunu calistirin.
+    Dal otomasyonu ve commit takibi için Git kurulu olmalıdır. Doğrulamak için `git --version` komutunu çalıştırın.
   </Step>
-  <Step title="GitHub CLI (istege bagli)" icon="github">
-    [Otomatik PR](/features/auto-pr) olusturma ozelligini kullanmak istiyorsaniz [`gh`](https://cli.github.com/) aracini kurun ve `gh auth login` komutunu calistirin.
+  <Step title="GitHub CLI (isteğe bağlı)" icon="github">
+    [Otomatik PR](/features/auto-pr) oluşturma özelliğini kullanmak istiyorsanız [`gh`](https://cli.github.com/) aracını kurun ve `gh auth login` komutunu çalıştırın.
   </Step>
 </Steps>
 
-## Masaustu Uygulamasi
+## Masaüstü Uygulaması
 
-Platformunuza uygun son surumu indirin:
+Platformunuza uygun son sürümü indirin:
 
 <Columns cols={3}>
   <Card title="Windows" icon="windows" href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest">
-    `.exe` / `.msi` yukleyici (x64)
+    `.exe` / `.msi` yükleyici (x64)
   </Card>
   <Card title="macOS" icon="apple" href="https://github.com/bahri-hirfanoglu/claude-board/releases/latest">
     `.dmg` — Intel ve Apple Silicon
@@ -36,31 +36,31 @@ Platformunuza uygun son surumu indirin:
   </Card>
 </Columns>
 
-### Ilk Calistirma
+### İlk Çalıştırma
 
-Ilk calistirmada [6 adimli kurulum sihirbazi](/desktop/setup) sizi su adimlarda yonlendirir:
+İlk çalıştırmada [6 adımlı kurulum sihirbazı](/desktop/setup) sizi şu adımlarda yönlendirir:
 
-1. **Dil secimi** — Ingilizce veya Turkce
-2. **Sistem kontrolu** — Claude CLI, Node.js, Git ve port uygunlugunu dogrular
-3. **Veri dizini** — SQLite veritabani ve yuklemelerin depolandigi konum
-4. **MCP sunucu portu** — Varsayilan `4000`, uygunluk otomatik kontrol edilir
-5. **Ilk proje** — Calisma dizini ile birlikte ilk projenizi olusturur
+1. **Dil seçimi** — İngilizce veya Türkçe
+2. **Sistem kontrolü** — Claude CLI, Node.js, Git ve port uygunluğunu doğrular
+3. **Veri dizini** — SQLite veritabanı ve yüklemelerin depolandığı konum
+4. **MCP sunucu portu** — Varsayılan `4000`, uygunluk otomatik kontrol edilir
+5. **İlk proje** — Çalışma dizini ile birlikte ilk projenizi oluşturur
 
-<Tip>Kurulum sihirbazi yalnizca bir kez calisir. Ayarlari daha sonra uygulama menusunden degistirebilirsiniz.</Tip>
+<Tip>Kurulum sihirbazı yalnızca bir kez çalışır. Ayarları daha sonra uygulama menüsünden değiştirebilirsiniz.</Tip>
 
 ## Kaynak Koddan Derleme
 
-Kaynak koddan derleme icin hem **Rust** hem de **Node.js** arac zincirleri gereklidir.
+Kaynak koddan derleme için hem **Rust** hem de **Node.js** araç zincirleri gereklidir.
 
-### Onkosuller
+### Önkoşullar
 
-| Arac | Surum | Amac |
+| Araç | Sürüm | Amaç |
 |------|-------|------|
 | [Rust](https://rustup.rs/) | Stable | Tauri v2 arka ucu |
-| [Node.js](https://nodejs.org) | >= 18.0.0 | React on yuzu ve derleme araclari |
-| Platform bagimliliklari | En son | [Tauri v2 onkosullar](https://v2.tauri.app/start/prerequisites/) |
+| [Node.js](https://nodejs.org) | >= 18.0.0 | React ön yüzü ve derleme araçları |
+| Platform bağımlılıkları | En son | [Tauri v2 önkoşullar](https://v2.tauri.app/start/prerequisites/) |
 
-### Adimlar
+### Adımlar
 
 ```bash
 git clone https://github.com/bahri-hirfanoglu/claude-board.git
@@ -69,32 +69,32 @@ npm install
 npx tauri dev
 ```
 
-`npx tauri dev` komutu Rust arka ucunu derler, React on yuzu icin Vite gelistirme sunucusunu baslatir ve anlik yenileme etkin sekilde uygulama penceresini acar.
+`npx tauri dev` komutu Rust arka ucunu derler, React ön yüzü için Vite geliştirme sunucusunu başlatır ve anlık yenileme etkin şekilde uygulama penceresini açar.
 
-## Uretim Derlemesi
+## Üretim Derlemesi
 
-Dagitilabilir bir yukleyici olusturmak icin:
+Dağıtılabilir bir yükleyici oluşturmak için:
 
 ```bash
 npx tauri build
 ```
 
-Cikti `src-tauri/target/release/bundle/` dizinine yazilir ve platforma ozel yukleyiciler icerir.
+Çıktı `src-tauri/target/release/bundle/` dizinine yazılır ve platforma özel yükleyiciler içerir.
 
-| Platform | Cikti |
+| Platform | Çıktı |
 |----------|-------|
-| Windows | `bundle/msi/` icinde `.exe` ve `.msi` |
-| macOS | `bundle/dmg/` icinde `.dmg` |
-| Linux | `bundle/deb/` ve `bundle/appimage/` icinde `.deb` ve `.AppImage` |
+| Windows | `bundle/msi/` içinde `.exe` ve `.msi` |
+| macOS | `bundle/dmg/` içinde `.dmg` |
+| Linux | `bundle/deb/` ve `bundle/appimage/` içinde `.deb` ve `.AppImage` |
 
-## Kurulumu Dogrulama
+## Kurulumu Doğrulama
 
-Kurulumdan sonra her seyin duzgun calistigini dogrulayin:
+Kurulumdan sonra her şeyin düzgün çalıştığını doğrulayın:
 
-<Accordion title="Dogrulama kontrol listesi">
-  1. Claude Board'u baslatin — kurulum sihirbazini (ilk calistirma) veya ana panoyu gormelisiniz
-  2. Ayarlar'i acin ve MCP sunucu portunun aktif oldugunu onaylayin
-  3. Herhangi bir kod dizinine isaret eden bir test projesi olusturun
-  4. Basit bir gorev olusturun (ornegin "Proje kok dizinindeki tum dosyalari listele") ve Devam Ediyor durumuna tasayin
-  5. Canli terminali izleyin — Claude'un ciktisini gercek zamanli olarak gormalisiniz
+<Accordion title="Doğrulama kontrol listesi">
+  1. Claude Board'u başlatın — kurulum sihirbazını (ilk çalıştırma) veya ana panoyu görmelisiniz
+  2. Ayarlar'ı açın ve MCP sunucu portunun aktif olduğunu onaylayın
+  3. Herhangi bir kod dizinine işaret eden bir test projesi oluşturun
+  4. Basit bir görev oluşturun (örneğin "Proje kök dizinindeki tüm dosyaları listele") ve Devam Ediyor durumuna taşıyın
+  5. Canlı terminali izleyin — Claude'un çıktısını gerçek zamanlı olarak görmelisiniz
 </Accordion>

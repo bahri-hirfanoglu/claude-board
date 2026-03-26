@@ -1,63 +1,63 @@
 ---
-title: "Proje Ayarlari"
-description: "Proje adi, dizin, izinler ve diger ayarlari yapilandirma"
+title: "Proje Ayarları"
+description: "Proje adı, dizin, izinler ve diğer ayarları yapılandırma"
 icon: "folder-open"
 ---
 
-Claude Board'daki her proje, Claude ajanlarin uzerinde calistigi bir kod tabanini temsil eder. Projeleri depo yapiniza ve is akisi tercihlerinize uygun sekilde yapilandirin.
+Claude Board'daki her proje, Claude ajanların üzerinde çalıştığı bir kod tabanını temsil eder. Projeleri depo yapınıza ve iş akışı tercihlerinize uygun şekilde yapılandırın.
 
 ## Temel Ayarlar
 
-| Ayar | Aciklama |
+| Ayar | Açıklama |
 |------|----------|
-| **Ad** | Board'da gosterilen gorunen ad |
-| **Slug** | URL-uyumlu tanimlayici, addan otomatik olusturulur |
-| **Calisma Dizini** | Projenin kod tabanina giden mutlak yol |
-| **Avatar** | Istege bagli proje simgesi veya gorseli |
+| **Ad** | Board'da gösterilen görünen ad |
+| **Slug** | URL-uyumlu tanımlayıcı, addan otomatik oluşturulur |
+| **Çalışma Dizini** | Projenin kod tabanına giden mutlak yol |
+| **Avatar** | İsteğe bağlı proje simgesi veya görseli |
 
-<Warning>Calisma dizini mevcut olmali ve Claude Board'u calistiran islem tarafindan erisilebilir olmalidir. Claude ajanlari bu dizinde dosya okur ve yazar.</Warning>
+<Warning>Çalışma dizini mevcut olmalı ve Claude Board'u çalıştıran işlem tarafından erişilebilir olmalıdır. Claude ajanları bu dizinde dosya okur ve yazar.</Warning>
 
-## Izin Modu
+## İzin Modu
 
-Claude'un arac izinlerini nasil yonetecegini kontrol eder. Ayrintilar icin [Izinler](/configuration/permissions) sayfasina bakin.
+Claude'un araç izinlerini nasıl yöneteceğini kontrol eder. Ayrıntılar için [İzinler](/configuration/permissions) sayfasına bakın.
 
-| Mod | Davranis |
+| Mod | Davranış |
 |-----|----------|
-| **Auto Accept** | Claude tum araclari onay almadan kullanir |
-| **Allowed Tools** | Yalnizca belirtilen arac kategorilerine izin verilir |
-| **Default** | Claude CLI'in yerlesik izin davranisini kullanir |
+| **Auto Accept** | Claude tüm araçları onay almadan kullanır |
+| **Allowed Tools** | Yalnızca belirtilen araç kategorilerine izin verilir |
+| **Default** | Claude CLI'ın yerleşik izin davranışını kullanır |
 
-## Izin Verilen Araclar
+## İzin Verilen Araçlar
 
-**Allowed Tools** modunu kullanirken, Claude'un hangi arac kategorilerini kullanabilecegini belirtin:
+**Allowed Tools** modunu kullanırken, Claude'un hangi araç kategorilerini kullanabileceğini belirtin:
 
-- `Read` — dosya iceriklerini okuma
-- `Edit` — dosyalari degistirme
-- `Write` — yeni dosya olusturma
-- `Bash` — kabuk komutlari calistirma
+- `Read` — dosya içeriklerini okuma
+- `Edit` — dosyaları değiştirme
+- `Write` — yeni dosya oluşturma
+- `Bash` — kabuk komutları çalıştırma
 - `Glob` — dosya deseni arama
-- `Grep` — dosya icerigi arama
+- `Grep` — dosya içeriği arama
 
 ## Ek Ayarlar
 
 <AccordionGroup>
-  <Accordion title="Otomatik Kuyruk">
-    Otomatik gorev yurutmeyi etkinlestirin ve maksimum es zamanli ajan sayisini (1-5) ayarlayin. Bkz. [Auto-Queue](/features/queue).
+  <Accordion title="Otomatik Kuyrük">
+    Otomatik görev yürütmeyi etkinleştirin ve maksimum eş zamanlı ajan sayısını (1-5) ayarlayın. Bkz. [Auto-Queue](/features/queue).
   </Accordion>
   <Accordion title="Git Otomasyonu">
-    Otomatik dal olusturma, otomatik PR ve temel dal yapilandirmasi. Bkz. [Git Automation](/features/git-automation).
+    Otomatik dal oluşturma, otomatik PR ve temel dal yapılandırması. Bkz. [Git Automation](/features/git-automation).
   </Accordion>
   <Accordion title="Webhook'lar">
-    Gorev olaylari icin bildirim uç noktalari ekleyin. Bkz. [Webhooks](/features/webhooks).
+    Görev olayları için bildirim uç noktaları ekleyin. Bkz. [Webhooks](/features/webhooks).
   </Accordion>
-  <Accordion title="Baglam Parcalari">
-    Her prompt'a enjekte edilen proje kurallarini tanimlayin. Bkz. [Snippets](/features/snippets).
+  <Accordion title="Bağlam Parçaları">
+    Her prompt'a enjekte edilen proje kurallarını tanımlayın. Bkz. [Snippets](/features/snippets).
   </Accordion>
-  <Accordion title="Prompt Sablonlari">
-    Yeniden kullanilabilir prompt desenleri olusturun. Bkz. [Templates](/features/templates).
+  <Accordion title="Prompt Şablonları">
+    Yeniden kullanılabilir prompt desenleri oluşturun. Bkz. [Templates](/features/templates).
   </Accordion>
 </AccordionGroup>
 
-## Proje Duzenleme
+## Proje Düzenleme
 
-Ayarlari acmak icin proje panosundaki disli simgesine tiklayin. Degisiklikler aninda kaydedilir. Calisma dizinini degistirmek calisan gorevleri etkilemez — yalnizca yeni ajan oturumlari guncellenmis yolu kullanir.
+Ayarları açmak için proje panosundaki dişli simgesine tıklayın. Değişiklikler anında kaydedilir. Çalışma dizinini değiştirmek çalışan görevleri etkilemez — yalnızca yeni ajan oturumları güncellenmiş yolu kullanır.

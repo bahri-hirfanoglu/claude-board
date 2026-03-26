@@ -1,85 +1,85 @@
 ---
-title: "Gorev Bagimliliklari"
-description: "Kosullu is akislari, baglam aktarimi ve alt gorev olusturma destekli DAG tabanli bagimlilik sistemi"
+title: "Görev Bağımlılıkları"
+description: "Koşullu iş akışları, bağlam aktarımı ve alt görev oluşturma destekli DAG tabanlı bağımlılık sistemi"
 icon: "diagram-project"
 ---
 
-Gorev bagimliliklari yurutme sirasini tanimlar ve gelismis orkestrasyon kaliplarini mumkun kilar. Claude Board, kosullu dallanma, otomatik baglam paylasimi ve alt gorev olusturma destekli tam DAG (Yonlu Dongusel Olmayan Graf) bagimliklarini destekler.
+Görev bağımlılıkları yürütme sırasını tanımlar ve gelişmiş orkestrasyon kalıplarını mümkün kılar. Claude Board, koşullu dallanma, otomatik bağlam paylaşımı ve alt görev oluşturma destekli tam DAG (Yönlü Döngüsel Olmayan Graf) bağımlılıklarını destekler.
 
-## Bagimlilik Ekleme
+## Bağımlılık Ekleme
 
 <Steps>
-  <Step title="Gorev penceresini acin">
-    Mevcut bir gorevde duzenle'ye tiklayin veya yeni bir gorev olusturun.
+  <Step title="Görev penceresini açın">
+    Mevcut bir görevde düzenle'ye tıklayın veya yeni bir görev oluşturun.
   </Step>
-  <Step title="Secenekleri genisletin">
-    Bagimlilik duzenleyicisini gostermek icin **Options** bolumune tiklayin.
+  <Step title="Seçenekleri genişletin">
+    Bağımlılık düzenleyicisini göstermek için **Options** bölümüne tıklayın.
   </Step>
-  <Step title="Arayin ve ekleyin">
-    Ust gorevleri aramak ve secmek icin **Add dependency** dugmesine tiklayin. Ayrica Orkestrasyon Graf gorunumunde dugumler arasinda **Shift+surukleme** de yapabilirsiniz.
+  <Step title="Arayın ve ekleyin">
+    Üst görevleri aramak ve seçmek için **Add dependency** düğmesine tıklayın. Ayrıca Orkestrasyon Graf görünümünde düğümler arasında **Shift+sürükleme** de yapabilirsiniz.
   </Step>
 </Steps>
 
-## Kosullu Bagimliliklar
+## Koşullu Bağımlılıklar
 
-Bagimliliklar, alt gorevlerin ne zaman tetiklenecegini kontrol eden kosullara sahip olabilir:
+Bağımlılıklar, alt görevlerin ne zaman tetikleneceğini kontrol eden koşullara sahip olabilir:
 
-| Kosul | Kenar Rengi | Davranis |
+| Koşul | Kenar Rengi | Davranış |
 |-----------|-----------|----------|
-| **Always** (varsayilan) | Gri duz cizgi | Ust gorev `done` veya `testing` durumuna ulastiginda alt gorev baslar |
-| **On Success** | Yesil kesikli | Always ile ayni — ust gorev basarili oldugunda alt gorev baslar |
-| **On Failure** | Kirmizi kesikli | Yalnizca ust gorev kalici olarak basarisiz oldugunda (yeniden denemeler tukendigi) alt gorev baslar |
+| **Always** (varsayılan) | Gri düz çizgi | Üst görev `done` veya `testing` durumuna ulaştığında alt görev başlar |
+| **On Success** | Yeşil kesikli | Always ile aynı — üst görev başarılı olduğunda alt görev başlar |
+| **On Failure** | Kırmızı kesikli | Yalnızca üst görev kalıcı olarak başarısız olduğunda (yeniden denemeler tükendiği) alt görev başlar |
 
-<Tip>Otomatik kurtarma is akislari olusturmak icin On Failure kosullarini kullanin. Ornek: Bir derleme gorevi basarisiz olursa, otomatik olarak bir hata ayiklama gorevi tetikleyin.</Tip>
+<Tip>Otomatik kurtarma iş akışları oluşturmak için On Failure koşullarını kullanın. Örnek: Bir derleme görevi başarısız olursa, otomatik olarak bir hata ayıklama görevi tetikleyin.</Tip>
 
-## Ajan Baglam Aktarimi
+## Ajan Bağlam Aktarımı
 
-Bir ust gorev tamamlandiginda, Claude Board otomatik olarak sunlari iceren bir **baglam ozeti** olusturur:
+Bir üst görev tamamlandığında, Claude Board otomatik olarak şunları içeren bir **bağlam özeti** oluşturur:
 
-- Git diff istatistikleri (degisen dosyalar)
-- Son commit mesajlari
-- Son Claude cikti ozeti
+- Git diff istatistikleri (değişen dosyalar)
+- Son commit mesajları
+- Son Claude çıktı özeti
 - Dal bilgisi
 
-Bu baglam, bagimli alt gorev istemlerine **otomatik olarak enjekte edilir**. Alt ajanlar, ust gorevin ne yaptigini, hangi dosyalarin degistigini bilir ve kod tabanini yeniden kesfetmeden bu calisma uzerine insa edebilir.
+Bu bağlam, bağımlı alt görev istemlerine **otomatik olarak enjekte edilir**. Alt ajanlar, üst görevin ne yaptığını, hangi dosyaların değiştiğini bilir ve kod tabanını yeniden keşfetmeden bu çalışma üzerine inşa edebilir.
 
-## Alt Gorev Olusturma
+## Alt Görev Oluşturma
 
-Calisan ajanlar, MCP araclari araciligiyla alt gorevler olusturabilir. Bir ajan `parent_task_id` ile `create_task` cagirdiginda, alt gorev ust goreve baglenir:
+Çalışan ajanlar, MCP araçları aracılığıyla alt görevler oluşturabilir. Bir ajan `parent_task_id` ile `create_task` çağırdığında, alt görev üst göreve bağlanır:
 
-1. Ajan, `parent_task_id` degerini kendi gorev kimligine ayarlayarak `create_task` cagrisinda bulunur
-2. Alt gorev backlog'da olusturulur ve otomatik olarak kuyruga alinir
-3. Claude sureci tamamlandiktan sonra ust gorev **alt gorevleri bekleme** durumuna gecer
-4. Alt gorevler yurutulur (DAG ve eslesiklik kurallarina uygun olarak)
-5. **Tum** alt gorevler `done`/`testing` durumuna ulastiginda, ust gorev otomatik olarak tamamlanir
+1. Ajan, `parent_task_id` değerini kendi görev kimliğine ayarlayarak `create_task` çağrısında bulunur
+2. Alt görev backlog'da oluşturulur ve otomatik olarak kuyruğa alınır
+3. Claude süreci tamamlandıktan sonra üst görev **alt görevleri bekleme** durumuna geçer
+4. Alt görevler yürütülür (DAG ve eşleşiklik kurallarına uygun olarak)
+5. **Tüm** alt görevler `done`/`testing` durumuna ulaştığında, üst görev otomatik olarak tamamlanır
 
-<Info>Alt gorevler, ust gorevin proje baglamini miras alir. Ust gorev istemi, Claude'a alt gorevler olustururken `parent_task_id` degerini nasil kullanacagini belirtir.</Info>
+<Info>Alt görevler, üst görevin proje bağlamını miras alır. Üst görev istemi, Claude'a alt görevler oluştururken `parent_task_id` değerini nasıl kullanacağını belirtir.</Info>
 
-## Dongu Algilama
+## Döngü Algılama
 
-Claude Board, DFS (Oncelik Derinlik Aramasi) gecisi kullanarak dongusel bagimliliklari onler. Bir bagimlilik eklemek bir dongu olusturacaksa (A -> B -> C -> A), islem reddedilir.
+Claude Board, DFS (Öncelik Derinlik Araması) geçişi kullanarak döngüsel bağımlılıkları önler. Bir bağımlılık eklemek bir döngü oluşturacaksa (A -> B -> C -> A), işlem reddedilir.
 
-## Bagimlilik Kaliplari
+## Bağımlılık Kalıpları
 
 <Tabs>
   <Tab title="Chain">
-    Sirali: A -> B -> C -> D. Her gorev ancak onceki tamamlandiktan sonra baslar.
+    Sıralı: A -> B -> C -> D. Her görev ancak önceki tamamlandıktan sonra başlar.
   </Tab>
   <Tab title="Fan-out">
-    Bir ust, birden fazla alt: A -> [B, C, D]. A tamamlandiginda tum alt gorevler paralel olarak calisir.
+    Bir üst, birden fazla alt: A -> [B, C, D]. A tamamlandığında tüm alt görevler paralel olarak çalışır.
   </Tab>
   <Tab title="Fan-in">
-    Birden fazla ust, bir alt: [A, B, C] -> D. D yalnizca TUM ust gorevler tamamlandiginda baslar.
+    Birden fazla üst, bir alt: [A, B, C] -> D. D yalnızca TÜM üst görevler tamamlandığında başlar.
   </Tab>
   <Tab title="Conditional">
-    Basari/basarisizlik dallanmasi: A -> B (on_success), A -> C (on_failure). A basarili olursa B calisir. A basarisiz olursa bunun yerine C calisir.
+    Başarı/başarısızlık dallanması: A -> B (on_success), A -> C (on_failure). A başarılı olursa B çalışır. A başarısız olursa bunun yerine C çalışır.
   </Tab>
 </Tabs>
 
 ## API
 
-- `addDependency(taskId, dependsOnId, conditionType?)` — Opsiyonel kosul (`always`, `on_success`, `on_failure`) ile bagimlilik ekle
-- `removeDependency(taskId, dependsOnId)` — Bir bagimliligi kaldir
-- `getTaskDependencies(taskId)` — Ust ve alt gorevleri getir
-- `getDependencyGraph(projectId)` — Kenarlar (`conditionType` dahil) ve dalgalar iceren tam graf
-- `getExecutionWaves(projectId)` — Dalga gruplamalari
+- `addDependency(taskId, dependsOnId, conditionType?)` — Opsiyonel koşul (`always`, `on_success`, `on_failure`) ile bağımlılık ekle
+- `removeDependency(taskId, dependsOnId)` — Bir bağımlılığı kaldır
+- `getTaskDependencies(taskId)` — Üst ve alt görevleri getir
+- `getDependencyGraph(projectId)` — Kenarlar (`conditionType` dahil) ve dalgalar içeren tam graf
+- `getExecutionWaves(projectId)` — Dalga gruplamaları

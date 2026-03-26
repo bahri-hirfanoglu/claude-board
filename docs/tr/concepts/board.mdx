@@ -1,76 +1,76 @@
 ---
-title: "Pano ve Gorunumler"
-description: "Gorevlerinizi yonetmek icin gorsel duzenler"
+title: "Pano ve Görünümler"
+description: "Görevlerinizi yönetmek için görsel düzenler"
 icon: "table-columns"
 ---
 
-Claude Board, gorevlerinizi yonetmek icin birden fazla gorunum sunar. Ust arac cubugundaki gorunum degistiriciyi kullanarak aralarinda gecis yapabilirsiniz.
+Claude Board, görevlerinizi yönetmek için birden fazla görünüm sunar. Üst araç çubuğundaki görünüm değiştiriciyi kullanarak aralarında geçiş yapabilirsiniz.
 
-## Gorunumler
+## Görünümler
 
 <Tabs>
   <Tab title="Kanban Board">
-    Varsayilan gorunum. Gorevler duruma gore sutunlar halinde duzenlenir:
+    Varsayılan görünüm. Görevler duruma göre sütunlar halinde düzenlenir:
 
-    | Sutun | Aciklama |
+    | Sütun | Açıklama |
     |--------|-------------|
-    | **Backlog** | Baslamayi bekleyen siradaki gorevler |
-    | **In Progress** | Claude aktif olarak calisiyor |
-    | **Testing** | Tamamlandi, incelemenizi bekliyor |
-    | **Done** | Onaylandi ve tamamlandi |
-    | **Failed** | Tum yeniden denemelerden sonra kalici olarak basarisiz |
+    | **Backlog** | Başlamayı bekleyen sıradaki görevler |
+    | **In Progress** | Claude aktif olarak çalışıyor |
+    | **Testing** | Tamamlandı, incelemenizi bekliyor |
+    | **Done** | Onaylandı ve tamamlandı |
+    | **Failed** | Tüm yeniden denemelerden sonra kalıcı olarak başarısız |
 
-    **Surukle ve Birak** — Gorevleri surukleyerek sutunlar arasinda tasiyabilirsiniz. **In Progress** sutununa birakmak otomatik olarak bir Claude ajansi baslatir. Suruklerken **Alt** tusunu basili tutarak iki gorev arasinda [baglanti](/features/dependencies) olusturabilirsiniz.
+    **Sürükle ve Bırak** — Görevleri sürükleyerek sütunlar arasında taşıyabilirsiniz. **In Progress** sütununa bırakmak otomatik olarak bir Claude ajanı başlatır. Sürüklerken **Alt** tuşunu basılı tutarak iki görev arasında [bağlantı](/features/dependencies) oluşturabilirsiniz.
   </Tab>
-  <Tab title="Liste Gorunumu">
-    Tum gorevleri siralanabilir sutunlarla gosteren kompakt bir tablo: baslik, durum, oncelik, model, tur, maliyet, sure ve olusturulma tarihi. Cok sayida gorevi olan buyuk projeler icin idealdir.
+  <Tab title="Liste Görünümü">
+    Tüm görevleri sıralanabilir sütunlarla gösteren kompakt bir tablo: başlık, durum, öncelik, model, tür, maliyet, süre ve oluşturulma tarihi. Çok sayıda görevi olan büyük projeler için idealdir.
   </Tab>
-  <Tab title="Ozet Gorunumu">
-    Asagidakileri iceren bir kontrol paneli tarzinda genel bakis:
-    - **Durum dagilimi** — sutun basina gorev sayilari
-    - **Oncelik dagilimi** — dusuk, orta, yuksek, acil
-    - **Son aktivite** — en son gorev guncellemeleri
-    - **Ajan kullanimi** — aktif ve bosta olan ajan yuvalari
+  <Tab title="Özet Görünümü">
+    Aşağıdakileri içeren bir kontrol paneli tarzında genel bakış:
+    - **Durum dağılımı** — sütun başına görev sayıları
+    - **Öncelik dağılımı** — düşük, orta, yüksek, acil
+    - **Son aktivite** — en son görev güncellemeleri
+    - **Ajan kullanımı** — aktif ve boşta olan ajan yuvaları
   </Tab>
   <Tab title="Orkestrasyon">
-    Coklu ajan yurutmesi icin komut merkezi. Uc alt gorunum:
-    - **Graf** — Suruklenebilir dugumlerle etkilesimli bagimlilik DAG'i
-    - **Zaman Cizelgesi** — SIMDI isaretcili Gantt tarzi yurutme gorunumu
-    - **Canli** — Dosya catismasi algilamali gercek zamanli arac cagrisi akisi
+    Çoklu ajan yürütmesi için komut merkezi. Üç alt görünüm:
+    - **Graf** — Sürüklenebilir düğümlerle etkileşimli bağımlılık DAG'ı
+    - **Zaman Çizelgesi** — ŞİMDİ işaretçili Gantt tarzı yürütme görünümü
+    - **Canlı** — Dosya çatışması algılamalı gerçek zamanlı araç çağrısı akışı
 
-    Ayrintilar icin [Orkestrasyon Gorunumu](/features/orchestration) sayfasina bakin.
+    Ayrıntılar için [Orkestrasyon Görünümü](/features/orchestration) sayfasına bakın.
   </Tab>
 </Tabs>
 
-## Gercek Zamanli Guncellemeler
+## Gerçek Zamanlı Güncellemeler
 
-<Info>Tum gorunumler WebSocket araciligiyla gercek zamanli olarak guncellenir. Gorev durum degisiklikleri, terminal ciktisi, token kullanimi ve bagimlilik guncellemeleri aninda iletilir — sayfayi yenilemenize gerek kalmaz.</Info>
+<Info>Tüm görünümler WebSocket aracılığıyla gerçek zamanlı olarak güncellenir. Görev durum değişiklikleri, terminal çıktısı, token kullanımı ve bağımlılık güncellemeleri anında iletilir — sayfayı yenilemenize gerek kalmaz.</Info>
 
-## Arac Cubugu
+## Araç Çubuğu
 
-Pano arac cubugu asagidakilere hizli erisim saglar:
+Pano araç çubuğu aşağıdakilere hızlı erişim sağlar:
 
-| Ozellik | Aciklama |
+| Özellik | Açıklama |
 |---------|-------------|
-| **Gorunum degistirici** | Kanban, Liste, Ozet ve Orkestrasyon arasinda gecis yapin |
-| **Model filtresi** | Yalnizca belirli bir modele ait gorevleri gosterin (Opus/Sonnet/Haiku) |
-| **Yeni Gorev** | Hizli olusturma penceresiyle yeni bir gorev olusturun |
-| **Arama** | Gorevleri baslik veya aciklamaya gore filtreleyin |
+| **Görünüm değiştirici** | Kanban, Liste, Özet ve Orkestrasyon arasında geçiş yapın |
+| **Model filtresi** | Yalnızca belirli bir modele ait görevleri gösterin (Opus/Sonnet/Haiku) |
+| **Yeni Görev** | Hızlı oluşturma penceresiyle yeni bir görev oluşturun |
+| **Arama** | Görevleri başlık veya açıklamaya göre filtreleyin |
 
 ## Mobil Deneyim
 
-Claude Board tamamen duyarli tasarima sahiptir. Kucuk ekranlarda:
+Claude Board tamamen duyarlı tasarıma sahiptir. Küçük ekranlarda:
 
-- Kanban panosu yatay olarak kaydirilir
-- Hizli tasima dugmeleri surukle-birak yerine kullanilir
-- Terminal alt sayfa olarak acilir
-- Gorev olusturma tam ekran pencere kullanir
+- Kanban panosu yatay olarak kaydırılır
+- Hızlı taşıma düğmeleri sürükle-bırak yerine kullanılır
+- Terminal alt sayfa olarak açılır
+- Görev oluşturma tam ekran pencere kullanır
 
 <Columns cols={2}>
-  <Card title="Gorev Yasam Dongusu" icon="arrows-rotate" href="/concepts/tasks">
-    Gorevlerin her durumdan nasil gectigini ogrenin.
+  <Card title="Görev Yaşam Döngüsü" icon="arrows-rotate" href="/concepts/tasks">
+    Görevlerin her durumdan nasıl geçtiğini öğrenin.
   </Card>
   <Card title="Orkestrasyon" icon="sitemap" href="/features/orchestration">
-    Bagimlilik grafi ve zaman cizelgesi gorunumlerini kesfedin.
+    Bağımlılık grafı ve zaman çizelgesi görünümlerini keşfedin.
   </Card>
 </Columns>

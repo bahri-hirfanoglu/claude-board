@@ -1,44 +1,44 @@
 ---
 title: "Kaynaktan Derleme"
-description: "Masaustu uygulamasini Windows, macOS ve Linux icin derleme"
+description: "Masaüstü uygulamasını Windows, macOS ve Linux için derleme"
 icon: "hammer"
 ---
 
-Claude Board, yerel masaustu uygulamalari uretmek icin [Tauri v2](https://v2.tauri.app/) kullanir. On yuz React + Vite ile, arka uc ise Rust ile yazilmistir.
+Claude Board, yerel masaüstü uygulamaları üretmek için [Tauri v2](https://v2.tauri.app/) kullanır. Ön yüz React + Vite ile, arka uç ise Rust ile yazılmıştır.
 
-## On Kosullar
+## Ön Koşullar
 
 - [Rust](https://rustup.rs/) (stable toolchain)
 - [Node.js](https://nodejs.org) 18+
 - npm veya yarn
-- Platforma ozel Tauri bagimliliklari — bkz. [Tauri v2 on kosullar](https://v2.tauri.app/start/prerequisites/)
+- Platforma özel Tauri bağımlılıkları — bkz. [Tauri v2 ön koşullar](https://v2.tauri.app/start/prerequisites/)
 
-## Derleme Komutlari
+## Derleme Komutları
 
 <Tabs>
   <Tab title="Windows">
     ```bash
     npx tauri build
     ```
-    `src-tauri/target/release/bundle/nsis/` ve `src-tauri/target/release/bundle/msi/` dizinlerinde `.exe` ve `.msi` yukleyicileri olusturur.
+    `src-tauri/target/release/bundle/nsis/` ve `src-tauri/target/release/bundle/msi/` dizinlerinde `.exe` ve `.msi` yükleyicileri oluşturur.
   </Tab>
   <Tab title="macOS">
     ```bash
     npx tauri build
     ```
-    `src-tauri/target/release/bundle/dmg/` dizininde bir `.dmg` yukleyici ve `.app` paketi olusturur. Imzalama icin macOS gerektirir.
+    `src-tauri/target/release/bundle/dmg/` dizininde bir `.dmg` yükleyici ve `.app` paketi oluşturur. İmzalama için macOS gerektirir.
   </Tab>
   <Tab title="Linux">
     ```bash
     npx tauri build
     ```
-    `src-tauri/target/release/bundle/` dizininde `.AppImage` ve `.deb` paketleri olusturur.
+    `src-tauri/target/release/bundle/` dizininde `.AppImage` ve `.deb` paketleri oluşturur.
   </Tab>
 </Tabs>
 
 ## Simgeler
 
-Uygulama simgeleri `src-tauri/tauri.conf.json` icinde yapilandirilmistir ve `src-tauri/icons/` dizininde bulunur:
+Uygulama simgeleri `src-tauri/tauri.conf.json` içinde yapılandırılmıştır ve `src-tauri/icons/` dizininde bulunur:
 
 | Platform | Dosya | Format |
 |----------|-------|--------|
@@ -46,37 +46,37 @@ Uygulama simgeleri `src-tauri/tauri.conf.json` icinde yapilandirilmistir ve `src
 | macOS | `icon.icns` | ICNS |
 | Linux | `icon.png` | PNG (512x512) |
 
-Simgeleri guncellemek icin bu dosyalari degistirin ve yeniden derleyin veya tek bir kaynak goruntuden tum formatlari olusturmak icin `npx tauri icon` komutunu kullanin.
+Simgeleri güncellemek için bu dosyaları değiştirin ve yeniden derleyin veya tek bir kaynak görüntüden tüm formatları oluşturmak için `npx tauri icon` komutunu kullanın.
 
-## CI/CD Is Akisi
+## CI/CD İş Akışı
 
-Claude Board, otomatik derlemeler icin bir GitHub Actions is akisi icerir:
+Claude Board, otomatik derlemeler için bir GitHub Actions iş akışı içerir:
 
 ```yaml
 # .github/workflows/build.yml
-# Surum etiketlerinde (v*) tetiklenir
-# Uc platform icin de derler
-# Yapilari GitHub Releases'a yukler
+# Sürüm etiketlerinde (v*) tetiklenir
+# Üç platform için de derler
+# Yapıları GitHub Releases'a yükler
 ```
 
-Is akisi:
+İş akışı:
 
 1. Depoyu kontrol eder
-2. Rust toolchain ve Node.js bagimliklarini yukler
-3. Vite ile React on yuzunu derler
+2. Rust toolchain ve Node.js bağımlılıklarını yükler
+3. Vite ile React ön yüzünü derler
 4. Rust arka ucunu derler ve Tauri ile paketler
-5. Yukleyicileri surum varliklari olarak yukler
+5. Yükleyicileri sürüm varlıkları olarak yükler
 
-<Tip>Otomatik bir surum derlemesini tetiklemek icin bir commit'i `v*` (orn. `v5.0.0`) ile etiketleyin.</Tip>
+<Tip>Otomatik bir sürüm derlemesini tetiklemek için bir commit'i `v*` (örn. `v5.0.0`) ile etiketleyin.</Tip>
 
-## Gelistirme Modu
+## Geliştirme Modu
 
-Yukleyici olusturmadan yerel gelistirme icin:
+Yükleyici oluşturmadan yerel geliştirme için:
 
 ```bash
 npx tauri dev
 ```
 
-Bu komut Rust arka ucunu derler, React on yuzu icin Vite gelistirme sunucusunu baslatir ve on yuz degisiklikleri icin hot-reload etkinlestirilmis sekilde uygulama penceresini acar.
+Bu komut Rust arka ucunu derler, React ön yüzü için Vite geliştirme sunucusunu başlatır ve ön yüz değişiklikleri için hot-reload etkinleştirilmiş şekilde uygulama penceresini açar.
 
-<Note>Capraz derleme Tauri tarafindan yerel olarak desteklenmemektedir. Her hedef platform icin CI/CD is akisini veya uyumlu bir derleme makinesini kullanin.</Note>
+<Note>Çapraz derleme Tauri tarafından yerel olarak desteklenmemektedir. Her hedef platform için CI/CD iş akışını veya uyumlu bir derleme makinesini kullanın.</Note>

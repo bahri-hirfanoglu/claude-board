@@ -1,21 +1,21 @@
 ---
-title: "Inceleme Sistemi"
-description: "Gorevleri onaylayin veya geri bildirimle degisiklik isteyin"
+title: "İnceleme Sistemi"
+description: "Görevleri onaylayın veya geri bildirimle değişiklik isteyin"
 icon: "magnifying-glass"
 ---
 
-Bir Claude ajani islemi tamamladiginda, gorev **Testing** durumuna gecer. Inceleme sistemi, calismayi degerlendirmenize ve onaylamaniza veya revizyon icin geri gondermenize olanak tanir.
+Bir Claude ajanı işlemi tamamladığında, görev **Testing** durumuna geçer. İnceleme sistemi, çalışmayı değerlendirmenize ve onaylamanıza veya revizyon için geri göndermenize olanak tanır.
 
 <Frame><img src="/images/feature-review.svg" alt="Review System" /></Frame>
 
-## Inceleme Islemleri
+## İnceleme İşlemleri
 
 <Tabs>
   <Tab title="Onayla">
-    Gorevi tamamlandi olarak isaretlemek icin **Approve** dugmesine tiklayin. Gorev **Done** sutununa tasinir ve baska bir ajan calismasi gerceklesmez.
+    Görevi tamamlandı olarak işaretlemek için **Approve** düğmesine tıklayın. Görev **Done** sütununa taşınır ve başka bir ajan çalışması gerçekleşmez.
   </Tab>
-  <Tab title="Degisiklik Iste">
-    Nelerin degismesi gerektigini aciklayan yazili geri bildirim saglayin. Claude Board, geri bildiriminizi orijinal prompt'a ekleyerek yeni bir ajan oturumu baslatir. Gorev tekrar **In Progress** durumuna doner.
+  <Tab title="Değişiklik İste">
+    Nelerin değişmesi gerektiğini açıklayan yazılı geri bildirim sağlayın. Claude Board, geri bildiriminizi orijinal prompt'a ekleyerek yeni bir ajan oturumu başlatır. Görev tekrar **In Progress** durumuna döner.
 
     ```
     The login endpoint works, but:
@@ -26,46 +26,46 @@ Bir Claude ajani islemi tamamladiginda, gorev **Testing** durumuna gecer. Incele
   </Tab>
 </Tabs>
 
-## Geri Bildirim Dongusu
+## Geri Bildirim Döngüsü
 
-Revizyon dongusu gerektiginde tekrarlanabilir:
+Revizyon döngüsü gerektiğinde tekrarlanabilir:
 
 <Steps>
   <Step title="Claude tamamlar → Testing">
-    Degisiklikleri terminal gunlugunde veya IDE'nizde inceleyin.
+    Değişiklikleri terminal günlüğünde veya IDE'nizde inceleyin.
   </Step>
-  <Step title="Geri bildirimle degisiklik isteyin">
-    Eksik veya hatali olani tanimlayin. Acik olun — Claude net talimatlarla daha iyi performans gosterir.
+  <Step title="Geri bildirimle değişiklik isteyin">
+    Eksik veya hatalı olanı tanımlayın. Açık olun — Claude net talimatlarla daha iyi performans gösterir.
   </Step>
-  <Step title="Claude duzeltir → Testing">
-    Ajan geri bildiriminizi alir, duzeltmeleri yapar ve Testing durumuna doner.
+  <Step title="Claude düzeltir → Testing">
+    Ajan geri bildiriminizi alır, düzeltmeleri yapar ve Testing durumuna döner.
   </Step>
   <Step title="Onayla → Done">
-    Memnun kaldiginizda gorevi onaylayin.
+    Memnun kaldığınızda görevi onaylayın.
   </Step>
 </Steps>
 
-## Revizyon Gecmisi
+## Revizyon Geçmişi
 
-Her revizyon kaydedilir. Gorev detay gorunumu sunlari gosterir:
+Her revizyon kaydedilir. Görev detay görünümü şunları gösterir:
 
-- Sagladiginiz her tur geri bildirim
-- Her yineleme icin ajan oturum gunlukleri
-- Revizyon basina token kullanimi
-- Toplam kumulatif maliyet
+- Sağladığınız her tür geri bildirim
+- Her yineleme için ajan oturum günlükleri
+- Revizyon başına token kullanımı
+- Toplam kümülatif maliyet
 
-<Tip>Geri bildirimi bir kod incelemesi yapar gibi yazin. Belirli dosya veya fonksiyon referanslari iceren madde isaretleri, Claude'un hedefli duzeltmeler yapmasina yardimci olur.</Tip>
+<Tip>Geri bildirimi bir kod incelemesi yapar gibi yazın. Belirli dosya veya fonksiyon referansları içeren madde işaretleri, Claude'un hedefli düzeltmeler yapmasına yardımcı olur.</Tip>
 
-## En Iyi Uygulamalar
+## En İyi Uygulamalar
 
 <AccordionGroup>
   <Accordion title="Geri bildirimde spesifik olun">
-    "Bu calismiyor" yerine "`/api/users` endpoint'i e-posta alani eksik oldugunda 500 hatasi donuyor" deyin.
+    "Bu çalışmıyor" yerine "`/api/users` endpoint'i e-posta alanı eksik olduğunda 500 hatası dönüyor" deyin.
   </Accordion>
-  <Accordion title="Onaylamadan once inceleyin">
-    Git diff'ini veya terminal gunluklerini kontrol edin. Claude beklediginizin otesinde degisiklikler yapmis olabilir.
+  <Accordion title="Onaylamadan önce inceleyin">
+    Git diff'ini veya terminal günlüklerini kontrol edin. Claude beklediğinizin ötesinde değişiklikler yapmış olabilir.
   </Accordion>
-  <Accordion title="Kucuk ve odakli gorevler kullanin">
-    Belirsiz aciklamali buyuk gorevler daha fazla revizyon dongusune yol acar. Isi daha kucuk parcalara bolun.
+  <Accordion title="Küçük ve odaklı görevler kullanın">
+    Belirsiz açıklamalı büyük görevler daha fazla revizyon döngüsüne yol açar. İşi daha küçük parçalara bölün.
   </Accordion>
 </AccordionGroup>

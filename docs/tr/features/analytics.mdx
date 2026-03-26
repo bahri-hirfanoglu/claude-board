@@ -1,52 +1,52 @@
 ---
 title: "Analitik"
-description: "Maliyet takibi, performans metrikleri, model karsilastirmasi ve verimlilik paneli"
+description: "Maliyet takibi, performans metrikleri, model karşılaştırması ve verimlilik paneli"
 icon: "chart-mixed"
 ---
 
-Analitik gorunumu kapsamli maliyet takibi, model karsilastirmasi, verimlilik metrikleri ve siralanabilir gorev performans tablosu sunar. Board arac cubugundan (TrendingUp simgesi) erisebilirsiniz.
+Analitik görünümü kapsamlı maliyet takibi, model karşılaştırması, verimlilik metrikleri ve sıralanabilir görev performans tablosu sunar. Board araç çubuğundan (TrendingUp simgesi) erişebilirsiniz.
 
-## Maliyet Ozeti
+## Maliyet Özeti
 
-Ustteki dort istatistik karti su bilgileri gosterir:
+Üstteki dört istatistik kartı şu bilgileri gösterir:
 
-| Metrik | Aciklama |
+| Metrik | Açıklama |
 |--------|----------|
-| **Toplam Maliyet** | Tum gorevler genelindeki kumulatif API maliyeti |
-| **Toplam Token** | Giris + cikis tokenlari ve dagilimi |
-| **Ort. Maliyet/Gorev** | Kullanim ile birlikte gorev basina ortalama maliyet |
-| **Ort. Token/Gorev** | Ortalama token tuketimi |
+| **Toplam Maliyet** | Tüm görevler genelindeki kümülatif API maliyeti |
+| **Toplam Token** | Giriş + çıkış tokenları ve dağılımı |
+| **Ort. Maliyet/Görev** | Kullanım ile birlikte görev başına ortalama maliyet |
+| **Ort. Token/Görev** | Ortalama token tüketimi |
 
-## Model Karsilastirmasi
+## Model Karşılaştırması
 
-Modelleri maliyet ve token kullanimina gore karsilastiran cubuk grafik:
+Modelleri maliyet ve token kullanımına göre karşılaştıran çubuk grafik:
 
-- Her model (Haiku, Sonnet, Opus) gorev sayisini, toplam tokenleri ve toplam maliyeti gosterir
-- Modele gore renk kodlu: yesil (Haiku), mavi (Sonnet), mor (Opus)
-- Is yukleriniz icin hangi modelin en uygun maliyetli oldugunu belirlemenize yardimci olur
+- Her model (Haiku, Sonnet, Opus) görev sayısını, toplam tokenleri ve toplam maliyeti gösterir
+- Modele göre renk kodlu: yeşil (Haiku), mavi (Sonnet), mor (Opus)
+- İş yükleriniz için hangi modelin en uygun maliyetli olduğunu belirlemenize yardımcı olur
 
 ## Maliyet Trendi
 
-Zaman icindeki harcamayi gosteren gunluk maliyet grafigi. Gunluk kesin degerler (maliyet, token, gorev sayisi) icin uzerine gelin.
+Zaman içindeki harcamayı gösteren günlük maliyet grafiği. Günlük kesin değerler (maliyet, token, görev sayısı) için üzerine gelin.
 
 ## Verimlilik Metrikleri
 
-Dort verimlilik karti:
+Dört verimlilik kartı:
 
-| Metrik | Aciklama |
+| Metrik | Açıklama |
 |--------|----------|
-| **Is Hacmi** | Calisma suresi basina tamamlanan gorev sayisi |
-| **Basari Orani** | Toplama kiyasla done/testing durumuna ulasan gorevlerin yuzdesi |
-| **Onbellek Orani** | Prompt onbellek isabet yuzdesi (yuksekse = daha ucuz) |
-| **Ort. Tur Sayisi** | Gorev basina ortalama konusma tur sayisi |
+| **İş Hacmi** | Çalışma süresi başına tamamlanan görev sayısı |
+| **Başarı Oranı** | Toplama kıyasla done/testing durumuna ulaşan görevlerin yüzdesi |
+| **Önbellek Oranı** | Prompt önbellek isabet yüzdesi (yüksekse = daha ucuz) |
+| **Ort. Tur Sayısı** | Görev başına ortalama konuşma tur sayısı |
 
-## Gorev Performans Tablosu
+## Görev Performans Tablosu
 
-Kullanim verileriyle birlikte tum gorevlerin siralanabilir tablosu:
+Kullanım verileriyle birlikte tüm görevlerin sıralanabilir tablosu:
 
-- **Siralama**: Maliyet (varsayilan), Token veya Sure — sutun basliklarini tiklayin
-- **Sutunlar**: Gorev anahtari, baslik, model, sure, token, maliyet
-- **En pahalI 3 gorev** uyari simgesiyle vurgulanir
-- 20 satir sayfalandirmali
+- **Sıralama**: Maliyet (varsayılan), Token veya Süre — sütun başlıklarını tıklayın
+- **Sütunlar**: Görev anahtarı, başlık, model, süre, token, maliyet
+- **En pahalı 3 görev** uyarı simgesiyle vurgulanır
+- 20 satır sayfalandırmalı
 
-<Tip>Pahali gorevleri belirlemek icin maliyete gore azalan siralama yapin. Dokumantasyon veya bakis gorevleri gibi basit isler icin daha ucuz bir model (Haiku) kullanmayi dusunun.</Tip>
+<Tip>Pahalı görevleri belirlemek için maliyete göre azalan sıralama yapın. Dokümantasyon veya bakış görevleri gibi basit işler için daha ucuz bir model (Haiku) kullanmayı düşünün.</Tip>

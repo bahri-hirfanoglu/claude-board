@@ -1,10 +1,10 @@
 ---
-title: "Gorev Anahtarlari"
-description: "Her gorev icin Jira tarzinda tanimlayicilar"
+title: "Görev Anahtarları"
+description: "Her görev için Jira tarzında tanımlayıcılar"
 icon: "key"
 ---
 
-Claude Board'daki her gorev, Jira sorun anahtarlarina benzer sekilde `{TUR}-{PROJE}-{NUMARA}` formatinda otomatik olusturulan bir anahtar alir.
+Claude Board'daki her görev, Jira sorun anahtarlarına benzer şekilde `{TÜR}-{PROJE}-{NUMARA}` formatında otomatik oluşturulan bir anahtar alır.
 
 <Frame><img src="/images/feature-task-keys.svg" alt="Task Keys" /></Frame>
 
@@ -13,14 +13,14 @@ Claude Board'daki her gorev, Jira sorun anahtarlarina benzer sekilde `{TUR}-{PRO
 ```
 FTR-CB-1001
  │   │   │
- │   │   └── Proje basina sirali sayac (1001'den baslar)
- │   └────── Proje anahtari (proje slug'indan turetilir)
- └────────── Gorev turu on eki
+ │   │   └── Proje başına sıralı sayaç (1001'den başlar)
+ │   └────── Proje anahtarı (proje slug'ından türetilir)
+ └────────── Görev türü ön eki
 ```
 
-## Tur On Ekleri
+## Tür Ön Ekleri
 
-| Gorev Turu | On Ek |
+| Görev Türü | Ön Ek |
 |------------|-------|
 | Feature | `FTR` |
 | Bug Fix | `BUG` |
@@ -29,25 +29,25 @@ FTR-CB-1001
 | Test | `TST` |
 | Chore | `CHR` |
 
-## Proje Anahtari
+## Proje Anahtarı
 
-Proje anahtari, proje slug'indan otomatik olarak turetilir:
+Proje anahtarı, proje slug'ından otomatik olarak türetilir:
 
-- Cok sozcuklu slug'lar bas harfleri kullanir: `claude-board` → `CB`, `utd-games-website` → `UGW`
-- Tek sozcuklu slug'lar ilk 3 karakteri kullanir: `renkler` → `RNK`
+- Çok sözcüklü slug'lar baş harfleri kullanır: `claude-board` → `CB`, `utd-games-website` → `UGW`
+- Tek sözcüklü slug'lar ilk 3 karakteri kullanır: `renkler` → `RNK`
 
-## Anahtarlar Nerede Gorunur
+## Anahtarlar Nerede Görünür
 
-Gorev anahtarlari, daha once gorev kimliginin gosterildigi her yerde goruntulenir:
+Görev anahtarları, daha önce görev kimliğinin gösterildiği her yerde görüntülenir:
 
-- Kanban board'undaki **gorev kartlari**
-- **Liste gorunumu** satirlari
-- **Zaman cizgisi gorunumu** etiketleri
-- **Gorev detay penceresi** basligi
-- **Canli terminal** basligi
+- Kanban board'undaki **görev kartları**
+- **Liste görünümü** satırları
+- **Zaman çizgisi görünümü** etiketleri
+- **Görev detay penceresi** başlığı
+- **Canlı terminal** başlığı
 
-## Otomatik Guncellemeler
+## Otomatik Güncellemeler
 
-- Anahtarlar gorev olusturulurken uretilir
-- Bir gorevin turu degistiginde (orn. feature → bugfix), on ek otomatik olarak guncellenir (`FTR-CB-1001` → `BUG-CB-1001`)
-- Mevcut gorevler sunucu baslatildiginda anahtarlarla geriye donuk olarak doldurulur
+- Anahtarlar görev oluşturulurken üretilir
+- Bir görevin türü değiştiğinde (örn. feature → bugfix), ön ek otomatik olarak güncellenir (`FTR-CB-1001` → `BUG-CB-1001`)
+- Mevcut görevler sunucu başlatıldığında anahtarlarla geriye dönük olarak doldurulur

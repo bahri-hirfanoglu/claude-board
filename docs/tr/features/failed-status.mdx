@@ -1,31 +1,31 @@
 ---
 title: "Failed Durumu"
-description: "Kalici olarak basarisiz gorevler icin ozel durum sutunu"
+description: "Kalıcı olarak başarısız görevler için özel durum sütunu"
 icon: "circle-xmark"
 ---
 
-Tum yeniden deneme haklarini tuketen gorevler, ozel bir **Failed** durumuna tasinir. Bu, neyin yanlis gittigini net bir sekilde gormenizi ve kolay kurtarma secenekleri sunar.
+Tüm yeniden deneme haklarını tüketen görevler, özel bir **Failed** durumuna taşınır. Bu, neyin yanlış gittiğini net bir şekilde görmenizi ve kolay kurtarma seçenekleri sunar.
 
-## Gorsel Gostergeler
+## Görsel Göstergeler
 
-Failed durumu, her gorunumde kirmizi gostergelerle acikca isaretlenir:
+Failed durumu, her görünümde kırmızı göstergelerle açıkça işaretlenir:
 
 <Tabs>
   <Tab title="Board View">
-    Kanban tahtasinda ozel bir kirmizi **Failed** sutunu gorunur. Kartlar yeniden deneme sayisini ve basarisizlik nedenini gosterir.
+    Kanban tahtasında özel bir kırmızı **Failed** sütunu görünür. Kartlar yeniden deneme sayısını ve başarısızlık nedenini gösterir.
   </Tab>
   <Tab title="List View">
-    Basarisizlik ayrintilariyla kirmizi durum noktasi. Basarisizlik zamanina gore siralanabilir.
+    Başarısızlık ayrıntılarıyla kırmızı durum noktası. Başarısızlık zamanına göre sıralanabilir.
   </Tab>
   <Tab title="Graph View">
-    Bagimlilik DAG'inda kirmizi dolgulu ve kirmizi kenarli dugum. Alt gorevler engellenmis gostergesi gosterir.
+    Bağımlılık DAG'ında kırmızı dolgulu ve kırmızı kenarlı düğüm. Alt görevler engellenmiş göstergesi gösterir.
   </Tab>
   <Tab title="Timeline View">
-    Son basarisizliktan once yeniden deneme girisimleri daha kucuk cubuklar olarak gorunen kirmizi cubuk segmenti.
+    Son başarısızlıktan önce yeniden deneme girişimleri daha küçük çubuklar olarak görünen kırmızı çubuk segmenti.
   </Tab>
 </Tabs>
 
-## Gorev Yasam Dongusu
+## Görev Yaşam Döngüsü
 
 ```
 Backlog ──▶ In Progress ──▶ Testing ──▶ Done
@@ -37,31 +37,31 @@ Backlog ──▶ In Progress ──▶ Testing ──▶ Done
              Backlog (retry count resets)
 ```
 
-Bir gorev su durumlarda Failed durumuna ulasir:
-1. Ajan sureci coker veya hatayla sonlanir
-2. Gorev, yapilandirilmis tum [yeniden deneme haklarini](/features/retry-backoff) zaten kullanmistir
-3. Baska yeniden deneme hakki kalmamistir
+Bir görev şu durumlarda Failed durumuna ulaşır:
+1. Ajan süreci çöker veya hatayla sonlanır
+2. Görev, yapılandırılmış tüm [yeniden deneme haklarını](/features/retry-backoff) zaten kullanmıştır
+3. Başka yeniden deneme hakkı kalmamıştır
 
 ## Kurtarma
 
 <Steps>
-  <Step title="Basarisizligi inceleyin" icon="magnifying-glass">
-    Neyin yanlis gittigini anlamak icin gorevi acin ve terminal ciktisini inceleyin. Son arac cagrilarini ve hata mesajlarini kontrol edin.
+  <Step title="Başarısızlığı inceleyin" icon="magnifying-glass">
+    Neyin yanlış gittiğini anlamak için görevi açın ve terminal çıktısını inceleyin. Son araç çağrılarını ve hata mesajlarını kontrol edin.
   </Step>
   <Step title="Sorunu giderin" icon="wrench">
-    Yaygin cozumler: gorev aciklamasini daha fazla baglam bilgisiyle guncelleyin, karmasik gorevler icin modeli Opus olarak degistirin, bozuk bir bagimliligi duzelin veya bir git catismasini cozun.
+    Yaygın çözümler: görev açıklamasını daha fazla bağlam bilgisiyle güncelleyin, karmaşık görevler için modeli Opus olarak değiştirin, bozuk bir bağımlılığı düzeltin veya bir git çatışmasını çözün.
   </Step>
-  <Step title="Gorevi yeniden deneyin" icon="rotate">
-    Gorevi **Backlog** veya **In Progress** durumuna geri tasiyin. Yeniden deneme sayaci otomatik olarak 0'a sifirlanir.
+  <Step title="Görevi yeniden deneyin" icon="rotate">
+    Görevi **Backlog** veya **In Progress** durumuna geri taşıyın. Yeniden deneme sayacı otomatik olarak 0'a sıfırlanır.
   </Step>
 </Steps>
 
-<Tip>Bir gorev surekli basarisiz oluyorsa, bagimliliklari olan daha kucuk alt gorevlere ayirmayi deneyin. Karmasik gorevler, parcalara ayrildıginda daha yuksek basari oranina sahiptir.</Tip>
+<Tip>Bir görev sürekli başarısız oluyorsa, bağımlılıkları olan daha küçük alt görevlere ayırmayı deneyin. Karmaşık görevler, parçalara ayrıldığında daha yüksek başarı oranına sahiptir.</Tip>
 
-## Kosullu Bagimliliklar
+## Koşullu Bağımlılıklar
 
-Basarisiz gorevler [on_failure bagimliklarini](/features/dependencies) tetikleyebilir. Bu, kurtarma is akislari olusturmanizi saglar:
+Başarısız görevler [on_failure bağımlılıklarını](/features/dependencies) tetikleyebilir. Bu, kurtarma iş akışları oluşturmanızı sağlar:
 
-- Gorev A basarisiz olur → Gorev B (hata ayiklama/duzeltme gorevi) otomatik olarak baslar
-- Basarisizlik ayrintilariyla bildirim webhook'u tetiklenir
-- Farkli bir modelle gorevin daha basit bir surumu denenebilir
+- Görev A başarısız olur → Görev B (hata ayıklama/düzeltme görevi) otomatik olarak başlar
+- Başarısızlık ayrıntılarıyla bildirim webhook'u tetiklenir
+- Farklı bir modelle görevin daha basit bir sürümü denenebilir

@@ -1,36 +1,36 @@
 ---
-title: "Durum Animasyonlari"
-description: "Gorevler durumlar arasinda gecis yaptiginda gorsel geri bildirim"
+title: "Durum Animasyonları"
+description: "Görevler durumlar arasında geçiş yaptığında görsel geri bildirim"
 icon: "sparkles"
 ---
 
-Bir gorev durumlar arasinda hareket ettiginde — ister surukle-birak, ister buton tiklama, ister sesli komutla — Claude Board gorev kartinda bir gecis animasyonu oynatir.
+Bir görev durumlar arasında hareket ettiğinde — ister sürükle-bırak, ister buton tıklama, ister sesli komutla — Claude Board görev kartında bir geçiş animasyonu oynatır.
 
-## Animasyon Turleri
+## Animasyon Türleri
 
-| Gecis | Efekt | Aciklama |
+| Geçiş | Efekt | Açıklama |
 |-------|-------|----------|
-| → **In Progress** | Kehribar kivilcimlar | 12 parlayan parcacik altin bir darbesiyle disa dogru ucar |
-| → **Testing** | Parlama dalgasi | Mor/kehribar degrade, yuzen noktalarla birlikte gecis yapar |
-| → **Done** | Konfeti patlamasi | 24 renkli parcacik, karisik sekillerle ve bir onay isareti pop'u |
-| ← **Geri** | Geri sarim surusu | Ters yonde hafif gri bir gecis |
+| → **In Progress** | Kehribar kıvılcımlar | 12 parlayan parçacık altın bir darbesiyle dışa doğru uçar |
+| → **Testing** | Parlama dalgası | Mor/kehribar degrade, yüzen noktalarla birlikte geçiş yapar |
+| → **Done** | Konfeti patlaması | 24 renkli parçacık, karışık şekillerle ve bir onay işareti pop'u |
+| ← **Geri** | Geri sarım sürüşü | Ters yönde hafif gri bir geçiş |
 
-Tum gecisler ayrica su unsurlari icerir:
+Tüm geçişler ayrıca şu unsurları içerir:
 - Hedef durum rengine uygun bir **parlama darbesi**
-- Bir **kart buyume** olcek animasyonu (kisa sureligine buyur, sonra yerine oturur)
+- Bir **kart büyüme** ölçek animasyonu (kısa süreliğine büyür, sonra yerine oturur)
 
-## Nasil Calisir
+## Nasıl Çalışır
 
-Animasyon sistemi, son gecisleri izleyen bir React context'i (`StatusTransitionContext`) kullanir:
+Animasyon sistemi, son geçişleri izleyen bir React context'i (`StatusTransitionContext`) kullanır:
 
-1. `onStatusChange` tetiklendiginde, `emitStatusTransition(taskId, fromStatus, toStatus)` gecisi kaydeder
-2. Her `TaskCard` aktif gecisler icin context'i kontrol eder
-3. Gorevi icin bir gecis varsa, `StatusTransitionEffect` katmanini render eder
+1. `onStatusChange` tetiklendiğinde, `emitStatusTransition(taskId, fromStatus, toStatus)` geçişi kaydeder
+2. Her `TaskCard` aktif geçişler için context'i kontrol eder
+3. Görevi için bir geçiş varsa, `StatusTransitionEffect` katmanını render eder
 4. Animasyonlar 2 saniye sonra otomatik olarak temizlenir
 
 ## Teknik Detaylar
 
-- Tum efektler **saf CSS animasyonlari** kullanir — harici kutuphane yoktur
-- Parcaciklar, CSS `@keyframes` ile rastgele olusturulan `div` elementleridir
-- Konfeti 8 farkli renk ve karisik sekiller (daireler + dikdortgenler) kullanir
-- Efektler kisa omurlu oldugundan ve GPU hizlandirmali donusumler kullandigindan performans hafiftir
+- Tüm efektler **saf CSS animasyonları** kullanır — harici kütüphane yoktur
+- Parçacıklar, CSS `@keyframes` ile rastgele oluşturulan `div` elementleridir
+- Konfeti 8 farklı renk ve karışık şekiller (daireler + dikdörtgenler) kullanır
+- Efektler kısa ömürlü olduğundan ve GPU hızlandırmalı dönüşümler kullandığından performans hafiftir
