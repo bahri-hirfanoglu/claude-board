@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.5.16] - 2026-03-26
+
+### Features
+- **Landing Page Overhaul**: Orchestration-focused redesign with interactive DAG hero, 4 switchable views (Graph/Timeline/Live/Board), animated capability ticker, 8 HTML-based preview mockups
+- **Documentation i18n**: Full Turkish translation for all 51 documentation pages with Mintlify language switcher
+- **Landing Page i18n**: TR/EN language toggle with localStorage persistence for the web landing page
+- **Documentation Enrichment**: 12 doc pages enhanced with Steps, Tabs, Accordions, Cards, and richer examples
+
+### Improvements
+- **Component Decomposition**: 4 monolithic components broken into 32 focused modules — LiveTerminal (746→200), Dashboard (637→150), TaskDetailModal (600→180), PlanningModal (1012→250)
+- **Error Handling Cleanup**: Removed redundant console.error calls; API layer handles all user-facing error toasts globally
+- **Setup Wizard Docs**: Updated for 6-step wizard with system check details
+
 ## [1.5.15] - 2026-03-26
 
 ### Features
