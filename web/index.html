@@ -606,7 +606,7 @@
       <a href="#features" data-i18n="nav.features">Features</a>
       <a href="#preview" data-i18n="nav.preview">Preview</a>
       <a href="https://docs.claboard.dev" target="_blank" data-i18n="nav.docs">Docs</a>
-      <button onclick="toggleLang()" class="lang-btn" id="langBtn" title="Turkce">TR</button>
+      <button onclick="toggleLang()" class="lang-btn" id="langBtn" title="Türkçe">TR</button>
       <a href="#download" class="nav-cta">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span data-i18n="nav.download">Download</span>
@@ -1671,45 +1671,45 @@
   var i18n = {
     tr: {
       'nav.orchestration': 'Orkestrasyon',
-      'nav.how': 'Nasil calisir',
-      'nav.features': 'Ozellikler',
-      'nav.preview': 'Onizleme',
-      'nav.docs': 'Dokumantasyon',
-      'nav.download': 'Indir',
-      'hero.title': 'AI gelistirici<br><span class="accent">ekibini yonet.</span>',
-      'hero.subtitle': 'Birden fazla Claude ajanini bagimlilik grafikleri, dalga yurutme ve canli gozlemlenebilirlik ile calistirin. Ozellikleri paralel olarak gelistirin \u2014 tek bir komut merkezinden.',
-      'hero.downloadBtn': 'Uygulamayi Indir',
+      'nav.how': 'Nasıl çalışır',
+      'nav.features': 'Özellikler',
+      'nav.preview': 'Önizleme',
+      'nav.docs': 'Dokümantasyon',
+      'nav.download': 'İndir',
+      'hero.title': 'AI geliştirici<br><span class="accent">ekibini yönet.</span>',
+      'hero.subtitle': 'Birden fazla Claude ajanını bağımlılık grafikleri, dalga yürütme ve canlı gözlemlenebilirlik ile çalıştırın. Özellikleri paralel olarak geliştirin \u2014 tek bir komut merkezinden.',
+      'hero.downloadBtn': 'Uygulamayı İndir',
       'hero.viewSource': 'Kaynak Kodu',
       'orch.label': 'Orkestrasyon Motoru',
-      'orch.title': 'Uc gorunum. Tam kontrol.',
-      'orch.desc': 'Tum AI pipeline\'inizi orkestrasyon komut merkezinden izleyin, hata ayiklayin ve yonetin.',
-      'orch.graphTitle': 'Bagimlilik Grafi',
-      'orch.graphDesc': 'Suruklenebilir dugumler, kosullu kenarlar ve dalga gruplama ile interaktif DAG. Bagimlilik olusturmak icin Shift+surukle.',
-      'orch.timelineTitle': 'Yurutme Zaman Cizgisi',
-      'orch.timelineDesc': 'Gercek zamanli ilerleme, SIMDI isaretcisi, dalga gruplari ve maliyet dokumu ile Gantt tarzi gorunum.',
-      'orch.liveTitle': 'Canli Gozlemlenebilirlik',
-      'orch.liveDesc': 'Tum arac cagrilarinin gercek zamanli beslemesi, catisma tespitli dosya isi haritasi ve ajan bazli etkinlik kartlari.',
-      'how.label': 'Nasil calisir',
-      'how.title': 'Fikirden uretime.<br>Uc adimda.',
-      'how.step1Title': 'Gorevlerinizi tanimlayin',
-      'how.step1Desc': 'Ozellikler, hatalar veya yeniden duzenlemeler tanimlayin. Modelleri secin, oncelikleri belirleyin ve surukle-birak ile gorevler arasi bagimliliklari olusturun.',
+      'orch.title': 'Üç görünüm. Tam kontrol.',
+      'orch.desc': 'Tüm AI pipeline\'ınızı orkestrasyon komut merkezinden izleyin, hata ayıklayın ve yönetin.',
+      'orch.graphTitle': 'Bağımlılık Grafı',
+      'orch.graphDesc': 'Sürüklenebilir düğümler, koşullu kenarlar ve dalga gruplama ile interaktif DAG. Bağımlılık oluşturmak için Shift+sürükle.',
+      'orch.timelineTitle': 'Yürütme Zaman Çizelgesi',
+      'orch.timelineDesc': 'Gerçek zamanlı ilerleme, ŞİMDİ işaretçisi, dalga grupları ve maliyet dökümü ile Gantt tarzı görünüm.',
+      'orch.liveTitle': 'Canlı Gözlemlenebilirlik',
+      'orch.liveDesc': 'Tüm araç çağrılarının gerçek zamanlı beslemesi, çatışma tespitli dosya ısı haritası ve ajan bazlı etkinlik kartları.',
+      'how.label': 'Nasıl çalışır',
+      'how.title': 'Fikirden üretime.<br>Üç adımda.',
+      'how.step1Title': 'Görevlerinizi tanımlayın',
+      'how.step1Desc': 'Özellikler, hatalar veya yeniden düzenlemeler tanımlayın. Modelleri seçin, öncelikleri belirleyin ve sürükle-bırak ile görevler arası bağımlılıkları oluşturun.',
       'how.step2Title': 'Ajanlar orkestre eder',
-      'how.step2Desc': 'Gorevler bagimlilik duyarli dalgalar halinde yurutulur. Her ajan bir dal olusturur, kod yazar, test calistirir ve commit eder \u2014 tumu canli terminalde gorunur.',
-      'how.step3Title': 'Inceleyin ve yollayin',
-      'how.step3Desc': 'Diff\'leri, otomatik test sonuclarini ve token maliyetlerini inceleyin. Otomatik PR olusturmak icin onaylayin veya degisiklik isteyin \u2014 Claude geri bildiriminize gore yineler.',
-      'feat.label': 'Ozellikler',
-      'feat.title': 'AI gelistirici ekibi<br>calistirmak icin gereken her sey.',
-      'feat.desc': 'Orkestrasyondan dagitima, Claude Board tum yasam dongusunu yonetir.',
-      'preview.label': 'Onizleme',
-      'preview.title': 'Calisirken gorun.',
-      'preview.desc': 'Claude Board\'un farkli gorunumlerini kesfetmek icin tiklayin.',
-      'dl.label': 'Indir',
-      'dl.title': 'Claude Board\'u Edin.',
-      'dl.desc': 'Ucretsiz ve acik kaynak. <a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code CLI</a> gerektirir.',
-      'cta.title': 'AI ekibinizi orkestre etmeye hazir misiniz?',
-      'cta.desc': 'Bagimlilik grafikleri. Dalga yurutme. Canli gozlemlenebilirlik. Hepsi makinenizde calisir.',
-      'cta.github': 'GitHub\'da Yildizla',
-      'cta.docs': 'Dokumantasyonu Oku',
+      'how.step2Desc': 'Görevler bağımlılık duyarlı dalgalar halinde yürütülür. Her ajan bir dal oluşturur, kod yazar, test çalıştırır ve commit eder \u2014 tümü canlı terminalde görünür.',
+      'how.step3Title': 'İnceleyin ve gönderin',
+      'how.step3Desc': 'Diff\'leri, otomatik test sonuçlarını ve token maliyetlerini inceleyin. Otomatik PR oluşturmak için onaylayın veya değişiklik isteyin \u2014 Claude geri bildiriminize göre yineler.',
+      'feat.label': 'Özellikler',
+      'feat.title': 'AI geliştirici ekibi<br>çalıştırmak için gereken her şey.',
+      'feat.desc': 'Orkestrasyondan dağıtıma, Claude Board tüm yaşam döngüsünü yönetir.',
+      'preview.label': 'Önizleme',
+      'preview.title': 'Çalışırken görün.',
+      'preview.desc': 'Claude Board\'un farklı görünümlerini keşfetmek için tıklayın.',
+      'dl.label': 'İndir',
+      'dl.title': 'Claude Board\'u Edinin.',
+      'dl.desc': 'Ücretsiz ve açık kaynak. <a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code CLI</a> gerektirir.',
+      'cta.title': 'AI ekibinizi orkestre etmeye hazır mısınız?',
+      'cta.desc': 'Bağımlılık grafikleri. Dalga yürütme. Canlı gözlemlenebilirlik. Hepsi makinenizde çalışır.',
+      'cta.github': 'GitHub\'da Yıldızla',
+      'cta.docs': 'Dokümantasyonu Oku',
     }
   };
 
@@ -1723,7 +1723,7 @@
       btn.title = 'English';
     } else {
       btn.textContent = 'TR';
-      btn.title = 'Turkce';
+      btn.title = 'Türkçe';
     }
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
       var key = el.getAttribute('data-i18n');
