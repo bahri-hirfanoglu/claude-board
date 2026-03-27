@@ -216,7 +216,7 @@ pub fn get_summary(db: &DbPool) -> Vec<ProjectSummary> {
          SUM(COALESCE(t.input_tokens,0)+COALESCE(t.output_tokens,0)) as total_tokens,
          SUM(COALESCE(t.total_cost,0)) as total_cost,
          MAX(t.updated_at) as last_activity
-       FROM projects p LEFT JOIN tasks t ON t.project_id=p.id GROUP BY p.id ORDER BY p.name"
+       FROM projects p LEFT JOIN tasks t ON t.project_id=p.id AND t.deleted_at IS NULL GROUP BY p.id ORDER BY p.name"
     ) {
         Ok(s) => s,
         Err(e) => { log::error!("get_summary: {}", e); return vec![]; }

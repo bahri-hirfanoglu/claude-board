@@ -156,10 +156,10 @@ pub fn on_task_completed(db: &DbPool, app: &AppHandle, project_id: i64, task_id:
             // Use transaction to prevent double parent completion from concurrent subtask completions
             let result = db::with_transaction(db, |conn| {
                 let total: i64 = conn.query_row(
-                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1", rusqlite::params![parent_id], |r| r.get(0),
+                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1 AND deleted_at IS NULL", rusqlite::params![parent_id], |r| r.get(0),
                 ).unwrap_or(0);
                 let done: i64 = conn.query_row(
-                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1 AND status IN ('done','testing')",
+                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1 AND deleted_at IS NULL AND status IN ('done','testing')",
                     rusqlite::params![parent_id], |r| r.get(0),
                 ).unwrap_or(0);
                 if total == 0 || done < total { return Ok(false); }
@@ -170,7 +170,8 @@ pub fn on_task_completed(db: &DbPool, app: &AppHandle, project_id: i64, task_id:
                 ).unwrap_or(0);
                 if awaiting != 1 { return Ok(false); }
 
-                conn.execute("UPDATE tasks SET awaiting_subtasks=0, status='testing', completed_at=datetime('now','localtime'), updated_at=datetime('now','localtime') WHERE id=?1",
+                // Only auto-complete if parent is still in_progress and awaiting
+                conn.execute("UPDATE tasks SET awaiting_subtasks=0, status='testing', completed_at=datetime('now','localtime'), updated_at=datetime('now','localtime') WHERE id=?1 AND status='in_progress'",
                     rusqlite::params![parent_id]).map_err(|e| e.to_string())?;
                 Ok(true)
             });

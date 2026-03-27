@@ -103,8 +103,11 @@ pub fn enforce_timeouts(app: &AppHandle) {
             std::fs::remove_dir_all(&attach_dir).ok();
         }
 
-        // Trigger failure flow (retry or permanent fail)
-        crate::services::queue::handle_task_failure(&db, app, project_id, task_id);
+        // Only retry if task is still in_progress (not manually moved by user)
+        let current_status = task.as_ref().and_then(|t| t.status.as_deref()).unwrap_or("");
+        if current_status == "in_progress" {
+            crate::services::queue::handle_task_failure(&db, app, project_id, task_id);
+        }
         crate::services::webhook::fire(project_id, "task_timeout", &format!("Task timed out: {}", title),
             serde_json::json!({"taskId": task_id, "title": title}));
     }
@@ -651,12 +654,25 @@ fn handle_process_lifecycle(
 
     let status = child.wait().ok().and_then(|s| s.code()).unwrap_or(-1);
 
+    // Check if process was stopped by user (stop() removes from ACTIVE_PROCESSES before kill)
+    let was_user_stopped = !ACTIVE_PROCESSES.lock().contains_key(&task_id);
+
     // Cleanup process tracking
     ACTIVE_PROCESSES.lock().remove(&task_id);
     STARTING_TASKS.lock().remove(&task_id);
     EVENT_CTX.task_usage.lock().remove(&task_id);
     EVENT_CTX.active_tool_calls.lock().retain(|_, tc| tc.task_id != task_id);
     super::events::clear_task_file_access(task_id);
+
+    // User manually stopped — don't treat as success or failure
+    if was_user_stopped {
+        tasks::add_log(db, task_id, "Task stopped by user.", "system", None);
+        generate_lifecycle_summary(task_id, db);
+        emit_task_updated(db, app, task_id);
+        app.emit("claude:finished", &serde_json::json!({"taskId": task_id, "exitCode": status})).ok();
+        if attach_dir.exists() { std::fs::remove_dir_all(attach_dir).ok(); }
+        return;
+    }
 
     if status == 0 {
         scan_git_info(working_dir, task_id, db);
@@ -684,26 +700,32 @@ fn handle_process_lifecycle(
         } else {
             // Normal completion — no pending sub-tasks
             tasks::update_status(db, task_id, "testing");
+            tasks::pause_timer(db, task_id);
             tasks::set_completed(db, task_id);
             emit_task_updated(db, app, task_id);
-            activity::add(db, project_id, Some(task_id), "task_completed", &format!("Task completed: {}", task_title), None);
-            crate::services::notification::notify_task_completed(app, &crate::services::notification::TaskNotification::new(task_title, task_key));
-            crate::services::webhook::fire(project_id, "task_completed", &format!("Task completed: {}", task_title),
-                serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title}));
 
-            // Auto-test: if enabled, start verification
+            // Auto-test: if enabled, start verification — don't cascade yet
             let project = projects::get_by_id(db, project_id);
             let should_auto_test = project.as_ref().is_some_and(|p| p.auto_test.unwrap_or(0) == 1);
             if should_auto_test {
+                activity::add(db, project_id, Some(task_id), "test_started", &format!("Auto-test started: {}", task_title), None);
+                crate::services::notification::notify_task_completed(app, &crate::services::notification::TaskNotification::new(task_title, task_key));
+                crate::services::webhook::fire(project_id, "test_started", &format!("Auto-test started: {}", task_title),
+                    serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title}));
                 if let (Some(task), Some(proj)) = (tasks::get_by_id(db, task_id), project) {
                     let mcp_port = crate::config::load_from_handle(app).port;
                     start_test(&task, app.clone(), working_dir, &proj, mcp_port);
                 }
+                // Don't cascade — auto-test completion handler will cascade when done
+            } else {
+                activity::add(db, project_id, Some(task_id), "task_completed", &format!("Task completed: {}", task_title), None);
+                crate::services::notification::notify_task_completed(app, &crate::services::notification::TaskNotification::new(task_title, task_key));
+                crate::services::webhook::fire(project_id, "task_completed", &format!("Task completed: {}", task_title),
+                    serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title}));
+                // No auto-test — cascade immediately
+                crate::services::queue::on_task_completed(db, app, project_id, task_id);
             }
         }
-
-        // Cascade: start newly unblocked dependent tasks
-        crate::services::queue::on_task_completed(db, app, project_id, task_id);
     } else {
         tasks::add_log(db, task_id, &format!("Claude exited with code {}.", status), "error", None);
         activity::add(db, project_id, Some(task_id), "task_failed", &format!("Task failed (exit {}): {}", status, task_title), None);
@@ -1053,7 +1075,13 @@ After all checks, you MUST output this exact JSON block as your final output:
                         }
                     }
 
-                    if verdict == "approve" {
+                    // Check if user manually changed task status while auto-test was running
+                    let current_status = tasks::get_by_id(&db, task_id).and_then(|t| t.status).unwrap_or_default();
+                    if current_status != "testing" {
+                        tasks::add_log(&db, task_id, &format!("Auto-test completed ({}) but task was manually moved to '{}'. Skipping.", verdict, current_status), "info", None);
+                        emit_task_updated(&db, &app, task_id);
+                        app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "skipped"})).ok();
+                    } else if verdict == "approve" {
                         tasks::add_log(&db, task_id, &format!("Auto-test PASSED: {}", summary), "success", None);
                         app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test PASSED: {}", summary), "logType": "success"})).ok();
                         tasks::update_status(&db, task_id, "done");
@@ -1115,6 +1143,7 @@ After all checks, you MUST output this exact JSON block as your final output:
                             let rev_num = current_rev + 1;
                             tasks::add_revision(&db, task_id, rev_num, &format!("Auto-test feedback:\n{}", revision_feedback));
                             tasks::update_status(&db, task_id, "in_progress");
+                            tasks::set_resumed(&db, task_id);
                             activity::add(&db, project_id, Some(task_id), "auto_revision",
                                 &format!("Auto-revision #{} from test failure: {}", rev_num, task_title), None);
                             tasks::add_log(&db, task_id, &format!("Auto-revision #{}/{}: Restarting with test feedback...", rev_num, MAX_AUTO_REVISIONS), "system", None);

@@ -8,14 +8,14 @@ pub fn get_tasks(project_id: i64) -> Vec<tq::Task> {
     let db = db::get_db();
     tq::get_by_project(&db, project_id)
         .into_iter()
-        .map(|mut t| { t.is_running = runner::is_running(t.id); t })
+        .map(|mut t| { t.is_running = runner::is_running(t.id) || runner::is_starting(t.id); t })
         .collect()
 }
 
 #[tauri::command]
 pub fn get_task(id: i64) -> Result<tq::Task, String> {
     let db = db::get_db();
-    tq::get_by_id(&db, id).map(|mut t| { t.is_running = runner::is_running(t.id); t })
+    tq::get_by_id(&db, id).map(|mut t| { t.is_running = runner::is_running(t.id) || runner::is_starting(t.id); t })
         .ok_or_else(|| "Task not found".into())
 }
 
@@ -163,15 +163,20 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
             activity::add(&db, task.project_id, Some(id), "task_started", &format!("Task started: {}", task.title), None);
         }
     }
-    if prev_status == "in_progress" && status != "in_progress" {
+    // Stop runner if task is running (covers in_progress, testing with auto-test, etc.)
+    if status != "in_progress" && runner::is_running(id) {
         runner::stop(id, &db, &app);
+    }
+    // When manually moving to backlog: reset retry state so auto-queue doesn't restart it
+    if status == "backlog" {
+        tq::reset_retry_count(&db, id);
     }
     if (status == "done" || status == "testing") && prev_status == "in_progress" {
         queue::start_next_queued(&db, &app, task.project_id);
     }
 
     let mut final_task = tq::get_by_id(&db, id).ok_or("Task not found")?;
-    final_task.is_running = runner::is_running(id);
+    final_task.is_running = runner::is_running(id) || runner::is_starting(id);
     app.emit("task:updated", &final_task).ok();
     Ok(final_task)
 }
@@ -180,7 +185,9 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
 pub fn delete_task(app: AppHandle, id: i64) -> Result<(), String> {
     let db = db::get_db();
     let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
-    if runner::is_running(id) { runner::stop(id, &db, &app); }
+    if runner::is_running(id) || runner::is_starting(id) {
+        runner::stop(id, &db, &app);
+    }
     // Notify children that their parent is being removed
     let children = db::dependencies::get_child_ids(&db, id);
     db::dependencies::remove_all_for_task(&db, id).map_err(|e| e.to_string())?;
@@ -232,7 +239,15 @@ pub fn restart_task(app: AppHandle, id: i64, mcp_port: u16) -> Result<tq::Task, 
 pub fn request_changes(app: AppHandle, id: i64, feedback: String, mcp_port: u16) -> Result<tq::Task, String> {
     let db = db::get_db();
     let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
+    let status = task.status.as_deref().unwrap_or("backlog");
+    if status != "testing" && status != "done" {
+        return Err(format!("Cannot request changes on task in '{}' status", status));
+    }
     if feedback.trim().is_empty() { return Err("Feedback is required".into()); }
+    // Stop any running process (auto-test) before restarting with revision
+    if runner::is_running(id) {
+        runner::stop(id, &db, &app);
+    }
 
     tq::increment_revision_count(&db, id);
     let rev_num = tq::get_by_id(&db, id).map(|t| t.revision_count.unwrap_or(1)).unwrap_or(1);
@@ -248,7 +263,7 @@ pub fn request_changes(app: AppHandle, id: i64, feedback: String, mcp_port: u16)
     crate::services::webhook::fire(task.project_id, "revision_requested", &format!("Revision #{}: {}", rev_num, task.title),
         serde_json::json!({"taskId": id, "taskKey": task.task_key, "title": task.title, "revision": rev_num, "feedback": feedback.trim()}));
     let mut final_task = tq::get_by_id(&db, id).ok_or("Task not found")?;
-    final_task.is_running = runner::is_running(id);
+    final_task.is_running = runner::is_running(id) || runner::is_starting(id);
     app.emit("task:updated", &final_task).ok();
     Ok(final_task)
 }

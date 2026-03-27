@@ -139,7 +139,7 @@ pub fn get_project_stats(db: &DbPool, pid: i64) -> ProjectStats {
     let conn = db.lock();
 
     let by_status = {
-        let mut s = match conn.prepare("SELECT status,COUNT(*) as count FROM tasks WHERE project_id=?1 GROUP BY status") {
+        let mut s = match conn.prepare("SELECT status,COUNT(*) as count FROM tasks WHERE project_id=?1 AND deleted_at IS NULL GROUP BY status") {
             Ok(s) => s,
             Err(e) => { log::error!("get_project_stats(by_status): {}", e); return ProjectStats { by_status: vec![], by_priority: vec![], by_type: vec![], duration: DurationStats::default(), timeline: vec![], recent_completed: vec![], claude_usage: ClaudeUsage::default(), model_breakdown: vec![] }; }
         };
@@ -151,7 +151,7 @@ pub fn get_project_stats(db: &DbPool, pid: i64) -> ProjectStats {
     };
 
     let by_priority = {
-        let mut s = match conn.prepare("SELECT priority,COUNT(*) as count FROM tasks WHERE project_id=?1 GROUP BY priority") {
+        let mut s = match conn.prepare("SELECT priority,COUNT(*) as count FROM tasks WHERE project_id=?1 AND deleted_at IS NULL GROUP BY priority") {
             Ok(s) => s,
             Err(e) => { log::error!("get_project_stats(by_priority): {}", e); return ProjectStats { by_status, by_priority: vec![], by_type: vec![], duration: DurationStats::default(), timeline: vec![], recent_completed: vec![], claude_usage: ClaudeUsage::default(), model_breakdown: vec![] }; }
         };
@@ -163,7 +163,7 @@ pub fn get_project_stats(db: &DbPool, pid: i64) -> ProjectStats {
     };
 
     let by_type = {
-        let mut s = match conn.prepare("SELECT task_type,COUNT(*) as count FROM tasks WHERE project_id=?1 GROUP BY task_type") {
+        let mut s = match conn.prepare("SELECT task_type,COUNT(*) as count FROM tasks WHERE project_id=?1 AND deleted_at IS NULL GROUP BY task_type") {
             Ok(s) => s,
             Err(e) => { log::error!("get_project_stats(by_type): {}", e); return ProjectStats { by_status, by_priority, by_type: vec![], duration: DurationStats::default(), timeline: vec![], recent_completed: vec![], claude_usage: ClaudeUsage::default(), model_breakdown: vec![] }; }
         };
@@ -179,7 +179,7 @@ pub fn get_project_stats(db: &DbPool, pid: i64) -> ProjectStats {
                 MIN(CASE WHEN work_duration_ms>0 THEN work_duration_ms/60000.0 ELSE (julianday(completed_at)-julianday(started_at))*24*60 END) as min_minutes,
                 MAX(CASE WHEN work_duration_ms>0 THEN work_duration_ms/60000.0 ELSE (julianday(completed_at)-julianday(started_at))*24*60 END) as max_minutes,
                 COUNT(*) as count
-         FROM tasks WHERE project_id=?1 AND started_at IS NOT NULL AND completed_at IS NOT NULL"
+         FROM tasks WHERE project_id=?1 AND deleted_at IS NULL AND started_at IS NOT NULL AND completed_at IS NOT NULL"
     ) {
         Ok(mut s) => s.query_row(params![pid], |r| Ok(DurationStats {
             avg_minutes: r.get(0).ok(),
@@ -192,7 +192,7 @@ pub fn get_project_stats(db: &DbPool, pid: i64) -> ProjectStats {
 
     let timeline = {
         let mut s = match conn.prepare(
-            "SELECT date(completed_at) as day,COUNT(*) as count FROM tasks WHERE project_id=?1 AND completed_at IS NOT NULL AND completed_at>=datetime('now','-14 days') GROUP BY date(completed_at) ORDER BY day"
+            "SELECT date(completed_at) as day,COUNT(*) as count FROM tasks WHERE project_id=?1 AND deleted_at IS NULL AND completed_at IS NOT NULL AND completed_at>=datetime('now','-14 days') GROUP BY date(completed_at) ORDER BY day"
         ) {
             Ok(s) => s,
             Err(e) => { log::error!("get_project_stats(timeline): {}", e); return ProjectStats { by_status, by_priority, by_type, duration, timeline: vec![], recent_completed: vec![], claude_usage: ClaudeUsage::default(), model_breakdown: vec![] }; }
@@ -206,7 +206,7 @@ pub fn get_project_stats(db: &DbPool, pid: i64) -> ProjectStats {
 
     let recent_completed = {
         let mut s = match conn.prepare(
-            "SELECT id,title,task_type,priority,model,model_used,input_tokens,output_tokens,cache_read_tokens,cache_creation_tokens,total_cost,num_turns,rate_limit_hits,started_at,completed_at,work_duration_ms,ROUND(CASE WHEN work_duration_ms>0 THEN work_duration_ms/60000.0 ELSE (julianday(completed_at)-julianday(started_at))*24*60 END,1) as duration_minutes FROM tasks WHERE project_id=?1 AND started_at IS NOT NULL AND completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT 10"
+            "SELECT id,title,task_type,priority,model,model_used,input_tokens,output_tokens,cache_read_tokens,cache_creation_tokens,total_cost,num_turns,rate_limit_hits,started_at,completed_at,work_duration_ms,ROUND(CASE WHEN work_duration_ms>0 THEN work_duration_ms/60000.0 ELSE (julianday(completed_at)-julianday(started_at))*24*60 END,1) as duration_minutes FROM tasks WHERE project_id=?1 AND deleted_at IS NULL AND started_at IS NOT NULL AND completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT 10"
         ) {
             Ok(s) => s,
             Err(e) => { log::error!("get_project_stats(recent_completed): {}", e); return ProjectStats { by_status, by_priority, by_type, duration, timeline, recent_completed: vec![], claude_usage: ClaudeUsage::default(), model_breakdown: vec![] }; }
@@ -225,7 +225,7 @@ pub fn get_project_stats(db: &DbPool, pid: i64) -> ProjectStats {
     };
 
     let claude_usage = match conn.prepare(
-        "SELECT SUM(COALESCE(input_tokens,0)),SUM(COALESCE(output_tokens,0)),SUM(COALESCE(cache_read_tokens,0)),SUM(COALESCE(cache_creation_tokens,0)),SUM(COALESCE(total_cost,0)),SUM(COALESCE(num_turns,0)),SUM(COALESCE(rate_limit_hits,0)),COUNT(CASE WHEN input_tokens>0 THEN 1 END) FROM tasks WHERE project_id=?1"
+        "SELECT SUM(COALESCE(input_tokens,0)),SUM(COALESCE(output_tokens,0)),SUM(COALESCE(cache_read_tokens,0)),SUM(COALESCE(cache_creation_tokens,0)),SUM(COALESCE(total_cost,0)),SUM(COALESCE(num_turns,0)),SUM(COALESCE(rate_limit_hits,0)),COUNT(CASE WHEN input_tokens>0 THEN 1 END) FROM tasks WHERE project_id=?1 AND deleted_at IS NULL"
     ) {
         Ok(mut s) => s.query_row(params![pid], |r| Ok(ClaudeUsage {
             total_input_tokens: r.get(0).ok(), total_output_tokens: r.get(1).ok(),
@@ -238,7 +238,7 @@ pub fn get_project_stats(db: &DbPool, pid: i64) -> ProjectStats {
 
     let raw_breakdown: Vec<ModelBreakdown> = {
         let mut s = match conn.prepare(
-            "SELECT COALESCE(NULLIF(model_used,''),NULLIF(model,''),'unknown') as model_name, COUNT(*) as count, SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)) as total_tokens, SUM(COALESCE(total_cost,0)) as total_cost FROM tasks WHERE project_id=?1 AND (input_tokens>0 OR status IN ('in_progress','testing','done')) GROUP BY model_name"
+            "SELECT COALESCE(NULLIF(model_used,''),NULLIF(model,''),'unknown') as model_name, COUNT(*) as count, SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)) as total_tokens, SUM(COALESCE(total_cost,0)) as total_cost FROM tasks WHERE project_id=?1 AND deleted_at IS NULL AND (input_tokens>0 OR status IN ('in_progress','testing','done')) GROUP BY model_name"
         ) {
             Ok(s) => s,
             Err(e) => { log::error!("get_project_stats(model_breakdown): {}", e); return ProjectStats { by_status, by_priority, by_type, duration, timeline, recent_completed, claude_usage, model_breakdown: vec![] }; }
@@ -275,7 +275,7 @@ fn merge_model_breakdown(rows: Vec<ModelBreakdown>) -> Vec<ModelBreakdown> {
 
 pub fn get_global_usage(db: &DbPool) -> GlobalUsage {
     let conn = db.lock();
-    let mut stmt = match conn.prepare("SELECT SUM(COALESCE(input_tokens,0)),SUM(COALESCE(output_tokens,0)),SUM(COALESCE(cache_read_tokens,0)),SUM(COALESCE(cache_creation_tokens,0)),SUM(COALESCE(total_cost,0)),SUM(COALESCE(num_turns,0)),SUM(COALESCE(rate_limit_hits,0)),COUNT(CASE WHEN input_tokens>0 THEN 1 END),COUNT(*) FROM tasks") {
+    let mut stmt = match conn.prepare("SELECT SUM(COALESCE(input_tokens,0)),SUM(COALESCE(output_tokens,0)),SUM(COALESCE(cache_read_tokens,0)),SUM(COALESCE(cache_creation_tokens,0)),SUM(COALESCE(total_cost,0)),SUM(COALESCE(num_turns,0)),SUM(COALESCE(rate_limit_hits,0)),COUNT(CASE WHEN input_tokens>0 THEN 1 END),COUNT(*) FROM tasks WHERE deleted_at IS NULL") {
         Ok(s) => s,
         Err(e) => { log::error!("get_global_usage: {}", e); return GlobalUsage::default(); }
     };
@@ -291,7 +291,7 @@ pub fn get_global_usage(db: &DbPool) -> GlobalUsage {
 pub fn get_global_model_breakdown(db: &DbPool) -> Vec<GlobalModelRow> {
     let conn = db.lock();
     let mut stmt = match conn.prepare(
-        "SELECT COALESCE(NULLIF(model_used,''),NULLIF(model,''),'unknown') as model, COUNT(*) as tasks, SUM(COALESCE(input_tokens,0)) as input_tokens, SUM(COALESCE(output_tokens,0)) as output_tokens, SUM(COALESCE(total_cost,0)) as cost FROM tasks WHERE input_tokens>0 GROUP BY model ORDER BY cost DESC"
+        "SELECT COALESCE(NULLIF(model_used,''),NULLIF(model,''),'unknown') as model, COUNT(*) as tasks, SUM(COALESCE(input_tokens,0)) as input_tokens, SUM(COALESCE(output_tokens,0)) as output_tokens, SUM(COALESCE(total_cost,0)) as cost FROM tasks WHERE deleted_at IS NULL AND input_tokens>0 GROUP BY model ORDER BY cost DESC"
     ) {
         Ok(s) => s,
         Err(e) => { log::error!("get_global_model_breakdown: {}", e); return vec![]; }
@@ -347,7 +347,7 @@ pub fn upsert_claude_limits(db: &DbPool, rate_limit_type: &str, status: &str, re
 pub fn get_usage_timeline(db: &DbPool) -> Vec<UsageTimelinePoint> {
     let conn = db.lock();
     let mut stmt = match conn.prepare(
-        "SELECT date(started_at) as day, SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)) as tokens, SUM(COALESCE(total_cost,0)) as cost, COUNT(*) as tasks FROM tasks WHERE started_at IS NOT NULL AND started_at>=datetime('now','-30 days') GROUP BY day ORDER BY day"
+        "SELECT date(started_at) as day, SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)) as tokens, SUM(COALESCE(total_cost,0)) as cost, COUNT(*) as tasks FROM tasks WHERE deleted_at IS NULL AND started_at IS NOT NULL AND started_at>=datetime('now','-30 days') GROUP BY day ORDER BY day"
     ) {
         Ok(s) => s,
         Err(e) => { log::error!("get_usage_timeline: {}", e); return vec![]; }

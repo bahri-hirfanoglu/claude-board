@@ -157,7 +157,7 @@ pub fn set_retry_after(db: &DbPool, task_id: i64, delay_seconds: i64) {
 
 pub fn reset_retry_count(db: &DbPool, task_id: i64) {
     let conn = db.lock();
-    if let Err(e) = conn.execute("UPDATE tasks SET retry_count=0 WHERE id=?1", params![task_id]) {
+    if let Err(e) = conn.execute("UPDATE tasks SET retry_count=0, retry_after=NULL WHERE id=?1", params![task_id]) {
         log::error!("reset_retry_count: {}", e);
     }
 }
