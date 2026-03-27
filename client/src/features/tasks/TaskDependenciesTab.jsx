@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import { api } from '../../lib/api';
 import { STATUS_COLORS } from './taskDetailHelpers';
 import { COLUMNS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
+import InlineDeleteConfirm from '../../components/InlineDeleteConfirm';
 
 export function TaskDependenciesTab({
   task,
@@ -16,6 +18,7 @@ export function TaskDependenciesTab({
   setAddDepDirection,
 }) {
   const { t } = useTranslation();
+  const [deleting, setDeleting] = useState(null);
 
   return (
     <div className="space-y-4">
@@ -43,18 +46,26 @@ export function TaskDependenciesTab({
                   </span>
                   {currentStatus === 'backlog' && (
                     <button
-                      onClick={async () => {
-                        await api.removeDependency(task.id, pid);
-                        api
-                          .getTaskDependencies(task.id)
-                          .then(setDeps)
-                          .catch(() => {});
-                      }}
+                      onClick={() => setDeleting(`parent-${pid}`)}
                       className="p-0.5 rounded hover:bg-red-500/20 text-surface-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                       title="Remove"
                     >
                       <X size={11} />
                     </button>
+                  )}
+                  {deleting === `parent-${pid}` && (
+                    <InlineDeleteConfirm
+                      message="Remove this dependency?"
+                      onConfirm={async () => {
+                        await api.removeDependency(task.id, pid);
+                        setDeleting(null);
+                        api
+                          .getTaskDependencies(task.id)
+                          .then(setDeps)
+                          .catch(() => {});
+                      }}
+                      onCancel={() => setDeleting(null)}
+                    />
                   )}
                 </div>
               );
@@ -89,18 +100,26 @@ export function TaskDependenciesTab({
                   </span>
                   {currentStatus === 'backlog' && (
                     <button
-                      onClick={async () => {
-                        await api.removeDependency(cid, task.id);
-                        api
-                          .getTaskDependencies(task.id)
-                          .then(setDeps)
-                          .catch(() => {});
-                      }}
+                      onClick={() => setDeleting(`child-${cid}`)}
                       className="p-0.5 rounded hover:bg-red-500/20 text-surface-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                       title="Remove"
                     >
                       <X size={11} />
                     </button>
+                  )}
+                  {deleting === `child-${cid}` && (
+                    <InlineDeleteConfirm
+                      message="Remove this dependency?"
+                      onConfirm={async () => {
+                        await api.removeDependency(cid, task.id);
+                        setDeleting(null);
+                        api
+                          .getTaskDependencies(task.id)
+                          .then(setDeps)
+                          .catch(() => {});
+                      }}
+                      onCancel={() => setDeleting(null)}
+                    />
                   )}
                 </div>
               );

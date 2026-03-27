@@ -34,10 +34,15 @@ const STATUS_CONFIG = {
 export default function PipelineView({ tasks, onStatusChange, onViewLogs, onViewDetail }) {
   const { t } = useTranslation();
   const [depMap, setDepMap] = useState({});
+  const [loading, setLoading] = useState(true);
 
   // Load all dependency data
   useEffect(() => {
-    if (!IS_TAURI || tasks.length === 0) return;
+    if (!IS_TAURI || tasks.length === 0) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     const loadDeps = async () => {
       const map = {};
       for (const task of tasks) {
@@ -47,6 +52,7 @@ export default function PipelineView({ tasks, onStatusChange, onViewLogs, onView
         } catch {}
       }
       setDepMap(map);
+      setLoading(false);
     };
     loadDeps();
   }, [tasks]);
@@ -124,6 +130,14 @@ export default function PipelineView({ tasks, onStatusChange, onViewLogs, onView
     if (m > 0) return `${m}m ${s % 60}s`;
     return `${s}s`;
   };
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loader2 size={24} className="animate-spin text-surface-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">

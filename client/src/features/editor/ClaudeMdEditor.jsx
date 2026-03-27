@@ -31,7 +31,7 @@ export default function ClaudeMdEditor({ projectId, projectName, onClose }) {
 
   useEffect(() => {
     loadFile();
-  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId]); // loadFile is intentionally omitted — it's not wrapped in useCallback and adding it would cause infinite re-renders
 
   const loadFile = async () => {
     setLoading(true);

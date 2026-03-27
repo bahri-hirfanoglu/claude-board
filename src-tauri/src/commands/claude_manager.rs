@@ -209,7 +209,8 @@ pub async fn save_claude_settings(settings: Value) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         let dir = dirs_home().join(".claude");
         std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-        std::fs::write(dir.join("settings.json"), serde_json::to_string_pretty(&settings).unwrap()).map_err(|e| e.to_string())
+        let json = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
+        std::fs::write(dir.join("settings.json"), json).map_err(|e| e.to_string())
     }).await.map_err(|e| e.to_string())?
 }
 

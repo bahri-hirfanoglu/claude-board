@@ -49,7 +49,8 @@ export function useProjects() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [projects]);
 
-  // Socket events
+  // Socket events — empty deps is intentional: `socket` is a module-level singleton
+  // (never changes) and all handlers use only state setter functions (stable by React guarantee)
   useEffect(() => {
     const onCreate = (project) => setProjects((prev) => [...prev, project]);
     const onUpdate = (project) => {

@@ -154,8 +154,12 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
 
     if status == "in_progress" && prev_status != "in_progress" {
         let project = pq::get_by_id(&db, task.project_id).ok_or("Project not found")?;
-        runner::start(&updated, app.clone(), &project.working_dir, &project, mcp_port);
-        activity::add(&db, task.project_id, Some(id), "task_started", &format!("Task started: {}", task.title), None);
+        if !runner::start(&updated, app.clone(), &project.working_dir, &project, mcp_port) {
+            log::error!("Failed to start runner for task {}, reverting status to {}", id, prev_status);
+            tq::update_status(&db, id, prev_status);
+        } else {
+            activity::add(&db, task.project_id, Some(id), "task_started", &format!("Task started: {}", task.title), None);
+        }
     }
     if prev_status == "in_progress" && status != "in_progress" {
         runner::stop(id, &db, &app);

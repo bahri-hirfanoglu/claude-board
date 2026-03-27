@@ -83,7 +83,7 @@ export default function Dashboard({ projects, onSelectProject, onNewProject, onO
 
   useEffect(() => {
     loadSummary();
-  }, [projects]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projects]); // loadSummary is intentionally omitted — it's not wrapped in useCallback and adding it would cause infinite re-renders
 
   const loadSummary = async () => {
     if (!summaryCache) setLoading(true);
@@ -118,7 +118,7 @@ export default function Dashboard({ projects, onSelectProject, onNewProject, onO
           groupsCache = Array.isArray(grp) ? grp : [];
           setGroups(groupsCache);
         })
-        .catch(() => {});
+        .catch((e) => console.error('Failed to load project groups:', e));
     }
     if (IS_TAURI && !suggestionsLoaded) {
       api
@@ -128,8 +128,9 @@ export default function Dashboard({ projects, onSelectProject, onNewProject, onO
           suggestionsLoaded = true;
           setSuggestions(suggestionsCache);
         })
-        .catch(() => {
+        .catch((e) => {
           suggestionsLoaded = true;
+          console.error('Failed to load suggestions:', e);
         });
     }
   };

@@ -30,11 +30,32 @@ pub fn path_from_handle(app: &tauri::AppHandle) -> PathBuf {
         .join("config.json")
 }
 
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            data_dir: String::new(),
+            port: DEFAULT_PORT,
+            language: default_lang(),
+        }
+    }
+}
+
 pub fn load(app: &tauri::App) -> Option<AppConfig> {
     let p = path(app);
     if p.exists() {
-        let content = std::fs::read_to_string(&p).ok()?;
-        serde_json::from_str(&content).ok()
+        let content = match std::fs::read_to_string(&p) {
+            Ok(c) => c,
+            Err(_) => return None,
+        };
+        match serde_json::from_str::<AppConfig>(&content) {
+            Ok(config) => Some(config),
+            Err(e) => {
+                log::warn!("Config file corrupted, backing up and using defaults: {}", e);
+                let bak = p.with_extension("json.bak");
+                std::fs::rename(&p, &bak).ok();
+                Some(AppConfig::default())
+            }
+        }
     } else {
         None
     }
@@ -42,6 +63,10 @@ pub fn load(app: &tauri::App) -> Option<AppConfig> {
 
 pub fn save(app: &tauri::AppHandle, config: &AppConfig) {
     let p = path_from_handle(app);
-    std::fs::create_dir_all(p.parent().unwrap()).ok();
-    std::fs::write(&p, serde_json::to_string_pretty(config).unwrap()).ok();
+    if let Some(parent) = p.parent() {
+        std::fs::create_dir_all(parent).ok();
+    }
+    if let Ok(json) = serde_json::to_string_pretty(config) {
+        std::fs::write(&p, json).ok();
+    }
 }

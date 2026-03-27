@@ -48,6 +48,7 @@ pub struct Task {
     pub retry_after: Option<String>,
     pub github_issue_number: Option<i64>,
     pub github_issue_url: Option<String>,
+    pub deleted_at: Option<String>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     #[serde(default)]
@@ -118,6 +119,7 @@ pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
         retry_after: row.get("retry_after").ok().flatten(),
         github_issue_number: row.get("github_issue_number").ok().flatten(),
         github_issue_url: row.get("github_issue_url").ok().flatten(),
+        deleted_at: row.get("deleted_at").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         is_running: false,
@@ -198,7 +200,7 @@ pub fn is_dependency_met(db: &DbPool, task: &Task) -> bool {
 
 pub fn get_by_project(db: &DbPool, project_id: i64) -> Vec<Task> {
     let conn = db.lock();
-    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE project_id=?1 ORDER BY status,sort_order,id") {
+    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE project_id=?1 AND deleted_at IS NULL ORDER BY status,sort_order,id") {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_project prepare: {}", e); return vec![]; }
     };
@@ -211,7 +213,7 @@ pub fn get_by_project(db: &DbPool, project_id: i64) -> Vec<Task> {
 
 pub fn get_by_id(db: &DbPool, id: i64) -> Option<Task> {
     let conn = db.lock();
-    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE id=?1") {
+    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE id=?1 AND deleted_at IS NULL") {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_id prepare: {}", e); return None; }
     };
@@ -317,8 +319,11 @@ pub fn set_tags(db: &DbPool, task_id: i64, tags: &str) {
 
 pub fn delete(db: &DbPool, id: i64) {
     let conn = db.lock();
-    if let Err(e) = conn.execute("DELETE FROM tasks WHERE id=?1", params![id]) {
-        log::error!("delete task: {}", e);
+    if let Err(e) = conn.execute(
+        "UPDATE tasks SET deleted_at=datetime('now','localtime'),updated_at=datetime('now','localtime') WHERE id=?1",
+        params![id],
+    ) {
+        log::error!("delete task (soft): {}", e);
     }
 }
 
@@ -504,7 +509,7 @@ pub fn increment_revision_count(db: &DbPool, id: i64) {
 // Queue
 pub fn get_next_queued(db: &DbPool, project_id: i64) -> Option<Task> {
     let conn = db.lock();
-    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE project_id=?1 AND status='backlog' ORDER BY priority DESC,queue_position ASC,id ASC LIMIT 1") {
+    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE project_id=?1 AND status='backlog' AND deleted_at IS NULL ORDER BY priority DESC,queue_position ASC,id ASC LIMIT 1") {
         Ok(s) => s,
         Err(e) => { log::error!("get_next_queued prepare: {}", e); return None; }
     };
@@ -513,7 +518,7 @@ pub fn get_next_queued(db: &DbPool, project_id: i64) -> Option<Task> {
 
 pub fn get_running_count(db: &DbPool, project_id: i64) -> i64 {
     let conn = db.lock();
-    conn.prepare("SELECT COUNT(*) FROM tasks WHERE project_id=?1 AND status='in_progress'")
+    conn.prepare("SELECT COUNT(*) FROM tasks WHERE project_id=?1 AND status='in_progress' AND deleted_at IS NULL")
         .and_then(|mut s| s.query_row(params![project_id], |row| row.get(0)))
         .unwrap_or(0)
 }
@@ -570,7 +575,7 @@ pub fn set_parent_task_id(db: &DbPool, task_id: i64, parent_id: i64) {
 
 pub fn get_subtasks(db: &DbPool, parent_id: i64) -> Vec<Task> {
     let conn = db.lock();
-    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE parent_task_id=?1 ORDER BY id") {
+    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE parent_task_id=?1 AND deleted_at IS NULL ORDER BY id") {
         Ok(s) => s,
         Err(_) => return vec![],
     };

@@ -19,6 +19,7 @@ struct ProcessInfo {
     pid: u32,
     started_at: std::time::Instant,
     project_id: i64,
+    working_dir: String,
 }
 
 type ProcessMap = Mutex<HashMap<i64, ProcessInfo>>;
@@ -30,6 +31,10 @@ static EVENT_CTX: once_cell::sync::Lazy<EventContext> = once_cell::sync::Lazy::n
 
 pub fn is_running(task_id: i64) -> bool {
     ACTIVE_PROCESSES.lock().contains_key(&task_id)
+}
+
+pub fn is_starting(task_id: i64) -> bool {
+    STARTING_TASKS.lock().contains(&task_id)
 }
 
 /// Fetch task and set is_running field, then emit task:updated event.
@@ -60,7 +65,7 @@ pub fn enforce_timeouts(app: &AppHandle) {
     let db = crate::db::get_db();
 
     // Collect tasks that exceeded timeout (snapshot under lock, then act outside lock)
-    let timed_out: Vec<(i64, u32)> = {
+    let timed_out: Vec<(i64, u32, String)> = {
         let procs = ACTIVE_PROCESSES.lock();
         let mut result = Vec::new();
         for (task_id, info) in procs.iter() {
@@ -71,14 +76,14 @@ pub fn enforce_timeouts(app: &AppHandle) {
             if timeout_min > 0 {
                 let elapsed_min = info.started_at.elapsed().as_secs() / 60;
                 if elapsed_min >= timeout_min as u64 {
-                    result.push((*task_id, info.pid));
+                    result.push((*task_id, info.pid, info.working_dir.clone()));
                 }
             }
         }
         result
     };
 
-    for (task_id, _pid) in timed_out {
+    for (task_id, _pid, working_dir) in timed_out {
         let task = tasks::get_by_id(&db, task_id);
         let title = task.as_ref().map(|t| t.title.as_str()).unwrap_or("unknown");
         let project_id = task.as_ref().map(|t| t.project_id).unwrap_or(0);
@@ -91,6 +96,12 @@ pub fn enforce_timeouts(app: &AppHandle) {
 
         // Stop the process (this removes from ACTIVE_PROCESSES and cleans up)
         stop(task_id, &db, app);
+
+        // Clean up attachments copied to working dir
+        let attach_dir = Path::new(&working_dir).join(".claude-attachments");
+        if attach_dir.exists() {
+            std::fs::remove_dir_all(&attach_dir).ok();
+        }
 
         // Trigger failure flow (retry or permanent fail)
         crate::services::queue::handle_task_failure(&db, app, project_id, task_id);
@@ -125,6 +136,14 @@ fn kill_process(pid: u32) {
     }
 }
 
+/// Sanitize a branch name to only allow safe git ref characters.
+/// Permits alphanumeric, dash, underscore, slash, and dot.
+fn sanitize_branch_name(name: &str) -> String {
+    name.chars()
+        .filter(|c| c.is_alphanumeric() || *c == '-' || *c == '_' || *c == '/' || *c == '.')
+        .collect::<String>()
+}
+
 fn generate_branch_slug(title: &str) -> String {
     title
         .to_lowercase()
@@ -143,9 +162,9 @@ fn ensure_task_branch(task: &tasks::Task, working_dir: &str, project: &projects:
     let is_revision = task.revision_count.unwrap_or(0) > 0;
     let slug = generate_branch_slug(&task.title);
     let slug = if slug.is_empty() { format!("task-{}", task.id) } else { slug };
-    let branch_name = task.branch_name.clone().unwrap_or_else(|| {
+    let branch_name = sanitize_branch_name(&task.branch_name.clone().unwrap_or_else(|| {
         format!("{}/{}", task.task_type.as_deref().unwrap_or("feature"), slug)
-    });
+    }));
 
     let exec = |cmd: &str| -> Result<String, String> {
         let mut c = Command::new("git");
@@ -182,7 +201,7 @@ fn ensure_task_branch(task: &tasks::Task, working_dir: &str, project: &projects:
         }
     } else {
         let base = project.pr_base_branch.as_deref().unwrap_or("main");
-        if exec(&format!("rev-parse --verify {}", branch_name)).is_ok() {
+        if git_hidden(&["rev-parse", "--verify", &branch_name], working_dir).map(|o| o.status.success()).unwrap_or(false) {
             let _ = git_hidden(&["checkout", &branch_name], working_dir);
         } else if git_hidden(&["checkout", "-b", &branch_name, base], working_dir).is_err() {
             let _ = git_hidden(&["checkout", "-b", &branch_name], working_dir);
@@ -493,7 +512,16 @@ fn copy_task_attachments(task_id: i64, working_dir: &str, db: &DbPool) -> (Vec<a
     let attach_dir = Path::new(working_dir).join(".claude-attachments");
 
     if !task_attachments.is_empty() {
-        std::fs::create_dir_all(&attach_dir).ok();
+        // Prevent symlink attacks - remove if exists and is symlink, then create fresh
+        if attach_dir.exists() {
+            if attach_dir.is_symlink() {
+                log::warn!("Symlink detected at {:?}, removing", attach_dir);
+                std::fs::remove_file(&attach_dir).ok();
+            }
+        }
+        if !attach_dir.exists() {
+            std::fs::create_dir(&attach_dir).ok();
+        }
         for a in &task_attachments {
             let src = uploads_dir.join(&a.filename);
             let dest = attach_dir.join(&a.filename);
@@ -573,6 +601,7 @@ fn handle_process_lifecycle(
         pid,
         started_at: std::time::Instant::now(),
         project_id,
+        working_dir: working_dir.to_string(),
     });
     STARTING_TASKS.lock().remove(&task_id);
 
@@ -699,7 +728,7 @@ pub fn start(
     working_dir: &str,
     project: &projects::Project,
     mcp_server_port: u16,
-) {
+) -> bool {
     let task_id = task.id;
     let db = db::get_db();
 
@@ -708,7 +737,7 @@ pub fn start(
         let active = ACTIVE_PROCESSES.lock();
         let mut starting = STARTING_TASKS.lock();
         if active.contains_key(&task_id) || starting.contains(&task_id) {
-            return;
+            return false;
         }
         starting.insert(task_id);
     }
@@ -798,6 +827,8 @@ pub fn start(
         let db = db::get_db();
         handle_process_lifecycle(task_id, child, &db, &app, &working_dir, project_id, &task_title, task_key.as_deref(), &attach_dir);
     });
+
+    true
 }
 
 /// Run auto-test verification: starts Claude with a test-specific prompt.
@@ -938,6 +969,7 @@ After all checks, you MUST output this exact JSON block as your final output:
             pid,
             started_at: std::time::Instant::now(),
             project_id,
+            working_dir: working_dir.to_string(),
         });
         STARTING_TASKS.lock().remove(&task_id);
 

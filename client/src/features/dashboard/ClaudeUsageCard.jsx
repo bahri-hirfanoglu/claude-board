@@ -23,7 +23,7 @@ export function ClaudeUsageCard({ t }) {
         usageCache = d;
         setData(d);
       })
-      .catch(() => {});
+      .catch((e) => console.error('Failed to load Claude usage:', e));
   }, []);
 
   if (!data?.usage) return null;

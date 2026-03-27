@@ -88,7 +88,7 @@ function AppInner() {
       api
         .getTemplates(currentProject.id)
         .then(setTemplates)
-        .catch(() => {});
+        .catch((e) => console.error('Failed to load templates:', e));
   }, [closeModal, currentProject]);
 
   const handleCloseRoles = useCallback(() => {
@@ -97,7 +97,7 @@ function AppInner() {
       api
         .getRoles(currentProject.id)
         .then(setRoles)
-        .catch(() => {});
+        .catch((e) => console.error('Failed to load roles:', e));
   }, [closeModal, currentProject]);
 
   // Listen for app updates
@@ -113,6 +113,8 @@ function AppInner() {
   // Auto-open terminal when task NEWLY starts running
   const runningIdsRef = useRef(new Set());
   const suppressRef = useRef(true);
+  const terminalRef = useRef(terminal);
+  terminalRef.current = terminal;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -130,7 +132,7 @@ function AppInner() {
       if (suppressRef.current) return;
       if (task.is_running && !runningIdsRef.current.has(task.id)) {
         runningIdsRef.current.add(task.id);
-        terminal.openTab(task);
+        terminalRef.current.openTab(task);
         setSelectedTask(task);
         setActivePanel('logs');
       } else if (!task.is_running) {
@@ -143,7 +145,7 @@ function AppInner() {
       socket.on('task:updated', handler);
       return () => socket.off('task:updated', handler);
     }
-  }, [terminal]);
+  }, []);
 
   // Clear panels on project change
   useEffect(() => {

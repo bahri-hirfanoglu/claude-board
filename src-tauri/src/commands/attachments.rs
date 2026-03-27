@@ -38,7 +38,14 @@ pub fn delete_attachment(app: AppHandle, id: i64) -> Result<(), String> {
         let task_id = att.task_id;
         let data_dir = db::get_data_dir();
         let file_path = data_dir.parent().unwrap_or(&data_dir).join("uploads").join(&att.filename);
-        std::fs::remove_file(&file_path).ok();
+        // Delete file first, only remove DB record if file is gone
+        let file_exists = file_path.exists();
+        if file_exists {
+            if let Err(e) = std::fs::remove_file(&file_path) {
+                log::warn!("Failed to delete attachment file: {}", e);
+                // Still remove DB record - file might be locked/moved
+            }
+        }
         aq::remove(&db, id);
         app.emit("task:attachmentDeleted", &serde_json::json!({"id": id, "taskId": task_id})).ok();
     }

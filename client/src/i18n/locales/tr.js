@@ -213,7 +213,20 @@ export default {
   'projectModal.autoBranch': 'Otomatik Dal',
   'projectModal.autoBranchDesc': 'Her g\u00f6rev i\u00e7in \u00f6zellik dal\u0131 olu\u015ftur',
   'projectModal.autoPR': 'Otomatik PR',
-  'projectModal.autoPRDesc': 'Tamamland\u0131\u011f\u0131nda pull request olu\u015ftur',
+  'projectModal.autoPRDesc': 'Tamamlandığında pull request oluştur',
+  'projectModal.autoTest': 'Otomatik Test',
+  'projectModal.autoTestEnabled': 'Otomatik test etkin',
+  'projectModal.autoTestDisabled': 'Otomatik test devre dışı',
+  'projectModal.autoTestDescription':
+    'Claude, tamamlanan görevleri testleri çalıştırarak ve kabul kriterlerini kontrol ederek otomatik olarak doğrular',
+  'projectModal.customTestInstructions': 'Özel test talimatları (isteğe bağlı)',
+  'projectModal.customTestPlaceholder':
+    'Claude değişiklikleri inceleyecek, testleri çalıştıracak ve kabul kriterlerini kontrol edecek. Projeye özel talimatlarınızı buraya ekleyin.',
+  'projectModal.allowedTools': 'İzin Verilen Araçlar (virgülle ayrılmış)',
+  'projectModal.repository': 'Depo',
+  'projectModal.repoHelpText': 'Git remote üzerinden otomatik algıla veya elle gir',
+  'projectModal.ghCliHelpText':
+    'gh CLI kimlik doğrulamasını kullanır. Kaydettikten sonra, sorunları görev olarak içe aktarmak için pano araç çubuğundaki Sorunlar düğmesini kullanın.',
 
   // ─── Review Modal ───
   'review.title': 'G\u00f6revi \u0130ncele',

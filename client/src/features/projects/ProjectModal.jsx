@@ -100,9 +100,9 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
       .then((repo) => {
         if (repo) setGithubRepo(typeof repo === 'string' ? repo : repo.toString());
       })
-      .catch(() => {})
+      .catch((e) => console.error('Failed to detect GitHub repo:', e))
       .finally(() => setGithubDetecting(false));
-  }, [tab, workingDir]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, workingDir, githubRepo]);
 
   const generateSlug = (text) =>
     text
@@ -332,7 +332,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
 
                 {permissionMode === 'allow-tools' && (
                   <div className="pt-1">
-                    <label className="block text-[10px] text-surface-500 mb-1">Allowed Tools (comma-separated)</label>
+                    <label className="block text-[10px] text-surface-500 mb-1">{t('projectModal.allowedTools')}</label>
                     <input
                       value={allowedTools}
                       onChange={(e) => setAllowedTools(e.target.value)}
@@ -427,19 +427,19 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                 <div>
                   <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5">
                     <FlaskConical size={12} />
-                    Auto Test
+                    {t('projectModal.autoTest')}
                   </label>
                   <ToggleRow
                     enabled={autoTest}
                     onToggle={() => setAutoTest(!autoTest)}
-                    label={autoTest ? 'Auto-test enabled' : 'Auto-test disabled'}
-                    desc="Claude automatically verifies completed tasks by running tests and checking acceptance criteria"
+                    label={autoTest ? t('projectModal.autoTestEnabled') : t('projectModal.autoTestDisabled')}
+                    desc={t('projectModal.autoTestDescription')}
                     activeColor="emerald"
                   />
                   {autoTest && (
                     <div className="mt-2 pl-1">
                       <label className="block text-[10px] text-surface-500 mb-1">
-                        Custom test instructions (optional)
+                        {t('projectModal.customTestInstructions')}
                       </label>
                       <textarea
                         value={testPrompt}
@@ -450,10 +450,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                         rows={3}
                         className="w-full px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 resize-none font-mono"
                       />
-                      <p className="text-[9px] text-surface-600 mt-1">
-                        Claude will review changes, run tests, and check acceptance criteria. Add project-specific
-                        instructions here.
-                      </p>
+                      <p className="text-[9px] text-surface-600 mt-1">{t('projectModal.customTestPlaceholder')}</p>
                     </div>
                   )}
                 </div>
@@ -528,7 +525,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                   <>
                     {/* Repository */}
                     <div>
-                      <label className="block text-[10px] text-surface-500 mb-1">Repository</label>
+                      <label className="block text-[10px] text-surface-500 mb-1">{t('projectModal.repository')}</label>
                       <div className="flex gap-2">
                         <input
                           value={githubRepo}
@@ -550,7 +547,9 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                                 setGithubRepo(typeof repo === 'string' ? repo : repo.toString());
                                 setGithubValid(null);
                               }
-                            } catch {}
+                            } catch (e) {
+                              console.error('Failed to detect GitHub repo:', e);
+                            }
                             setGithubDetecting(false);
                           }}
                           className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium rounded-lg bg-surface-800 border border-surface-700 text-surface-400 hover:text-surface-100 hover:bg-surface-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
@@ -560,7 +559,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                           Detect
                         </button>
                       </div>
-                      <p className="text-[9px] text-surface-600 mt-1">Auto-detect from git remote or enter manually</p>
+                      <p className="text-[9px] text-surface-600 mt-1">{t('projectModal.repoHelpText')}</p>
                     </div>
 
                     {/* gh CLI Status */}
@@ -605,7 +604,8 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                           try {
                             const result = await api.githubCheckStatus(githubRepo);
                             setGithubValid(result?.status || 'error');
-                          } catch {
+                          } catch (e) {
+                            console.error('Failed to check GitHub connection:', e);
                             setGithubValid('error');
                           } finally {
                             setGithubValidating(false);
@@ -618,10 +618,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                       </button>
                     </div>
 
-                    <p className="text-[9px] text-surface-600">
-                      Uses <code className="text-surface-500">gh</code> CLI authentication. After saving, use the{' '}
-                      <strong>Issues</strong> button in the board toolbar to browse and import issues as tasks.
-                    </p>
+                    <p className="text-[9px] text-surface-600">{t('projectModal.ghCliHelpText')}</p>
                   </>
                 )}
               </div>

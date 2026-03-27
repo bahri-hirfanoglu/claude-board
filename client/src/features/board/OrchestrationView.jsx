@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { GitBranch, CalendarRange, Radio, X, Tag, ChevronDown } from 'lucide-react';
+import { GitBranch, CalendarRange, Radio, X, Tag, ChevronDown, Loader2 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { IS_TAURI, tauriListen } from '../../lib/tauriEvents';
 import { useTranslation } from '../../i18n/I18nProvider';
@@ -31,6 +31,7 @@ function savePositions(projectId, positions) {
 export default function OrchestrationView({ tasks, projectId, onViewLogs, onStatusChange, onViewDetail }) {
   const { t } = useTranslation();
   const [graphData, setGraphData] = useState({ tasks: [], edges: [], waves: [] });
+  const [loading, setLoading] = useState(true);
   const [savedPositions, setSavedPositions] = useState(() => loadPositions(projectId));
   const [viewType, setViewType] = useState('graph'); // 'graph' | 'timeline' | 'live'
   const [tagFilter, setTagFilter] = useState([]);
@@ -48,11 +49,15 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
   }, [tagDropdownOpen]);
 
   const loadGraph = useCallback(() => {
-    if (!IS_TAURI || !projectId) return;
+    if (!IS_TAURI || !projectId) {
+      setLoading(false);
+      return;
+    }
     api
       .getDependencyGraph(projectId)
       .then((data) => setGraphData(data))
-      .catch(() => {});
+      .catch((e) => console.error('Failed to load dependency graph:', e))
+      .finally(() => setLoading(false));
   }, [projectId]);
 
   // Reload on task changes
@@ -112,7 +117,7 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
   }, [graphData.tasks, filteredIds, tagFilter]);
 
   const handleStop = useCallback((task) => {
-    api.stopTask(task.id).catch(() => {});
+    api.stopTask(task.id).catch((e) => console.error('Failed to stop task:', e));
   }, []);
 
   const handleAddDependency = useCallback(
@@ -121,7 +126,7 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
       api
         .addDependency(taskId, dependsOnId)
         .then(() => loadGraph())
-        .catch(() => {});
+        .catch((e) => console.error('Failed to add dependency:', e));
     },
     [loadGraph],
   );
@@ -141,6 +146,14 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
     },
     [onStatusChange],
   );
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loader2 size={24} className="animate-spin text-surface-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col gap-3 p-4 overflow-auto">

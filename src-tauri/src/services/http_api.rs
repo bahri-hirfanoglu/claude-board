@@ -39,8 +39,13 @@ pub async fn start_server(port: u16) {
         .route("/api/settings", get(get_settings).put(update_settings))
         .layer(CorsLayer::permissive());
 
-    let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port))
-        .await.expect("Failed to bind MCP HTTP API port");
+    let listener = match tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port)).await {
+        Ok(l) => l,
+        Err(e) => {
+            log::error!("Failed to bind MCP HTTP API on port {}: {}", port, e);
+            return;
+        }
+    };
     log::info!("MCP HTTP API listening on port {}", port);
     axum::serve(listener, app).await.ok();
 }

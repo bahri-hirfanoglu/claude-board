@@ -166,6 +166,7 @@ pub fn create_tables(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_task_events_task ON task_events(task_id)",
         "CREATE INDEX IF NOT EXISTS idx_task_deps_task ON task_dependencies(task_id)",
         "CREATE INDEX IF NOT EXISTS idx_task_deps_parent ON task_dependencies(depends_on_id)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_key_unique ON tasks(task_key) WHERE task_key != ''",
     ];
     for idx in indexes {
         conn.execute_batch(idx).ok();
@@ -252,6 +253,8 @@ pub fn run_migrations(conn: &Connection) {
         ("projects", "github_sync_enabled", "ALTER TABLE projects ADD COLUMN github_sync_enabled INTEGER DEFAULT 0"),
         ("tasks", "github_issue_number", "ALTER TABLE tasks ADD COLUMN github_issue_number INTEGER"),
         ("tasks", "github_issue_url", "ALTER TABLE tasks ADD COLUMN github_issue_url TEXT"),
+        // Soft delete
+        ("tasks", "deleted_at", "ALTER TABLE tasks ADD COLUMN deleted_at TEXT DEFAULT NULL"),
     ];
 
     for (table, col, sql) in migrations {
@@ -269,56 +272,70 @@ pub fn run_migrations(conn: &Connection) {
         ).is_err();
         if needs_migration {
             log::info!("Migrating tasks table to support 'failed' status...");
-            conn.execute_batch("
-                CREATE TABLE IF NOT EXISTS tasks_new (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    project_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT DEFAULT '',
-                    status TEXT DEFAULT 'backlog' CHECK(status IN ('backlog','in_progress','testing','done','failed')),
-                    priority INTEGER DEFAULT 0,
-                    task_type TEXT DEFAULT 'feature' CHECK(task_type IN ('feature','bugfix','refactor','docs','test','chore')),
-                    acceptance_criteria TEXT DEFAULT '', model TEXT DEFAULT 'sonnet', thinking_effort TEXT DEFAULT 'medium',
-                    sort_order INTEGER DEFAULT 0, queue_position INTEGER DEFAULT 0,
-                    branch_name TEXT, claude_session_id TEXT,
-                    input_tokens INTEGER DEFAULT 0, output_tokens INTEGER DEFAULT 0,
-                    cache_read_tokens INTEGER DEFAULT 0, cache_creation_tokens INTEGER DEFAULT 0,
-                    total_cost REAL DEFAULT 0, num_turns INTEGER DEFAULT 0, rate_limit_hits INTEGER DEFAULT 0,
-                    revision_count INTEGER DEFAULT 0, model_used TEXT,
-                    started_at DATETIME, completed_at DATETIME,
-                    work_duration_ms INTEGER DEFAULT 0, last_resumed_at DATETIME,
-                    commits TEXT DEFAULT '[]', pr_url TEXT, diff_stat TEXT,
-                    role_id INTEGER, task_key TEXT DEFAULT '',
-                    created_at DATETIME DEFAULT (datetime('now','localtime')),
-                    updated_at DATETIME DEFAULT (datetime('now','localtime')),
-                    test_report TEXT, depends_on INTEGER, retry_count INTEGER DEFAULT 0,
-                    context_summary TEXT, parent_task_id INTEGER, awaiting_subtasks INTEGER DEFAULT 0,
-                    tags TEXT DEFAULT '[]', lifecycle_summary TEXT, retry_after DATETIME,
-                    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-                );
-                INSERT INTO tasks_new SELECT
-                    id, project_id, title, description, status, priority, task_type,
-                    acceptance_criteria, model, thinking_effort, sort_order, queue_position,
-                    branch_name, claude_session_id,
-                    input_tokens, output_tokens, cache_read_tokens, cache_creation_tokens,
-                    total_cost, num_turns, rate_limit_hits, revision_count, model_used,
-                    started_at, completed_at, work_duration_ms, last_resumed_at,
-                    commits, pr_url, diff_stat, role_id, task_key,
-                    created_at, updated_at,
-                    test_report, depends_on, retry_count,
-                    context_summary, parent_task_id, awaiting_subtasks,
-                    tags, lifecycle_summary, retry_after
-                FROM tasks;
-                DROP TABLE tasks;
-                ALTER TABLE tasks_new RENAME TO tasks;
-            ").ok();
-            // Recreate indexes lost during table rebuild
-            conn.execute_batch("
-                CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id);
-                CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
-                CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
-                CREATE INDEX IF NOT EXISTS idx_tasks_project_status ON tasks(project_id, status);
-                CREATE INDEX IF NOT EXISTS idx_tasks_created ON tasks(created_at);
-            ").ok();
-            log::info!("Tasks table migration completed");
+            let tx_result: Result<(), rusqlite::Error> = (|| {
+                conn.execute_batch("BEGIN IMMEDIATE")?;
+
+                conn.execute_batch("
+                    CREATE TABLE IF NOT EXISTS tasks_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        project_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT DEFAULT '',
+                        status TEXT DEFAULT 'backlog' CHECK(status IN ('backlog','in_progress','testing','done','failed')),
+                        priority INTEGER DEFAULT 0,
+                        task_type TEXT DEFAULT 'feature' CHECK(task_type IN ('feature','bugfix','refactor','docs','test','chore')),
+                        acceptance_criteria TEXT DEFAULT '', model TEXT DEFAULT 'sonnet', thinking_effort TEXT DEFAULT 'medium',
+                        sort_order INTEGER DEFAULT 0, queue_position INTEGER DEFAULT 0,
+                        branch_name TEXT, claude_session_id TEXT,
+                        input_tokens INTEGER DEFAULT 0, output_tokens INTEGER DEFAULT 0,
+                        cache_read_tokens INTEGER DEFAULT 0, cache_creation_tokens INTEGER DEFAULT 0,
+                        total_cost REAL DEFAULT 0, num_turns INTEGER DEFAULT 0, rate_limit_hits INTEGER DEFAULT 0,
+                        revision_count INTEGER DEFAULT 0, model_used TEXT,
+                        started_at DATETIME, completed_at DATETIME,
+                        work_duration_ms INTEGER DEFAULT 0, last_resumed_at DATETIME,
+                        commits TEXT DEFAULT '[]', pr_url TEXT, diff_stat TEXT,
+                        role_id INTEGER, task_key TEXT DEFAULT '',
+                        created_at DATETIME DEFAULT (datetime('now','localtime')),
+                        updated_at DATETIME DEFAULT (datetime('now','localtime')),
+                        test_report TEXT, depends_on INTEGER, retry_count INTEGER DEFAULT 0,
+                        context_summary TEXT, parent_task_id INTEGER, awaiting_subtasks INTEGER DEFAULT 0,
+                        tags TEXT DEFAULT '[]', lifecycle_summary TEXT, retry_after DATETIME,
+                        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+                    )")?;
+
+                conn.execute_batch("
+                    INSERT INTO tasks_new SELECT
+                        id, project_id, title, description, status, priority, task_type,
+                        acceptance_criteria, model, thinking_effort, sort_order, queue_position,
+                        branch_name, claude_session_id,
+                        input_tokens, output_tokens, cache_read_tokens, cache_creation_tokens,
+                        total_cost, num_turns, rate_limit_hits, revision_count, model_used,
+                        started_at, completed_at, work_duration_ms, last_resumed_at,
+                        commits, pr_url, diff_stat, role_id, task_key,
+                        created_at, updated_at,
+                        test_report, depends_on, retry_count,
+                        context_summary, parent_task_id, awaiting_subtasks,
+                        tags, lifecycle_summary, retry_after
+                    FROM tasks")?;
+
+                conn.execute_batch("DROP TABLE tasks")?;
+                conn.execute_batch("ALTER TABLE tasks_new RENAME TO tasks")?;
+
+                conn.execute_batch("
+                    CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id);
+                    CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+                    CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
+                    CREATE INDEX IF NOT EXISTS idx_tasks_project_status ON tasks(project_id, status);
+                    CREATE INDEX IF NOT EXISTS idx_tasks_created ON tasks(created_at)")?;
+
+                conn.execute_batch("COMMIT")?;
+                Ok(())
+            })();
+
+            if let Err(e) = tx_result {
+                log::error!("Migration failed, rolling back: {}", e);
+                conn.execute_batch("ROLLBACK").ok();
+            } else {
+                log::info!("Tasks table migration completed");
+            }
         }
     }
 

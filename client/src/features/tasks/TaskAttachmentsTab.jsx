@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { FileText, Trash2 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
+import InlineDeleteConfirm from '../../components/InlineDeleteConfirm';
 
 export function TaskAttachmentsTab({ attachments, setAttachments }) {
   const { t } = useTranslation();
+  const [deleting, setDeleting] = useState(null);
 
   return (
     <div className="space-y-3">
@@ -37,18 +40,28 @@ export function TaskAttachmentsTab({ attachments, setAttachments }) {
                 </a>
               )}
               <button
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.preventDefault();
-                  try {
-                    await api.deleteAttachment(a.id);
-                    setAttachments((prev) => prev.filter((x) => x.id !== a.id));
-                  } catch {}
+                  setDeleting(a.id);
                 }}
                 className="absolute top-1 right-1 p-1 rounded bg-black/60 text-surface-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                 title="Delete"
               >
                 <Trash2 size={11} />
               </button>
+              {deleting === a.id && (
+                <InlineDeleteConfirm
+                  message="Delete this attachment?"
+                  onConfirm={async () => {
+                    try {
+                      await api.deleteAttachment(a.id);
+                      setAttachments((prev) => prev.filter((x) => x.id !== a.id));
+                    } catch {}
+                    setDeleting(null);
+                  }}
+                  onCancel={() => setDeleting(null)}
+                />
+              )}
             </div>
           );
         })}

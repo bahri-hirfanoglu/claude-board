@@ -211,6 +211,19 @@ export default {
   'projectModal.autoBranchDesc': 'Create feature branch per task',
   'projectModal.autoPR': 'Auto PR',
   'projectModal.autoPRDesc': 'Create pull request on completion',
+  'projectModal.autoTest': 'Auto Test',
+  'projectModal.autoTestEnabled': 'Auto-test enabled',
+  'projectModal.autoTestDisabled': 'Auto-test disabled',
+  'projectModal.autoTestDescription':
+    'Claude automatically verifies completed tasks by running tests and checking acceptance criteria',
+  'projectModal.customTestInstructions': 'Custom test instructions (optional)',
+  'projectModal.customTestPlaceholder':
+    'Claude will review changes, run tests, and check acceptance criteria. Add project-specific instructions here.',
+  'projectModal.allowedTools': 'Allowed Tools (comma-separated)',
+  'projectModal.repository': 'Repository',
+  'projectModal.repoHelpText': 'Auto-detect from git remote or enter manually',
+  'projectModal.ghCliHelpText':
+    'Uses gh CLI authentication. After saving, use the Issues button in the board toolbar to browse and import issues as tasks.',
 
   // ─── Review Modal ───
   'review.title': 'Review Task',

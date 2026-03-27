@@ -150,10 +150,11 @@ fn get_imported_issues(project_id: i64) -> Vec<i64> {
         Ok(s) => s,
         Err(_) => return vec![],
     };
-    stmt.query_map([project_id], |row| row.get(0))
-        .unwrap_or_else(|_| panic!("query failed"))
-        .filter_map(|r| r.ok())
-        .collect()
+    let result: Vec<i64> = match stmt.query_map([project_id], |row| row.get(0)) {
+        Ok(rows) => rows.filter_map(|r| r.ok()).collect(),
+        Err(_) => vec![],
+    };
+    result
 }
 
 /// Fetch GitHub issues list (does NOT create tasks — just returns the list)
@@ -194,57 +195,68 @@ pub async fn github_import_issues(app: AppHandle, project_id: i64, issue_numbers
     let issues = github::fetch_issues(&token, &repo, "open").await?;
 
     let pool = db::get_db();
-    let conn = pool.lock();
 
-    let mut imported = 0i64;
-    for issue in &issues {
-        if !issue_numbers.contains(&issue.number) { continue; }
+    // Use a transaction to ensure all-or-nothing import (no partial imports on failure)
+    let (imported, task_events) = db::with_transaction(&pool, |conn| {
+        let mut imported = 0i64;
+        let mut task_events: Vec<serde_json::Value> = Vec::new();
 
-        let exists: bool = conn.query_row(
-            "SELECT COUNT(*) > 0 FROM tasks WHERE project_id = ?1 AND github_issue_number = ?2",
-            rusqlite::params![project_id, issue.number],
-            |row| row.get(0),
-        ).unwrap_or(false);
-        if exists { continue; }
+        for issue in &issues {
+            if !issue_numbers.contains(&issue.number) { continue; }
 
-        let task_type = map_labels_to_type(&issue.labels);
-        let description = issue.body.clone().unwrap_or_default();
-        let tags = serde_json::json!(["github"]).to_string();
+            let exists: bool = conn.query_row(
+                "SELECT COUNT(*) > 0 FROM tasks WHERE project_id = ?1 AND github_issue_number = ?2",
+                rusqlite::params![project_id, issue.number],
+                |row| row.get(0),
+            ).unwrap_or(false);
+            if exists { continue; }
 
-        conn.execute(
-            "INSERT INTO tasks (project_id, title, description, status, task_type, tags, github_issue_number, github_issue_url, created_at, updated_at) VALUES (?1, ?2, ?3, 'backlog', ?4, ?5, ?6, ?7, datetime('now','localtime'), datetime('now','localtime'))",
-            rusqlite::params![project_id, issue.title, description, task_type, tags, issue.number, issue.html_url],
-        ).map_err(|e| e.to_string())?;
+            let task_type = map_labels_to_type(&issue.labels);
+            let description = issue.body.clone().unwrap_or_default();
+            let tags = serde_json::json!(["github"]).to_string();
 
-        let task_id = conn.last_insert_rowid();
-        if let Ok(task_json) = conn.query_row(
-            "SELECT id, project_id, title, description, status, priority, task_type, model, thinking_effort, github_issue_number, github_issue_url, tags, task_key, created_at, updated_at FROM tasks WHERE id = ?1",
-            [task_id],
-            |row| Ok(serde_json::json!({
-                "id": row.get::<_, i64>(0)?,
-                "project_id": row.get::<_, i64>(1)?,
-                "title": row.get::<_, String>(2)?,
-                "description": row.get::<_, Option<String>>(3)?,
-                "status": row.get::<_, String>(4)?,
-                "priority": row.get::<_, i64>(5)?,
-                "task_type": row.get::<_, String>(6)?,
-                "model": row.get::<_, Option<String>>(7)?,
-                "thinking_effort": row.get::<_, Option<String>>(8)?,
-                "github_issue_number": row.get::<_, Option<i64>>(9)?,
-                "github_issue_url": row.get::<_, Option<String>>(10)?,
-                "tags": row.get::<_, Option<String>>(11)?,
-                "task_key": row.get::<_, Option<String>>(12)?,
-                "created_at": row.get::<_, Option<String>>(13)?,
-                "updated_at": row.get::<_, Option<String>>(14)?,
-                "input_tokens": 0,
-                "output_tokens": 0,
-                "total_cost": 0.0,
-            }))
-        ) {
-            app.emit("task:created", &task_json).ok();
+            conn.execute(
+                "INSERT INTO tasks (project_id, title, description, status, task_type, tags, github_issue_number, github_issue_url, created_at, updated_at) VALUES (?1, ?2, ?3, 'backlog', ?4, ?5, ?6, ?7, datetime('now','localtime'), datetime('now','localtime'))",
+                rusqlite::params![project_id, issue.title, description, task_type, tags, issue.number, issue.html_url],
+            ).map_err(|e| e.to_string())?;
+
+            let task_id = conn.last_insert_rowid();
+            if let Ok(task_json) = conn.query_row(
+                "SELECT id, project_id, title, description, status, priority, task_type, model, thinking_effort, github_issue_number, github_issue_url, tags, task_key, created_at, updated_at FROM tasks WHERE id = ?1",
+                [task_id],
+                |row| Ok(serde_json::json!({
+                    "id": row.get::<_, i64>(0)?,
+                    "project_id": row.get::<_, i64>(1)?,
+                    "title": row.get::<_, String>(2)?,
+                    "description": row.get::<_, Option<String>>(3)?,
+                    "status": row.get::<_, String>(4)?,
+                    "priority": row.get::<_, i64>(5)?,
+                    "task_type": row.get::<_, String>(6)?,
+                    "model": row.get::<_, Option<String>>(7)?,
+                    "thinking_effort": row.get::<_, Option<String>>(8)?,
+                    "github_issue_number": row.get::<_, Option<i64>>(9)?,
+                    "github_issue_url": row.get::<_, Option<String>>(10)?,
+                    "tags": row.get::<_, Option<String>>(11)?,
+                    "task_key": row.get::<_, Option<String>>(12)?,
+                    "created_at": row.get::<_, Option<String>>(13)?,
+                    "updated_at": row.get::<_, Option<String>>(14)?,
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "total_cost": 0.0,
+                }))
+            ) {
+                task_events.push(task_json);
+            }
+
+            imported += 1;
         }
 
-        imported += 1;
+        Ok((imported, task_events))
+    })?;
+
+    // Emit events after transaction commits successfully
+    for task_json in &task_events {
+        app.emit("task:created", task_json).ok();
     }
 
     Ok(serde_json::json!({ "imported": imported }))

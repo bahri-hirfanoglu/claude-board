@@ -181,7 +181,9 @@ export default function TaskCard({
 
   const handleContextMenu = (e) => {
     e.preventDefault();
-    setMenuPos({ x: e.clientX, y: e.clientY });
+    const x = Math.min(e.clientX, window.innerWidth - 200);
+    const y = Math.min(e.clientY, window.innerHeight - 300);
+    setMenuPos({ x, y });
     setShowMenu(true);
   };
 

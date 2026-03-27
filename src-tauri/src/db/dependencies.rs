@@ -74,14 +74,13 @@ pub fn get_child_ids(db: &DbPool, task_id: i64) -> Vec<i64> {
 
 /// Check if ALL parent dependencies of a task are met, respecting condition_type.
 /// - "always" / "on_success": parent must be done or testing
-/// - "on_failure": parent must have failed (exhausted retries and still in backlog)
+/// - "on_failure": parent must have failed (status = 'failed')
 pub fn are_all_parents_met(db: &DbPool, task_id: i64) -> bool {
     let conn = db.lock();
 
     // Count unmet dependencies using condition-aware logic:
     // "always" or "on_success" → parent.status IN ('done','testing')
-    // "on_failure" → parent failed: status='backlog' AND retry_count >= project.max_retries AND retry_count > 0
-    //   (a task that was retried and is back in backlog with max retries hit = failed)
+    // "on_failure" → parent failed: status='failed'
     let unmet: i64 = conn.query_row(
         "SELECT COUNT(*) FROM task_dependencies td
          JOIN tasks t ON t.id = td.depends_on_id
@@ -89,7 +88,7 @@ pub fn are_all_parents_met(db: &DbPool, task_id: i64) -> bool {
          AND NOT (
              CASE COALESCE(td.condition_type, 'always')
                  WHEN 'on_failure' THEN
-                     (t.status = 'backlog' AND COALESCE(t.retry_count, 0) > 0)
+                     t.status = 'failed'
                  ELSE
                      t.status IN ('done', 'testing')
              END
@@ -118,7 +117,7 @@ pub fn get_ready_tasks(db: &DbPool, project_id: i64) -> Vec<Task> {
              AND NOT (
                  CASE COALESCE(td.condition_type, 'always')
                      WHEN 'on_failure' THEN
-                         (parent.status = 'backlog' AND COALESCE(parent.retry_count, 0) > 0)
+                         parent.status = 'failed'
                      ELSE
                          parent.status IN ('done', 'testing')
                  END

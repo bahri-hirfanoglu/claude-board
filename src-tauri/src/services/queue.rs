@@ -96,7 +96,7 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
     // Count only ACTUALLY running tasks (process alive), not just DB status
     let all_tasks = tasks::get_by_project(db, project_id);
     let running = all_tasks.iter()
-        .filter(|t| t.status.as_deref() == Some("in_progress") && runner::is_running(t.id))
+        .filter(|t| t.status.as_deref() == Some("in_progress") && (runner::is_running(t.id) || runner::is_starting(t.id)))
         .count();
     let slots = max_conc.saturating_sub(running);
     if slots == 0 {
@@ -113,7 +113,7 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
         if started >= slots {
             break;
         }
-        if runner::is_running(task.id) {
+        if runner::is_running(task.id) || runner::is_starting(task.id) {
             continue;
         }
 

@@ -142,7 +142,7 @@ export default function StatsPanel({ projectId, onClose }) {
 
   useEffect(() => {
     load();
-  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId]); // load is intentionally omitted — it's not wrapped in useCallback and adding it would cause infinite re-renders
 
   const totalTasks = stats?.byStatus?.reduce((sum, s) => sum + s.count, 0) || 0;
   const doneCount = stats?.byStatus?.find((s) => s.label === 'done')?.count || 0;

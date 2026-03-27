@@ -22,6 +22,7 @@
     "lint": "cd client && npx eslint src/",
     "lint:fix": "cd client && npx eslint src/ --fix",
     "format": "prettier --write \"client/src/**/*.{js,jsx}\"",
+    "test": "cd client && npx vitest run",
     "format:check": "prettier --check \"client/src/**/*.{js,jsx}\"",
     "prepare": "husky"
   },

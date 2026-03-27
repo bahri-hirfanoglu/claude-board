@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.6.2] - 2026-03-27
+
+### Bug Fixes
+- **Rust Panic/Unwrap Elimination** — Removed all `panic!()` and unsafe `.unwrap()` from production code; replaced with proper `Result` error handling
+- **Shell Injection Prevention** — Branch names sanitized + git arguments passed as arrays instead of format strings
+- **DB Transaction Safety** — GitHub issue import wrapped in transaction to prevent partial imports and race conditions
+- **DB Migration Safety** — Task table migration now uses transaction with rollback on failure, preventing data loss
+- **on_failure Dependency Bug** — Fixed condition to check `status='failed'` instead of incorrect `backlog + retry_count` check
+- **Silent Catch Blocks** — All 14 empty `catch {}` blocks replaced with proper `console.error` logging
+- **Stale Closure Fix** — Task event handler in App.jsx now uses ref pattern to always access latest terminal
+- **runner::start() Error Propagation** — Process spawn failures now revert task status instead of leaving it stuck as in_progress
+- **Queue Slot Race Condition** — Added `is_starting()` check to prevent exceeding `max_concurrent` limit
+- **Orphaned Attachments** — `.claude-attachments` directories now cleaned up on timeout kill, not just normal completion
+- **Symlink Attack Prevention** — Attachment directory creation checks for symlinks before copying files
+- **Context Menu Overflow** — Right-click menu now stays within viewport bounds
+- **Config Corruption Recovery** — Corrupted config files are backed up and defaults restored instead of silent failure
+- **Attachment File Cleanup** — Delete now checks file existence before removal, logs warnings on failure
+
+### Improvements
+- **Confirmation Dialogs** — Added confirmation before deleting attachments and removing task dependencies
+- **Warning Toast Type** — Added amber warning toast alongside existing success/error/info types
+- **Loading States** — Added loading spinners to PipelineView and OrchestrationView
+- **i18n Completeness** — All ProjectModal hardcoded strings (Auto Test, Repository, etc.) now use translation keys with Turkish translations
+- **Turkish Character Fix** — Settings language label corrected from "Turkce" to "Türkçe"
+- **Soft Delete** — Tasks now use soft delete (`deleted_at` column) instead of permanent deletion
+- **Task Key Uniqueness** — Added partial unique index on `task_key` to prevent duplicate keys
+- **useEffect Dependencies** — Fixed missing `githubRepo` dependency in ProjectModal, added justification comments elsewhere
+- **Dead Code Removal** — Removed unused SummaryView component (335 lines)
+- **CI/CD Pipeline** — Added test execution step, enforced Clippy warnings (removed soft-fail)
+- **Web Responsive** — Landing page fully responsive at 480px, 768px, 1024px breakpoints with hamburger menu
+- **Socket Cleanup** — Added documentation for singleton socket pattern in useProjects
+
 ## [1.6.1] - 2026-03-27
 
 ### Bug Fixes

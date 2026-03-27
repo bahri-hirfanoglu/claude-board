@@ -69,7 +69,7 @@ export default function PlanningModal({ projectId, onClose }) {
           sessionStorage.removeItem('planning:active');
         }
       })
-      .catch(() => {});
+      .catch((e) => console.error('Failed to load planning status:', e));
     return () => {
       cancelled = true;
     };
