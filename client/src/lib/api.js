@@ -245,9 +245,14 @@ export const api = {
         saveHooks: (hooks) => tauriCall('save_hooks', { hooks }),
         listSessions: () => tauriCall('list_sessions'),
         getPermissionRules: () => tauriCall('get_permission_rules'),
-        scanCodebase: (projectId, mode = 'overwrite') => tauriCall('scan_codebase', { projectId, mode }),
-        saveScanResult: (projectId, content, mode = 'overwrite') =>
-          tauriCall('save_scan_result', { projectId, content, mode }),
+        prescanStats: (projectId) => tauriCall('prescan_stats', { projectId }),
+        scanCodebase: (projectId, scanType = 'detailed', customPrompt = null) =>
+          tauriCall('scan_codebase', { projectId, scanType, customPrompt }),
+        saveScanResult: (projectId, content, scanType = null, mode = 'overwrite') =>
+          tauriCall('save_scan_result', { projectId, content, scanType, mode }),
+        getScanHistory: (projectId) => tauriCall('get_scan_history', { projectId }),
+        getScanDetail: (id) => tauriCall('get_scan_detail', { id }),
+        deleteScan: (id) => tauriCall('delete_scan', { id }),
         getSuggestions: () => tauriCall('get_suggestions'),
         listCustomCommands: () => tauriCall('list_custom_commands'),
         listCustomSkills: () => tauriCall('list_custom_skills'),

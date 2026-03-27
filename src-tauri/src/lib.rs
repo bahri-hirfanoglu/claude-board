@@ -274,8 +274,12 @@ pub fn run() {
             commands::claude_manager::save_hooks,
             commands::claude_manager::list_sessions,
             commands::claude_manager::get_permission_rules,
+            commands::claude_manager::prescan_stats,
             commands::claude_manager::scan_codebase,
             commands::claude_manager::save_scan_result,
+            commands::claude_manager::get_scan_history,
+            commands::claude_manager::get_scan_detail,
+            commands::claude_manager::delete_scan,
             commands::claude_manager::get_suggestions,
             // Custom Commands & Skills
             commands::claude_manager::list_custom_commands,

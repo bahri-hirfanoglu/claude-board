@@ -10,6 +10,7 @@ pub mod webhooks;
 pub mod roles;
 pub mod auth;
 pub mod dependencies;
+pub mod scans;
 pub mod settings;
 
 use once_cell::sync::OnceCell;

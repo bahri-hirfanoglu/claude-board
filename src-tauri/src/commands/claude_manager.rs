@@ -287,19 +287,130 @@ pub async fn get_permission_rules() -> Result<Value, String> {
     extract_json(&out)
 }
 
+// ─── Pre-scan stats (no Claude needed) ───
+#[tauri::command]
+pub fn prescan_stats(project_id: i64) -> Result<serde_json::Value, String> {
+    let db = crate::db::get_db();
+    let project = crate::db::projects::get_by_id(&db, project_id).ok_or("Project not found")?;
+    let (file_count, project_types) = collect_codebase_stats(&project.working_dir);
+    let estimated_time = if file_count < 5000 { "1-2 minutes" } else if file_count < 20000 { "2-5 minutes" } else { "5-10 minutes" };
+    Ok(serde_json::json!({
+        "fileCount": file_count,
+        "projectTypes": project_types,
+        "estimatedTime": estimated_time,
+    }))
+}
+
+/// Walk directory and count files / detect project types (excludes common non-source dirs).
+fn collect_codebase_stats(working_dir: &str) -> (usize, Vec<String>) {
+    use std::collections::HashSet;
+    let skip_dirs: HashSet<&str> = ["node_modules", ".git", "dist", "build", "target", ".next",
+        "__pycache__", ".venv", "venv", ".tox", "vendor", ".cache", "coverage"].iter().copied().collect();
+
+    let mut file_count: usize = 0;
+    let mut markers: HashSet<String> = HashSet::new();
+
+    fn walk(dir: &std::path::Path, skip: &std::collections::HashSet<&str>, count: &mut usize, markers: &mut std::collections::HashSet<String>) {
+        let entries = match std::fs::read_dir(dir) {
+            Ok(e) => e,
+            Err(_) => return,
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().to_string();
+            if path.is_dir() {
+                if !skip.contains(name.as_str()) {
+                    walk(&path, skip, count, markers);
+                }
+            } else {
+                *count += 1;
+                // Detect project types from marker files
+                match name.as_str() {
+                    "package.json" => { markers.insert("Node.js".into()); }
+                    "Cargo.toml" => { markers.insert("Rust".into()); }
+                    "go.mod" => { markers.insert("Go".into()); }
+                    "requirements.txt" | "setup.py" | "pyproject.toml" => { markers.insert("Python".into()); }
+                    "pom.xml" | "build.gradle" => { markers.insert("Java".into()); }
+                    "tsconfig.json" => { markers.insert("TypeScript".into()); }
+                    "tauri.conf.json" => { markers.insert("Tauri".into()); }
+                    "next.config.js" | "next.config.mjs" | "next.config.ts" => { markers.insert("Next.js".into()); }
+                    "vite.config.js" | "vite.config.ts" => { markers.insert("Vite".into()); }
+                    "Dockerfile" | "docker-compose.yml" => { markers.insert("Docker".into()); }
+                    "Gemfile" => { markers.insert("Ruby".into()); }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    walk(std::path::Path::new(working_dir), &skip_dirs, &mut file_count, &mut markers);
+    let mut types: Vec<String> = markers.into_iter().collect();
+    types.sort();
+    (file_count, types)
+}
+
 // ─── Scan Codebase (analyze only — does not write) ───
 #[tauri::command]
-pub async fn scan_codebase(app: tauri::AppHandle, project_id: i64, _mode: Option<String>) -> Result<String, String> {
+pub async fn scan_codebase(
+    app: tauri::AppHandle,
+    project_id: i64,
+    scan_type: Option<String>,
+    custom_prompt: Option<String>,
+) -> Result<serde_json::Value, String> {
     let db = crate::db::get_db();
     let project = crate::db::projects::get_by_id(&db, project_id).ok_or("Project not found")?;
     let working_dir = project.working_dir.clone();
+    let scan_type_str = scan_type.unwrap_or_else(|| "detailed".into());
 
     use tauri::Emitter;
-    app.emit("scan:started", &serde_json::json!({"projectId": project_id})).ok();
+    app.emit("scan:started", &serde_json::json!({"projectId": project_id, "scanType": scan_type_str})).ok();
 
-    let summary = tauri::async_runtime::spawn_blocking(move || {
+    // Pre-scan stats
+    let (file_count, project_types) = collect_codebase_stats(&working_dir);
+    let project_types_str = if project_types.is_empty() { "software".to_string() } else { project_types.join("/") };
+    let project_types_json = serde_json::to_string(&project_types).unwrap_or_else(|_| "[]".into());
+    let estimated_time = if file_count < 5000 { "1-2 minutes" } else if file_count < 20000 { "2-5 minutes" } else { "5-10 minutes" };
+
+    app.emit("scan:stats", &serde_json::json!({
+        "fileCount": file_count,
+        "projectTypes": &project_types,
+        "estimatedTime": estimated_time,
+    })).ok();
+
+    // Build prompt based on scan type
+    let prompt = match scan_type_str.as_str() {
+        "quick" => format!(
+            "Briefly analyze this {} project. List: tech stack, main directories, entry points. Keep it under 500 words. Output ONLY the summary.",
+            project_types_str
+        ),
+        "api" => format!(
+            "Document ALL API endpoints in this {} project. For each endpoint list: method, path, parameters, response format. Output ONLY the documentation.",
+            project_types_str
+        ),
+        "architecture" => format!(
+            "Create a detailed architecture document for this {} project. Include component diagrams (text-based), data flow, dependency graph, and design patterns used. Output ONLY the document.",
+            project_types_str
+        ),
+        "custom" => custom_prompt.unwrap_or_else(|| "Analyze this codebase.".to_string()),
+        _ => format!(
+            "Thoroughly analyze this {} project. Include:\n1. Tech Stack & Dependencies\n2. Project Structure & Architecture\n3. Key Patterns & Conventions\n4. Entry Points & Build System\n5. Database & Data Models\n6. API Endpoints\n7. Testing Setup\n8. Notable Code Quality Observations\nOutput ONLY the analysis text, no conversation.",
+            project_types_str
+        ),
+    };
+
+    // Adjust max-turns based on codebase size
+    let max_turns = if file_count < 5000 { "10" } else if file_count < 20000 { "15" } else { "20" };
+
+    let scan_type_for_db = scan_type_str.clone();
+
+    app.emit("scan:progress", &serde_json::json!({
+        "phase": "analyzing",
+        "message": format!("Running {} scan on {} files...", scan_type_str, file_count),
+    })).ok();
+
+    let result_text = tauri::async_runtime::spawn_blocking(move || {
         let mut cmd = Command::new("claude");
-        cmd.args(["-p", "Analyze this codebase and write a concise summary. Include: tech stack, main directories, key patterns, entry points. Output ONLY the summary text, no conversation.", "--output-format", "text", "--max-turns", "10", "--dangerously-skip-permissions"])
+        cmd.args(["-p", &prompt, "--output-format", "text", "--max-turns", max_turns, "--dangerously-skip-permissions"])
             .current_dir(&working_dir)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -316,26 +427,51 @@ pub async fn scan_codebase(app: tauri::AppHandle, project_id: i64, _mode: Option
         }
     }).await.map_err(|e| e.to_string())??;
 
-    app.emit("scan:completed", &serde_json::json!({"projectId": project_id, "result": summary})).ok();
-    Ok(summary)
+    // Try to save to scans table (may not exist yet if migration hasn't run)
+    {
+        use rusqlite::params;
+        let db = crate::db::get_db();
+        let _ = db.lock().execute(
+            "INSERT INTO scans (project_id, scan_type, content, file_count, line_count, project_types) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![project_id, &scan_type_for_db, &result_text, file_count as i64, 0i64, &project_types_json],
+        );
+    }
+
+    let timestamp = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+    let result = serde_json::json!({
+        "content": result_text,
+        "scanType": scan_type_for_db,
+        "fileCount": file_count,
+        "projectTypes": project_types,
+        "timestamp": timestamp,
+    });
+
+    app.emit("scan:completed", &serde_json::json!({
+        "projectId": project_id,
+        "result": &result,
+    })).ok();
+
+    Ok(result)
 }
 
 // ─── Save scan result to CLAUDE.md ───
 #[tauri::command]
-pub async fn save_scan_result(project_id: i64, content: String, mode: Option<String>) -> Result<(), String> {
+pub async fn save_scan_result(project_id: i64, content: String, scan_type: Option<String>, mode: Option<String>) -> Result<(), String> {
     let db = crate::db::get_db();
     let project = crate::db::projects::get_by_id(&db, project_id).ok_or("Project not found")?;
     let write_mode = mode.unwrap_or_else(|| "overwrite".into());
+    let scan_label = scan_type.unwrap_or_else(|| "detailed".into());
     let claude_md_path = std::path::Path::new(&project.working_dir).join("CLAUDE.md");
+    let section_header = format!("# Codebase Analysis ({} scan, auto-generated)", scan_label);
     let new_content = if write_mode == "append" {
         let existing = std::fs::read_to_string(&claude_md_path).unwrap_or_default();
         if existing.is_empty() {
-            format!("# Project Overview\n\n{}", content)
+            format!("{}\n\n{}", section_header, content)
         } else {
-            format!("{}\n\n---\n\n# Codebase Analysis (Auto-generated)\n\n{}", existing.trim(), content)
+            format!("{}\n\n---\n\n{}\n\n{}", existing.trim(), section_header, content)
         }
     } else {
-        format!("# Project Overview\n\n{}", content)
+        format!("{}\n\n{}", section_header, content)
     };
     std::fs::write(&claude_md_path, &new_content).map_err(|e| e.to_string())?;
     Ok(())
@@ -672,6 +808,26 @@ fn detect_default_branch(client: &reqwest::blocking::Client, repo: &str) -> Stri
         }
     }
     "main".to_string()
+}
+
+// ─── Scan History ───
+#[tauri::command]
+pub fn get_scan_history(project_id: i64) -> Result<Vec<crate::db::scans::Scan>, String> {
+    let db = crate::db::get_db();
+    Ok(crate::db::scans::get_by_project(&db, project_id))
+}
+
+#[tauri::command]
+pub fn get_scan_detail(id: i64) -> Result<crate::db::scans::Scan, String> {
+    let db = crate::db::get_db();
+    crate::db::scans::get_by_id(&db, id).ok_or_else(|| "Scan not found".to_string())
+}
+
+#[tauri::command]
+pub fn delete_scan(id: i64) -> Result<(), String> {
+    let db = crate::db::get_db();
+    crate::db::scans::delete(&db, id);
+    Ok(())
 }
 
 fn dirs_home() -> std::path::PathBuf {

@@ -143,6 +143,21 @@ pub fn create_tables(conn: &Connection) {
             value TEXT NOT NULL DEFAULT '',
             updated_at DATETIME DEFAULT (datetime('now','localtime'))
         );
+
+        CREATE TABLE IF NOT EXISTS scans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            scan_type TEXT DEFAULT 'full',
+            content TEXT NOT NULL,
+            summary TEXT,
+            tech_stack TEXT,
+            file_count INTEGER DEFAULT 0,
+            line_count INTEGER DEFAULT 0,
+            languages TEXT,
+            project_types TEXT,
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        );
         ",
     )
     .expect("Failed to create tables");
@@ -167,6 +182,7 @@ pub fn create_tables(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_task_deps_task ON task_dependencies(task_id)",
         "CREATE INDEX IF NOT EXISTS idx_task_deps_parent ON task_dependencies(depends_on_id)",
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_key_unique ON tasks(task_key) WHERE task_key != ''",
+        "CREATE INDEX IF NOT EXISTS idx_scans_project ON scans(project_id, created_at DESC)",
     ];
     for idx in indexes {
         conn.execute_batch(idx).ok();
