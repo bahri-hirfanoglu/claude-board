@@ -18,6 +18,11 @@ import {
   Check,
   Eye,
   Pencil,
+  Zap,
+  SearchCode,
+  Radio,
+  Blocks,
+  PenLine,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { tauriListen } from '../../lib/tauriEvents';
@@ -40,11 +45,11 @@ function estimateTime(fileCount) {
 }
 
 const SCAN_TYPES = [
-  { key: 'quick', icon: '⚡' },
-  { key: 'detailed', icon: '🔍' },
-  { key: 'apiDocs', icon: '📡' },
-  { key: 'architecture', icon: '🏗️' },
-  { key: 'custom', icon: '✏️' },
+  { key: 'quick', Icon: Zap },
+  { key: 'detailed', Icon: SearchCode },
+  { key: 'apiDocs', Icon: Radio },
+  { key: 'architecture', Icon: Blocks },
+  { key: 'custom', Icon: PenLine },
 ];
 
 // Module-level cache — survives open/close
@@ -385,7 +390,7 @@ export default function ScanModal({ projectId, onClose }) {
           {phase === 'idle' && (
             <>
               <div className="flex flex-wrap gap-1.5">
-                {SCAN_TYPES.map(({ key, icon }) => (
+                {SCAN_TYPES.map(({ key, Icon }) => (
                   <button
                     key={key}
                     onClick={() => setScanType(key)}
@@ -395,7 +400,7 @@ export default function ScanModal({ projectId, onClose }) {
                         : 'bg-surface-800 text-surface-400 hover:text-surface-200 hover:bg-surface-700'
                     }`}
                   >
-                    <span className="text-sm">{icon}</span>
+                    <Icon size={13} />
                     {t(`scan.${key}`)}
                   </button>
                 ))}
