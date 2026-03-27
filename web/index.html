@@ -25,6 +25,7 @@
       }
       html {
         scroll-behavior: smooth;
+        overflow-x: hidden;
       }
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
@@ -33,6 +34,8 @@
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
         overflow-x: hidden;
+        width: 100%;
+        max-width: 100vw;
       }
       a {
         color: #da7756;
@@ -1661,6 +1664,12 @@
 
       /* --- Tablet: max-width 768px --- */
       @media (max-width: 768px) {
+        /* Global overflow protection */
+        section, .container, .hero-dag, .dag-container, .preview-frame, .pv-app {
+          max-width: 100vw;
+          overflow: hidden;
+        }
+
         /* Nav: hamburger + mobile menu */
         .nav-hamburger {
           display: flex;
@@ -1738,18 +1747,25 @@
 
         /* Timeline view labels */
         #hero-timeline div[style*='padding-left:130px'] {
-          padding-left: 80px !important;
+          padding-left: 60px !important;
         }
         #hero-timeline div[style*='width:118px'] {
-          width: 70px !important;
-          font-size: 9px !important;
+          width: 55px !important;
+          font-size: 8px !important;
+        }
+        #hero-timeline {
+          max-width: 100%;
+          overflow: hidden;
         }
 
         /* Board view: horizontal scroll */
         #hero-board > div {
-          grid-template-columns: repeat(5, 160px) !important;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
+          grid-template-columns: repeat(3, 1fr) !important;
+          overflow-x: hidden;
+        }
+        #hero-board > div > div:nth-child(4),
+        #hero-board > div > div:nth-child(5) {
+          display: none;
         }
 
         /* Sections */
@@ -1817,10 +1833,14 @@
           padding: 8px 12px;
         }
 
-        /* Preview board: scroll horizontally */
-        #pv-board .pv-main > div[style*='grid-template-columns: repeat(5'] {
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
+        /* Preview board: fit viewport */
+        #pv-board .pv-main > div[style*='grid-template-columns'] {
+          grid-template-columns: repeat(3, 1fr) !important;
+          overflow: hidden;
+        }
+        #pv-board .pv-main > div > div:nth-child(4),
+        #pv-board .pv-main > div > div:nth-child(5) {
+          display: none;
         }
 
         /* Preview dashboard stats */
@@ -1844,6 +1864,12 @@
           width: 100% !important;
           flex-direction: row !important;
           flex-wrap: wrap;
+        }
+        #pv-pipeline .pv-main {
+          overflow: hidden;
+        }
+        #pv-pipeline div[style*='grid-template-columns'] {
+          grid-template-columns: repeat(2, 1fr) !important;
         }
 
         /* Preview activity rows */
@@ -1918,17 +1944,45 @@
           font-size: 12px;
         }
 
-        /* Images */
-        img {
+        /* Images & SVGs */
+        img, svg {
           max-width: 100%;
           height: auto;
+        }
+        /* Prevent any element from exceeding viewport */
+        * {
+          max-width: 100vw;
+        }
+        .container, .nav-inner, section {
+          box-sizing: border-box;
+        }
+        /* Long text wrapping */
+        h1, h2, h3, p {
+          word-break: break-word;
+          overflow-wrap: break-word;
+        }
+        /* Code blocks horizontal scroll within container */
+        code, pre {
+          max-width: calc(100vw - 32px);
+          overflow-x: auto;
+          display: inline-block;
         }
       }
 
       /* --- Mobile: max-width 480px --- */
       @media (max-width: 480px) {
         .container {
-          padding: 0 16px;
+          padding: 0 12px;
+          max-width: 100vw;
+          overflow: hidden;
+        }
+        /* Global overflow protection */
+        section, .hero, .hero-dag, .dag-container {
+          max-width: 100vw;
+          overflow: hidden;
+        }
+        nav .nav-inner {
+          padding: 0 12px;
         }
         .hero {
           padding: 100px 0 48px;
@@ -1981,7 +2035,12 @@
 
         /* Board view cells */
         #hero-board > div {
-          grid-template-columns: repeat(5, 140px) !important;
+          grid-template-columns: repeat(2, 1fr) !important;
+        }
+        #hero-board > div > div:nth-child(3),
+        #hero-board > div > div:nth-child(4),
+        #hero-board > div > div:nth-child(5) {
+          display: none;
         }
 
         /* Sections */
@@ -2096,9 +2155,12 @@
           font-size: 10px;
         }
         #pv-board .pv-main > div[style*='grid-template-columns'] {
-          grid-template-columns: repeat(5, 130px) !important;
+          grid-template-columns: repeat(2, 1fr) !important;
           gap: 6px !important;
           padding: 8px !important;
+        }
+        #pv-board .pv-main > div > div:nth-child(n+3) {
+          display: none;
         }
 
         /* Ticker */
@@ -2173,6 +2235,85 @@
           text-overflow: ellipsis;
           white-space: nowrap;
           max-width: 120px;
+        }
+
+        /* Preview stats grid: single column */
+        #pv-stats div[style*='grid-template-columns:repeat(4'] {
+          grid-template-columns: repeat(2, 1fr) !important;
+        }
+        #pv-stats div[style*='grid-template-columns: 1fr 1fr'] {
+          grid-template-columns: 1fr !important;
+        }
+
+        /* Preview dashboard: compact */
+        #pv-dashboard div[style*='grid-template-columns:repeat(4'] {
+          grid-template-columns: repeat(2, 1fr) !important;
+        }
+        #pv-dashboard div[style*='grid-template-columns:2fr 1fr'] {
+          grid-template-columns: 1fr !important;
+        }
+        #pv-dashboard div[style*='height:100px'] {
+          height: 60px !important;
+        }
+
+        /* Preview pipeline: single column grid */
+        #pv-pipeline div[style*='grid-template-columns:repeat(3'] {
+          grid-template-columns: repeat(2, 1fr) !important;
+        }
+        #pv-pipeline div[style*='width:180px'] {
+          width: 100% !important;
+          flex-direction: row !important;
+          flex-wrap: wrap;
+        }
+        #pv-pipeline .pv-main > div {
+          overflow: hidden;
+        }
+
+        /* Preview activity/planning rows */
+        .pv-activity-row, .pv-plan-row {
+          flex-wrap: wrap;
+          gap: 4px;
+          font-size: 9px;
+        }
+
+        /* Preview task modal: full width */
+        #pv-task-modal div[style*='width:360px'] {
+          width: calc(100vw - 24px) !important;
+        }
+
+        /* All preview views: overflow protection */
+        .pv-app, .pv-main, .preview-frame {
+          max-width: 100vw;
+          overflow: hidden;
+        }
+
+        /* SVG elements: fit viewport */
+        svg {
+          max-width: 100%;
+          height: auto;
+        }
+        .dag-svg {
+          max-width: 100%;
+        }
+
+        /* Stats bar: single column on very small */
+        .stats-bar {
+          gap: 12px;
+        }
+        .stat-item {
+          min-width: 0;
+        }
+
+        /* How section visual: compact */
+        .how-visual {
+          max-width: 100%;
+          overflow: hidden;
+        }
+
+        /* Download grid */
+        .download-grid {
+          max-width: 100%;
+          width: 100%;
         }
 
         /* Footer */
