@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.6.4] - 2026-03-27
+
+### Features
+- **Enhanced Codebase Scan** — Complete rewrite of the scan system with 5 analysis presets (Quick, Detailed, API Docs, Architecture, Custom), .gitignore-aware file filtering, project type auto-detection, pre-scan statistics, progress bar with cancel, and adjustable Claude max-turns based on codebase size
+- **Scan History** — All scan results saved to database with full history view, past scan viewing, deletion, and diff comparison between current and historical scans
+- **Markdown Preview** — Scan results now render as formatted Markdown with eye/edit toggle; edit mode for raw text, preview mode for rendered output
+- **Editable Results** — Scan output is editable before saving to CLAUDE.md, with word count, search (Ctrl+F), and copy-to-clipboard
+- **Folder Picker** — Native "Browse" button for working directory selection (Tauri only)
+- **Scanner Service** — New Rust service with .gitignore parser, 40+ language detection, file tree generator, and codebase statistics collector
+
+### Bug Fixes
+- **Scan Crash Fix** — Fixed `result.trim is not a function` error caused by backend returning JSON object instead of string
+- **GitHub Sync "0" Badge** — Fixed `github_sync_enabled` integer `0` being rendered as text by React's `&&` operator
+- **Emojis Replaced** — All scan preset emojis replaced with proper Lucide icons (Zap, SearchCode, Radio, Blocks, PenLine)
+
+### Improvements
+- **i18n Completeness** — All remaining ProjectModal hardcoded strings (Browse, Detect, Check Connection, GitHub status messages, Randomize) now use translation keys with Turkish translations
+- **Column Badge** — Empty board columns no longer show "0" count badge
+- **MCP Port Config** — All hardcoded port 4000 values now read from app config
+- **Retry Timing** — `get_next_queued` now respects `retry_after` datetime
+- **ErrorBoundary on Modals** — All 14 modals wrapped with ErrorBoundary
+- **ListView Pagination** — Large task lists paginate at 50 items with "Load more"
+
 ## [1.6.3] - 2026-03-27
 
 ### Bug Fixes
