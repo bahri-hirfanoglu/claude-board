@@ -16,10 +16,13 @@ import {
   AlertTriangle,
   History,
   Check,
+  Eye,
+  Pencil,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { tauriListen } from '../../lib/tauriEvents';
 import { useTranslation } from '../../i18n/I18nProvider';
+import { MarkdownContent } from '../tasks/MarkdownContent';
 
 function formatElapsed(ms) {
   const s = Math.floor(ms / 1000);
@@ -88,6 +91,7 @@ export default function ScanModal({ projectId, onClose }) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [viewingHistoryItem, setViewingHistoryItem] = useState(null);
   const [diffMode, setDiffMode] = useState(false);
+  const [viewMode, setViewMode] = useState('preview'); // 'preview' | 'edit'
 
   const textareaRef = useRef(null);
 
@@ -524,6 +528,23 @@ export default function ScanModal({ projectId, onClose }) {
                   <span className="text-[10px] text-surface-600">
                     {t('scan.wordCount')}: {wordCount}
                   </span>
+                  {/* Preview / Edit toggle */}
+                  <div className="flex items-center bg-surface-800 rounded-lg p-0.5">
+                    <button
+                      onClick={() => setViewMode('preview')}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors ${viewMode === 'preview' ? 'bg-surface-700 text-surface-200' : 'text-surface-500 hover:text-surface-300'}`}
+                      title="Markdown Preview"
+                    >
+                      <Eye size={10} />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('edit')}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors ${viewMode === 'edit' ? 'bg-surface-700 text-surface-200' : 'text-surface-500 hover:text-surface-300'}`}
+                      title="Edit"
+                    >
+                      <Pencil size={10} />
+                    </button>
+                  </div>
                   <button
                     onClick={() => {
                       setShowSearch(true);
@@ -555,9 +576,9 @@ export default function ScanModal({ projectId, onClose }) {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] text-surface-500 font-medium">Current</p>
-                    <pre className="text-xs text-surface-300 whitespace-pre-wrap bg-surface-800/50 rounded-lg p-3 border border-surface-700/50 leading-relaxed overflow-y-auto h-full max-h-[40vh]">
-                      {result}
-                    </pre>
+                    <div className="bg-surface-800/50 rounded-lg p-3 border border-surface-700/50 overflow-y-auto max-h-[40vh]">
+                      <MarkdownContent content={result} />
+                    </div>
                   </div>
                 </div>
               ) : searchQuery && highlightedResult ? (
@@ -572,7 +593,7 @@ export default function ScanModal({ projectId, onClose }) {
                     ),
                   )}
                 </div>
-              ) : (
+              ) : viewMode === 'edit' ? (
                 <textarea
                   ref={textareaRef}
                   value={result}
@@ -581,6 +602,13 @@ export default function ScanModal({ projectId, onClose }) {
                   style={{ minHeight: '200px', maxHeight: '50vh' }}
                   readOnly={phase === 'saved'}
                 />
+              ) : (
+                <div
+                  className="bg-surface-800/50 rounded-lg p-4 border border-surface-700/50 overflow-y-auto"
+                  style={{ minHeight: '200px', maxHeight: '50vh' }}
+                >
+                  <MarkdownContent content={result} />
+                </div>
               )}
 
               {/* Mode selector — only in preview */}
