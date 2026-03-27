@@ -216,7 +216,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                       ref={nameRef}
                       value={name}
                       onChange={(e) => handleNameChange(e.target.value)}
-                      placeholder="My Project"
+                      placeholder={t('projectModal.namePlaceholder')}
                       className="w-full px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600"
                       required
                     />
@@ -245,7 +245,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                       type="button"
                       onClick={randomizeSeed}
                       className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-500 hover:text-surface-300 transition-colors"
-                      title="Randomize"
+                      title={t('projectModal.randomize')}
                     >
                       <RefreshCw size={12} />
                     </button>
@@ -305,10 +305,10 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                           }
                         }}
                         className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium rounded-lg bg-surface-800 border border-surface-700 text-surface-400 hover:text-surface-100 hover:bg-surface-700 transition-colors whitespace-nowrap"
-                        title="Browse folder"
+                        title={t('projectModal.browseFolder')}
                       >
                         <FolderOpen size={12} />
-                        Browse
+                        {t('projectModal.browse')}
                       </button>
                     )}
                   </div>
@@ -528,13 +528,13 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                 <div>
                   <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5">
                     <Github size={12} />
-                    GitHub Issues Sync
+                    {t('projectModal.githubIssuesSync')}
                   </label>
                   <ToggleRow
                     enabled={githubSyncEnabled}
                     onToggle={() => setGithubSyncEnabled(!githubSyncEnabled)}
-                    label={githubSyncEnabled ? 'Sync enabled' : 'Sync disabled'}
-                    desc="Automatically sync GitHub issues as tasks"
+                    label={githubSyncEnabled ? t('projectModal.syncEnabled') : t('projectModal.syncDisabled')}
+                    desc={t('projectModal.syncDesc')}
                     activeColor="violet"
                   />
                 </div>
@@ -571,10 +571,10 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                             setGithubDetecting(false);
                           }}
                           className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium rounded-lg bg-surface-800 border border-surface-700 text-surface-400 hover:text-surface-100 hover:bg-surface-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
-                          title="Detect from git remote"
+                          title={t('projectModal.detectFromGit')}
                         >
                           {githubDetecting ? <Loader2 size={10} className="animate-spin" /> : <GitBranch size={10} />}
-                          Detect
+                          {t('projectModal.detect')}
                         </button>
                       </div>
                       <p className="text-[9px] text-surface-600 mt-1">{t('projectModal.repoHelpText')}</p>
@@ -601,12 +601,11 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                           <XCircle size={12} />
                         )}
                         <span className="text-[10px] font-medium">
-                          {githubValid === 'ready' && 'Connected — using gh CLI authentication'}
-                          {githubValid === 'not_installed' &&
-                            'GitHub CLI (gh) not installed. Install from cli.github.com'}
-                          {githubValid === 'not_authenticated' && 'Not logged in. Run: gh auth login'}
-                          {githubValid === 'no_access' && 'Cannot access this repository'}
-                          {githubValid === 'authenticated' && 'Authenticated — enter a repository'}
+                          {githubValid === 'ready' && t('projectModal.ghReady')}
+                          {githubValid === 'not_installed' && t('projectModal.ghNotInstalled')}
+                          {githubValid === 'not_authenticated' && t('projectModal.ghNotAuth')}
+                          {githubValid === 'no_access' && t('projectModal.ghNoAccess')}
+                          {githubValid === 'authenticated' && t('projectModal.ghAuthenticated')}
                         </span>
                       </div>
                     )}
@@ -632,7 +631,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-800 border border-surface-700 text-surface-300 hover:text-surface-100 hover:bg-surface-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         {githubValidating ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
-                        Check Connection
+                        {t('projectModal.checkConnection')}
                       </button>
                     </div>
 

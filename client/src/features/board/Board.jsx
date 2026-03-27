@@ -267,7 +267,7 @@ export default function Board({
           )}
 
           {/* GitHub Issues panel toggle (Tauri only — no HTTP routes for GitHub) */}
-          {IS_TAURI && project?.github_sync_enabled && (
+          {IS_TAURI && !!project?.github_sync_enabled && (
             <>
               <div className="w-px h-5 bg-surface-700/50 mx-1.5" />
               <button

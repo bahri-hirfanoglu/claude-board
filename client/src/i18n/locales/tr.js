@@ -237,6 +237,22 @@ export default {
   'projectModal.timesDefault': 'kez (0 = varsayılan 2)',
   'projectModal.maxRetriesDesc':
     'Kalıcı olarak başarısız olarak işaretlemeden önce başarısız görevleri kaç kez otomatik yeniden denesin.',
+  'projectModal.namePlaceholder': 'Projem',
+  'projectModal.randomize': 'Rastgele',
+  'projectModal.browseFolder': 'Klasör seç',
+  'projectModal.browse': 'Gözat',
+  'projectModal.githubIssuesSync': 'GitHub Issues Senkronizasyonu',
+  'projectModal.syncEnabled': 'Senkronizasyon açık',
+  'projectModal.syncDisabled': 'Senkronizasyon kapalı',
+  'projectModal.syncDesc': "GitHub issue'larını otomatik olarak görev olarak senkronize et",
+  'projectModal.detectFromGit': "Git remote'dan algıla",
+  'projectModal.detect': 'Algıla',
+  'projectModal.checkConnection': 'Bağlantıyı Kontrol Et',
+  'projectModal.ghReady': 'Bağlandı — gh CLI kimlik doğrulaması kullanılıyor',
+  'projectModal.ghNotInstalled': 'GitHub CLI (gh) yüklü değil. cli.github.com adresinden yükleyin',
+  'projectModal.ghNotAuth': 'Giriş yapılmamış. Çalıştırın: gh auth login',
+  'projectModal.ghNoAccess': 'Bu depoya erişilemiyor',
+  'projectModal.ghAuthenticated': 'Kimlik doğrulandı — bir depo girin',
 
   // ─── Review Modal ───
   'review.title': 'G\u00f6revi \u0130ncele',
