@@ -141,8 +141,9 @@ export default function ScanModal({ projectId, onClose }) {
       tauriListen('scan:completed', (data) => {
         if (data.projectId !== projectId) return;
         clearInterval(timerRef.current);
-        if (data.result) {
-          setResult(data.result);
+        const r = data.result;
+        if (r) {
+          setResult(typeof r === 'string' ? r : r.content || JSON.stringify(r, null, 2));
           setPhase('preview');
           setProgressText('');
         }
@@ -178,9 +179,9 @@ export default function ScanModal({ projectId, onClose }) {
     setViewingHistoryItem(null);
     setDiffMode(false);
     try {
-      const text = await api.scanCodebase(projectId, scanType, scanType === 'custom' ? customPrompt : null);
+      const res = await api.scanCodebase(projectId, scanType, scanType === 'custom' ? customPrompt : null);
       clearInterval(timerRef.current);
-      setResult(text);
+      setResult(typeof res === 'string' ? res : res?.content || JSON.stringify(res, null, 2));
       setPhase('preview');
       setProgressText('');
     } catch (e) {
