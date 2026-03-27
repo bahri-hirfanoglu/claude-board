@@ -408,7 +408,7 @@ pub async fn list_custom_commands() -> Result<Value, String> {
         ];
         for dir in &dirs {
             if !dir.exists() { continue; }
-            let scope = if dir.starts_with(&dirs_home().join(".claude")) { "user" } else { "project" };
+            let scope = if dir.starts_with(dirs_home().join(".claude")) { "user" } else { "project" };
             if let Ok(entries) = std::fs::read_dir(dir) {
                 for entry in entries.flatten() {
                     let path = entry.path();
@@ -664,7 +664,7 @@ pub async fn fetch_github_skills(repo_url: String, path: Option<String>) -> Resu
 }
 
 fn detect_default_branch(client: &reqwest::blocking::Client, repo: &str) -> String {
-    if let Ok(resp) = client.get(&format!("https://api.github.com/repos/{}", repo)).send() {
+    if let Ok(resp) = client.get(format!("https://api.github.com/repos/{}", repo)).send() {
         if let Ok(data) = resp.json::<serde_json::Value>() {
             if let Some(branch) = data.get("default_branch").and_then(|v| v.as_str()) {
                 return branch.to_string();

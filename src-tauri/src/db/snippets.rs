@@ -29,7 +29,7 @@ pub fn get_by_project(db: &DbPool, pid: i64) -> Vec<Snippet> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_project: {}", e); return vec![]; }
     };
-    let result = match stmt.query_map(params![pid], |r| row_to_snippet(r)) {
+    let result = match stmt.query_map(params![pid], row_to_snippet) {
         Ok(rows) => rows.flatten().collect(),
         Err(e) => { log::error!("get_by_project: {}", e); vec![] }
     };
@@ -42,7 +42,7 @@ pub fn get_enabled_by_project(db: &DbPool, pid: i64) -> Vec<Snippet> {
         Ok(s) => s,
         Err(e) => { log::error!("get_enabled_by_project: {}", e); return vec![]; }
     };
-    let result = match stmt.query_map(params![pid], |r| row_to_snippet(r)) {
+    let result = match stmt.query_map(params![pid], row_to_snippet) {
         Ok(rows) => rows.flatten().collect(),
         Err(e) => { log::error!("get_enabled_by_project: {}", e); vec![] }
     };
@@ -55,7 +55,7 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<Snippet> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_id: {}", e); return None; }
     };
-    stmt.query_row(params![id], |r| row_to_snippet(r)).ok()
+    stmt.query_row(params![id], row_to_snippet).ok()
 }
 
 pub fn create(db: &DbPool, pid: i64, title: &str, content: &str) -> i64 {

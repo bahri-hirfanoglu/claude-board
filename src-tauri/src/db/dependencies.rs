@@ -128,7 +128,7 @@ pub fn get_ready_tasks(db: &DbPool, project_id: i64) -> Vec<Task> {
         Ok(s) => s,
         Err(_) => return vec![],
     };
-    let result = match stmt.query_map(params![project_id], |r| super::tasks::row_to_task(r)) {
+    let result = match stmt.query_map(params![project_id], super::tasks::row_to_task) {
         Ok(rows) => rows.flatten().collect(),
         Err(_) => vec![],
     };

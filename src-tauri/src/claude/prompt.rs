@@ -4,6 +4,7 @@ use crate::db::attachments::Attachment;
 use crate::db::roles::Role;
 use crate::db::templates::Template;
 
+#[allow(clippy::too_many_arguments)]
 pub fn build_prompt(
     task: &Task,
     revisions: &[TaskRevision],

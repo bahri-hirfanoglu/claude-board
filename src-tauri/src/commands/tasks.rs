@@ -21,6 +21,7 @@ pub fn get_task(id: i64) -> Result<tq::Task, String> {
 
 #[tauri::command]
 #[allow(non_snake_case)]
+#[allow(clippy::too_many_arguments)]
 pub fn create_task(
     app: AppHandle, project_id: i64,
     title: String, description: Option<String>, priority: Option<i64>,
@@ -61,6 +62,7 @@ pub fn create_task(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn update_task(
     app: AppHandle, id: i64,
     title: Option<String>, description: Option<String>, priority: Option<i64>,

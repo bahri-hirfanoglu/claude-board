@@ -43,7 +43,7 @@ fn track_file_access(task_id: i64, tool_name: &str, input: &Value, app: &AppHand
     if let Some(fp) = file_path {
         let normalized = normalize_path(fp);
         let mut map = FILE_ACCESS_MAP.lock();
-        let entry = map.entry(normalized.clone()).or_insert_with(HashSet::new);
+        let entry = map.entry(normalized.clone()).or_default();
         let is_write = matches!(tool_name, "Write" | "Edit" | "NotebookEdit");
 
         // Check for file conflict: another task is also accessing this file
@@ -374,7 +374,7 @@ fn handle_result(task_id: i64, event: &Value, db: &DbPool, app: &AppHandle, ctx:
     }), db);
 
     if let Some(result) = event.get("result").and_then(|v| v.as_str()) {
-        let preview = safe_truncate(&result, 500);
+        let preview = safe_truncate(result, 500);
         add_log(task_id, &format!("Result: {}", preview), "success", db, app, None);
     }
 }

@@ -29,7 +29,7 @@ pub fn get_by_project(db: &DbPool, pid: i64) -> Vec<Role> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_project: {}", e); return vec![]; }
     };
-    let result = match stmt.query_map(params![pid], |r| row_to(r)) {
+    let result = match stmt.query_map(params![pid], row_to) {
         Ok(rows) => rows.flatten().collect(),
         Err(e) => { log::error!("get_by_project: {}", e); vec![] }
     };
@@ -42,7 +42,7 @@ pub fn get_global(db: &DbPool) -> Vec<Role> {
         Ok(s) => s,
         Err(e) => { log::error!("get_global: {}", e); return vec![]; }
     };
-    let result = match stmt.query_map([], |r| row_to(r)) {
+    let result = match stmt.query_map([], row_to) {
         Ok(rows) => rows.flatten().collect(),
         Err(e) => { log::error!("get_global: {}", e); vec![] }
     };
@@ -55,7 +55,7 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<Role> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_id: {}", e); return None; }
     };
-    stmt.query_row(params![id], |r| row_to(r)).ok()
+    stmt.query_row(params![id], row_to).ok()
 }
 
 pub fn create(db: &DbPool, pid: Option<i64>, name: &str, description: &str, prompt: &str, color: &str) -> i64 {

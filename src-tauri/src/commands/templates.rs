@@ -7,6 +7,7 @@ pub fn get_templates(project_id: i64) -> Vec<tq::Template> {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn create_template(
     app: AppHandle, project_id: i64,
     name: String, description: Option<String>, template: String,
@@ -25,6 +26,7 @@ pub fn create_template(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn update_template(
     app: AppHandle, id: i64,
     name: String, description: Option<String>, template: String,

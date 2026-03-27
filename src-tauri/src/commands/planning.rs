@@ -81,7 +81,7 @@ pub fn start_planning(
         let pid_clone = plan_id_clone.clone();
         std::thread::spawn(move || {
             let reader = BufReader::new(stderr);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 let line = line.trim().to_string();
                 if line.is_empty() { continue; }
                 log::warn!("Planning stderr: {}", &line);
@@ -107,7 +107,7 @@ pub fn start_planning(
         let mut current_phase = "starting";
         let start_time = std::time::Instant::now();
 
-        for line in reader.lines().flatten() {
+        for line in reader.lines().map_while(Result::ok) {
             if line.trim().is_empty() { continue; }
             if let Ok(event) = serde_json::from_str::<serde_json::Value>(&line) {
                 if event.get("type").and_then(|v| v.as_str()) == Some("assistant") {

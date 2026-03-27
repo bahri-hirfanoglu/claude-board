@@ -34,7 +34,7 @@ pub fn get_by_project(db: &DbPool, pid: i64) -> Vec<Template> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_project: {}", e); return vec![]; }
     };
-    let result = match stmt.query_map(params![pid], |r| row_to(r)) {
+    let result = match stmt.query_map(params![pid], row_to) {
         Ok(rows) => rows.flatten().collect(),
         Err(e) => { log::error!("get_by_project: {}", e); vec![] }
     };
@@ -47,7 +47,7 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<Template> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_id: {}", e); return None; }
     };
-    stmt.query_row(params![id], |r| row_to(r)).ok()
+    stmt.query_row(params![id], row_to).ok()
 }
 
 /// Find a matching template for a task: first try exact task_type match, then fallback to any template.
@@ -56,11 +56,12 @@ pub fn find_for_task(db: &DbPool, project_id: i64, task_type: &str) -> Option<Te
     // Exact match on task_type
     let exact = conn.prepare("SELECT * FROM prompt_templates WHERE project_id=?1 AND task_type=?2 ORDER BY id DESC LIMIT 1")
         .ok()
-        .and_then(|mut s| s.query_row(params![project_id, task_type], |r| row_to(r)).ok());
+        .and_then(|mut s| s.query_row(params![project_id, task_type], row_to).ok());
     if exact.is_some() { return exact; }
     None
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create(db: &DbPool, pid: i64, name: &str, description: Option<&str>, template: &str, variables: Option<&str>, task_type: &str, model: &str, thinking_effort: &str) -> i64 {
     let conn = db.lock();
     match conn.execute(
@@ -73,6 +74,7 @@ pub fn create(db: &DbPool, pid: i64, name: &str, description: Option<&str>, temp
     conn.last_insert_rowid()
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update(db: &DbPool, id: i64, name: &str, description: Option<&str>, template: &str, variables: Option<&str>, task_type: &str, model: &str, thinking_effort: &str) {
     let conn = db.lock();
     if let Err(e) = conn.execute(

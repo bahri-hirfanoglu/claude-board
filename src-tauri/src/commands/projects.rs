@@ -20,6 +20,7 @@ pub fn get_project(id: i64) -> Result<pq::Project, String> {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn create_project(
     app: AppHandle,
     name: String, slug: String, working_dir: String,
@@ -41,6 +42,7 @@ pub fn create_project(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn update_project(
     app: AppHandle, id: i64,
     name: Option<String>, slug: Option<String>, working_dir: Option<String>,

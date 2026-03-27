@@ -34,7 +34,7 @@ pub fn is_auth_enabled(db: &DbPool) -> bool {
         .ok()
         .and_then(|mut s| s.query_row([], |r| Ok((r.get(0)?, r.get(1)?))).ok());
     match result {
-        Some((enabled, hash)) => enabled == 1 && hash.as_ref().map_or(false, |h| !h.is_empty()),
+        Some((enabled, hash)) => enabled == 1 && hash.as_ref().is_some_and(|h| !h.is_empty()),
         None => false,
     }
 }

@@ -32,7 +32,7 @@ pub fn get_by_project(db: &DbPool, pid: i64) -> Vec<Webhook> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_project: {}", e); return vec![]; }
     };
-    let result = match stmt.query_map(params![pid], |r| row_to(r)) {
+    let result = match stmt.query_map(params![pid], row_to) {
         Ok(rows) => rows.flatten().collect(),
         Err(e) => { log::error!("get_by_project: {}", e); vec![] }
     };
@@ -45,7 +45,7 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<Webhook> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_id: {}", e); return None; }
     };
-    stmt.query_row(params![id], |r| row_to(r)).ok()
+    stmt.query_row(params![id], row_to).ok()
 }
 
 pub fn get_enabled_by_project(db: &DbPool, pid: i64) -> Vec<Webhook> {
@@ -54,7 +54,7 @@ pub fn get_enabled_by_project(db: &DbPool, pid: i64) -> Vec<Webhook> {
         Ok(s) => s,
         Err(e) => { log::error!("get_enabled_by_project: {}", e); return vec![]; }
     };
-    let result = match stmt.query_map(params![pid], |r| row_to(r)) {
+    let result = match stmt.query_map(params![pid], row_to) {
         Ok(rows) => rows.flatten().collect(),
         Err(e) => { log::error!("get_enabled_by_project: {}", e); vec![] }
     };

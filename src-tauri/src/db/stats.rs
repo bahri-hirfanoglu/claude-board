@@ -335,6 +335,7 @@ pub fn get_claude_limits(db: &DbPool) -> Option<ClaudeLimits> {
         })).ok()
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn upsert_claude_limits(db: &DbPool, rate_limit_type: &str, status: &str, resets_at: i64, overage_status: &str, is_using_overage: bool, model: &str, cost_usd: f64, context_window: i64, max_output_tokens: i64) {
     let conn = db.lock();
     conn.execute(

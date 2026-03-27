@@ -28,7 +28,7 @@ pub fn get_by_task(db: &DbPool, task_id: i64) -> Vec<Attachment> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_task: {}", e); return vec![]; }
     };
-    let result = match stmt.query_map(params![task_id], |r| row_to(r)) {
+    let result = match stmt.query_map(params![task_id], row_to) {
         Ok(rows) => rows.flatten().collect(),
         Err(e) => { log::error!("get_by_task: {}", e); vec![] }
     };
@@ -41,7 +41,7 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<Attachment> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_id: {}", e); return None; }
     };
-    stmt.query_row(params![id], |r| row_to(r)).ok()
+    stmt.query_row(params![id], row_to).ok()
 }
 
 pub fn create(db: &DbPool, task_id: i64, filename: &str, original_name: &str, mime_type: Option<&str>, size: i64) -> i64 {

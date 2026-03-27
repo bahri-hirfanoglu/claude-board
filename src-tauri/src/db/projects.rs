@@ -78,7 +78,7 @@ pub fn get_all(db: &DbPool) -> Vec<Project> {
         Ok(s) => s,
         Err(e) => { log::error!("get_all: {}", e); return vec![]; }
     };
-    let result = match stmt.query_map([], |row| row_to_project(row)) {
+    let result = match stmt.query_map([], row_to_project) {
         Ok(rows) => rows.flatten().collect(),
         Err(e) => { log::error!("get_all: {}", e); vec![] }
     };
@@ -91,7 +91,7 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<Project> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_id: {}", e); return None; }
     };
-    stmt.query_row(params![id], |row| row_to_project(row))
+    stmt.query_row(params![id], row_to_project)
         .ok()
 }
 
@@ -101,10 +101,11 @@ pub fn get_by_slug(db: &DbPool, slug: &str) -> Option<Project> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_slug: {}", e); return None; }
     };
-    stmt.query_row(params![slug], |row| row_to_project(row))
+    stmt.query_row(params![slug], row_to_project)
         .ok()
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create(
     db: &DbPool,
     name: &str, slug: &str, working_dir: &str,
@@ -130,6 +131,7 @@ pub fn create(
     conn.last_insert_rowid()
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update(
     db: &DbPool, id: i64,
     name: &str, slug: &str, working_dir: &str,

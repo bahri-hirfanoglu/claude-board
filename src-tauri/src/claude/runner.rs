@@ -513,11 +513,9 @@ fn copy_task_attachments(task_id: i64, working_dir: &str, db: &DbPool) -> (Vec<a
 
     if !task_attachments.is_empty() {
         // Prevent symlink attacks - remove if exists and is symlink, then create fresh
-        if attach_dir.exists() {
-            if attach_dir.is_symlink() {
-                log::warn!("Symlink detected at {:?}, removing", attach_dir);
-                std::fs::remove_file(&attach_dir).ok();
-            }
+        if attach_dir.exists() && attach_dir.is_symlink() {
+            log::warn!("Symlink detected at {:?}, removing", attach_dir);
+            std::fs::remove_file(&attach_dir).ok();
         }
         if !attach_dir.exists() {
             std::fs::create_dir(&attach_dir).ok();
@@ -585,6 +583,7 @@ fn build_claude_args(
 }
 
 /// Handle process output, track events, and update task state on completion.
+#[allow(clippy::too_many_arguments)]
 fn handle_process_lifecycle(
     task_id: i64,
     mut child: std::process::Child,
@@ -612,7 +611,7 @@ fn handle_process_lifecycle(
         let app_err = app.clone();
         std::thread::spawn(move || {
             let reader = BufReader::new(stderr);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 let line = line.trim().to_string();
                 if line.is_empty() { continue; }
                 // Show stderr in task logs so users see rate limits, errors, warnings
@@ -641,7 +640,7 @@ fn handle_process_lifecycle(
     // Read stdout (safe: we configured Stdio::piped, stderr is drained above)
     if let Some(stdout) = child.stdout.take() {
         let reader = BufReader::new(stdout);
-        for line in reader.lines().flatten() {
+        for line in reader.lines().map_while(Result::ok) {
             if line.trim().is_empty() { continue; }
             match serde_json::from_str::<serde_json::Value>(&line) {
                 Ok(event) => super::events::handle_event(task_id, &event, db, app, &EVENT_CTX),
@@ -694,7 +693,7 @@ fn handle_process_lifecycle(
 
             // Auto-test: if enabled, start verification
             let project = projects::get_by_id(db, project_id);
-            let should_auto_test = project.as_ref().map_or(false, |p| p.auto_test.unwrap_or(0) == 1);
+            let should_auto_test = project.as_ref().is_some_and(|p| p.auto_test.unwrap_or(0) == 1);
             if should_auto_test {
                 if let (Some(task), Some(proj)) = (tasks::get_by_id(db, task_id), project) {
                     let mcp_port: u16 = 4000;
@@ -978,7 +977,7 @@ After all checks, you MUST output this exact JSON block as your final output:
             let app_err = app.clone();
             std::thread::spawn(move || {
                 let reader = BufReader::new(stderr);
-                for line in reader.lines().flatten() {
+                for line in reader.lines().map_while(Result::ok) {
                     let line = line.trim().to_string();
                     if line.is_empty() { continue; }
                     let db = db::get_db();
@@ -998,7 +997,7 @@ After all checks, you MUST output this exact JSON block as your final output:
         if let Some(stdout) = child.stdout.take() {
             let reader = BufReader::new(stdout);
             let db = db::get_db();
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.trim().is_empty() { continue; }
                 match serde_json::from_str::<serde_json::Value>(&line) {
                     Ok(event) => {

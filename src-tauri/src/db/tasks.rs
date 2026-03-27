@@ -204,7 +204,7 @@ pub fn get_by_project(db: &DbPool, project_id: i64) -> Vec<Task> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_project prepare: {}", e); return vec![]; }
     };
-    let result: Vec<Task> = match stmt.query_map(params![project_id], |row| row_to_task(row)) {
+    let result: Vec<Task> = match stmt.query_map(params![project_id], row_to_task) {
         Ok(rows) => rows.flatten().collect(),
         Err(e) => { log::error!("get_by_project query: {}", e); vec![] }
     };
@@ -217,7 +217,7 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<Task> {
         Ok(s) => s,
         Err(e) => { log::error!("get_by_id prepare: {}", e); return None; }
     };
-    stmt.query_row(params![id], |row| row_to_task(row)).ok()
+    stmt.query_row(params![id], row_to_task).ok()
 }
 
 fn generate_task_key(conn: &rusqlite::Connection, project_id: i64, task_type: &str) -> String {
@@ -251,6 +251,7 @@ fn generate_task_key(conn: &rusqlite::Connection, project_id: i64, task_type: &s
     format!("{}-{}-{}", prefix, pk, counter)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create(
     db: &DbPool,
     project_id: i64, title: &str, description: &str,
@@ -271,6 +272,7 @@ pub fn create(
     conn.last_insert_rowid()
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update(
     db: &DbPool, id: i64,
     title: &str, description: &str, priority: i64,
@@ -375,6 +377,7 @@ pub fn finalize_timer(db: &DbPool, id: i64) {
     ) { log::error!("finalize_timer: {}", e); }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn set_usage_live(db: &DbPool, id: i64, input: i64, output: i64, cache_read: i64, cache_creation: i64, cost: f64, model: &str) {
     let conn = db.lock();
     if let Err(e) = conn.execute(
@@ -513,7 +516,7 @@ pub fn get_next_queued(db: &DbPool, project_id: i64) -> Option<Task> {
         Ok(s) => s,
         Err(e) => { log::error!("get_next_queued prepare: {}", e); return None; }
     };
-    stmt.query_row(params![project_id], |row| row_to_task(row)).ok()
+    stmt.query_row(params![project_id], row_to_task).ok()
 }
 
 pub fn get_running_count(db: &DbPool, project_id: i64) -> i64 {
@@ -579,7 +582,7 @@ pub fn get_subtasks(db: &DbPool, parent_id: i64) -> Vec<Task> {
         Ok(s) => s,
         Err(_) => return vec![],
     };
-    let result: Vec<Task> = match stmt.query_map(params![parent_id], |r| row_to_task(r)) {
+    let result: Vec<Task> = match stmt.query_map(params![parent_id], row_to_task) {
         Ok(rows) => rows.flatten().collect(),
         Err(_) => vec![],
     };
