@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.6.5] - 2026-03-27
+
+### Bug Fixes
+- **Stats exclude deleted tasks** — All 13 statistics queries now filter out soft-deleted tasks (project stats, global usage, model breakdown, timeline, project list counts)
+- **Stop on any status change** — Running tasks now properly stopped when dragged to backlog, testing, or any non-running status (was only stopping from in_progress)
+- **No auto-retry on manual stop** — Manually stopping or moving a task no longer triggers auto-retry; retry state (count + delay) fully reset on backlog transition
+- **User-stopped detection** — Runner distinguishes user-initiated stops from crashes; stopped tasks skip failure handling entirely
+- **Auto-test race condition** — Auto-test results are skipped if user manually changed task status while test was running
+- **Timer accuracy** — Timer paused when transitioning to testing; timer resumed on auto-revision restart; prevents duration inflation from auto-test time
+- **is_running immediate** — Task shows as running immediately when started (includes "starting" state), not just after process spawns
+- **request_changes guard** — Cannot request changes on tasks in backlog/in_progress; only testing/done allowed
+- **Cascade timing** — Dependency cascade deferred until auto-test completes (was triggering before test started)
+- **Parent auto-complete guard** — Sub-task completion only auto-completes parent if parent is still in_progress (respects manual status changes)
+- **Timeout retry guard** — Timed-out tasks only retry if still in in_progress status (respects manual user changes)
+- **Delete running task** — Properly stops both running and starting processes before deletion
+
 ## [1.6.4] - 2026-03-27
 
 ### Features
