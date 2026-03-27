@@ -205,13 +205,13 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
             {task.is_running && (
               <span className="flex items-center gap-1 text-[9px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
                 <Activity size={9} className="animate-pulse" />
-                <span className="hidden sm:inline">Running</span>
+                <span className="hidden sm:inline">{t('terminal.running')}</span>
               </span>
             )}
             {!task.is_running && logs.some((l) => l.log_type === 'success') && (
               <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
                 <CheckCircle2 size={9} />
-                <span className="hidden sm:inline">Done</span>
+                <span className="hidden sm:inline">{t('terminal.done')}</span>
               </span>
             )}
           </div>
@@ -271,7 +271,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
               if (!showSearch) setTimeout(() => searchInputRef.current?.focus(), 50);
             }}
             className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-surface-700 text-claude' : 'text-surface-500 hover:text-surface-200 hover:bg-surface-800'}`}
-            title="Search (Ctrl+F)"
+            title={t('terminal.searchShortcut')}
           >
             <Search size={12} />
           </button>
@@ -279,7 +279,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
             <button
               onClick={onToggleLayout}
               className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-500 hover:text-surface-200 transition-colors"
-              title={isBottom ? 'Side panel' : 'Bottom panel'}
+              title={isBottom ? t('terminal.sidePanel') : t('terminal.bottomPanel')}
             >
               {isBottom ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
             </button>
@@ -288,7 +288,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
             <button
               onClick={handleStop}
               className="p-1.5 rounded-lg hover:bg-red-500/20 text-surface-500 hover:text-red-400 transition-colors"
-              title="Stop"
+              title={t('terminal.stop')}
             >
               <Square size={12} />
             </button>
@@ -296,7 +296,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
           <button
             onClick={handleRestart}
             className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-500 hover:text-amber-400 transition-colors"
-            title="Restart"
+            title={t('terminal.restart')}
           >
             <RotateCcw size={12} />
           </button>
@@ -353,14 +353,14 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
         <button
           onClick={toggleExpandAll}
           className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${expandAll ? 'text-purple-400 bg-purple-500/10' : 'text-surface-500 hover:text-surface-300'}`}
-          title={expandAll ? 'Collapse all' : 'Expand all'}
+          title={expandAll ? t('terminal.collapseAll') : t('terminal.expandAll')}
         >
-          {expandAll ? 'Collapse' : 'Expand'}
+          {expandAll ? t('terminal.collapse') : t('terminal.expand')}
         </button>
         <button
           onClick={() => (paused ? resumeLogs() : setPaused(true))}
           className={`p-1 rounded transition-colors ${paused ? 'text-amber-400 bg-amber-500/10' : 'text-surface-500 hover:text-surface-300'}`}
-          title={paused ? `Resume (${pausedLogsRef.current.length})` : 'Pause'}
+          title={paused ? `${t('terminal.resume')} (${pausedLogsRef.current.length})` : t('terminal.pause')}
         >
           {paused ? <Play size={10} /> : <Pause size={10} />}
         </button>
@@ -389,10 +389,10 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
                 <div className="relative">
                   <div className="w-8 h-8 rounded-full border-2 border-claude/20 border-t-claude animate-spin" />
                 </div>
-                <span className="text-surface-500">Waiting for Claude...</span>
+                <span className="text-surface-500">{t('terminal.waitingForClaude')}</span>
               </div>
             ) : (
-              <span>No output yet</span>
+              <span>{t('terminal.noOutput')}</span>
             )}
           </div>
         ) : (

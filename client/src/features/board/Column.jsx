@@ -44,7 +44,9 @@ export default function Column({
             <div className={`w-2 h-2 rounded-full ${column.bg}`} />
             <h2 className={`text-sm font-medium ${column.color}`}>{t('status.' + column.id)}</h2>
           </div>
-          <span className="text-xs text-surface-500 bg-surface-800 px-2 py-0.5 rounded-full">{tasks.length}</span>
+          {tasks.length > 0 && (
+            <span className="text-xs text-surface-500 bg-surface-800 px-2 py-0.5 rounded-full">{tasks.length}</span>
+          )}
         </div>
       )}
 

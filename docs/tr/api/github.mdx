@@ -1,0 +1,115 @@
+---
+title: "GitHub API"
+description: "Sorun eşitleme, depo algılama ve PR otomasyonu için GitHub entegrasyonu"
+icon: "github"
+---
+
+<Note>GitHub entegrasyon özellikleri yalnızca Tauri'ye özeldir. GitHub CLI'nin (`gh`) yüklü ve `gh auth login` ile kimlik doğrulaması yapılmış olması gerekir.</Note>
+
+## Depo Algıla
+
+```javascript
+invoke('github_detect_repo', { workingDir: "/home/user/my-app" })
+// -> "owner/repo"
+```
+
+Belirtilen çalışma dizinindeki git remote URL'sinden GitHub deposunu algılar.
+
+Depoyu `owner/repo` formatında döndürür veya şu durumlarda hata verir:
+- Git remote bulunamadıysa
+- Remote bir GitHub URL'si değilse
+- Depo formatı ayrıştırılamadıysa
+
+## Durum Kontrol Et
+
+```javascript
+invoke('github_check_status', { repo: "owner/repo" })
+```
+
+Tam GitHub entegrasyon durumunu kontrol eder: CLI yüklü, kimlik doğrulaması yapılmış ve depo erişilebilir.
+
+```json
+{
+  "status": "ready",
+  "message": "Connected",
+  "repo": "owner/repo"
+}
+```
+
+### Durum Değerleri
+
+| Durum | Açıklama |
+|-------|----------|
+| `not_installed` | GitHub CLI (`gh`) yüklü değil |
+| `not_authenticated` | Giriş yapılmamış -- `gh auth login` komutunu çalıştırın |
+| `authenticated` | Giriş yapılmış ancak depo yapılandırılmamış |
+| `no_access` | Belirtilen depoya erişilemiyor |
+| `ready` | Tam bağlantı sağlandı ve depo erişilebilir |
+
+## Sorunları Getir
+
+```javascript
+invoke('github_fetch_issues', { projectId: 1 })
+```
+
+Projenin yapılandırılmış deposundan açık GitHub sorunlarını getirir. Görev oluşturmaz -- yalnızca kullanıcının seçim yapması için sorun listesini döndürür.
+
+```json
+{
+  "issues": [
+    {
+      "number": 42,
+      "title": "Login page crashes on mobile",
+      "body": "Steps to reproduce...",
+      "state": "open",
+      "html_url": "https://github.com/owner/repo/issues/42",
+      "labels": [{ "name": "bug", "color": "d73a4a" }],
+      "created_at": "2025-01-10T08:00:00Z",
+      "updated_at": "2025-01-12T15:30:00Z",
+      "already_imported": false,
+      "suggested_type": "bugfix"
+    }
+  ],
+  "repo": "owner/repo"
+}
+```
+
+| Alan | Açıklama |
+|------|----------|
+| `already_imported` | Bu sorunun zaten bir görev olarak içe aktarılıp aktarılmadığı |
+| `suggested_type` | Sorun etiketlerine göre otomatik algılanan görev türü (`feature`, `bugfix`, `refactor`, `docs`, `test`, `chore`) |
+
+<Info>Sorunları getirmeden önce projenin Proje Ayarları > GitHub bölümünde bir GitHub deposu yapılandırılmış olmalıdır.</Info>
+
+## Sorunları İçe Aktar
+
+```javascript
+invoke('github_import_issues', {
+  projectId: 1,
+  issueNumbers: [42, 55, 61]
+})
+```
+
+Seçilen GitHub sorunlarını projede görev olarak içe aktarır. Her içe aktarılan sorun `backlog` durumunda bir görev olur.
+
+```json
+{
+  "imported": 3
+}
+```
+
+- Yinelenen içe aktarmalar otomatik olarak atlanır (sorun numarasına göre eşleştirilir)
+- Görev türü sorun etiketlerinden otomatik algılanır
+- Sorun gövdesi görev açıklaması olur
+- Tüm içe aktarılan görevler `["github"]` ile etiketlenir
+- Her içe aktarılan görev için `task:created` olayı yayınlanır
+
+## Sorunu Kapat
+
+```javascript
+invoke('github_close_issue', { projectId: 1, taskId: 5 })
+```
+
+Bir göreve bağlı GitHub sorununu kapatır. Bağlı bir sorunu olan görev `done` durumuna geçtiğinde otomatik olarak çağrılır.
+
+Görevin bağlı bir GitHub sorunu yoksa veya projenin yapılandırılmış bir GitHub deposu yoksa hiçbir şey yapmaz.

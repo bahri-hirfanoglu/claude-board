@@ -32,13 +32,53 @@ GET /api/projects/summary
 
 Tüm projeleri duruma göre görev sayılarıyla birlikte döndürür. Genel pano görünümü için kullanışlıdır.
 
+```json
+[
+  {
+    "id": 1,
+    "name": "My App",
+    "slug": "my-app",
+    "workingDir": "/home/user/my-app",
+    "backlogCount": 5,
+    "inProgressCount": 2,
+    "testingCount": 1,
+    "doneCount": 12
+  }
+]
+```
+
 ## Proje Getir
 
 ```http
 GET /api/projects/:id
 ```
 
-İzin modu, izin verilen araçlar ve kuyrük yapılandırması dahil tam ayarlarıyla birlikte tek bir projeyi döndürür.
+İzin modu, izin verilen araçlar, kuyruk yapılandırması, git ayarları, otomatik test ve GitHub entegrasyonu dahil tam ayarlarıyla birlikte tek bir projeyi döndürür.
+
+```json
+{
+  "id": 1,
+  "name": "My App",
+  "slug": "my-app",
+  "workingDir": "/home/user/my-app",
+  "icon": null,
+  "iconSeed": null,
+  "permissionMode": "auto-accept",
+  "allowedTools": null,
+  "autoQueue": 1,
+  "maxConcurrent": 2,
+  "autoBranch": 1,
+  "autoPr": 0,
+  "prBaseBranch": "main",
+  "autoTest": 0,
+  "testPrompt": "",
+  "taskTimeoutMinutes": null,
+  "maxRetries": 0,
+  "githubRepo": "owner/repo",
+  "githubSyncEnabled": 0,
+  "createdAt": "2025-01-15T10:00:00Z"
+}
+```
 
 ## Proje Oluştur
 
@@ -54,20 +94,22 @@ Content-Type: application/json
   "workingDir": "/home/user/my-app",
   "permissionMode": "auto-accept",
   "allowedTools": [],
-  "autoQueue": false,
-  "maxConcurrent": 1
+  "icon": null,
+  "iconSeed": null
 }
 ```
 
 | Alan | Zorunlu | Açıklama |
 |------|---------|----------|
 | `name` | Evet | Proje görünen adı |
-| `slug` | Evet | URL uyumlu tanımlayıcı |
+| `slug` | Evet | URL uyumlu tanımlayıcı (benzersiz olmalı) |
 | `workingDir` | Evet | Kod tabanının mutlak yolu |
 | `permissionMode` | Hayır | `auto-accept`, `allow-tools`, `default` |
-| `allowedTools` | Hayır | Araç adları dizisi (`allow-tools` modu için) |
-| `autoQueue` | Hayır | Otomatik kuyruğu etkinleştir |
-| `maxConcurrent` | Hayır | Maksimum eşzamanlı ajan sayısı (1–5) |
+| `allowedTools` | Hayır | Virgülle ayrılmış araç adları (`allow-tools` modu için) |
+| `icon` | Hayır | Özel simge tanımlayıcısı |
+| `iconSeed` | Hayır | Otomatik oluşturulan simge için tohum |
+
+<Info>Kuyruk, git, otomatik test ve GitHub entegrasyonu gibi ek ayarlar, oluşturma sonrasında Proje Güncelle ile yapılandırılır.</Info>
 
 ## Proje Güncelle
 
@@ -76,7 +118,72 @@ PUT /api/projects/:id
 Content-Type: application/json
 ```
 
-Oluşturma ile aynı alanları kabul eder. Yalnızca gönderilen alanlar güncellenir.
+Aşağıdaki alanların herhangi bir kombinasyonunu kabul eder. Yalnızca gönderilen alanlar güncellenir.
+
+```json
+{
+  "name": "My App (Güncellenmiş)",
+  "autoQueue": true,
+  "maxConcurrent": 3,
+  "autoBranch": true,
+  "autoPr": true,
+  "prBaseBranch": "develop",
+  "autoTest": true,
+  "testPrompt": "Run npm test and verify all pass",
+  "taskTimeoutMinutes": 30,
+  "maxRetries": 3,
+  "githubRepo": "owner/repo",
+  "githubSyncEnabled": 1
+}
+```
+
+### Temel Alanlar
+
+| Alan | Tür | Açıklama |
+|------|-----|----------|
+| `name` | string | Proje görünen adı |
+| `slug` | string | URL uyumlu tanımlayıcı |
+| `workingDir` | string | Kod tabanının mutlak yolu |
+| `icon` | string | Özel simge tanımlayıcısı |
+| `iconSeed` | string | Otomatik oluşturulan simge için tohum |
+| `permissionMode` | string | `auto-accept`, `allow-tools`, `default` |
+| `allowedTools` | string | Virgülle ayrılmış araç adları |
+
+### Kuyruk Ayarları
+
+| Alan | Tür | Açıklama |
+|------|-----|----------|
+| `autoQueue` | boolean | Boş slot olduğunda kuyruktaki görevleri otomatik başlat |
+| `maxConcurrent` | integer | Maksimum eşzamanlı ajan sayısı (1–5) |
+
+### Git ve PR Ayarları
+
+| Alan | Tür | Açıklama |
+|------|-----|----------|
+| `autoBranch` | boolean | Görev başına otomatik özellik dalı oluştur |
+| `autoPr` | boolean | Görev tamamlandığında otomatik pull request oluştur |
+| `prBaseBranch` | string | Otomatik PR'lar için hedef dal (varsayılan: `main`) |
+
+### Otomatik Test Ayarları
+
+| Alan | Tür | Açıklama |
+|------|-----|----------|
+| `autoTest` | boolean | Görev tamamlandıktan sonra otomatik test doğrulamasını etkinleştir |
+| `testPrompt` | string | Test doğrulama ajanı için özel prompt |
+
+### Yeniden Deneme ve Zaman Aşımı Ayarları
+
+| Alan | Tür | Açıklama |
+|------|-----|----------|
+| `taskTimeoutMinutes` | integer | N dakika sonra ajanı sonlandır (0 = zaman aşımı yok) |
+| `maxRetries` | integer | Başarısız görevleri N kez otomatik yeniden dene (0 = yeniden deneme yok, varsayılan maks: 2) |
+
+### GitHub Entegrasyonu
+
+| Alan | Tür | Açıklama |
+|------|-----|----------|
+| `githubRepo` | string | `owner/repo` formatında GitHub deposu |
+| `githubSyncEnabled` | integer | GitHub sorun eşitlemesini etkinleştir (1 = etkin, 0 = devre dışı) |
 
 ## Proje Sil
 
@@ -84,4 +191,4 @@ Oluşturma ile aynı alanları kabul eder. Yalnızca gönderilen alanlar güncel
 DELETE /api/projects/:id
 ```
 
-<Warning>Bir projeyi silmek, projeye ait tüm görevleri, günlükleri, webhook'ları, snippet'leri ve şablonları kaldırır. Bu işlem geri alınamaz.</Warning>
+<Warning>Bir projeyi silmek tüm çalışan ajanları durdurur ve projeye ait tüm görevleri, günlükleri, webhook'ları, snippet'leri, şablonları ve ekleri kaldırır. Bu işlem geri alınamaz.</Warning>

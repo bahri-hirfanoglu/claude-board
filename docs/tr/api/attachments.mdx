@@ -1,0 +1,65 @@
+---
+title: "Attachments API"
+description: "Görevler için dosya ekleri"
+icon: "paperclip"
+---
+
+## Ekleri Getir
+
+```javascript
+invoke('get_attachments', { taskId: 1 })
+```
+
+Bir göreve ait tüm ekleri döndürür.
+
+```json
+[
+  {
+    "id": 1,
+    "taskId": 1,
+    "fileName": "design-spec.pdf",
+    "mimeType": "application/pdf",
+    "size": 245000,
+    "createdAt": "2025-01-15T10:00:00Z"
+  }
+]
+```
+
+## Ek Yükle (Tauri IPC)
+
+```javascript
+invoke('upload_attachment', {
+  taskId: 1,
+  fileData: [...],       // Uint8Array sayı dizisi olarak
+  fileName: "spec.pdf",
+  mimeType: "application/pdf"
+})
+```
+
+Bir göreve tek bir dosya eki yükler. Ön yüz, birden fazla dosyayı her biri için sırayla çağırarak yönetir.
+
+| Alan | Zorunlu | Açıklama |
+|------|---------|----------|
+| `taskId` | Evet | Hedef görev kimliği |
+| `fileData` | Evet | Bayt dizisi olarak dosya içeriği |
+| `fileName` | Evet | Orijinal dosya adı |
+| `mimeType` | Evet | MIME türü (ör. `application/pdf`, `image/png`) |
+
+## Ek Yükle (HTTP)
+
+```http
+POST /api/tasks/:taskId/attachments
+Content-Type: multipart/form-data
+```
+
+Standart multipart form verisi kullanarak bir veya daha fazla dosya yükleyin. Dosyalar `files` alan adı altında gönderilmelidir.
+
+## Ek Sil
+
+```javascript
+invoke('delete_attachment', { id: 1 })
+```
+
+Bir eki ve depolanan dosya verisini kalıcı olarak kaldırır.
+
+<Note>Ekler yerel SQLite veritabanında saklanır. Görev detay görünümüne dahil edilir ve görev yürütülürken Claude ajanları tarafından referans alınabilir.</Note>

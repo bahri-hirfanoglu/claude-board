@@ -1,0 +1,58 @@
+---
+title: "Auth API"
+description: "MCP HTTP API için kimlik doğrulama kapısı"
+icon: "lock"
+---
+
+## Kimlik Doğrulama Durumunu Getir
+
+```http
+GET /api/auth/status
+```
+
+HTTP API için kimlik doğrulamanın etkin olup olmadığını kontrol eder.
+
+```json
+{
+  "enabled": false
+}
+```
+
+## Kimlik Doğrulamayı Etkinleştir (Tauri IPC)
+
+```javascript
+invoke('enable_auth')
+```
+
+MCP HTTP API üzerinde kimlik doğrulamayı etkinleştirir. Etkinleştirildiğinde, API istekleri geçerli bir token gerektirir.
+
+```json
+{
+  "enabled": true,
+  "token": "cb_xxxxxxxxxxxxxxxxxxxx"
+}
+```
+
+<Warning>Token'ı hemen kaydedin -- yalnızca bir kez gösterilir. Kaybolursa, yeni bir token oluşturmak için kimlik doğrulamayı devre dışı bırakıp yeniden etkinleştirin.</Warning>
+
+## Kimlik Doğrulamayı Devre Dışı Bırak (Tauri IPC)
+
+```javascript
+invoke('disable_auth')
+```
+
+Kimlik doğrulamayı devre dışı bırakır. Tüm API istekleri token olmadan kabul edilir.
+
+```json
+{
+  "enabled": false
+}
+```
+
+## Kimlik Doğrulama Bilgisi Getir (Tauri IPC)
+
+```javascript
+invoke('get_auth_info')
+```
+
+Claude CLI giriş durumu ve API anahtarı bilgileri dahil kimlik doğrulama ayrıntılarını döndürür.

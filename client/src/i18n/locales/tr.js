@@ -20,6 +20,8 @@ export default {
   'common.preview': '\u00d6nizleme',
   'common.tasks': 'g\u00f6rev',
   'common.tokens': 'token',
+  'common.loadMore': 'Daha fazla',
+  'common.remaining': 'kalan',
 
   // ─── Status ───
   'status.backlog': 'Beklemede',
@@ -227,6 +229,14 @@ export default {
   'projectModal.repoHelpText': 'Git remote üzerinden otomatik algıla veya elle gir',
   'projectModal.ghCliHelpText':
     'gh CLI kimlik doğrulamasını kullanır. Kaydettikten sonra, sorunları görev olarak içe aktarmak için pano araç çubuğundaki Sorunlar düğmesini kullanın.',
+  'projectModal.taskTimeout': 'Görev Zaman Aşımı',
+  'projectModal.minutesNoLimit': 'dakika (0 = sınırsız)',
+  'projectModal.taskTimeoutDesc':
+    'Bu süreyi aşan görevleri otomatik sonlandır. Zaman aşımına uğrayan görevler yeniden deneme politikasına tabidir.',
+  'projectModal.maxRetries': 'Maksimum Yeniden Deneme',
+  'projectModal.timesDefault': 'kez (0 = varsayılan 2)',
+  'projectModal.maxRetriesDesc':
+    'Kalıcı olarak başarısız olarak işaretlemeden önce başarısız görevleri kaç kez otomatik yeniden denesin.',
 
   // ─── Review Modal ───
   'review.title': 'G\u00f6revi \u0130ncele',
@@ -562,6 +572,10 @@ export default {
   'terminal.switchToSide': 'Yan panele ge\u00e7',
   'terminal.searchShortcut': 'Ara (Ctrl+F)',
   'terminal.errorCount': 'hata',
+  'terminal.resume': 'Devam Et',
+  'terminal.pause': 'Duraklat',
+  'terminal.collapseAll': 'Tümünü daralt',
+  'terminal.expandAll': 'Tümünü genişlet',
 
   // ─── G\u00f6rev Kart\u0131 ───
   'card.failed': 'Ba\u015far\u0131s\u0131z',

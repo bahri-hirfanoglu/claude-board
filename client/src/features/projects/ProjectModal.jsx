@@ -23,6 +23,7 @@ import Avatar from 'boring-avatars';
 import { AVATAR_VARIANTS, AVATAR_COLORS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { api } from '../../lib/api';
+import { IS_TAURI } from '../../lib/tauriEvents';
 
 const PERMISSION_MODES = [
   {
@@ -283,13 +284,34 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                   <label className="block text-xs font-medium text-surface-400 mb-1">
                     {t('projectModal.workingDir')}
                   </label>
-                  <input
-                    value={workingDir}
-                    onChange={(e) => setWorkingDir(e.target.value)}
-                    placeholder="/home/user/projects/my-project"
-                    className="w-full px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 font-mono"
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      value={workingDir}
+                      onChange={(e) => setWorkingDir(e.target.value)}
+                      placeholder="/home/user/projects/my-project"
+                      className="flex-1 px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 font-mono"
+                      required
+                    />
+                    {IS_TAURI && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const { open } = await import('@tauri-apps/plugin-dialog');
+                            const selected = await open({ directory: true, multiple: false });
+                            if (selected) setWorkingDir(selected);
+                          } catch (e) {
+                            console.error('Failed to open folder picker:', e);
+                          }
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium rounded-lg bg-surface-800 border border-surface-700 text-surface-400 hover:text-surface-100 hover:bg-surface-700 transition-colors whitespace-nowrap"
+                        title="Browse folder"
+                      >
+                        <FolderOpen size={12} />
+                        Browse
+                      </button>
+                    )}
+                  </div>
                   <p className="text-[10px] text-surface-600 mt-0.5">{t('projectModal.workingDirHint')}</p>
                 </div>
               </div>
@@ -459,7 +481,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                 <div>
                   <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5">
                     <Timer size={12} />
-                    Task Timeout
+                    {t('projectModal.taskTimeout')}
                   </label>
                   <div className="flex items-center gap-2">
                     <input
@@ -471,18 +493,16 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                       placeholder="0"
                       className="w-24 px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs text-surface-200 focus:outline-none focus:ring-1 focus:ring-claude"
                     />
-                    <span className="text-[10px] text-surface-500">minutes (0 = no limit)</span>
+                    <span className="text-[10px] text-surface-500">{t('projectModal.minutesNoLimit')}</span>
                   </div>
-                  <p className="text-[9px] text-surface-600 mt-1">
-                    Auto-kill tasks that exceed this duration. Timed-out tasks follow the retry policy.
-                  </p>
+                  <p className="text-[9px] text-surface-600 mt-1">{t('projectModal.taskTimeoutDesc')}</p>
                 </div>
 
                 {/* Max Retries */}
                 <div>
                   <label className="flex items-center gap-1.5 text-xs font-medium text-surface-400 mb-1.5">
                     <RotateCcw size={12} />
-                    Max Retries
+                    {t('projectModal.maxRetries')}
                   </label>
                   <div className="flex items-center gap-2">
                     <input
@@ -494,11 +514,9 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                       placeholder="0"
                       className="w-24 px-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs text-surface-200 focus:outline-none focus:ring-1 focus:ring-claude"
                     />
-                    <span className="text-[10px] text-surface-500">times (0 = default 2)</span>
+                    <span className="text-[10px] text-surface-500">{t('projectModal.timesDefault')}</span>
                   </div>
-                  <p className="text-[9px] text-surface-600 mt-1">
-                    How many times to auto-retry failed tasks before marking as permanently failed.
-                  </p>
+                  <p className="text-[9px] text-surface-600 mt-1">{t('projectModal.maxRetriesDesc')}</p>
                 </div>
               </div>
             )}

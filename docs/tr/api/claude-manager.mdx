@@ -1,0 +1,274 @@
+---
+title: "Claude Manager API"
+description: "Claude CLI, MCP sunucuları, eklentiler ve beceriler yönetimi için Tauri IPC komutları"
+icon: "wand-magic-sparkles"
+---
+
+<Note>Tüm Claude Manager uç noktaları yalnızca Tauri IPC'dir. Claude CLI'nin yüklü olması gerekir.</Note>
+
+## Claude CLI
+
+### Sürüm Getir
+
+```javascript
+invoke('get_claude_version')
+// -> "1.0.16 (Claude Code)"
+```
+
+Yüklü Claude CLI sürüm dizesini döndürür.
+
+### CLI'yi Güncelle
+
+```javascript
+invoke('update_claude_cli')
+// -> "Updated to version 1.0.17"
+```
+
+Claude CLI'yi en son sürüme güncellemek için `claude update` komutunu çalıştırır.
+
+### Ajanları Listele
+
+```javascript
+invoke('list_agents')
+```
+
+Tüm aktif Claude ajan oturumlarını listeler.
+
+### Oturumları Listele
+
+```javascript
+invoke('list_sessions')
+```
+
+Son Claude CLI oturumlarını meta verilerle birlikte listeler.
+
+---
+
+## Ayarlar
+
+### Claude Ayarlarını Getir
+
+```javascript
+invoke('get_claude_settings')
+```
+
+Claude CLI yapılandırmasını (`~/.claude/settings.json`) döndürür.
+
+### Claude Ayarlarını Kaydet
+
+```javascript
+invoke('save_claude_settings', {
+  settings: {
+    // Claude CLI ayarlar nesnesi
+  }
+})
+```
+
+Güncellenmiş ayarları Claude CLI yapılandırma dosyasına yazar.
+
+### İzin Kurallarını Getir
+
+```javascript
+invoke('get_permission_rules')
+```
+
+Mevcut Claude CLI izin kuralları yapılandırmasını döndürür.
+
+### Hook'ları Getir
+
+```javascript
+invoke('get_hooks')
+```
+
+Yapılandırılmış Claude CLI hook'larını (ön/son yürütme kancaları) döndürür.
+
+### Hook'ları Kaydet
+
+```javascript
+invoke('save_hooks', {
+  hooks: {
+    // Hook'lar yapılandırma nesnesi
+  }
+})
+```
+
+---
+
+## MCP Sunucuları
+
+### MCP Sunucularını Listele
+
+```javascript
+invoke('list_mcp_servers')
+```
+
+Yapılandırılmış tüm MCP (Model Context Protocol) sunucularını döndürür.
+
+### MCP Sunucusu Ekle
+
+```javascript
+invoke('add_mcp_server', {
+  name: "my-server",
+  commandStr: "npx",
+  args: ["-y", "@my/mcp-server"],
+  scope: "project",  // "project" | "global"
+  env: ["API_KEY=xxx"]
+})
+```
+
+| Alan | Zorunlu | Açıklama |
+|------|---------|----------|
+| `name` | Evet | Sunucu görünen adı |
+| `commandStr` | Evet | Sunucuyu başlatma komutu |
+| `args` | Hayır | Komut argümanları |
+| `scope` | Hayır | `project` veya `global` |
+| `env` | Hayır | `ANAHTAR=DEGER` formatında ortam değişkenleri |
+
+### MCP Sunucusunu Kaldır
+
+```javascript
+invoke('remove_mcp_server', { name: "my-server", scope: "project" })
+```
+
+---
+
+## Eklentiler
+
+### Eklentileri Listele
+
+```javascript
+invoke('list_plugins')
+```
+
+### Eklenti Yükle
+
+```javascript
+invoke('install_plugin', { name: "plugin-name" })
+```
+
+### Eklentiyi Kaldır
+
+```javascript
+invoke('uninstall_plugin', { name: "plugin-name" })
+```
+
+### Eklentiyi Aç/Kapat
+
+```javascript
+invoke('toggle_plugin', { name: "plugin-name", enabled: true })
+```
+
+---
+
+## Marketler
+
+### Marketleri Listele
+
+```javascript
+invoke('list_marketplaces')
+```
+
+### Market Ekle
+
+```javascript
+invoke('add_marketplace', { source: "https://marketplace-url", scope: "global" })
+```
+
+### Marketi Kaldır
+
+```javascript
+invoke('remove_marketplace', { name: "marketplace-name" })
+```
+
+---
+
+## Kod Tabanı Taraması
+
+### Kod Tabanını Tara
+
+```javascript
+invoke('scan_codebase', { projectId: 1, mode: "overwrite" })
+```
+
+Proje kod tabanını analiz etmek ve projeye özel talimatlar içeren bir CLAUDE.md dosyası oluşturmak için Claude'u çalıştırır.
+
+| Alan | Varsayılan | Açıklama |
+|------|------------|----------|
+| `projectId` | *zorunlu* | Hedef proje kimliği |
+| `mode` | `overwrite` | `overwrite` mevcut olanı değiştirir, `append` mevcut olana ekler |
+
+### Tarama Sonucunu Kaydet
+
+```javascript
+invoke('save_scan_result', {
+  projectId: 1,
+  content: "# Project Instructions\n...",
+  mode: "overwrite"
+})
+```
+
+Oluşturulan tarama içeriğini projenin CLAUDE.md dosyası olarak kaydeder.
+
+---
+
+## Özel Komutlar ve Beceriler
+
+### Özel Komutları Listele
+
+```javascript
+invoke('list_custom_commands')
+```
+
+Claude CLI'de yapılandırılmış tüm özel eğik çizgi komutlarını döndürür.
+
+### Özel Becerileri Listele
+
+```javascript
+invoke('list_custom_skills')
+```
+
+Yerel olarak kaydedilmiş tüm özel becerileri döndürür.
+
+### Özel Beceri Kaydet
+
+```javascript
+invoke('save_custom_skill', {
+  name: "my-skill",
+  content: "Beceri tanımı içeriği..."
+})
+```
+
+### Özel Beceri Sil
+
+```javascript
+invoke('delete_custom_skill', { name: "my-skill" })
+```
+
+### GitHub Becerilerini Getir
+
+```javascript
+invoke('fetch_github_skills', {
+  repoUrl: "https://github.com/owner/skills-repo",
+  path: "skills/"  // isteğe bağlı alt dizin
+})
+```
+
+Bir GitHub deposundan beceri tanımlarını getirir.
+
+### Beceri İçeriğini Getir
+
+```javascript
+invoke('fetch_skill_content', { url: "https://raw.githubusercontent.com/.../skill.md" })
+```
+
+Bir URL'den tek bir beceri dosyasının içeriğini indirir.
+
+---
+
+## Öneriler
+
+```javascript
+invoke('get_suggestions')
+```
+
+Claude CLI yapılandırmasını ve proje kurulumunu iyileştirmek için yapay zeka tarafından oluşturulan öneriler döndürür.

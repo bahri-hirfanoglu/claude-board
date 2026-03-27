@@ -512,7 +512,7 @@ pub fn increment_revision_count(db: &DbPool, id: i64) {
 // Queue
 pub fn get_next_queued(db: &DbPool, project_id: i64) -> Option<Task> {
     let conn = db.lock();
-    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE project_id=?1 AND status='backlog' AND deleted_at IS NULL ORDER BY priority DESC,queue_position ASC,id ASC LIMIT 1") {
+    let mut stmt = match conn.prepare("SELECT * FROM tasks WHERE project_id=?1 AND status='backlog' AND deleted_at IS NULL AND (retry_after IS NULL OR retry_after <= datetime('now','localtime')) ORDER BY priority DESC,queue_position ASC,id ASC LIMIT 1") {
         Ok(s) => s,
         Err(e) => { log::error!("get_next_queued prepare: {}", e); return None; }
     };

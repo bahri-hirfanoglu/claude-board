@@ -61,6 +61,18 @@ pub fn load(app: &tauri::App) -> Option<AppConfig> {
     }
 }
 
+pub fn load_from_handle(app: &tauri::AppHandle) -> AppConfig {
+    let p = path_from_handle(app);
+    if p.exists() {
+        if let Ok(content) = std::fs::read_to_string(&p) {
+            if let Ok(config) = serde_json::from_str::<AppConfig>(&content) {
+                return config;
+            }
+        }
+    }
+    AppConfig::default()
+}
+
 pub fn save(app: &tauri::AppHandle, config: &AppConfig) {
     let p = path_from_handle(app);
     if let Some(parent) = p.parent() {

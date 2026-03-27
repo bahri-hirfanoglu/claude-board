@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.6.3] - 2026-03-27
+
+### Bug Fixes
+- **MCP Port Hardcoded** — All 4 hardcoded `port: 4000` values now read from app config, enabling multiple instances
+- **Retry Timing Bug** — `get_next_queued` now respects `retry_after` datetime, preventing premature task restarts
+- **Column Badge** — Empty columns no longer show "0" badge in board header
+
+### Improvements
+- **i18n Completeness** — All remaining hardcoded strings in TaskModal (Prompt, Listening, Dictate), ProjectModal (Task Timeout, Max Retries), and LiveTerminal (Running, Done, Stop, Restart, Pause, Resume, etc.) now use translation keys with Turkish translations
+- **Folder Picker** — Working directory input now has a native "Browse" button (Tauri only) using `@tauri-apps/plugin-dialog`
+- **ErrorBoundary on Modals** — All 14 modals wrapped with ErrorBoundary to prevent full app crash on modal errors
+- **ListView Pagination** — Large task lists now paginate at 50 items with "Load more" button for better performance
+- **API Documentation** — Added 12 new API doc pages (Settings, Auth, Attachments, GitHub, Roles, Claude Manager) in English and Turkish; updated existing Projects, Tasks, and Stats docs with correct endpoints and new fields
+- **Version Sync** — Root `package.json` version synchronized with `tauri.conf.json`
+
 ## [1.6.2] - 2026-03-27
 
 ### Bug Fixes

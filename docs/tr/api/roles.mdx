@@ -1,0 +1,75 @@
+---
+title: "Roles API"
+description: "Ajan rolleri (sistem promptları) için CRUD uç noktaları"
+icon: "user-gear"
+---
+
+Roller, Claude ajanlarının görevler üzerinde çalışırken nasıl davranacağını şekillendiren özel sistem promptlarını tanımlar. Ajan davranışını özelleştirmek için tek tek görevlere bir rol atanabilir.
+
+## Rolleri Listele
+
+```javascript
+invoke('get_roles', { projectId: 1 })
+```
+
+Bir projeye ait tüm rolleri döndürür.
+
+```json
+[
+  {
+    "id": 1,
+    "projectId": 1,
+    "name": "Backend Developer",
+    "systemPrompt": "You are a senior backend developer...",
+    "isGlobal": false,
+    "createdAt": "2025-01-15T10:00:00Z"
+  }
+]
+```
+
+## Global Rolleri Listele
+
+```javascript
+invoke('get_global_roles')
+```
+
+Belirli bir projeye bağlı olmayan tüm rolleri döndürür. Global roller tüm projelerde kullanılabilir.
+
+## Rol Oluştur
+
+```javascript
+invoke('create_role', {
+  projectId: 1,
+  name: "Backend Developer",
+  systemPrompt: "You are a senior backend developer specializing in Rust and TypeScript...",
+  isGlobal: false
+})
+```
+
+| Alan | Zorunlu | Varsayılan | Açıklama |
+|------|---------|------------|----------|
+| `projectId` | Evet | -- | Rolün ilişkilendirileceği proje |
+| `name` | Evet | -- | Rol görünen adı |
+| `systemPrompt` | Evet | -- | Claude'un bağlamına enjekte edilen sistem promptu |
+| `isGlobal` | Hayır | `false` | Rolü tüm projelerde kullanılabilir yap |
+
+## Rol Güncelle
+
+```javascript
+invoke('update_role', {
+  id: 1,
+  name: "Senior Backend Developer",
+  systemPrompt: "Updated system prompt...",
+  isGlobal: false
+})
+```
+
+Oluşturma ile aynı alanları kabul eder. Güncellemede tüm alanlar zorunludur.
+
+## Rol Sil
+
+```javascript
+invoke('delete_role', { id: 1 })
+```
+
+<Warning>Bir rolü silmek, daha önce o role atanmış görevleri etkilemez. Bu görevler role özel sistem promptu olmadan çalışmaya devam eder.</Warning>

@@ -23,6 +23,7 @@ import CommandsModal from '../features/commands/CommandsModal';
 import SkillsModal from '../features/skills/SkillsModal';
 import ScanModal from '../features/scan/ScanModal';
 import SettingsModal from '../features/settings/SettingsModal';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function AppLayout({
   connected,
@@ -150,69 +151,109 @@ export default function AppLayout({
 
       {/* Modals */}
       {modals.task && currentProject && (
-        <TaskModal
-          task={editingTask}
-          onSubmit={editingTask ? (data) => taskActions.onUpdate(editingTask, data) : taskActions.onCreate}
-          onClose={() => closeModal('task')}
-          templates={templates || []}
-          roles={roles || []}
-          allTasks={tasks}
-        />
+        <ErrorBoundary>
+          <TaskModal
+            task={editingTask}
+            onSubmit={editingTask ? (data) => taskActions.onUpdate(editingTask, data) : taskActions.onCreate}
+            onClose={() => closeModal('task')}
+            templates={templates || []}
+            roles={roles || []}
+            allTasks={tasks}
+          />
+        </ErrorBoundary>
       )}
       {modals.project && (
-        <ProjectModal
-          project={editingProject}
-          onSubmit={editingProject ? (data) => projectActions.onUpdate(editingProject, data) : projectActions.onCreate}
-          onClose={() => closeModal('project')}
-        />
+        <ErrorBoundary>
+          <ProjectModal
+            project={editingProject}
+            onSubmit={
+              editingProject ? (data) => projectActions.onUpdate(editingProject, data) : projectActions.onCreate
+            }
+            onClose={() => closeModal('project')}
+          />
+        </ErrorBoundary>
       )}
       {modals.claudeMd && currentProject && (
-        <ClaudeMdEditor
-          projectId={currentProject.id}
-          projectName={currentProject.name}
-          onClose={() => closeModal('claudeMd')}
-        />
+        <ErrorBoundary>
+          <ClaudeMdEditor
+            projectId={currentProject.id}
+            projectName={currentProject.name}
+            onClose={() => closeModal('claudeMd')}
+          />
+        </ErrorBoundary>
       )}
       {modals.snippets && currentProject && (
-        <SnippetsModal
-          projectId={currentProject.id}
-          projectName={currentProject.name}
-          onClose={() => closeModal('snippets')}
-        />
+        <ErrorBoundary>
+          <SnippetsModal
+            projectId={currentProject.id}
+            projectName={currentProject.name}
+            onClose={() => closeModal('snippets')}
+          />
+        </ErrorBoundary>
       )}
       {modals.templates && currentProject && (
-        <TemplatesModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseTemplates} />
+        <ErrorBoundary>
+          <TemplatesModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseTemplates} />
+        </ErrorBoundary>
       )}
       {modals.webhooks && currentProject && (
-        <WebhooksModal
-          projectId={currentProject.id}
-          projectName={currentProject.name}
-          onClose={() => closeModal('webhooks')}
-        />
+        <ErrorBoundary>
+          <WebhooksModal
+            projectId={currentProject.id}
+            projectName={currentProject.name}
+            onClose={() => closeModal('webhooks')}
+          />
+        </ErrorBoundary>
       )}
       {modals.roles && currentProject && (
-        <RolesModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseRoles} />
+        <ErrorBoundary>
+          <RolesModal projectId={currentProject.id} projectName={currentProject.name} onClose={onCloseRoles} />
+        </ErrorBoundary>
       )}
       {modals.review && (
-        <ReviewModal
-          task={modals.review}
-          onApprove={taskActions.onApprove}
-          onRequestChanges={taskActions.onRequestChanges}
-          onClose={() => closeModal('review')}
-        />
+        <ErrorBoundary>
+          <ReviewModal
+            task={modals.review}
+            onApprove={taskActions.onApprove}
+            onRequestChanges={taskActions.onRequestChanges}
+            onClose={() => closeModal('review')}
+          />
+        </ErrorBoundary>
       )}
       {modals.detail && (
-        <TaskDetailModal
-          task={modals.detail}
-          onClose={() => closeModal('detail')}
-          onStatusChange={taskActions.onStatusChange}
-        />
+        <ErrorBoundary>
+          <TaskDetailModal
+            task={modals.detail}
+            onClose={() => closeModal('detail')}
+            onStatusChange={taskActions.onStatusChange}
+          />
+        </ErrorBoundary>
       )}
-      {modals.planning && currentProject && <PlanningModal projectId={currentProject.id} onClose={onClosePlanning} />}
-      {modals.commands && <CommandsModal onClose={() => closeModal('commands')} />}
-      {modals.skills && <SkillsModal onClose={() => closeModal('skills')} />}
-      {modals.scan && currentProject && <ScanModal projectId={currentProject.id} onClose={() => closeModal('scan')} />}
-      {modals.appSettings && <SettingsModal onClose={() => closeModal('appSettings')} />}
+      {modals.planning && currentProject && (
+        <ErrorBoundary>
+          <PlanningModal projectId={currentProject.id} onClose={onClosePlanning} />
+        </ErrorBoundary>
+      )}
+      {modals.commands && (
+        <ErrorBoundary>
+          <CommandsModal onClose={() => closeModal('commands')} />
+        </ErrorBoundary>
+      )}
+      {modals.skills && (
+        <ErrorBoundary>
+          <SkillsModal onClose={() => closeModal('skills')} />
+        </ErrorBoundary>
+      )}
+      {modals.scan && currentProject && (
+        <ErrorBoundary>
+          <ScanModal projectId={currentProject.id} onClose={() => closeModal('scan')} />
+        </ErrorBoundary>
+      )}
+      {modals.appSettings && (
+        <ErrorBoundary>
+          <SettingsModal onClose={() => closeModal('appSettings')} />
+        </ErrorBoundary>
+      )}
       {confirm && <ConfirmDialog {...confirm} />}
       <Toast toasts={toasts} />
       {/* Voice assistant temporarily disabled

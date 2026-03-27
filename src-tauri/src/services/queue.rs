@@ -3,6 +3,7 @@ use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 use crate::db::{self, DbPool, tasks, projects, activity, dependencies};
 use crate::claude::runner;
+use crate::config;
 
 /// Shared shutdown flag — set to true when app is exiting.
 static SHUTDOWN: once_cell::sync::Lazy<Arc<AtomicBool>> =
@@ -41,7 +42,8 @@ pub fn startup_recovery(app: &AppHandle) {
                         if project.auto_test.unwrap_or(0) == 1 {
                             log::info!("Re-starting auto-test for task {} ({})", task_id, task.title);
                             tasks::add_log(&db, task_id, "Auto-test: Resuming after app restart...", "system", None);
-                            runner::start_test(&task, app_test.clone(), &project.working_dir, &project, 4000);
+                            let mcp_port = config::load_from_handle(&app_test).port;
+                            runner::start_test(&task, app_test.clone(), &project.working_dir, &project, mcp_port);
                         }
                     }
                 }
@@ -107,7 +109,7 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
     let ready = dependencies::get_ready_tasks(db, project_id);
 
     let mut started = 0;
-    let mcp_port: u16 = 4000;
+    let mcp_port = config::load_from_handle(app).port;
 
     for task in &ready {
         if started >= slots {

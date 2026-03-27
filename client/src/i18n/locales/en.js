@@ -20,6 +20,8 @@ export default {
   'common.preview': 'Preview',
   'common.tasks': 'tasks',
   'common.tokens': 'tokens',
+  'common.loadMore': 'Load more',
+  'common.remaining': 'remaining',
 
   // ─── Status ───
   'status.backlog': 'Backlog',
@@ -224,6 +226,12 @@ export default {
   'projectModal.repoHelpText': 'Auto-detect from git remote or enter manually',
   'projectModal.ghCliHelpText':
     'Uses gh CLI authentication. After saving, use the Issues button in the board toolbar to browse and import issues as tasks.',
+  'projectModal.taskTimeout': 'Task Timeout',
+  'projectModal.minutesNoLimit': 'minutes (0 = no limit)',
+  'projectModal.taskTimeoutDesc': 'Auto-kill tasks that exceed this duration. Timed-out tasks follow the retry policy.',
+  'projectModal.maxRetries': 'Max Retries',
+  'projectModal.timesDefault': 'times (0 = default 2)',
+  'projectModal.maxRetriesDesc': 'How many times to auto-retry failed tasks before marking as permanently failed.',
 
   // ─── Review Modal ───
   'review.title': 'Review Task',
@@ -554,6 +562,10 @@ export default {
   'terminal.switchToSide': 'Switch to side panel',
   'terminal.searchShortcut': 'Search (Ctrl+F)',
   'terminal.errorCount': 'err',
+  'terminal.resume': 'Resume',
+  'terminal.pause': 'Pause',
+  'terminal.collapseAll': 'Collapse all',
+  'terminal.expandAll': 'Expand all',
 
   // ─── Task Card ───
   'card.failed': 'Failed',

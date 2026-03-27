@@ -52,10 +52,15 @@ Returns aggregate statistics for a project.
 ## Activity Feed
 
 ```http
-GET /api/projects/:projectId/activity
+GET /api/projects/:projectId/activity?limit=50&offset=0
 ```
 
 Returns recent task events in chronological order. Useful for building a project timeline.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `limit` | `50` | Max number of entries to return |
+| `offset` | `0` | Number of entries to skip (for pagination) |
 
 ```json
 [
@@ -73,24 +78,57 @@ Returns recent task events in chronological order. Useful for building a project
 ## Claude Usage
 
 ```http
-GET /api/projects/:projectId/claude-usage
+GET /api/stats/claude-usage
 ```
 
-Returns aggregated Claude API usage across all tasks.
+Returns aggregated Claude API usage across all projects and tasks. This is a global endpoint, not per-project.
 
 ```json
 {
-  "totalInputTokens": 125000,
-  "totalOutputTokens": 48000,
-  "totalCacheRead": 30000,
-  "totalCacheCreation": 15000,
-  "totalCost": 12.50,
-  "byModel": {
+  "usage": {
+    "totalInputTokens": 125000,
+    "totalOutputTokens": 48000,
+    "totalCacheRead": 30000,
+    "totalCacheCreation": 15000,
+    "totalCost": 12.50
+  },
+  "models": {
     "sonnet": { "tasks": 10, "inputTokens": 80000, "outputTokens": 30000, "cost": 5.20 },
     "opus": { "tasks": 3, "inputTokens": 40000, "outputTokens": 15000, "cost": 6.80 },
     "haiku": { "tasks": 7, "inputTokens": 5000, "outputTokens": 3000, "cost": 0.50 }
+  },
+  "timeline": [...],
+  "limits": {
+    "dailyLimit": null,
+    "currentUsage": 12.50
   }
 }
 ```
 
 <Info>Cost estimates are calculated from published Claude API pricing. Actual costs may vary based on your billing plan.</Info>
+
+## CLAUDE.md (Tauri IPC)
+
+### Get CLAUDE.md
+
+```javascript
+invoke('get_claude_md', { projectId: 1 })
+```
+
+Returns the contents of the project's CLAUDE.md file.
+
+```json
+{
+  "content": "# Project Instructions\n...",
+  "path": "/home/user/my-app/CLAUDE.md",
+  "exists": true
+}
+```
+
+### Save CLAUDE.md
+
+```javascript
+invoke('save_claude_md', { projectId: 1, content: "# Updated instructions" })
+```
+
+Writes content to the project's CLAUDE.md file.

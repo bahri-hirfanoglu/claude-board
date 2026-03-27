@@ -148,10 +148,22 @@
                   "api/projects",
                   "api/tasks",
                   "api/planning",
+                  "api/stats",
                   "api/webhooks",
                   "api/snippets",
                   "api/templates",
-                  "api/stats"
+                  "api/roles",
+                  "api/attachments",
+                  "api/settings",
+                  "api/auth"
+                ]
+              },
+              {
+                "group": "Integrations",
+                "icon": "plug",
+                "pages": [
+                  "api/github",
+                  "api/claude-manager"
                 ]
               },
               {
@@ -278,10 +290,22 @@
                   "tr/api/projects",
                   "tr/api/tasks",
                   "tr/api/planning",
+                  "tr/api/stats",
                   "tr/api/webhooks",
                   "tr/api/snippets",
                   "tr/api/templates",
-                  "tr/api/stats"
+                  "tr/api/roles",
+                  "tr/api/attachments",
+                  "tr/api/settings",
+                  "tr/api/auth"
+                ]
+              },
+              {
+                "group": "Entegrasyonlar",
+                "icon": "plug",
+                "pages": [
+                  "tr/api/github",
+                  "tr/api/claude-manager"
                 ]
               },
               {

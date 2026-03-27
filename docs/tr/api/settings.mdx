@@ -1,0 +1,52 @@
+---
+title: "Settings API"
+description: "Uygulama genelindeki ayarların yönetimi"
+icon: "gear"
+---
+
+## Ayarları Getir
+
+```http
+GET /api/settings
+```
+
+Mevcut uygulama ayarlarını döndürür.
+
+```json
+{
+  "confirmBeforeDelete": true,
+  "defaultModel": "sonnet",
+  "defaultEffort": "medium",
+  "language": "en",
+  "autoOpenTerminal": false,
+  "soundEnabled": true
+}
+```
+
+| Alan | Tür | Açıklama |
+|------|-----|----------|
+| `confirmBeforeDelete` | boolean | Görev silmeden önce onay iletişim kutusu göster |
+| `defaultModel` | string | Yeni görevler için varsayılan Claude modeli (`opus`, `sonnet`, `haiku`) |
+| `defaultEffort` | string | Varsayılan düşünme çabası (`low`, `medium`, `high`) |
+| `language` | string | Arayüz dili (`en`, `tr`) |
+| `autoOpenTerminal` | boolean | Görev başladığında terminal panelini otomatik aç |
+| `soundEnabled` | boolean | Görev tamamlandığında ses bildirimi çal |
+
+## Ayarları Güncelle
+
+```http
+PUT /api/settings
+Content-Type: application/json
+```
+
+Ayar alanlarının herhangi bir alt kümesini kabul eder. Yalnızca gönderilen alanlar güncellenir.
+
+```json
+{
+  "defaultModel": "opus",
+  "language": "tr",
+  "soundEnabled": false
+}
+```
+
+Tam güncellenmiş ayar nesnesini döndürür.

@@ -15,18 +15,41 @@ Bir projeye ait tüm görevleri öncelik ve oluşturulma tarihine göre sıralı
 ## Görev Getir
 
 ```http
-GET /api/projects/:projectId/tasks/:id
+GET /api/tasks/:id
 ```
 
-Açıklama, günlükler ve kullanım istatistikleri dahil tam görev ayrıntılarını döndürür.
+Tüm alanlarıyla birlikte tek bir görevi döndürür.
 
 ## Görev Detayı Getir
 
 ```http
-GET /api/projects/:projectId/tasks/:id/detail
+GET /api/tasks/:id/detail
 ```
 
-Revizyon geçmişi, ekler ve tüm günlük kayıtlarını içeren genişletilmiş detay görünümü.
+Revizyon geçmişi, ekler, ayrıştırılmış commit'ler ve tüm günlük kayıtlarını içeren genişletilmiş detay görünümü.
+
+```json
+{
+  "id": 1,
+  "title": "Add authentication",
+  "description": "Implement JWT login",
+  "status": "testing",
+  "priority": 2,
+  "task_type": "feature",
+  "model": "sonnet",
+  "thinking_effort": "medium",
+  "acceptance_criteria": "All tests pass",
+  "tags": "[\"auth\", \"backend\"]",
+  "task_key": "FTR-PRJ-1001",
+  "commits": [{ "hash": "abc1234", "message": "Add login endpoint" }],
+  "revisions": [
+    { "id": 1, "taskId": 1, "feedback": "Add validation", "createdAt": "..." }
+  ],
+  "attachments": [
+    { "id": 1, "taskId": 1, "fileName": "spec.pdf", "mimeType": "application/pdf" }
+  ]
+}
+```
 
 ## Görev Oluştur
 
@@ -39,37 +62,51 @@ Content-Type: application/json
 {
   "title": "Add user authentication",
   "description": "Implement JWT-based login and registration",
-  "type": "feature",
+  "task_type": "feature",
   "priority": 2,
   "model": "sonnet",
-  "thinkingEffort": "medium",
-  "parentTaskId": null
+  "thinking_effort": "medium",
+  "acceptance_criteria": "All auth tests pass, tokens expire correctly",
+  "tags": "[\"auth\"]",
+  "parent_task_id": null
 }
 ```
 
 | Alan | Zorunlu | Varsayılan | Açıklama |
 |------|---------|------------|----------|
-| `title` | Evet | — | Görev başlığı |
-| `description` | Hayır | — | Ayrıntılı talimatlar |
-| `type` | Hayır | `feature` | `feature`, `bugfix`, `refactor`, `docs`, `test`, `chore` |
-| `priority` | Hayır | `1` | 0 (düşük) ile 3 (acil) arası |
+| `title` | Evet | -- | Görev başlığı |
+| `description` | Hayır | `""` | Ajan için ayrıntılı talimatlar |
+| `task_type` | Hayır | `feature` | `feature`, `bugfix`, `refactor`, `docs`, `test`, `chore` |
+| `priority` | Hayır | `0` | 0 (düşük) ile 3 (acil) arası |
 | `model` | Hayır | `sonnet` | `opus`, `sonnet`, `haiku` |
-| `thinkingEffort` | Hayır | `medium` | `low`, `medium`, `high` |
-| `parentTaskId` | Hayır | `null` | Alt görev bağlantısı için üst görev kimliği |
+| `thinking_effort` | Hayır | `medium` | `low`, `medium`, `high` |
+| `acceptance_criteria` | Hayır | `""` | Ajanın karşılaması gereken kriterler |
+| `tags` | Hayır | `null` | Etiket adlarının JSON dizi dizesi |
+| `parent_task_id` | Hayır | `null` | Alt görev bağlantısı için üst görev kimliği |
 
-<Info>`parentTaskId` ayarlandığında, yeni görev bir alt görev haline gelir. Üst görev otomatik olarak "alt görevleri bekleme" moduna geçer ve tüm alt görevler tamamlandığında tamamlanır.</Info>
+<Info>`parent_task_id` ayarlandığında, yeni görev bir alt görev haline gelir. Üst görev otomatik olarak "alt görevleri bekleme" moduna geçer ve tüm alt görevler tamamlandığında tamamlanır.</Info>
 
 ## Görev Güncelle
 
 ```http
-PUT /api/projects/:projectId/tasks/:id
+PUT /api/tasks/:id
 Content-Type: application/json
+```
+
+Oluşturma ile aynı alanları kabul eder (`parent_task_id` hariç). Yalnızca gönderilen alanlar güncellenir.
+
+```json
+{
+  "title": "Güncellenmiş başlık",
+  "priority": 3,
+  "tags": "[\"acil\", \"auth\"]"
+}
 ```
 
 ## Durum Değiştir
 
 ```http
-PUT /api/projects/:projectId/tasks/:id/status
+PATCH /api/tasks/:id/status
 Content-Type: application/json
 ```
 
@@ -77,41 +114,86 @@ Content-Type: application/json
 { "status": "in_progress" }
 ```
 
+Geçerli durumlar: `backlog`, `in_progress`, `testing`, `done`, `failed`
+
 `in_progress` durumuna geçiş bir Claude ajanı başlatır. `done` durumuna geçiş çalışan ajanı durdurur.
-
-## Ajanı Durdur
-
-```http
-POST /api/projects/:projectId/tasks/:id/stop
-```
-
-## Ajanı Yeniden Başlat
-
-```http
-POST /api/projects/:projectId/tasks/:id/restart
-```
-
-## Değişiklik Talep Et
-
-```http
-POST /api/projects/:projectId/tasks/:id/request-changes
-Content-Type: application/json
-```
-
-```json
-{ "feedback": "Add input validation to the login endpoint" }
-```
 
 ## Günlükleri Getir
 
 ```http
-GET /api/projects/:projectId/tasks/:id/logs
+GET /api/tasks/:id/logs?limit=500
 ```
+
+Bir görev için son ajan günlük kayıtlarını kronolojik sırada (eskiden yeniye) döndürür.
+
+| Parametre | Varsayılan | Açıklama |
+|-----------|------------|----------|
+| `limit` | `500` | Döndürülecek maksimum günlük kaydı sayısı |
+
+## Revizyonları Getir
+
+```http
+GET /api/tasks/:id/revisions
+```
+
+Bir görev için tüm değişiklik talebi revizyonlarını döndürür.
 
 ## Görev Sil
 
 ```http
-DELETE /api/projects/:projectId/tasks/:id
+DELETE /api/tasks/:id
+```
+
+Başarı durumunda `{ "ok": true }` döndürür.
+
+---
+
+## Ajan Kontrolü (Tauri IPC)
+
+<Note>Bu uç noktalar yalnızca Tauri masaüstü uygulamasında kullanılabilir. HTTP API üzerinden sunulmazlar.</Note>
+
+### Ajanı Durdur
+
+```javascript
+invoke('stop_task', { id: 1 })
+```
+
+Bir görev için çalışan Claude sürecini sonlandırır ve durumu `backlog` olarak ayarlar.
+
+### Ajanı Yeniden Başlat
+
+```javascript
+invoke('restart_task', { id: 1, mcpPort: 4000 })
+```
+
+Çalışan ajanı durdurur ve yeni bir Claude oturumu başlatır.
+
+### Değişiklik Talep Et
+
+```javascript
+invoke('request_changes', {
+  id: 1,
+  feedback: "Add input validation to the login endpoint",
+  mcpPort: 4000
+})
+```
+
+Bir revizyon kaydı oluşturur ve ajanı geri bildirimle devam ettirir.
+
+### Görev Farkını Getir
+
+```javascript
+invoke('get_task_diff', { taskId: 1 })
+```
+
+Ajanın görevin özellik dalında yaptığı değişikliklerin git diff'ini döndürür.
+
+```json
+{
+  "diff": "diff --git a/src/auth.rs ...",
+  "branch": "cb/add-authentication-1",
+  "stats": { "files": 3, "insertions": 45, "deletions": 12 }
+}
 ```
 
 ---
@@ -140,22 +222,44 @@ invoke('remove_task_dependency', { taskId: 5, dependsOnId: 3 })
 
 ```javascript
 invoke('get_task_dependencies', { taskId: 5 })
-// → { parents: [3, 1], children: [8, 9] }
+// -> { parents: [3, 1], children: [8, 9] }
 ```
 
 ### Bağımlılık Grafiğini Getir
 
 ```javascript
 invoke('get_dependency_graph', { projectId: 1 })
-// → { tasks: [...], edges: [{from: 3, to: 5, conditionType: "always"}, ...], waves: [...] }
+// -> { tasks: [...], edges: [{from: 3, to: 5, conditionType: "always"}, ...], waves: [...] }
 ```
 
 ### Yürütme Dalgalarını Getir
 
 ```javascript
 invoke('get_execution_waves', { projectId: 1 })
-// → [[task1, task2], [task3], [task4, task5]]
+// -> [[task1, task2], [task3], [task4, task5]]
 ```
+
+Aynı dalga içindeki görevler paralel olarak çalışabilir.
+
+### Pipeline Durumunu Getir
+
+```javascript
+invoke('get_pipeline_status', { projectId: 1 })
+```
+
+Hangi dalganın aktif olduğu ve hangi görevlerin engellendiği dahil mevcut pipeline yürütme durumunu döndürür.
+
+---
+
+## Kuyruk Yönetimi (Tauri IPC)
+
+### Kuyruğu Yeniden Sırala
+
+```javascript
+invoke('reorder_queue', { projectId: 1, taskIds: [5, 3, 8, 1] })
+```
+
+Sağlanan sıraya göre öncelik ayarlayarak görev kuyruğunu yeniden sıralar.
 
 ---
 
@@ -202,7 +306,15 @@ invoke('get_agent_activity', { projectId: 1 })
 
 ```javascript
 invoke('get_active_file_map')
-// → { "src/auth.rs": [5], "src/main.rs": [5, 8] }
+// -> { "src/auth.rs": [5], "src/main.rs": [5, 8] }
 ```
 
 Dosya yollarının, o anda erişen görev kimliklerine eşlemesini döndürür.
+
+### Görev Olaylarını Getir
+
+```javascript
+invoke('get_task_events', { taskId: 1, limit: 500 })
+```
+
+Araç çağrıları, durum değişiklikleri ve ajan mesajları dahil bir görev için yapılandırılmış olay günlüğünü döndürür.

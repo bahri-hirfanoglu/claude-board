@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   ChevronUp,
   ChevronDown,
@@ -16,6 +16,8 @@ import { formatDuration, formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, MODEL_COLORS, COLUMNS } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { TagList } from './TagBadge';
+
+const PAGE_SIZE = 50;
 
 const STATUS_DOT = {
   backlog: 'bg-surface-400',
@@ -36,6 +38,12 @@ export default function ListView({
   const { t } = useTranslation();
   const [sortField, setSortField] = useState('id');
   const [sortDir, setSortDir] = useState('desc');
+  const [page, setPage] = useState(1);
+
+  // Reset pagination when tasks change (filter/search applied)
+  useEffect(() => {
+    setPage(1);
+  }, [tasks]);
 
   const toggleSort = (field) => {
     if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -65,6 +73,8 @@ export default function ListView({
     });
     return arr;
   }, [tasks, sortField, sortDir]);
+
+  const visibleTasks = sorted.slice(0, page * PAGE_SIZE);
 
   const SortIcon = ({ field }) => {
     if (sortField !== field) return <ChevronUp size={10} className="text-surface-700" />;
@@ -105,7 +115,7 @@ export default function ListView({
             </tr>
           </thead>
           <tbody>
-            {sorted.map((task) => {
+            {visibleTasks.map((task) => {
               const taskType = task.task_type || 'feature';
               const totalTokens = (task.input_tokens || 0) + (task.output_tokens || 0);
               const modelDisplay = task.model_used || task.model || 'sonnet';
@@ -202,6 +212,16 @@ export default function ListView({
             })}
           </tbody>
         </table>
+        {sorted.length > visibleTasks.length && (
+          <div className="flex justify-center py-3">
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              className="px-4 py-1.5 text-xs font-medium rounded-md bg-surface-800 text-surface-300 hover:bg-surface-700 hover:text-surface-100 transition-colors"
+            >
+              {t('common.loadMore')} ({sorted.length - visibleTasks.length} {t('common.remaining')})
+            </button>
+          </div>
+        )}
         {sorted.length === 0 && (
           <div className="flex items-center justify-center py-16 text-surface-500 text-sm">{t('board.noTasks')}</div>
         )}

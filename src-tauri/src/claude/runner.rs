@@ -696,7 +696,7 @@ fn handle_process_lifecycle(
             let should_auto_test = project.as_ref().is_some_and(|p| p.auto_test.unwrap_or(0) == 1);
             if should_auto_test {
                 if let (Some(task), Some(proj)) = (tasks::get_by_id(db, task_id), project) {
-                    let mcp_port: u16 = 4000;
+                    let mcp_port = crate::config::load_from_handle(app).port;
                     start_test(&task, app.clone(), working_dir, &proj, mcp_port);
                 }
             }
@@ -1121,7 +1121,7 @@ After all checks, you MUST output this exact JSON block as your final output:
 
                             // Restart the task with revision context
                             if let (Some(updated_task), Some(proj)) = (tasks::get_by_id(&db, task_id), projects::get_by_id(&db, project_id)) {
-                                let mcp_port: u16 = 4000;
+                                let mcp_port = crate::config::load_from_handle(&app).port;
                                 start(&updated_task, app.clone(), &working_dir, &proj, mcp_port);
                             }
                             emit_task_updated(&db, &app, task_id);

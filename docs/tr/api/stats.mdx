@@ -52,10 +52,15 @@ Bir proje için toplu istatistikleri döndürür.
 ## Aktivite Akışı
 
 ```http
-GET /api/projects/:projectId/activity
+GET /api/projects/:projectId/activity?limit=50&offset=0
 ```
 
 Son görev olaylarını kronolojik sırada döndürür. Proje zaman çizelgesi oluşturmak için kullanışlıdır.
+
+| Parametre | Varsayılan | Açıklama |
+|-----------|------------|----------|
+| `limit` | `50` | Döndürülecek maksimum kayıt sayısı |
+| `offset` | `0` | Atlanacak kayıt sayısı (sayfalama için) |
 
 ```json
 [
@@ -73,24 +78,57 @@ Son görev olaylarını kronolojik sırada döndürür. Proje zaman çizelgesi o
 ## Claude Kullanımı
 
 ```http
-GET /api/projects/:projectId/claude-usage
+GET /api/stats/claude-usage
 ```
 
-Tüm görevler genelinde toplu Claude API kullanımını döndürür.
+Tüm projeler ve görevler genelinde toplu Claude API kullanımını döndürür. Bu, proje bazlı değil global bir uç noktadır.
 
 ```json
 {
-  "totalInputTokens": 125000,
-  "totalOutputTokens": 48000,
-  "totalCacheRead": 30000,
-  "totalCacheCreation": 15000,
-  "totalCost": 12.50,
-  "byModel": {
+  "usage": {
+    "totalInputTokens": 125000,
+    "totalOutputTokens": 48000,
+    "totalCacheRead": 30000,
+    "totalCacheCreation": 15000,
+    "totalCost": 12.50
+  },
+  "models": {
     "sonnet": { "tasks": 10, "inputTokens": 80000, "outputTokens": 30000, "cost": 5.20 },
     "opus": { "tasks": 3, "inputTokens": 40000, "outputTokens": 15000, "cost": 6.80 },
     "haiku": { "tasks": 7, "inputTokens": 5000, "outputTokens": 3000, "cost": 0.50 }
+  },
+  "timeline": [...],
+  "limits": {
+    "dailyLimit": null,
+    "currentUsage": 12.50
   }
 }
 ```
 
 <Info>Maliyet tahminleri yayınlanmış Claude API fiyatlandırmasından hesaplanır. Gerçek maliyetler faturalandırma planınıza göre farklılık gösterebilir.</Info>
+
+## CLAUDE.md (Tauri IPC)
+
+### CLAUDE.md Getir
+
+```javascript
+invoke('get_claude_md', { projectId: 1 })
+```
+
+Projenin CLAUDE.md dosyasının içeriğini döndürür.
+
+```json
+{
+  "content": "# Project Instructions\n...",
+  "path": "/home/user/my-app/CLAUDE.md",
+  "exists": true
+}
+```
+
+### CLAUDE.md Kaydet
+
+```javascript
+invoke('save_claude_md', { projectId: 1, content: "# Güncellenmiş talimatlar" })
+```
+
+İçeriği projenin CLAUDE.md dosyasına yazar.
