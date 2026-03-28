@@ -48,6 +48,7 @@ pub fn get_phases(milestone_id: i64) -> Vec<rm::Phase> {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn create_phase(
     app: AppHandle, milestone_id: i64, project_id: i64, phase_number: String,
     title: String, description: Option<String>, goal: Option<String>, success_criteria: Option<String>,
@@ -95,6 +96,7 @@ pub fn reorder_phases(milestone_id: i64, phase_ids: Vec<i64>) -> Result<(), Stri
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn insert_phase(
     app: AppHandle, milestone_id: i64, project_id: i64, after_phase_number: String,
     title: String, description: Option<String>, goal: Option<String>, success_criteria: Option<String>,

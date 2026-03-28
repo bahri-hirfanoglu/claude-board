@@ -153,6 +153,7 @@ pub fn delete_milestone(db: &DbPool, id: i64) {
 
 // ─── Phases ───
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_phase(
     db: &DbPool, milestone_id: i64, project_id: i64, phase_number: &str,
     title: &str, description: &str, goal: &str, success_criteria: &str,
@@ -229,6 +230,7 @@ pub fn reorder_phases(db: &DbPool, milestone_id: i64, phase_ids: &[i64]) {
 }
 
 /// Insert a decimal phase after a given phase number (e.g. after "2" creates "2.1")
+#[allow(clippy::too_many_arguments)]
 pub fn insert_decimal_phase(
     db: &DbPool, milestone_id: i64, project_id: i64, after_phase_number: &str,
     title: &str, description: &str, goal: &str, success_criteria: &str,
