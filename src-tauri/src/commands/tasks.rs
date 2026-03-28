@@ -171,6 +171,18 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
     let mut final_task = tq::get_by_id(&db, id).ok_or("Task not found")?;
     final_task.is_running = runner::is_running(id) || runner::is_starting(id);
     app.emit("task:updated", &final_task).ok();
+
+    // GSD Roadmap: propagate status to plan -> phase
+    if let Some(plan_id) = final_task.phase_plan_id {
+        db::roadmap::recompute_plan_status(&db, plan_id);
+        if let Some(plan) = db::roadmap::get_plan(&db, plan_id) {
+            db::roadmap::recompute_phase_status(&db, plan.phase_id);
+            if let Some(phase) = db::roadmap::get_phase(&db, plan.phase_id) {
+                app.emit("roadmap:updated", &phase.project_id).ok();
+            }
+        }
+    }
+
     Ok(final_task)
 }
 

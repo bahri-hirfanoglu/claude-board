@@ -283,6 +283,9 @@ pub fn run_migrations(conn: &Connection) {
         // Approval gates
         ("projects", "require_approval", "ALTER TABLE projects ADD COLUMN require_approval INTEGER DEFAULT 0"),
         ("tasks", "agent_name", "ALTER TABLE tasks ADD COLUMN agent_name TEXT DEFAULT ''"),
+        // GSD Roadmap
+        ("tasks", "phase_plan_id", "ALTER TABLE tasks ADD COLUMN phase_plan_id INTEGER"),
+        ("projects", "gsd_enabled", "ALTER TABLE projects ADD COLUMN gsd_enabled INTEGER DEFAULT 0"),
     ];
 
     for (table, col, sql) in migrations {
@@ -467,6 +470,73 @@ pub fn run_migrations(conn: &Connection) {
         )
     ").ok();
     conn.execute_batch("CREATE INDEX IF NOT EXISTS idx_achievements_project ON achievements(project_id)").ok();
+
+    // GSD Roadmap tables
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS milestones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            version TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            status TEXT DEFAULT 'active' CHECK(status IN ('active','completed','archived')),
+            sort_order INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT (datetime('now','localtime')),
+            updated_at DATETIME DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS phases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            milestone_id INTEGER NOT NULL,
+            project_id INTEGER NOT NULL,
+            phase_number TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            goal TEXT DEFAULT '',
+            success_criteria TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending','planning','in_progress','verifying','completed','failed')),
+            sort_order INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT (datetime('now','localtime')),
+            updated_at DATETIME DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (milestone_id) REFERENCES milestones(id) ON DELETE CASCADE,
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS phase_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            phase_id INTEGER NOT NULL,
+            plan_number TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending','in_progress','completed','failed')),
+            wave_index INTEGER DEFAULT 0,
+            sort_order INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT (datetime('now','localtime')),
+            updated_at DATETIME DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (phase_id) REFERENCES phases(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS phase_plan_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plan_id INTEGER NOT NULL,
+            task_id INTEGER NOT NULL,
+            checkpoint_type TEXT DEFAULT 'auto' CHECK(checkpoint_type IN ('auto','human-verify','decision','human-action')),
+            sort_order INTEGER DEFAULT 0,
+            FOREIGN KEY (plan_id) REFERENCES phase_plans(id) ON DELETE CASCADE,
+            FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+            UNIQUE(plan_id, task_id)
+        );
+    ").ok();
+
+    conn.execute_batch("
+        CREATE INDEX IF NOT EXISTS idx_milestones_project ON milestones(project_id);
+        CREATE INDEX IF NOT EXISTS idx_phases_milestone ON phases(milestone_id);
+        CREATE INDEX IF NOT EXISTS idx_phases_project ON phases(project_id);
+        CREATE INDEX IF NOT EXISTS idx_phase_plans_phase ON phase_plans(phase_id);
+        CREATE INDEX IF NOT EXISTS idx_phase_plan_tasks_plan ON phase_plan_tasks(plan_id);
+        CREATE INDEX IF NOT EXISTS idx_phase_plan_tasks_task ON phase_plan_tasks(task_id);
+    ").ok();
 
     // Backfill empty model fields
     conn.execute("UPDATE tasks SET model='sonnet' WHERE model IS NULL OR model=''", []).ok();

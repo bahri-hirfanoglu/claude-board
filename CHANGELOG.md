@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.7.1] - 2026-03-28
+
+### Features
+- **GSD Roadmap View** — Full "Get Stuff Done" workflow integration with Milestone → Phase → Plan → Task hierarchy
+- **AI Phase Planning** — Click the Brain button on any phase to let Claude analyze your codebase and generate an executable task breakdown with dependencies
+- **Checkpoint Types** — Tasks classified as auto, human-verify, decision, or human-action for GSD-style execution control
+- **Success Criteria** — Interactive checklist per phase with click-to-verify and inline criterion addition
+- **Phase Management** — Create, edit, delete, reorder phases. Insert decimal phases (2.1) for urgent work between existing phases
+- **Milestone Lifecycle** — Create milestones with versions (v1.0), edit inline, transition between active/completed/archived states
+- **Plan Management** — Create plans within phases, link/unlink tasks with checkpoint type selection, delete plans
+- **Status Propagation** — Task completion automatically updates plan and phase status up the hierarchy
+- **Manual Status Control** — Dropdown to manually set phase status (pending/planning/in_progress/verifying/completed/failed)
+
+### Database
+- New tables: milestones, phases, phase_plans, phase_plan_tasks
+- New columns: tasks.phase_plan_id, projects.gsd_enabled
+- Automatic status recomputation across plan → phase hierarchy
+
+### Planning
+- GSD-aware planning prompt with checkpoint_type guidance
+- Success criteria included in AI planning context
+- Phase goal and description enriched prompt for better task generation
+
 ## [1.7.0] - 2026-03-28
 
 ### Features

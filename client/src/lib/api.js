@@ -273,6 +273,77 @@ export const api = {
         resetCircuitBreaker: (id) => tauriCall('reset_circuit_breaker', { id }),
         // ─── AI Chat ───
         chatSend: (projectId, message, model) => tauriCall('chat_send', { projectId, message, model: model || null }),
+        // ─── Roadmap (GSD) ───
+        getMilestones: (projectId) => tauriCall('get_milestones', { projectId }),
+        createMilestone: (projectId, version, title, description) =>
+          tauriCall('create_milestone', { projectId, version, title, description: description || null }),
+        updateMilestone: (id, version, title, description, status) =>
+          tauriCall('update_milestone', { id, version, title, description: description || null, status }),
+        deleteMilestone: (id) => tauriCall('delete_milestone', { id }),
+        getPhases: (milestoneId) => tauriCall('get_phases', { milestoneId }),
+        createPhase: (milestoneId, projectId, phaseNumber, title, description, goal, successCriteria) =>
+          tauriCall('create_phase', {
+            milestoneId,
+            projectId,
+            phaseNumber,
+            title,
+            description: description || null,
+            goal: goal || null,
+            successCriteria: successCriteria || null,
+          }),
+        updatePhase: (id, title, description, goal, successCriteria, status) =>
+          tauriCall('update_phase', {
+            id,
+            title,
+            description: description || null,
+            goal: goal || null,
+            successCriteria: successCriteria || null,
+            status,
+          }),
+        deletePhase: (id) => tauriCall('delete_phase', { id }),
+        reorderPhases: (milestoneId, phaseIds) => tauriCall('reorder_phases', { milestoneId, phaseIds }),
+        insertPhase: (milestoneId, projectId, afterPhaseNumber, title, description, goal, successCriteria) =>
+          tauriCall('insert_phase', {
+            milestoneId,
+            projectId,
+            afterPhaseNumber,
+            title,
+            description: description || null,
+            goal: goal || null,
+            successCriteria: successCriteria || null,
+          }),
+        getPlans: (phaseId) => tauriCall('get_plans', { phaseId }),
+        createPlan: (phaseId, planNumber, title, description, waveIndex) =>
+          tauriCall('create_plan', {
+            phaseId,
+            planNumber,
+            title,
+            description: description || null,
+            waveIndex: waveIndex || null,
+          }),
+        updatePlan: (id, title, description, status) =>
+          tauriCall('update_plan', { id, title, description: description || null, status }),
+        deletePlan: (id) => tauriCall('delete_plan', { id }),
+        linkTaskToPlan: (planId, taskId, checkpointType) =>
+          tauriCall('link_task_to_plan', { planId, taskId, checkpointType: checkpointType || null }),
+        unlinkTaskFromPlan: (planId, taskId) => tauriCall('unlink_task_from_plan', { planId, taskId }),
+        getPlanTasks: (planId) => tauriCall('get_plan_tasks', { planId }),
+        getRoadmap: (projectId) => tauriCall('get_roadmap', { projectId }),
+        getPhaseProgress: (phaseId) => tauriCall('get_phase_progress', { phaseId }),
+        updateSuccessCriterion: (phaseId, criterionIndex, verified) =>
+          tauriCall('update_success_criterion', { phaseId, criterionIndex, verified }),
+        planPhase: (projectId, phaseId, model, effort) =>
+          tauriCall('plan_phase', { projectId, phaseId, model: model || null, effort: effort || null }),
+        approvePhasePlan: (projectId, phaseId, planTitle, tasks, model, dependenciesEdges) =>
+          tauriCall('approve_phase_plan', {
+            projectId,
+            phaseId,
+            planTitle,
+            tasks,
+            model: model || null,
+            dependenciesEdges: dependenciesEdges || null,
+          }),
+        executePhase: (projectId, phaseId) => tauriCall('execute_phase', { projectId, phaseId }),
       }
     : {}),
 };

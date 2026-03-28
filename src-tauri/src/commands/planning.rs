@@ -412,7 +412,8 @@ You MUST end your response with exactly one JSON code block in this format:
       "description": "Detailed implementation instructions. Include specific file paths, function signatures, and expected behavior. This must be detailed enough for Claude to implement without further clarification.",
       "task_type": "feature|bugfix|refactor|docs|test|chore",
       "priority": 0,
-      "acceptance_criteria": "Concrete, verifiable definition of done (e.g. 'The /api/users endpoint returns 401 for unauthenticated requests')"
+      "acceptance_criteria": "Concrete, verifiable definition of done (e.g. 'The /api/users endpoint returns 401 for unauthenticated requests')",
+      "checkpoint_type": "auto|human-verify|decision|human-action"
     }}
   ],
   "dependencies": [[0, 1], [0, 2], [1, 3]]
@@ -425,6 +426,7 @@ You MUST end your response with exactly one JSON code block in this format:
 - **task_type**: One of `feature`, `bugfix`, `refactor`, `docs`, `test`, `chore`
 - **priority**: 0 (highest) to 3 (lowest), following the guidelines above
 - **acceptance_criteria**: Testable condition that proves the task is complete
+- **checkpoint_type**: One of `auto` (default, fully automated), `human-verify` (AI implements, human verifies), `decision` (human chooses between options), `human-action` (human must perform non-automatable action)
 - **dependencies**: Array of `[parentIndex, childIndex]` pairs. `[0, 1]` means task 1 depends on task 0. Tasks with no dependency edges run in parallel.
 
 ### Rules

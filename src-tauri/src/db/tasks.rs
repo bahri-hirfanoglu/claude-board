@@ -50,6 +50,7 @@ pub struct Task {
     pub github_issue_url: Option<String>,
     pub deleted_at: Option<String>,
     pub agent_name: Option<String>,
+    pub phase_plan_id: Option<i64>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     #[serde(default)]
@@ -122,6 +123,7 @@ pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
         github_issue_url: row.get("github_issue_url").ok().flatten(),
         deleted_at: row.get("deleted_at").ok().flatten(),
         agent_name: row.get("agent_name").ok().flatten(),
+        phase_plan_id: row.get("phase_plan_id").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         is_running: false,

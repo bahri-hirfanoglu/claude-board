@@ -11,6 +11,7 @@ import {
   Link2,
   ArrowRight,
   Github,
+  Map,
 } from 'lucide-react';
 import Column from './Column';
 import ListView from './ListView';
@@ -22,6 +23,7 @@ import { notifyError } from '../../lib/api';
 import { IS_TAURI } from '../../lib/tauriEvents';
 import GitHubIssuesPanel from './GitHubIssuesPanel';
 import ErrorBoundary from '../../components/ErrorBoundary';
+import RoadmapView from '../roadmap/RoadmapView';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { parseTags } from './TagBadge';
 import { api } from '../../lib/api';
@@ -32,6 +34,7 @@ const VIEWS = [
   { id: 'pipeline', labelKey: 'board.pipeline', icon: GitBranch },
   { id: 'orchestration', labelKey: 'board.orchestration', icon: Workflow },
   { id: 'analytics', labelKey: 'board.analytics', icon: TrendingUp },
+  { id: 'roadmap', labelKey: 'board.roadmap', icon: Map },
 ];
 
 const MODEL_DOT = MODEL_DOT_COLORS;
@@ -415,6 +418,20 @@ export default function Board({
           <ErrorBoundary>
             <div className="flex-1 overflow-hidden">
               <AnalyticsView tasks={filteredTasks} projectId={projectId} />
+            </div>
+          </ErrorBoundary>
+        )}
+
+        {viewMode === 'roadmap' && (
+          <ErrorBoundary>
+            <div className="flex-1 overflow-auto">
+              <RoadmapView
+                projectId={projectId}
+                project={project}
+                tasks={filteredTasks}
+                onViewDetail={onViewDetail}
+                onStatusChange={onStatusChange}
+              />
             </div>
           </ErrorBoundary>
         )}
