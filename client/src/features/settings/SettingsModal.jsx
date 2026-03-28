@@ -265,7 +265,7 @@ const DEFAULT_SETTINGS = {
   notify_revision_requested: true,
   notify_queue_started: false,
   sound_enabled: true,
-  auto_open_terminal: true,
+  auto_open_terminal: false,
 };
 
 export default function SettingsModal({ onClose }) {

@@ -25,12 +25,14 @@ import {
   Terminal,
   Wand2,
   SlidersHorizontal,
+  MessageSquare,
 } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from '../../lib/constants';
 import { formatTokens as fmtTokens } from '../../lib/formatters';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { IS_TAURI } from '../../lib/tauriEvents';
+import Tooltip from '../../components/Tooltip';
 
 function ProjectUsage({ tasks }) {
   const totals = useMemo(() => {
@@ -101,6 +103,8 @@ export default function Header({
   onOpenPlanning,
   onOpenScan,
   onOpenAppSettings,
+  onToggleChat,
+  chatActive,
   tasks,
 }) {
   const { t, lang, setLang } = useTranslation();
@@ -135,13 +139,14 @@ export default function Header({
   return (
     <header className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-surface-900 border-b border-surface-700/50 gap-2">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-        <button
-          onClick={onBackToDashboard}
-          className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 hover:text-claude transition-colors flex-shrink-0"
-          title={t('header.backToDashboard')}
-        >
-          <LayoutGrid size={16} />
-        </button>
+        <Tooltip text={t('header.backToDashboard')}>
+          <button
+            onClick={onBackToDashboard}
+            className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 hover:text-claude transition-colors flex-shrink-0"
+          >
+            <LayoutGrid size={16} />
+          </button>
+        </Tooltip>
 
         <div className="relative min-w-0" ref={menuRef}>
           <button
@@ -270,7 +275,8 @@ export default function Header({
         {!connected && <WifiOff size={13} className="text-red-400 sm:hidden" />}
       </div>
 
-      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Search */}
         <div className="relative hidden sm:block">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-500" />
           <input
@@ -278,10 +284,11 @@ export default function Header({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t('header.searchPlaceholder')}
-            className="w-32 lg:w-48 pl-8 pr-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600"
+            className="w-32 lg:w-44 pl-8 pr-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-claude focus:border-claude placeholder-surface-600"
           />
         </div>
 
+        {/* Running badge */}
         {runningCount > 0 && (
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] sm:text-xs font-medium">
             <Activity size={11} className="animate-pulse" />
@@ -290,69 +297,59 @@ export default function Header({
           </div>
         )}
 
-        <div className="hidden lg:block">
+        {/* Info: task count + usage */}
+        <div className="hidden lg:flex items-center gap-2 text-xs text-surface-500">
+          <span className="whitespace-nowrap">
+            {taskCount} {t('common.tasks')}
+          </span>
           <ProjectUsage tasks={tasks} />
         </div>
 
-        <span className="hidden sm:inline text-xs text-surface-500 whitespace-nowrap">
-          {taskCount} {t('common.tasks')}
-        </span>
+        {/* Toolbar — compact icon toggle group */}
+        <div className="flex items-center bg-surface-800/60 rounded-lg p-0.5 border border-surface-700/40">
+          <ToolbarBtn icon={Clock} active={activityActive} onClick={onToggleActivity} title={t('header.activity')} />
+          <ToolbarBtn icon={BarChart3} active={statsActive} onClick={onToggleStats} title={t('header.stats')} />
+          {onOpenPlanning && (
+            <ToolbarBtn icon={Sparkles} onClick={onOpenPlanning} title="Planning" data-tour="planning-btn" />
+          )}
+          {IS_TAURI && currentProject && onToggleChat && (
+            <ToolbarBtn icon={MessageSquare} active={chatActive} onClick={onToggleChat} title="AI Chat" />
+          )}
+          {IS_TAURI && currentProject && onOpenScan && (
+            <ToolbarBtn icon={ScanSearch} onClick={onOpenScan} title={t('header.scanCodebase')} />
+          )}
+        </div>
 
-        <button
-          onClick={onToggleActivity}
-          className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 flex-shrink-0 ${
-            activityActive ? 'bg-claude/20 text-claude-light' : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
-          }`}
-          title={t('header.activity')}
-        >
-          <Clock size={14} />
-          <span className="hidden sm:inline">{t('header.activity')}</span>
-        </button>
-
-        <button
-          onClick={onToggleStats}
-          className={`p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 flex-shrink-0 ${
-            statsActive ? 'bg-claude/20 text-claude-light' : 'bg-surface-800 text-surface-300 hover:bg-surface-700'
-          }`}
-          title={t('header.stats')}
-        >
-          <BarChart3 size={14} />
-          <span className="hidden sm:inline">{t('header.stats')}</span>
-        </button>
-
-        {onOpenPlanning && (
-          <button
-            onClick={onOpenPlanning}
-            data-tour="planning-btn"
-            className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 border border-surface-700 hover:border-claude/30 text-sm font-medium transition-colors flex items-center gap-1.5 flex-shrink-0 text-surface-300 hover:text-claude"
-            title="Planning Mode"
-          >
-            <Sparkles size={14} />
-            <span className="hidden sm:inline">{t('header.plan')}</span>
-          </button>
-        )}
-        {IS_TAURI && currentProject && onOpenScan && (
-          <button
-            onClick={onOpenScan}
-            className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 border border-surface-700 hover:border-blue-500/30 text-sm font-medium transition-colors flex items-center gap-1.5 flex-shrink-0 text-surface-300 hover:text-blue-400"
-            title={t('header.scanCodebase')}
-          >
-            <ScanSearch size={14} />
-            <span className="hidden sm:inline">{t('header.scan')}</span>
-          </button>
-        )}
+        {/* New Task */}
         {onNewTask && (
-          <button
-            onClick={onNewTask}
-            data-tour="new-task"
-            className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex items-center gap-1.5 flex-shrink-0"
-            title="New Task (N)"
-          >
-            <Plus size={14} />
-            <span className="hidden sm:inline">{t('header.newTask')}</span>
-          </button>
+          <Tooltip text={t('header.newTask')} shortcut="N">
+            <button
+              onClick={onNewTask}
+              data-tour="new-task"
+              className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex items-center gap-1.5 flex-shrink-0"
+            >
+              <Plus size={14} />
+              <span className="hidden sm:inline">{t('header.newTask')}</span>
+            </button>
+          </Tooltip>
         )}
       </div>
     </header>
+  );
+}
+
+function ToolbarBtn({ icon: Icon, active, onClick, title, shortcut, ...rest }) {
+  return (
+    <Tooltip text={title} shortcut={shortcut}>
+      <button
+        onClick={onClick}
+        className={`p-1.5 rounded-md transition-colors ${
+          active ? 'bg-claude/20 text-claude' : 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'
+        }`}
+        {...rest}
+      >
+        <Icon size={14} />
+      </button>
+    </Tooltip>
   );
 }

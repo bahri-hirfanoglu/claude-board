@@ -282,6 +282,7 @@ pub fn run_migrations(conn: &Connection) {
         ("projects", "consecutive_failures", "ALTER TABLE projects ADD COLUMN consecutive_failures INTEGER DEFAULT 0"),
         // Approval gates
         ("projects", "require_approval", "ALTER TABLE projects ADD COLUMN require_approval INTEGER DEFAULT 0"),
+        ("tasks", "agent_name", "ALTER TABLE tasks ADD COLUMN agent_name TEXT DEFAULT ''"),
     ];
 
     for (table, col, sql) in migrations {
@@ -452,6 +453,20 @@ pub fn run_migrations(conn: &Connection) {
             }
         }
     }
+
+    // Achievements table
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS achievements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            achievement_key TEXT NOT NULL,
+            unlocked_at DATETIME DEFAULT (datetime('now','localtime')),
+            meta TEXT DEFAULT '{}',
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+            UNIQUE(project_id, achievement_key)
+        )
+    ").ok();
+    conn.execute_batch("CREATE INDEX IF NOT EXISTS idx_achievements_project ON achievements(project_id)").ok();
 
     // Backfill empty model fields
     conn.execute("UPDATE tasks SET model='sonnet' WHERE model IS NULL OR model=''", []).ok();

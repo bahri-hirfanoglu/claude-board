@@ -304,6 +304,7 @@ pub fn run() {
             commands::workflows::update_workflow_template,
             commands::workflows::delete_workflow_template,
             commands::workflows::apply_workflow_template,
+            commands::chat::chat_send,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

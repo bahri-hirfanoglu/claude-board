@@ -23,6 +23,7 @@ import CommandsModal from '../features/commands/CommandsModal';
 import SkillsModal from '../features/skills/SkillsModal';
 import ScanModal from '../features/scan/ScanModal';
 import SettingsModal from '../features/settings/SettingsModal';
+import ChatSidebar from '../features/chat/ChatSidebar';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function AppLayout({
@@ -90,6 +91,8 @@ export default function AppLayout({
         onEditSkills={() => openModal('skills')}
         onOpenAppSettings={onOpenAppSettings}
         onOpenScan={currentProject ? () => openModal('scan') : null}
+        onToggleChat={currentProject ? () => (modals.chat ? closeModal('chat') : openModal('chat')) : null}
+        chatActive={!!modals.chat}
       />
 
       {/* Main content */}
@@ -140,6 +143,15 @@ export default function AppLayout({
             <div className="absolute inset-0 md:relative md:inset-auto z-20 md:z-auto h-full">
               <ActivityTimeline projectId={currentProject.id} onClose={() => onSetActivePanel(null)} />
             </div>
+          )}
+
+          {/* AI Chat Sidebar */}
+          {modals.chat && currentProject && (
+            <ChatSidebar
+              projectId={currentProject.id}
+              projectName={currentProject.name}
+              onClose={() => closeModal('chat')}
+            />
           )}
         </div>
 

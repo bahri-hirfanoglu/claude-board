@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.7.0] - 2026-03-28
+
+### Features
+- **Command Palette (Ctrl+K)** — Fuzzy search across tasks, projects, and quick actions. Keyboard navigation, inline task actions (Start, Approve, Logs), shortcut hints
+- **Battle Arena View** — Gamified orchestration view where agents fight with emoji projectiles (🔥⚡💫❄️☠️💣), HP bars, explosion effects, critical hit damage numbers, file conflict clash lines, victory/defeat animations
+- **Agent Avatars & Names** — Each running agent gets a random character name (Nova, Atlas, Spark, etc.) with a unique avatar. Names appear in agent cards, terminal logs, and battle view
+- **AI Chat Sidebar** — Right-side chat panel powered by Claude CLI. Ask questions about your project, summarize tasks, get suggestions. Markdown-rendered responses
+- **Tooltip System** — Global tooltip component with hover delay, keyboard shortcut badges, viewport-aware positioning
+- **Enhanced Dashboard** — Quick actions bar with Ctrl+K hint, stat cards with icons and glow effects, active task pulse animation
+
+### Orchestration
+- **Circuit Breaker** — Auto-pause queue after N consecutive failures with manual reset
+- **Conditional Workflows** — on_success/on_failure/on_any dependency conditions
+- **Smart Queue Priority** — Critical path analysis (tasks blocking most dependents run first)
+- **Approval Gates** — Optional awaiting_approval status between testing and done
+- **Workflow Templates** — Reusable task chains with one-click apply and DAG wiring
+- **Enhanced Pipeline Stats** — Bottleneck detection, burn rate, circuit breaker banner, approval indicators
+
+### UI Improvements
+- **Redesigned Project Modal** — 720px sidebar layout with Section cards, Field/Toggle components
+- **Compact Header Toolbar** — Icon-only toggle group replacing 8 separate buttons
+- **Status Animations** — New violet approval effect, red fail flash with X mark
+- **Auto-test improvements** — Token tracking during verification, step progress markers, configurable test model
+- **Auto-open terminal** — Default changed to off; respects app settings toggle
+
+### Engine
+- **Task State Machine** — Declarative TaskStatus enum, transition validation table, EngineConfig
+- **Configurable Parameters** — Max auto-revisions, retry delays, auto-test model per project
+- **Agent name assignment** — Stored in tasks.agent_name column
+
 ## [1.6.6] - 2026-03-28
 
 ### Features

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { GitBranch, CalendarRange, Radio, X, Tag, ChevronDown, Loader2 } from 'lucide-react';
+import { GitBranch, CalendarRange, Radio, X, Tag, ChevronDown, Loader2, Swords } from 'lucide-react';
 import { api } from '../../lib/api';
 import { IS_TAURI, tauriListen } from '../../lib/tauriEvents';
 import { useTranslation } from '../../i18n/I18nProvider';
@@ -10,6 +10,7 @@ import AgentCard from './AgentCard';
 import DependencyGraph from './DependencyGraph';
 import TimelineView from './TimelineView';
 import ObservabilityPanel from './ObservabilityPanel';
+import BattleView from './BattleView';
 
 const STORAGE_KEY = 'claude-board:dag-positions:';
 
@@ -33,7 +34,7 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
   const [graphData, setGraphData] = useState({ tasks: [], edges: [], waves: [] });
   const [loading, setLoading] = useState(true);
   const [savedPositions, setSavedPositions] = useState(() => loadPositions(projectId));
-  const [viewType, setViewType] = useState('graph'); // 'graph' | 'timeline' | 'live'
+  const [viewType, setViewType] = useState('graph'); // 'graph' | 'timeline' | 'live' | 'battle'
   const [tagFilter, setTagFilter] = useState([]);
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
   const tagDropdownRef = useRef(null);
@@ -250,11 +251,22 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
             <Radio size={12} />
             {t('orchestration.live')}
           </button>
+          <button
+            onClick={() => setViewType('battle')}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              viewType === 'battle' ? 'bg-amber-500/15 text-amber-400' : 'text-surface-500 hover:text-surface-300'
+            }`}
+          >
+            <Swords size={12} />
+            Battle
+          </button>
         </div>
       </div>
 
       <div className="flex-1 flex gap-3 min-h-0">
-        {viewType === 'live' ? (
+        {viewType === 'battle' ? (
+          <BattleView tasks={filteredTasks} projectId={projectId} />
+        ) : viewType === 'live' ? (
           /* Live Observability Panel — full width */
           <div className="flex-1 min-w-0">
             <ObservabilityPanel projectId={projectId} />

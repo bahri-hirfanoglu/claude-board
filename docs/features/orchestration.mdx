@@ -38,6 +38,18 @@ Switch between modes using the toggle buttons at the top right of the orchestrat
 
     **Stats Bar** — Total agents running, tool calls, tokens, cost, and conflict count.
   </Tab>
+  <Tab title="Battle">
+    Gamified arena view where running agents appear as avatar sprites on a 2D map. Features include:
+    - Emoji projectiles that fly between agents on token usage
+    - HP bars that decrease as tokens are consumed
+    - Explosion effects with shrapnel particles on impact
+    - Critical hit damage numbers floating up
+    - File conflict lines with "VS" markers
+    - Victory crowns and defeat skulls
+    - Idle bobbing animation for active agents
+
+    See [Battle View](/features/battle-view) for full details.
+  </Tab>
 </Tabs>
 
 ## Wave Execution
@@ -52,7 +64,7 @@ Wave 2: [Tasks depending on Wave 0 + 1]  → start when deps complete
 
 ## Live Agent Cards
 
-Each running Claude agent gets a card in the sidebar (Graph/Timeline modes) showing:
+Each running Claude agent gets a named card in the sidebar with a unique avatar (e.g., 'Agent Nova') (Graph/Timeline modes) showing:
 
 - Task title and key
 - Model (Haiku/Sonnet/Opus) and elapsed time

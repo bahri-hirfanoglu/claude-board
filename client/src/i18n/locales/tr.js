@@ -29,6 +29,7 @@ export default {
   'status.testing': 'Test',
   'status.done': 'Tamamland\u0131',
   'status.failed': 'Ba\u015far\u0131s\u0131z',
+  'status.awaiting_approval': 'Onay Bekliyor',
   'status.running': '\u00c7al\u0131\u015f\u0131yor',
   'status.active': 'Aktif',
   'status.connected': 'Ba\u011fl\u0131',
@@ -72,6 +73,7 @@ export default {
   'dashboard.active': 'Aktif',
   'dashboard.tokens': 'Token',
   'dashboard.cost': 'Maliyet',
+  'dashboard.searchPlaceholder': 'Görev, proje ara...',
   'dashboard.done': 'bitti',
   'dashboard.tasksLabel': 'g\u00f6rev',
 

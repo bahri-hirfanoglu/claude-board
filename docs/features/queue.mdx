@@ -71,4 +71,15 @@ Tasks are picked from the backlog in this order:
 2. **Queue position** — Manual drag-and-drop ordering
 3. **Creation time** — Older tasks first (FIFO)
 
+## Smart Queue Priority
+
+Beyond the basic priority ordering above, the queue also considers **critical path** when selecting the next task:
+- Tasks that block the most dependents are prioritized
+- This ensures that bottleneck tasks run first, maximizing parallelism in later waves
+- Critical path priority is applied as a tiebreaker within the same priority level
+
+## Circuit Breaker
+
+The queue supports an automatic pause mechanism when too many tasks fail consecutively. See [Circuit Breaker](/features/circuit-breaker) for configuration and details.
+
 <Warning>Dependencies override queue position. Even if a task has position #1, it won't start until all parent dependencies are met.</Warning>

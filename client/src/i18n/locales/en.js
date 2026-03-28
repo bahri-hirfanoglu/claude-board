@@ -29,6 +29,7 @@ export default {
   'status.testing': 'Testing',
   'status.done': 'Done',
   'status.failed': 'Failed',
+  'status.awaiting_approval': 'Awaiting Approval',
   'status.running': 'Running',
   'status.active': 'Active',
   'status.connected': 'Connected',
@@ -71,6 +72,7 @@ export default {
   'dashboard.active': 'Active',
   'dashboard.tokens': 'Tokens',
   'dashboard.cost': 'Cost',
+  'dashboard.searchPlaceholder': 'Search tasks, projects...',
   'dashboard.done': 'done',
   'dashboard.tasksLabel': 'tasks',
 

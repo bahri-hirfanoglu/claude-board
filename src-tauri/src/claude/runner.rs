@@ -30,6 +30,20 @@ static ACTIVE_PROCESSES: once_cell::sync::Lazy<ProcessMap> = once_cell::sync::La
 static STARTING_TASKS: once_cell::sync::Lazy<StartingSet> = once_cell::sync::Lazy::new(|| Mutex::new(HashSet::new()));
 static EVENT_CTX: once_cell::sync::Lazy<EventContext> = once_cell::sync::Lazy::new(EventContext::new);
 
+const AGENT_NAMES: &[&str] = &[
+    "Nova", "Atlas", "Spark", "Echo", "Pulse", "Drift", "Flux", "Blaze",
+    "Cipher", "Nexus", "Orbit", "Prism", "Surge", "Volt", "Apex", "Helix",
+    "Pixel", "Byte", "Quark", "Zephyr", "Onyx", "Jade", "Iris", "Sol",
+    "Astra", "Cosmo", "Flare", "Rune", "Vega", "Luna",
+];
+
+fn assign_agent_name(task_id: i64, db: &crate::db::DbPool) -> String {
+    let idx = (task_id as usize + rand::random::<usize>()) % AGENT_NAMES.len();
+    let name = AGENT_NAMES[idx].to_string();
+    crate::db::tasks::set_agent_name(db, task_id, &name);
+    name
+}
+
 pub fn is_running(task_id: i64) -> bool {
     ACTIVE_PROCESSES.lock().contains_key(&task_id)
 }
@@ -764,6 +778,9 @@ pub fn start(
         starting.insert(task_id);
     }
 
+    // Assign agent name
+    let agent_name = assign_agent_name(task_id, &db);
+
     // Copy attachments to working dir
     let (task_attachments, attach_dir) = copy_task_attachments(task_id, working_dir, &db);
 
@@ -812,7 +829,7 @@ pub fn start(
     crate::services::notification::notify_task_started(&app, &crate::services::notification::TaskNotification::new(&task.title, task.task_key.as_deref()));
     crate::services::webhook::fire(task.project_id, "task_started", &format!("Task started: {}", task.title),
         serde_json::json!({"taskId": task_id, "taskKey": task.task_key, "title": task.title, "model": task.model}));
-    tasks::add_log(&db, task_id, &format!("Starting Claude for task: {}", task.title), "system", None);
+    tasks::add_log(&db, task_id, &format!("Agent {} starting task: {}", agent_name, task.title), "system", None);
     tasks::add_log(&db, task_id, &format!("Model: {} | Effort: {} | Permissions: {}", model, effort, permission_mode), "info", None);
     activity::add(&db, task.project_id, Some(task_id), "claude_started", &format!("Claude started: {}", task.title), None);
 

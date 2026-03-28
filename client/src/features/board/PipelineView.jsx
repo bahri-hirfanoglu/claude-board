@@ -282,6 +282,7 @@ function Section({ title, count, color, children, collapsible }) {
 }
 
 function PipelineCard({ task, position, draggable, onViewLogs, onViewDetail, onMoveUp, onMoveDown }) {
+  const { t } = useTranslation();
   const status = task.status || 'backlog';
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.backlog;
   const typeColor = TYPE_COLORS[task.task_type] || 'bg-surface-500/15 text-surface-400';

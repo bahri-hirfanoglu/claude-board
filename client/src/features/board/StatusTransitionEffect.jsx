@@ -181,8 +181,69 @@ function RewindEffect() {
   );
 }
 
+// ─── Approval gate (violet glow + badge) ───
+function ApprovalEffect() {
+  const stars = useMemo(() => generateParticles(6, '#a78bfa', 60), []);
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-visible z-10">
+      {stars.map((s) => (
+        <div
+          key={s.id}
+          className="absolute left-1/2 top-1/2"
+          style={{
+            animation: `float-up ${s.duration}s ease-out ${s.delay}s both`,
+            '--tx': `${s.x}px`,
+            '--ty': `${s.y}px`,
+          }}
+        >
+          <div
+            className="w-1.5 h-1.5 rounded-full"
+            style={{
+              backgroundColor: s.color,
+              boxShadow: `0 0 6px ${s.color}, 0 0 10px ${s.color}50`,
+              transform: `scale(${s.scale})`,
+            }}
+          />
+        </div>
+      ))}
+      <div
+        className="absolute inset-0 rounded-lg animate-[glow-pulse_1s_ease-out_both]"
+        style={{ boxShadow: '0 0 20px rgba(167,139,250,0.4), inset 0 0 20px rgba(167,139,250,0.1)' }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center animate-[check-pop_0.6s_ease-out_0.1s_both]">
+        <div className="text-lg opacity-80 drop-shadow-lg text-violet-300">&#9733;</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Fail shake (red flash + shake) ───
+function FailEffect() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-visible z-10">
+      <div className="absolute inset-0 rounded-lg overflow-hidden">
+        <div
+          className="absolute inset-0 animate-[shimmer-wave_0.5s_ease-out_both]"
+          style={{
+            background:
+              'linear-gradient(90deg, transparent, rgba(239,68,68,0.25), rgba(239,68,68,0.4), rgba(239,68,68,0.25), transparent)',
+            backgroundSize: '200% 100%',
+          }}
+        />
+      </div>
+      <div
+        className="absolute inset-0 rounded-lg animate-[glow-pulse_0.5s_ease-out_both]"
+        style={{ boxShadow: '0 0 16px rgba(239,68,68,0.4), inset 0 0 16px rgba(239,68,68,0.1)' }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center animate-[check-pop_0.4s_ease-out_both]">
+        <div className="text-lg opacity-60 drop-shadow-lg text-red-400">&#10007;</div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ───
-const STATUS_ORDER = { backlog: 0, in_progress: 1, testing: 2, done: 3, failed: -1 };
+const STATUS_ORDER = { backlog: 0, in_progress: 1, testing: 2, awaiting_approval: 3, done: 4, failed: -1 };
 
 export default function StatusTransitionEffect({ from, to }) {
   const [visible, setVisible] = useState(true);
@@ -194,7 +255,8 @@ export default function StatusTransitionEffect({ from, to }) {
 
   if (!visible) return null;
 
-  if (to === 'failed') return <RewindEffect />;
+  if (to === 'failed') return <FailEffect />;
+  if (to === 'awaiting_approval') return <ApprovalEffect />;
 
   const fromIdx = STATUS_ORDER[from] ?? 0;
   const toIdx = STATUS_ORDER[to] ?? 0;

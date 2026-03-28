@@ -127,7 +127,7 @@ export default function Board({
   }, [tasks, modelFilter, tagFilter]);
 
   const groupedTasks = useMemo(() => {
-    const grouped = { backlog: [], in_progress: [], testing: [], done: [], failed: [] };
+    const grouped = { backlog: [], in_progress: [], testing: [], done: [], failed: [], awaiting_approval: [] };
     for (const t of filteredTasks) {
       const s = t.status || 'backlog';
       if (grouped[s]) grouped[s].push(t);
@@ -135,6 +135,12 @@ export default function Board({
     return grouped;
   }, [filteredTasks]);
   const columnTasks = (colId) => groupedTasks[colId] || [];
+
+  // Only show awaiting_approval column when require_approval is enabled
+  const visibleColumns = useMemo(
+    () => COLUMNS.filter((col) => col.id !== 'awaiting_approval' || project?.require_approval),
+    [project?.require_approval],
+  );
 
   return (
     <div className="h-full flex">
@@ -291,7 +297,7 @@ export default function Board({
           <>
             {/* Mobile tab bar */}
             <div className="flex md:hidden border-b border-surface-800 bg-surface-900/80 overflow-x-auto">
-              {COLUMNS.map((col) => {
+              {visibleColumns.map((col) => {
                 const count = columnTasks(col.id).length;
                 return (
                   <button
@@ -314,7 +320,7 @@ export default function Board({
             {/* Mobile: single column */}
             <div className="flex-1 overflow-y-auto md:hidden p-3">
               <Column
-                column={COLUMNS.find((c) => c.id === mobileTab)}
+                column={visibleColumns.find((c) => c.id === mobileTab) || visibleColumns[0]}
                 tasks={columnTasks(mobileTab)}
                 draggedTask={draggedTask}
                 onDragStart={setDraggedTask}
@@ -336,7 +342,7 @@ export default function Board({
 
             {/* Desktop: all columns side by side */}
             <div className="hidden md:flex flex-1 gap-4 p-4 overflow-x-auto">
-              {COLUMNS.map((col) => (
+              {visibleColumns.map((col) => (
                 <Column
                   key={col.id}
                   column={col}

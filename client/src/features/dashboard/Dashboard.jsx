@@ -1,5 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, FolderOpen, Layers, Bot, LayoutGrid, List, Settings } from 'lucide-react';
+import {
+  Plus,
+  FolderOpen,
+  Layers,
+  Bot,
+  LayoutGrid,
+  List,
+  Settings,
+  Search,
+  Activity,
+  CheckCircle2,
+  Cpu,
+  Coins,
+  Zap,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 import { formatTokens } from '../../lib/formatters';
 import { useTranslation } from '../../i18n/I18nProvider';
@@ -186,43 +200,56 @@ export default function Dashboard({ projects, onSelectProject, onNewProject, onO
           onOpenSettings={onOpenSettings}
         />
 
+        {/* Quick Actions Bar */}
+        {totalProjects > 0 && (
+          <div className="flex items-center gap-2 mb-6">
+            <button
+              onClick={() => {
+                window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-800/60 border border-surface-700/30 text-surface-400 hover:text-surface-200 hover:border-surface-600 transition-all flex-1 max-w-sm"
+            >
+              <Search size={14} />
+              <span className="text-sm">{t('dashboard.searchPlaceholder') || 'Search tasks, projects...'}</span>
+              <kbd className="ml-auto px-1.5 py-0.5 text-[10px] bg-surface-700 rounded border border-surface-600 font-mono text-surface-400">
+                Ctrl+K
+              </kbd>
+            </button>
+          </div>
+        )}
+
         {/* Global Stats */}
         {totalProjects > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-8">
-            <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">
-                {t('dashboard.projects')}
-              </div>
-              <div className="text-lg font-semibold text-surface-200">{totalProjects}</div>
-            </div>
-            <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">
-                {t('dashboard.totalTasks')}
-              </div>
-              <div className="text-lg font-semibold text-surface-200">{totalTasks}</div>
-            </div>
-            <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">
-                {t('dashboard.completed')}
-              </div>
-              <div className="text-lg font-semibold text-emerald-400">{totalDone}</div>
-            </div>
-            <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">
-                {t('dashboard.active')}
-              </div>
-              <div className="text-lg font-semibold text-amber-400">{totalActive}</div>
-            </div>
-            <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">
-                {t('dashboard.tokens')}
-              </div>
-              <div className="text-lg font-semibold text-blue-400">{formatTokens(allTokens) || '0'}</div>
-            </div>
-            <div className="p-3 rounded-lg bg-surface-800/60 border border-surface-700/30">
-              <div className="text-[10px] text-surface-500 uppercase tracking-wider mb-0.5">{t('dashboard.cost')}</div>
-              <div className="text-lg font-semibold text-surface-200">${allCost.toFixed(2)}</div>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+            <StatCard icon={FolderOpen} label={t('dashboard.projects')} value={totalProjects} color="text-claude" />
+            <StatCard icon={Layers} label={t('dashboard.totalTasks')} value={totalTasks} color="text-surface-200" />
+            <StatCard
+              icon={CheckCircle2}
+              label={t('dashboard.completed')}
+              value={totalDone}
+              color="text-emerald-400"
+              glow="emerald"
+            />
+            <StatCard
+              icon={Activity}
+              label={t('dashboard.active')}
+              value={totalActive}
+              color="text-amber-400"
+              glow="amber"
+              pulse={totalActive > 0}
+            />
+            <StatCard
+              icon={Cpu}
+              label={t('dashboard.tokens')}
+              value={formatTokens(allTokens) || '0'}
+              color="text-blue-400"
+            />
+            <StatCard
+              icon={Coins}
+              label={t('dashboard.cost')}
+              value={`$${allCost.toFixed(2)}`}
+              color="text-surface-200"
+            />
           </div>
         )}
 
@@ -365,6 +392,29 @@ export default function Dashboard({ projects, onSelectProject, onNewProject, onO
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+const GLOW_COLORS = {
+  emerald: 'shadow-emerald-500/10',
+  amber: 'shadow-amber-500/10',
+  blue: 'shadow-blue-500/10',
+  claude: 'shadow-claude/10',
+};
+
+function StatCard({ icon: Icon, label, value, color, glow, pulse }) {
+  return (
+    <div
+      className={`relative p-3.5 rounded-xl bg-surface-800/60 border border-surface-700/30 hover:border-surface-600/50 transition-all group ${glow ? `shadow-lg ${GLOW_COLORS[glow] || ''}` : ''}`}
+    >
+      <div className="flex items-center gap-2 mb-1.5">
+        <div className="w-6 h-6 rounded-lg bg-surface-700/50 flex items-center justify-center group-hover:bg-surface-700 transition-colors">
+          <Icon size={12} className={color} />
+        </div>
+        <div className="text-[10px] text-surface-500 uppercase tracking-wider">{label}</div>
+      </div>
+      <div className={`text-xl font-bold ${color} ${pulse ? 'animate-pulse' : ''}`}>{value}</div>
     </div>
   );
 }

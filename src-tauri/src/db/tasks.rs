@@ -49,6 +49,7 @@ pub struct Task {
     pub github_issue_number: Option<i64>,
     pub github_issue_url: Option<String>,
     pub deleted_at: Option<String>,
+    pub agent_name: Option<String>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     #[serde(default)]
@@ -120,6 +121,7 @@ pub fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
         github_issue_number: row.get("github_issue_number").ok().flatten(),
         github_issue_url: row.get("github_issue_url").ok().flatten(),
         deleted_at: row.get("deleted_at").ok().flatten(),
+        agent_name: row.get("agent_name").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         is_running: false,
@@ -317,6 +319,14 @@ pub fn set_lifecycle_summary(db: &DbPool, task_id: i64, summary: &str) {
 pub fn set_tags(db: &DbPool, task_id: i64, tags: &str) {
     let conn = db.lock();
     conn.execute("UPDATE tasks SET tags=?1,updated_at=datetime('now','localtime') WHERE id=?2", params![tags, task_id]).ok();
+}
+
+pub fn set_agent_name(db: &DbPool, id: i64, name: &str) {
+    let conn = db.lock();
+    conn.execute(
+        "UPDATE tasks SET agent_name=?1,updated_at=datetime('now','localtime') WHERE id=?2",
+        params![name, id],
+    ).ok();
 }
 
 pub fn delete(db: &DbPool, id: i64) {

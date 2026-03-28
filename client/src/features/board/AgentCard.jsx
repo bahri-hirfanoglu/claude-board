@@ -14,11 +14,10 @@ import {
   Globe,
   Layers,
   Hash,
-  ArrowRight,
-  FlaskConical,
 } from 'lucide-react';
+import Avatar from 'boring-avatars';
 import { formatTokens } from '../../lib/formatters';
-import { TYPE_COLORS, MODEL_COSTS } from '../../lib/constants';
+import { TYPE_COLORS, MODEL_COSTS, AVATAR_COLORS } from '../../lib/constants';
 import { IS_TAURI, tauriListen } from '../../lib/tauriEvents';
 
 const TOOL_ICONS = {
@@ -75,6 +74,7 @@ export default function AgentCard({ task, onStop, onViewLogs }) {
   const model = task.model_used || task.model || 'sonnet';
   const typeColor = TYPE_COLORS[task.task_type] || TYPE_COLORS.feature;
   const isTesting = task.status === 'testing' && task.is_running;
+  const agentName = task.agent_name || `Agent ${task.id}`;
 
   // Live elapsed timer
   const [elapsed, setElapsed] = useState(0);
@@ -143,23 +143,24 @@ export default function AgentCard({ task, onStop, onViewLogs }) {
       }`}
       onClick={() => onViewLogs?.(task)}
     >
-      {/* Header */}
+      {/* Agent identity */}
       <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            {isTesting ? (
-              <FlaskConical size={11} className="text-purple-400 animate-pulse flex-shrink-0" />
-            ) : (
-              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${typeColor?.dot || 'bg-blue-400'}`} />
-            )}
-            <span className="text-xs font-medium text-surface-200 truncate">{task.title}</span>
-            {isTesting && (
-              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400">
-                Testing
-              </span>
-            )}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="rounded-lg overflow-hidden ring-1 ring-surface-600 flex-shrink-0">
+            <Avatar size={28} name={agentName} variant="beam" colors={AVATAR_COLORS} />
           </div>
-          {task.task_key && <span className="text-[10px] text-surface-500 font-mono">{task.task_key}</span>}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-xs font-bold text-claude">{agentName}</span>
+              {isTesting && (
+                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400">
+                  Testing
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] text-surface-400 truncate block">{task.title}</span>
+            {task.task_key && <span className="text-[9px] text-surface-600 font-mono">{task.task_key}</span>}
+          </div>
         </div>
         <button
           onClick={(e) => {
@@ -213,20 +214,27 @@ export default function AgentCard({ task, onStop, onViewLogs }) {
         )}
       </div>
 
-      {/* Last tool call */}
+      {/* Agent activity — speech bubble style */}
       {lastTool && (
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-900/60 border border-surface-700/30 mb-1.5">
-          {ToolIcon && <ToolIcon size={10} className={toolColor} />}
-          <span className={`text-[10px] font-medium ${toolColor}`}>{lastTool.name}</span>
-          {lastTool.path && (
-            <span className="text-[9px] text-surface-600 truncate flex-1">{shortenPath(lastTool.path)}</span>
-          )}
-          <ArrowRight size={8} className="text-surface-600 animate-pulse" />
+        <div className="relative mt-1.5">
+          <div className="absolute -top-1 left-4 w-2 h-2 bg-surface-900/60 border-l border-t border-surface-700/30 rotate-45" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-900/60 border border-surface-700/30">
+            {ToolIcon && <ToolIcon size={10} className={toolColor} />}
+            <span className={`text-[10px] font-medium ${toolColor}`}>{lastTool.name}</span>
+            {lastTool.path && (
+              <span className="text-[9px] text-surface-600 truncate flex-1">{shortenPath(lastTool.path)}</span>
+            )}
+          </div>
         </div>
       )}
-
-      {/* Last claude text */}
-      {lastText && !lastTool && <div className="text-[9px] text-surface-500 truncate px-1 italic">{lastText}</div>}
+      {lastText && !lastTool && (
+        <div className="relative mt-1.5">
+          <div className="absolute -top-1 left-4 w-2 h-2 bg-surface-900/60 border-l border-t border-surface-700/30 rotate-45" />
+          <div className="px-2.5 py-1.5 rounded-lg bg-surface-900/60 border border-surface-700/30">
+            <span className="text-[9px] text-surface-400 italic">{lastText}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { StatusTransitionProvider } from '../features/board/StatusTransitionCont
 import { I18nProvider, useTranslation } from '../i18n/I18nProvider';
 import OnboardingTour, { useOnboarding } from '../features/onboarding/OnboardingTour';
 import ErrorBoundary from '../components/ErrorBoundary';
+import CommandPalette from '../features/command-palette/CommandPalette';
 
 function AppInner() {
   const { t } = useTranslation();
@@ -110,13 +111,20 @@ function AppInner() {
     return () => unsubs.forEach((fn) => fn());
   }, []);
 
-  // Auto-open terminal when task NEWLY starts running
+  // Auto-open terminal when task NEWLY starts running (respects auto_open_terminal setting)
   const runningIdsRef = useRef(new Set());
   const suppressRef = useRef(true);
   const terminalRef = useRef(terminal);
   terminalRef.current = terminal;
+  const autoOpenRef = useRef(false);
 
   useEffect(() => {
+    api
+      .getAppSettings()
+      .then((s) => {
+        autoOpenRef.current = !!s?.auto_open_terminal;
+      })
+      .catch(() => {});
     const timer = setTimeout(() => {
       suppressRef.current = false;
     }, 5000);
@@ -129,7 +137,7 @@ function AppInner() {
 
   useEffect(() => {
     const handler = (task) => {
-      if (suppressRef.current) return;
+      if (suppressRef.current || !autoOpenRef.current) return;
       if (task.is_running && !runningIdsRef.current.has(task.id)) {
         runningIdsRef.current.add(task.id);
         terminalRef.current.openTab(task);
@@ -171,9 +179,18 @@ function AppInner() {
       .catch(() => setRoles([]));
   }, [currentProject]);
 
+  // Command palette
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e) => {
+      // Ctrl/Cmd+K — command palette (works everywhere, even in inputs)
+      if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+        return;
+      }
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       if (e.key === 'n' && !e.ctrlKey && !e.metaKey && currentProject) {
         e.preventDefault();
@@ -184,7 +201,9 @@ function AppInner() {
         document.getElementById('search-input')?.focus();
       }
       if (e.key === 'Escape') {
-        if (modals.task) {
+        if (commandPaletteOpen) {
+          setCommandPaletteOpen(false);
+        } else if (modals.task) {
           closeModal('task');
         } else if (modals.project) {
           closeModal('project');
@@ -198,7 +217,7 @@ function AppInner() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [modals.task, modals.project, confirm, activePanel, currentProject, openModal, closeModal]);
+  }, [modals.task, modals.project, confirm, activePanel, currentProject, openModal, closeModal, commandPaletteOpen]);
 
   const filteredTasks = useMemo(() => {
     if (!search.trim()) return tasks;
@@ -269,6 +288,19 @@ function AppInner() {
         taskActions={taskActions}
         projectActions={projectActions}
         onOpenAppSettings={() => openModal('appSettings')}
+      />
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        tasks={tasks}
+        projects={projects}
+        currentProject={currentProject}
+        onNavigateToProject={navigateToProject}
+        onNavigateToDashboard={navigateToDashboard}
+        onStatusChange={(task, status) => taskActions.onStatusChange(task.id, status)}
+        onViewLogs={(task) => taskActions.onViewLogs(task.id)}
+        onViewDetail={(task) => openModal('detail', task)}
+        openModal={openModal}
       />
       <OnboardingTour active={showOnboarding} onComplete={completeOnboarding} hasProject={!!currentProject} />
     </StatusTransitionProvider>

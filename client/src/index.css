@@ -41,6 +41,63 @@
   animation: slide-up 0.2s ease-out;
 }
 
+@keyframes fade-tooltip {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Battle View animations ─── */
+@keyframes attack-swing {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-15deg); }
+  75% { transform: rotate(15deg); }
+}
+
+@keyframes damage-float {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-40px) scale(0.6); }
+}
+
+@keyframes damage-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+@keyframes impact-flash {
+  0% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+@keyframes victory-bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.05); }
+  50% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+@keyframes impact-ring {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+@keyframes trail-fade {
+  0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+}
+
+@keyframes explosion-flash {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+}
+
+@keyframes shrapnel-fly {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0.3); opacity: 0; }
+}
+
 /* ─── Status transition animations ─── */
 @keyframes spark-fly {
   0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
@@ -194,4 +251,53 @@
 .md-preview-compact .wmde-markdown li {
   font-size: 12px !important;
   margin-bottom: 2px !important;
+}
+
+/* Chat sidebar markdown */
+.chat-md-content .wmde-markdown {
+  background-color: transparent !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+}
+.chat-md-content .wmde-markdown h1,
+.chat-md-content .wmde-markdown h2,
+.chat-md-content .wmde-markdown h3,
+.chat-md-content .wmde-markdown h4 {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-top: 10px !important;
+  margin-bottom: 4px !important;
+  color: #ebe4d8 !important;
+}
+.chat-md-content .wmde-markdown p {
+  margin-bottom: 8px !important;
+}
+.chat-md-content .wmde-markdown pre {
+  font-size: 12px !important;
+  padding: 10px !important;
+  margin: 8px 0 !important;
+  border-radius: 8px !important;
+  background-color: #2a2520 !important;
+  border: 1px solid #3d372e !important;
+}
+.chat-md-content .wmde-markdown code {
+  font-size: 12px !important;
+  background-color: #2a2520 !important;
+  color: #DA7756 !important;
+  padding: 1px 4px !important;
+  border-radius: 4px !important;
+}
+.chat-md-content .wmde-markdown ul,
+.chat-md-content .wmde-markdown ol {
+  padding-left: 20px !important;
+  margin-bottom: 8px !important;
+}
+.chat-md-content .wmde-markdown li {
+  font-size: 13px !important;
+  margin-bottom: 3px !important;
+}
+.chat-md-content .wmde-markdown strong {
+  color: #ebe4d8 !important;
 }

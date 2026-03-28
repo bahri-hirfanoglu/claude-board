@@ -73,4 +73,24 @@ Check TypeScript compilation with 'npx tsc --noEmit'.
 Ensure no console.log statements remain in production code.
 ```
 
+## Auto-Test Token Tracking
+
+Token usage during auto-test is now counted in the task's total token usage. This means the token counter, cost estimate, and analytics all reflect the full cost of execution including verification.
+
+## Step Progress Markers
+
+During auto-test execution, the task card shows real-time step progress indicators:
+- **Step 1/4: Build Check**
+- **Step 2/4: Test Suite**
+- **Step 3/4: Code Review**
+- **Step 4/4: Acceptance Criteria**
+
+Each step displays its current status (running, passed, failed, skipped) as it executes.
+
+## Auto-Test Model Selection
+
+By default, auto-test runs with Sonnet at low effort. You can override this in **Project Settings → Engine tab**:
+- **Test Model** — choose between Haiku, Sonnet, or Opus
+- Higher-capability models catch more subtle issues but cost more
+
 <Note>The verification agent runs commands one at a time to prevent parallel tool call cancellation errors on Windows.</Note>

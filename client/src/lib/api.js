@@ -271,6 +271,8 @@ export const api = {
           tauriCall('apply_workflow_template', { templateId, projectId }),
         // ─── Circuit Breaker ───
         resetCircuitBreaker: (id) => tauriCall('reset_circuit_breaker', { id }),
+        // ─── AI Chat ───
+        chatSend: (projectId, message, model) => tauriCall('chat_send', { projectId, message, model: model || null }),
       }
     : {}),
 };
