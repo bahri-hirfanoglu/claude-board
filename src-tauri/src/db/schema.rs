@@ -271,6 +271,17 @@ pub fn run_migrations(conn: &Connection) {
         ("tasks", "github_issue_url", "ALTER TABLE tasks ADD COLUMN github_issue_url TEXT"),
         // Soft delete
         ("tasks", "deleted_at", "ALTER TABLE tasks ADD COLUMN deleted_at TEXT DEFAULT NULL"),
+        // Engine configuration (extracted hard-coded values)
+        ("projects", "max_auto_revisions", "ALTER TABLE projects ADD COLUMN max_auto_revisions INTEGER DEFAULT 0"),
+        ("projects", "retry_base_delay_secs", "ALTER TABLE projects ADD COLUMN retry_base_delay_secs INTEGER DEFAULT 0"),
+        ("projects", "retry_max_delay_secs", "ALTER TABLE projects ADD COLUMN retry_max_delay_secs INTEGER DEFAULT 0"),
+        ("projects", "auto_test_model", "ALTER TABLE projects ADD COLUMN auto_test_model TEXT DEFAULT ''"),
+        // Circuit breaker
+        ("projects", "circuit_breaker_threshold", "ALTER TABLE projects ADD COLUMN circuit_breaker_threshold INTEGER DEFAULT 0"),
+        ("projects", "circuit_breaker_active", "ALTER TABLE projects ADD COLUMN circuit_breaker_active INTEGER DEFAULT 0"),
+        ("projects", "consecutive_failures", "ALTER TABLE projects ADD COLUMN consecutive_failures INTEGER DEFAULT 0"),
+        // Approval gates
+        ("projects", "require_approval", "ALTER TABLE projects ADD COLUMN require_approval INTEGER DEFAULT 0"),
     ];
 
     for (table, col, sql) in migrations {
@@ -351,6 +362,93 @@ pub fn run_migrations(conn: &Connection) {
                 conn.execute_batch("ROLLBACK").ok();
             } else {
                 log::info!("Tasks table migration completed");
+            }
+        }
+    }
+
+    // Create workflow_templates table
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS workflow_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            steps TEXT DEFAULT '[]',
+            created_at DATETIME DEFAULT (datetime('now','localtime')),
+            updated_at DATETIME DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        )
+    ").ok();
+
+    // Migrate tasks table to support 'awaiting_approval' status (remove CHECK constraint)
+    {
+        let needs_migration = conn.execute(
+            "UPDATE tasks SET status='awaiting_approval' WHERE id=-1", []
+        ).is_err();
+        if needs_migration {
+            log::info!("Migrating tasks table to support 'awaiting_approval' status...");
+            let tx_result: Result<(), rusqlite::Error> = (|| {
+                conn.execute_batch("BEGIN IMMEDIATE")?;
+                conn.execute_batch("
+                    CREATE TABLE IF NOT EXISTS tasks_v3 (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        project_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT DEFAULT '',
+                        status TEXT DEFAULT 'backlog',
+                        priority INTEGER DEFAULT 0,
+                        task_type TEXT DEFAULT 'feature' CHECK(task_type IN ('feature','bugfix','refactor','docs','test','chore')),
+                        acceptance_criteria TEXT DEFAULT '', model TEXT DEFAULT 'sonnet', thinking_effort TEXT DEFAULT 'medium',
+                        sort_order INTEGER DEFAULT 0, queue_position INTEGER DEFAULT 0,
+                        branch_name TEXT, claude_session_id TEXT,
+                        input_tokens INTEGER DEFAULT 0, output_tokens INTEGER DEFAULT 0,
+                        cache_read_tokens INTEGER DEFAULT 0, cache_creation_tokens INTEGER DEFAULT 0,
+                        total_cost REAL DEFAULT 0, num_turns INTEGER DEFAULT 0, rate_limit_hits INTEGER DEFAULT 0,
+                        revision_count INTEGER DEFAULT 0, model_used TEXT,
+                        started_at DATETIME, completed_at DATETIME,
+                        work_duration_ms INTEGER DEFAULT 0, last_resumed_at DATETIME,
+                        commits TEXT DEFAULT '[]', pr_url TEXT, diff_stat TEXT,
+                        role_id INTEGER, task_key TEXT DEFAULT '',
+                        created_at DATETIME DEFAULT (datetime('now','localtime')),
+                        updated_at DATETIME DEFAULT (datetime('now','localtime')),
+                        test_report TEXT, depends_on INTEGER, retry_count INTEGER DEFAULT 0,
+                        context_summary TEXT, parent_task_id INTEGER, awaiting_subtasks INTEGER DEFAULT 0,
+                        tags TEXT DEFAULT '[]', lifecycle_summary TEXT, retry_after DATETIME,
+                        github_issue_number INTEGER, github_issue_url TEXT, deleted_at TEXT DEFAULT NULL,
+                        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+                    )
+                ")?;
+                conn.execute_batch("
+                    INSERT INTO tasks_v3 SELECT
+                        id, project_id, title, description, status, priority, task_type,
+                        acceptance_criteria, model, thinking_effort, sort_order, queue_position,
+                        branch_name, claude_session_id,
+                        input_tokens, output_tokens, cache_read_tokens, cache_creation_tokens,
+                        total_cost, num_turns, rate_limit_hits, revision_count, model_used,
+                        started_at, completed_at, work_duration_ms, last_resumed_at,
+                        commits, pr_url, diff_stat, role_id, task_key,
+                        created_at, updated_at,
+                        test_report, depends_on, retry_count,
+                        context_summary, parent_task_id, awaiting_subtasks,
+                        tags, lifecycle_summary, retry_after,
+                        github_issue_number, github_issue_url, deleted_at
+                    FROM tasks
+                ")?;
+                conn.execute_batch("DROP TABLE tasks")?;
+                conn.execute_batch("ALTER TABLE tasks_v3 RENAME TO tasks")?;
+                conn.execute_batch("
+                    CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id);
+                    CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+                    CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
+                    CREATE INDEX IF NOT EXISTS idx_tasks_project_status ON tasks(project_id, status);
+                    CREATE INDEX IF NOT EXISTS idx_tasks_created ON tasks(created_at)
+                ")?;
+                conn.execute_batch("COMMIT")?;
+                Ok(())
+            })();
+            if let Err(e) = tx_result {
+                log::error!("awaiting_approval migration failed, rolling back: {}", e);
+                conn.execute_batch("ROLLBACK").ok();
+            } else {
+                log::info!("Tasks table migration for awaiting_approval completed");
             }
         }
     }

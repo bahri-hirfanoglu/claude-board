@@ -29,6 +29,13 @@ const STATUS_CONFIG = {
   backlog: { color: 'text-surface-400', bg: 'bg-surface-800/50', border: 'border-surface-700/30', label: 'Queued' },
   testing: { color: 'text-claude', bg: 'bg-claude/10', border: 'border-claude/30', label: 'Testing' },
   done: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', label: 'Done' },
+  awaiting_approval: {
+    color: 'text-violet-400',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/30',
+    label: 'Awaiting Approval',
+  },
+  failed: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', label: 'Failed' },
 };
 
 export default function PipelineView({ tasks, onStatusChange, onViewLogs, onViewDetail }) {

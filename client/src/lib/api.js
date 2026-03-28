@@ -260,6 +260,17 @@ export const api = {
         deleteCustomSkill: (name) => tauriCall('delete_custom_skill', { name }),
         fetchGithubSkills: (repoUrl, path) => tauriCall('fetch_github_skills', { repoUrl, path: path || null }),
         fetchSkillContent: (url) => tauriCall('fetch_skill_content', { url }),
+        // ─── Workflow Templates ───
+        getWorkflowTemplates: (projectId) => tauriCall('get_workflow_templates', { projectId }),
+        createWorkflowTemplate: (projectId, name, description, steps) =>
+          tauriCall('create_workflow_template', { projectId, name, description, steps }),
+        updateWorkflowTemplate: (id, name, description, steps) =>
+          tauriCall('update_workflow_template', { id, name, description, steps }),
+        deleteWorkflowTemplate: (id) => tauriCall('delete_workflow_template', { id }),
+        applyWorkflowTemplate: (templateId, projectId) =>
+          tauriCall('apply_workflow_template', { templateId, projectId }),
+        // ─── Circuit Breaker ───
+        resetCircuitBreaker: (id) => tauriCall('reset_circuit_breaker', { id }),
       }
     : {}),
 };

@@ -187,6 +187,7 @@ pub fn run() {
             commands::projects::update_project,
             commands::projects::delete_project,
             commands::projects::get_project_groups,
+            commands::projects::reset_circuit_breaker,
             // Tasks
             commands::tasks::get_tasks,
             commands::tasks::get_task,
@@ -297,6 +298,12 @@ pub fn run() {
             commands::github::github_fetch_issues,
             commands::github::github_import_issues,
             commands::github::github_close_issue,
+            // Workflows
+            commands::workflows::get_workflow_templates,
+            commands::workflows::create_workflow_template,
+            commands::workflows::update_workflow_template,
+            commands::workflows::delete_workflow_template,
+            commands::workflows::apply_workflow_template,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

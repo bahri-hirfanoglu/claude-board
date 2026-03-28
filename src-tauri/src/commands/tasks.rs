@@ -1,6 +1,7 @@
 use tauri::{AppHandle, Emitter};
 use crate::db::{self, tasks as tq, projects as pq, attachments, activity};
 use crate::claude::runner;
+use crate::claude::state_machine::{TaskStatus, is_valid_transition};
 use crate::services::queue;
 
 #[tauri::command]
@@ -93,92 +94,116 @@ pub fn update_task(
 pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16) -> Result<tq::Task, String> {
     let db = db::get_db();
     let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
-    let valid = ["backlog", "in_progress", "testing", "done", "failed"];
-    if !valid.contains(&status.as_str()) { return Err("Invalid status".into()); }
 
-    let prev_status = task.status.as_deref().unwrap_or("backlog");
-    tq::update_status(&db, id, &status);
+    // ── Parse & validate via state machine ──
+    let to = TaskStatus::from_str(&status).ok_or("Invalid status")?;
+    let from = TaskStatus::from_str(task.status.as_deref().unwrap_or("backlog"))
+        .unwrap_or(TaskStatus::Backlog);
 
-    // Reset retry state when moving out of failed
-    if prev_status == "failed" && (status == "backlog" || status == "in_progress") {
+    if from != to && !is_valid_transition(from, to) {
+        return Err(format!("Invalid transition: {} -> {}", from, to));
+    }
+
+    // ── Apply status in DB ──
+    tq::update_status(&db, id, to.as_str());
+
+    // ── Side effects by target status ──
+
+    // Reset retry state when leaving failed
+    if from == TaskStatus::Failed && (to == TaskStatus::Backlog || to == TaskStatus::InProgress) {
         tq::reset_retry_count(&db, id);
     }
-    if status == "in_progress" {
+
+    if to == TaskStatus::InProgress {
+        // Timer management
         if task.started_at.is_none() { tq::set_started(&db, id); }
         else { tq::set_resumed(&db, id); }
-        // Reset retry count when manually starting — allows re-running failed tasks
+        // Reset retry count when manually starting
         if task.retry_count.unwrap_or(0) > 0 {
             tq::reset_retry_count(&db, id);
         }
     }
-    if status == "testing" && prev_status == "in_progress" {
+
+    if to == TaskStatus::Testing && from == TaskStatus::InProgress {
         tq::pause_timer(&db, id);
     }
-    if status == "done" {
+
+    if to == TaskStatus::Done {
         if task.completed_at.is_none() {
             tq::finalize_timer(&db, id);
         }
         activity::add(&db, task.project_id, Some(id), "task_approved", &format!("Task approved: {}", task.title), None);
-        if let Some(project) = pq::get_by_id(&db, task.project_id) {
-            // Auto-create PR if enabled and not already created
-            let fresh_task = tq::get_by_id(&db, id).unwrap_or(task.clone());
-            runner::auto_create_pr_public(&fresh_task, &project.working_dir, &project, &db, &app);
-            // Cleanup feature branch (skipped if auto_pr is on)
-            let after_pr = tq::get_by_id(&db, id).unwrap_or(fresh_task.clone());
-            runner::cleanup_task_branch(&after_pr, &project.working_dir, &project);
-
-            // Auto-close linked GitHub issue + add comment with PR link
-            if project.github_sync_enabled.unwrap_or(0) == 1 {
-                if let Some(issue_num) = fresh_task.github_issue_number {
-                    let repo = project.github_repo.as_deref().unwrap_or("");
-                    if !repo.is_empty() {
-                        let pr_url = after_pr.pr_url.as_deref().unwrap_or("");
-                        let task_key = fresh_task.task_key.as_deref().unwrap_or("");
-                        let comment_body = if !pr_url.is_empty() {
-                            format!("Completed via Claude Board task `{}`. PR: {}", task_key, pr_url)
-                        } else {
-                            format!("Completed via Claude Board task `{}`.", task_key)
-                        };
-                        // Close issue + add comment in background thread
-                        let repo_owned = repo.to_string();
-                        std::thread::spawn(move || {
-                            if let Ok(token) = crate::commands::github::get_gh_token_pub() {
-                                let _ = crate::services::github_sync::close_and_comment(&token, &repo_owned, issue_num, &comment_body);
-                            }
-                        });
-                    }
-                }
-            }
-        }
+        execute_done_side_effects(&db, &app, id, &task);
     }
 
+    if to == TaskStatus::Backlog {
+        tq::reset_retry_count(&db, id);
+    }
+
+    // ── Runner lifecycle ──
     let updated = tq::get_by_id(&db, id).ok_or("Task not found after status update")?;
 
-    if status == "in_progress" && prev_status != "in_progress" {
+    if to == TaskStatus::InProgress && from != TaskStatus::InProgress {
         let project = pq::get_by_id(&db, task.project_id).ok_or("Project not found")?;
         if !runner::start(&updated, app.clone(), &project.working_dir, &project, mcp_port) {
-            log::error!("Failed to start runner for task {}, reverting status to {}", id, prev_status);
-            tq::update_status(&db, id, prev_status);
+            log::error!("Failed to start runner for task {}, reverting status to {}", id, from);
+            tq::update_status(&db, id, from.as_str());
         } else {
             activity::add(&db, task.project_id, Some(id), "task_started", &format!("Task started: {}", task.title), None);
         }
     }
-    // Stop runner if task is running (covers in_progress, testing with auto-test, etc.)
-    if status != "in_progress" && runner::is_running(id) {
+
+    // Stop runner when leaving active state
+    if to != TaskStatus::InProgress && runner::is_running(id) {
         runner::stop(id, &db, &app);
     }
-    // When manually moving to backlog: reset retry state so auto-queue doesn't restart it
-    if status == "backlog" {
-        tq::reset_retry_count(&db, id);
-    }
-    if (status == "done" || status == "testing") && prev_status == "in_progress" {
+
+    // Cascade queue when freeing a slot
+    if from == TaskStatus::InProgress && (to == TaskStatus::Done || to == TaskStatus::Testing) {
         queue::start_next_queued(&db, &app, task.project_id);
+    }
+
+    // Cascade when approving: AwaitingApproval -> Done unblocks dependents
+    if from == TaskStatus::AwaitingApproval && to == TaskStatus::Done {
+        queue::on_task_completed(&db, &app, task.project_id, id);
     }
 
     let mut final_task = tq::get_by_id(&db, id).ok_or("Task not found")?;
     final_task.is_running = runner::is_running(id) || runner::is_starting(id);
     app.emit("task:updated", &final_task).ok();
     Ok(final_task)
+}
+
+/// Side effects when a task transitions to Done (manual approval).
+fn execute_done_side_effects(db: &crate::db::DbPool, app: &AppHandle, id: i64, task: &tq::Task) {
+    if let Some(project) = pq::get_by_id(db, task.project_id) {
+        let fresh_task = tq::get_by_id(db, id).unwrap_or(task.clone());
+        runner::auto_create_pr_public(&fresh_task, &project.working_dir, &project, db, app);
+        let after_pr = tq::get_by_id(db, id).unwrap_or(fresh_task.clone());
+        runner::cleanup_task_branch(&after_pr, &project.working_dir, &project);
+
+        // Auto-close linked GitHub issue
+        if project.github_sync_enabled.unwrap_or(0) == 1 {
+            if let Some(issue_num) = fresh_task.github_issue_number {
+                let repo = project.github_repo.as_deref().unwrap_or("");
+                if !repo.is_empty() {
+                    let pr_url = after_pr.pr_url.as_deref().unwrap_or("");
+                    let task_key = fresh_task.task_key.as_deref().unwrap_or("");
+                    let comment_body = if !pr_url.is_empty() {
+                        format!("Completed via Claude Board task `{}`. PR: {}", task_key, pr_url)
+                    } else {
+                        format!("Completed via Claude Board task `{}`.", task_key)
+                    };
+                    let repo_owned = repo.to_string();
+                    std::thread::spawn(move || {
+                        if let Ok(token) = crate::commands::github::get_gh_token_pub() {
+                            let _ = crate::services::github_sync::close_and_comment(&token, &repo_owned, issue_num, &comment_body);
+                        }
+                    });
+                }
+            }
+        }
+    }
 }
 
 #[tauri::command]
@@ -239,9 +264,10 @@ pub fn restart_task(app: AppHandle, id: i64, mcp_port: u16) -> Result<tq::Task, 
 pub fn request_changes(app: AppHandle, id: i64, feedback: String, mcp_port: u16) -> Result<tq::Task, String> {
     let db = db::get_db();
     let task = tq::get_by_id(&db, id).ok_or("Task not found")?;
-    let status = task.status.as_deref().unwrap_or("backlog");
-    if status != "testing" && status != "done" {
-        return Err(format!("Cannot request changes on task in '{}' status", status));
+    let current = TaskStatus::from_str(task.status.as_deref().unwrap_or("backlog"))
+        .unwrap_or(TaskStatus::Backlog);
+    if current != TaskStatus::Testing && current != TaskStatus::Done {
+        return Err(format!("Cannot request changes on task in '{}' status", current));
     }
     if feedback.trim().is_empty() { return Err("Feedback is required".into()); }
     // Stop any running process (auto-test) before restarting with revision
@@ -403,8 +429,8 @@ pub fn get_dependency_graph(project_id: i64) -> serde_json::Value {
 pub fn get_pipeline_status(project_id: i64) -> serde_json::Value {
     let db = db::get_db();
     let tasks = tq::get_by_project(&db, project_id);
-    let running: Vec<_> = tasks.iter().filter(|t| t.status.as_deref() == Some("in_progress") || runner::is_running(t.id)).collect();
-    let queued: Vec<_> = tasks.iter().filter(|t| t.status.as_deref() == Some("backlog"))
+    let running: Vec<_> = tasks.iter().filter(|t| t.status.as_deref() == Some(TaskStatus::InProgress.as_str()) || runner::is_running(t.id)).collect();
+    let queued: Vec<_> = tasks.iter().filter(|t| t.status.as_deref() == Some(TaskStatus::Backlog.as_str()))
         .collect();
     let completed: Vec<_> = tasks.iter().filter(|t| matches!(t.status.as_deref(), Some("done") | Some("testing")))
         .collect();
@@ -416,16 +442,67 @@ pub fn get_pipeline_status(project_id: i64) -> serde_json::Value {
     };
 
     let waves = db::dependencies::get_execution_waves(&db, project_id);
+    let failed: Vec<_> = tasks.iter().filter(|t| t.status.as_deref() == Some(TaskStatus::Failed.as_str())).collect();
+    let awaiting_approval: Vec<_> = tasks.iter().filter(|t| t.status.as_deref() == Some("awaiting_approval")).collect();
+
+    // Circuit breaker status
+    let project = pq::get_by_id(&db, project_id);
+    let circuit_breaker_active = project.as_ref().map(|p| p.circuit_breaker_active.unwrap_or(0) == 1).unwrap_or(false);
+    let circuit_breaker_threshold = project.as_ref().and_then(|p| p.circuit_breaker_threshold).unwrap_or(0);
+    let consecutive_failures = project.as_ref().and_then(|p| p.consecutive_failures).unwrap_or(0);
+
+    // Bottlenecks: tasks that block the most other tasks
+    let bottlenecks: Vec<serde_json::Value> = {
+        let conn = db.lock();
+        let mut stmt = match conn.prepare(
+            "SELECT t.id, t.title, t.status, COUNT(cd.task_id) as blocker_count
+             FROM tasks t
+             JOIN task_dependencies cd ON cd.depends_on_id = t.id
+             WHERE t.project_id = ?1 AND t.deleted_at IS NULL AND t.status NOT IN ('done')
+             GROUP BY t.id
+             ORDER BY blocker_count DESC
+             LIMIT 5"
+        ) {
+            Ok(s) => s,
+            Err(_) => return serde_json::json!({}),
+        };
+        let result: Vec<serde_json::Value> = stmt.query_map(rusqlite::params![project_id], |r| {
+            Ok(serde_json::json!({
+                "taskId": r.get::<_, i64>(0)?,
+                "title": r.get::<_, String>(1)?,
+                "status": r.get::<_, String>(2)?,
+                "blockerCount": r.get::<_, i64>(3)?,
+            }))
+        }).ok().map(|rows| rows.flatten().collect()).unwrap_or_default();
+        result
+    };
+
+    // Burn rate: tokens per minute based on running tasks
+    let burn_rate: f64 = running.iter().filter_map(|t| {
+        let started = t.started_at.as_ref()?;
+        let elapsed_sec = chrono::NaiveDateTime::parse_from_str(started, "%Y-%m-%d %H:%M:%S").ok()
+            .map(|d| (chrono::Local::now().naive_local() - d).num_seconds())?;
+        if elapsed_sec <= 0 { return None; }
+        let tokens = (t.input_tokens.unwrap_or(0) + t.output_tokens.unwrap_or(0)) as f64;
+        Some(tokens / (elapsed_sec as f64 / 60.0))
+    }).sum();
 
     serde_json::json!({
         "running": running.len(),
         "queued": queued.len(),
         "completed": completed.len(),
+        "failed": failed.len(),
+        "awaitingApproval": awaiting_approval.len(),
         "total": tasks.len(),
         "totalCost": total_cost,
         "totalTokens": total_tokens,
         "avgDurationMs": avg_duration,
         "waves": waves.len(),
+        "circuitBreakerActive": circuit_breaker_active,
+        "circuitBreakerThreshold": circuit_breaker_threshold,
+        "consecutiveFailures": consecutive_failures,
+        "bottlenecks": bottlenecks,
+        "burnRate": burn_rate,
         "tasks": {
             "running": running,
             "queued": queued,
@@ -502,7 +579,7 @@ pub fn get_agent_activity(project_id: i64) -> serde_json::Value {
     let file_map = crate::claude::events::get_file_access_map();
 
     let agents: Vec<serde_json::Value> = tasks.iter()
-        .filter(|t| t.status.as_deref() == Some("in_progress") || runner::is_running(t.id))
+        .filter(|t| t.status.as_deref() == Some(TaskStatus::InProgress.as_str()) || runner::is_running(t.id))
         .map(|t| {
             // Get recent tool calls from logs
             let conn = db.lock();

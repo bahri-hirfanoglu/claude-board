@@ -26,6 +26,14 @@ pub struct Project {
     pub task_timeout_minutes: Option<i64>,
     pub github_repo: Option<String>,
     pub github_sync_enabled: Option<i64>,
+    pub max_auto_revisions: Option<i64>,
+    pub retry_base_delay_secs: Option<i64>,
+    pub retry_max_delay_secs: Option<i64>,
+    pub auto_test_model: Option<String>,
+    pub circuit_breaker_threshold: Option<i64>,
+    pub circuit_breaker_active: Option<i64>,
+    pub consecutive_failures: Option<i64>,
+    pub require_approval: Option<i64>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
@@ -67,6 +75,14 @@ fn row_to_project(row: &rusqlite::Row) -> rusqlite::Result<Project> {
         task_timeout_minutes: row.get("task_timeout_minutes").ok().flatten(),
         github_repo: row.get("github_repo").ok().flatten(),
         github_sync_enabled: row.get("github_sync_enabled").ok().flatten(),
+        max_auto_revisions: row.get("max_auto_revisions").ok().flatten(),
+        retry_base_delay_secs: row.get("retry_base_delay_secs").ok().flatten(),
+        retry_max_delay_secs: row.get("retry_max_delay_secs").ok().flatten(),
+        auto_test_model: row.get("auto_test_model").ok().flatten(),
+        circuit_breaker_threshold: row.get("circuit_breaker_threshold").ok().flatten(),
+        circuit_breaker_active: row.get("circuit_breaker_active").ok().flatten(),
+        consecutive_failures: row.get("consecutive_failures").ok().flatten(),
+        require_approval: row.get("require_approval").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -198,6 +214,63 @@ pub fn update_github_settings(db: &DbPool, id: i64, github_repo: &str, github_sy
         "UPDATE projects SET github_repo=?1,github_sync_enabled=?2,updated_at=datetime('now','localtime') WHERE id=?3",
         params![github_repo, github_sync_enabled as i64, id],
     ) { log::error!("update_github_settings: {}", e); }
+}
+
+pub fn update_engine_settings(db: &DbPool, id: i64, max_auto_revisions: i64, retry_base_delay_secs: i64, retry_max_delay_secs: i64, auto_test_model: &str) {
+    let conn = db.lock();
+    if let Err(e) = conn.execute(
+        "UPDATE projects SET max_auto_revisions=?1,retry_base_delay_secs=?2,retry_max_delay_secs=?3,auto_test_model=?4,updated_at=datetime('now','localtime') WHERE id=?5",
+        params![max_auto_revisions, retry_base_delay_secs, retry_max_delay_secs, auto_test_model, id],
+    ) { log::error!("update_engine_settings: {}", e); }
+}
+
+pub fn update_circuit_breaker_settings(db: &DbPool, id: i64, threshold: i64) {
+    let conn = db.lock();
+    conn.execute(
+        "UPDATE projects SET circuit_breaker_threshold=?1,circuit_breaker_active=0,consecutive_failures=0,updated_at=datetime('now','localtime') WHERE id=?2",
+        params![threshold, id],
+    ).ok();
+}
+
+pub fn increment_consecutive_failures(db: &DbPool, id: i64) -> i64 {
+    let conn = db.lock();
+    conn.execute(
+        "UPDATE projects SET consecutive_failures=consecutive_failures+1,updated_at=datetime('now','localtime') WHERE id=?1",
+        params![id],
+    ).ok();
+    conn.query_row("SELECT consecutive_failures FROM projects WHERE id=?1", params![id], |r| r.get(0)).unwrap_or(0)
+}
+
+pub fn reset_consecutive_failures(db: &DbPool, id: i64) {
+    let conn = db.lock();
+    conn.execute(
+        "UPDATE projects SET consecutive_failures=0,updated_at=datetime('now','localtime') WHERE id=?1",
+        params![id],
+    ).ok();
+}
+
+pub fn activate_circuit_breaker(db: &DbPool, id: i64) {
+    let conn = db.lock();
+    conn.execute(
+        "UPDATE projects SET circuit_breaker_active=1,updated_at=datetime('now','localtime') WHERE id=?1",
+        params![id],
+    ).ok();
+}
+
+pub fn deactivate_circuit_breaker(db: &DbPool, id: i64) {
+    let conn = db.lock();
+    conn.execute(
+        "UPDATE projects SET circuit_breaker_active=0,consecutive_failures=0,updated_at=datetime('now','localtime') WHERE id=?1",
+        params![id],
+    ).ok();
+}
+
+pub fn update_approval_settings(db: &DbPool, id: i64, require_approval: bool) {
+    let conn = db.lock();
+    conn.execute(
+        "UPDATE projects SET require_approval=?1,updated_at=datetime('now','localtime') WHERE id=?2",
+        params![require_approval as i64, id],
+    ).ok();
 }
 
 pub fn delete(db: &DbPool, id: i64) {

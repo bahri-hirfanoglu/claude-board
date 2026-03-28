@@ -54,6 +54,12 @@ pub fn update_project(
     task_timeout_minutes: Option<i64>,
     max_retries: Option<i64>,
     github_repo: Option<String>, github_sync_enabled: Option<i64>,
+    max_auto_revisions: Option<i64>,
+    retry_base_delay_secs: Option<i64>,
+    retry_max_delay_secs: Option<i64>,
+    auto_test_model: Option<String>,
+    circuit_breaker_threshold: Option<i64>,
+    require_approval: Option<bool>,
 ) -> Result<pq::Project, String> {
     let db = db::get_db();
     let project = pq::get_by_id(&db, id).ok_or("Project not found")?;
@@ -95,9 +101,35 @@ pub fn update_project(
             github_repo.as_deref().unwrap_or(project.github_repo.as_deref().unwrap_or("")),
             github_sync_enabled.unwrap_or(project.github_sync_enabled.unwrap_or(0)) == 1);
     }
+    if max_auto_revisions.is_some() || retry_base_delay_secs.is_some() || retry_max_delay_secs.is_some() || auto_test_model.is_some() {
+        pq::update_engine_settings(&db, id,
+            max_auto_revisions.unwrap_or(project.max_auto_revisions.unwrap_or(0)),
+            retry_base_delay_secs.unwrap_or(project.retry_base_delay_secs.unwrap_or(0)),
+            retry_max_delay_secs.unwrap_or(project.retry_max_delay_secs.unwrap_or(0)),
+            auto_test_model.as_deref().unwrap_or(project.auto_test_model.as_deref().unwrap_or("")));
+    }
+
+    if let Some(threshold) = circuit_breaker_threshold {
+        pq::update_circuit_breaker_settings(&db, id, threshold);
+    }
+    if let Some(approval) = require_approval {
+        pq::update_approval_settings(&db, id, approval);
+    }
 
     let updated = pq::get_by_id(&db, id).ok_or("Failed to retrieve updated project")?;
     app.emit("project:updated", &updated).ok();
+    Ok(updated)
+}
+
+#[tauri::command]
+pub fn reset_circuit_breaker(app: AppHandle, id: i64) -> Result<pq::Project, String> {
+    let db = db::get_db();
+    pq::deactivate_circuit_breaker(&db, id);
+    let updated = pq::get_by_id(&db, id).ok_or("Project not found")?;
+    app.emit("project:circuit_breaker", &serde_json::json!({"projectId": id, "active": false})).ok();
+    app.emit("project:updated", &updated).ok();
+    // Restart queue after circuit breaker reset
+    crate::services::queue::start_next_queued(&db, &app, id);
     Ok(updated)
 }
 

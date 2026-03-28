@@ -160,7 +160,7 @@ export default function OrchestrationView({ tasks, projectId, onViewLogs, onStat
       {/* Pipeline Stats + Tag Filter + View Toggle */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex-1 min-w-0">
-          <PipelineStats tasks={filteredTasks} waves={waves} />
+          <PipelineStats tasks={filteredTasks} waves={waves} projectId={projectId} />
         </div>
         {/* Tag filter dropdown */}
         {activeTags.length > 0 && (

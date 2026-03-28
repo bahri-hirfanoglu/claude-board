@@ -3,6 +3,7 @@ use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 use crate::db::{self, DbPool, tasks, projects, activity, dependencies};
 use crate::claude::runner;
+use crate::claude::state_machine::{TaskStatus, EngineConfig};
 use crate::config;
 
 /// Shared shutdown flag — set to true when app is exiting.
@@ -93,12 +94,16 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
     if project.auto_queue.unwrap_or(0) == 0 {
         return;
     }
+    // Circuit breaker: block queue if active
+    if project.circuit_breaker_active.unwrap_or(0) == 1 {
+        return;
+    }
 
     let max_conc = project.max_concurrent.unwrap_or(1) as usize;
     // Count only ACTUALLY running tasks (process alive), not just DB status
     let all_tasks = tasks::get_by_project(db, project_id);
     let running = all_tasks.iter()
-        .filter(|t| t.status.as_deref() == Some("in_progress") && (runner::is_running(t.id) || runner::is_starting(t.id)))
+        .filter(|t| t.status.as_deref() == Some(TaskStatus::InProgress.as_str()) && (runner::is_running(t.id) || runner::is_starting(t.id)))
         .count();
     let slots = max_conc.saturating_sub(running);
     if slots == 0 {
@@ -119,7 +124,7 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
             continue;
         }
 
-        tasks::update_status(db, task.id, "in_progress");
+        tasks::update_status(db, task.id, TaskStatus::InProgress.as_str());
         if task.started_at.is_none() {
             tasks::set_started(db, task.id);
         } else {
@@ -159,7 +164,8 @@ pub fn on_task_completed(db: &DbPool, app: &AppHandle, project_id: i64, task_id:
                     "SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1 AND deleted_at IS NULL", rusqlite::params![parent_id], |r| r.get(0),
                 ).unwrap_or(0);
                 let done: i64 = conn.query_row(
-                    "SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1 AND deleted_at IS NULL AND status IN ('done','testing')",
+                    &format!("SELECT COUNT(*) FROM tasks WHERE parent_task_id=?1 AND deleted_at IS NULL AND status IN ('{}','{}')",
+                        TaskStatus::Done.as_str(), TaskStatus::Testing.as_str()),
                     rusqlite::params![parent_id], |r| r.get(0),
                 ).unwrap_or(0);
                 if total == 0 || done < total { return Ok(false); }
@@ -171,7 +177,9 @@ pub fn on_task_completed(db: &DbPool, app: &AppHandle, project_id: i64, task_id:
                 if awaiting != 1 { return Ok(false); }
 
                 // Only auto-complete if parent is still in_progress and awaiting
-                conn.execute("UPDATE tasks SET awaiting_subtasks=0, status='testing', completed_at=datetime('now','localtime'), updated_at=datetime('now','localtime') WHERE id=?1 AND status='in_progress'",
+                conn.execute(
+                    &format!("UPDATE tasks SET awaiting_subtasks=0, status='{}', completed_at=datetime('now','localtime'), updated_at=datetime('now','localtime') WHERE id=?1 AND status='{}'",
+                        TaskStatus::Testing.as_str(), TaskStatus::InProgress.as_str()),
                     rusqlite::params![parent_id]).map_err(|e| e.to_string())?;
                 Ok(true)
             });
@@ -186,13 +194,13 @@ pub fn on_task_completed(db: &DbPool, app: &AppHandle, project_id: i64, task_id:
             }
         }
     }
+    // Reset circuit breaker counter on success
+    projects::reset_consecutive_failures(db, project_id);
     start_next_queued(db, app, project_id);
 }
 
-/// Default retry limit when project has max_retries=0 (not configured).
-const DEFAULT_MAX_RETRIES: i64 = 2;
-
-/// Handle task failure: retry up to max (default 2), then permanently fail.
+/// Handle task failure: retry up to max, then permanently fail.
+/// Uses EngineConfig for retry limits and backoff parameters.
 pub fn handle_task_failure(db: &DbPool, app: &AppHandle, project_id: i64, task_id: i64) {
     let project = match projects::get_by_id(db, project_id) {
         Some(p) => p,
@@ -203,43 +211,49 @@ pub fn handle_task_failure(db: &DbPool, app: &AppHandle, project_id: i64, task_i
         None => return,
     };
 
-    let max_retries = {
-        let configured = project.max_retries.unwrap_or(0);
-        if configured > 0 { configured } else { DEFAULT_MAX_RETRIES }
-    };
+    let config = EngineConfig::from_project(&project);
     let retry_count = task.retry_count.unwrap_or(0);
 
-    if retry_count < max_retries {
-        // Retry with exponential backoff: 30s, 60s, 120s, 240s... capped at 600s (10min)
+    if retry_count < config.max_retries {
         tasks::increment_retry(db, task_id);
-        tasks::update_status(db, task_id, "backlog");
+        tasks::update_status(db, task_id, TaskStatus::Backlog.as_str());
         let new_count = retry_count + 1;
-        let base_delay: i64 = 30; // 30 seconds
-        let delay = std::cmp::min(base_delay * (1 << retry_count), 600); // exponential, max 10min
-        // Add jitter: ±20%
-        let jitter = (delay as f64 * 0.2 * (rand::random::<f64>() * 2.0 - 1.0)) as i64;
-        let final_delay = std::cmp::max(delay + jitter, 10);
+        let final_delay = config.retry_delay(retry_count);
         tasks::set_retry_after(db, task_id, final_delay);
-        let msg = format!("Retry {}/{}: {} (backoff {}s)", new_count, max_retries, task.title, final_delay);
-        tasks::add_log(db, task_id, &format!("Auto-retry ({}/{}): Waiting {}s before retry...", new_count, max_retries, final_delay), "system", None);
+        let msg = format!("Retry {}/{}: {} (backoff {}s)", new_count, config.max_retries, task.title, final_delay);
+        tasks::add_log(db, task_id, &format!("Auto-retry ({}/{}): Waiting {}s before retry...", new_count, config.max_retries, final_delay), "system", None);
         activity::add(db, project_id, Some(task_id), "queue_retry", &msg, None);
         app.emit("task:log", &serde_json::json!({
-            "taskId": task_id, "message": format!("Auto-retry ({}/{})", new_count, max_retries), "logType": "system"
+            "taskId": task_id, "message": format!("Auto-retry ({}/{})", new_count, config.max_retries), "logType": "system"
         })).ok();
         app.emit("task:updated", &tasks::get_by_id(db, task_id)).ok();
         start_next_queued(db, app, project_id);
     } else {
         // Retries exhausted — move to failed status
         tasks::increment_retry(db, task_id);
-        tasks::update_status(db, task_id, "failed");
-        let msg = format!("Permanently failed after {} retries: {}", max_retries, task.title);
-        tasks::add_log(db, task_id, &format!("All {} retries exhausted. Task will not auto-start. Move manually to retry.", max_retries), "error", None);
+        tasks::update_status(db, task_id, TaskStatus::Failed.as_str());
+        let msg = format!("Permanently failed after {} retries: {}", config.max_retries, task.title);
+        tasks::add_log(db, task_id, &format!("All {} retries exhausted. Task will not auto-start. Move manually to retry.", config.max_retries), "error", None);
         activity::add(db, project_id, Some(task_id), "task_failed_permanent", &msg, None);
         app.emit("task:log", &serde_json::json!({
-            "taskId": task_id, "message": format!("All {} retries exhausted", max_retries), "logType": "error"
+            "taskId": task_id, "message": format!("All {} retries exhausted", config.max_retries), "logType": "error"
         })).ok();
         app.emit("task:updated", &tasks::get_by_id(db, task_id)).ok();
-        // Cascade: on_failure dependent tasks are now unblocked
+
+        // Circuit breaker: track consecutive failures
+        let threshold = project.circuit_breaker_threshold.unwrap_or(0);
+        if threshold > 0 {
+            let count = projects::increment_consecutive_failures(db, project_id);
+            if count >= threshold {
+                projects::activate_circuit_breaker(db, project_id);
+                log::warn!("Circuit breaker activated for project {} after {} consecutive failures", project_id, count);
+                tasks::add_log(db, task_id, &format!("Circuit breaker activated — {} consecutive failures. Queue paused.", count), "error", None);
+                app.emit("project:circuit_breaker", &serde_json::json!({"projectId": project_id, "active": true, "failures": count})).ok();
+                crate::services::webhook::fire(project_id, "circuit_breaker_activated", &format!("Circuit breaker: {} failures", count),
+                    serde_json::json!({"projectId": project_id, "consecutiveFailures": count}));
+            }
+        }
+
         start_next_queued(db, app, project_id);
     }
 }

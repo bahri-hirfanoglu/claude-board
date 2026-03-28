@@ -20,6 +20,12 @@
   }
 }
 
+@layer components {
+  .input-field {
+    @apply w-full px-3 py-2 bg-surface-800 border border-surface-700 rounded-lg text-sm text-surface-100 focus:outline-none focus:ring-1 focus:ring-claude placeholder-surface-600 transition-colors;
+  }
+}
+
 @layer utilities {
   .drag-over {
     @apply ring-2 ring-claude/50 bg-claude/5;

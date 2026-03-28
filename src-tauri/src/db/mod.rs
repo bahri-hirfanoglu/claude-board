@@ -12,6 +12,7 @@ pub mod auth;
 pub mod dependencies;
 pub mod scans;
 pub mod settings;
+pub mod workflows;
 
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;

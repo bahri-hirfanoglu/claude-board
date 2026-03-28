@@ -11,3 +11,4 @@ pub mod planning;
 pub mod claude_manager;
 pub mod settings;
 pub mod github;
+pub mod workflows;

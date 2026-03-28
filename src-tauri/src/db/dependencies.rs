@@ -89,6 +89,8 @@ pub fn are_all_parents_met(db: &DbPool, task_id: i64) -> bool {
              CASE COALESCE(td.condition_type, 'always')
                  WHEN 'on_failure' THEN
                      t.status = 'failed'
+                 WHEN 'on_any' THEN
+                     t.status IN ('done', 'testing', 'failed')
                  ELSE
                      t.status IN ('done', 'testing')
              END
@@ -118,12 +120,16 @@ pub fn get_ready_tasks(db: &DbPool, project_id: i64) -> Vec<Task> {
                  CASE COALESCE(td.condition_type, 'always')
                      WHEN 'on_failure' THEN
                          parent.status = 'failed'
+                     WHEN 'on_any' THEN
+                         parent.status IN ('done', 'testing', 'failed')
                      ELSE
                          parent.status IN ('done', 'testing')
                  END
              )
          )
-         ORDER BY t.priority DESC, t.queue_position ASC, t.id ASC"
+         ORDER BY
+             (SELECT COUNT(*) FROM task_dependencies cd WHERE cd.depends_on_id = t.id) DESC,
+             t.priority DESC, t.queue_position ASC, t.id ASC"
     ) {
         Ok(s) => s,
         Err(_) => return vec![],

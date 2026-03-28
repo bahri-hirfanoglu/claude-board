@@ -8,6 +8,7 @@ use crate::db::{self, DbPool};
 use crate::db::{tasks, snippets, attachments, roles, projects, activity, templates};
 use super::events::{EventContext, UsageTracker, UsageBaseline, UsageSession};
 use super::prompt::build_prompt;
+use super::state_machine::{TaskStatus, EngineConfig};
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -105,7 +106,7 @@ pub fn enforce_timeouts(app: &AppHandle) {
 
         // Only retry if task is still in_progress (not manually moved by user)
         let current_status = task.as_ref().and_then(|t| t.status.as_deref()).unwrap_or("");
-        if current_status == "in_progress" {
+        if current_status == TaskStatus::InProgress.as_str() {
             crate::services::queue::handle_task_failure(&db, app, project_id, task_id);
         }
         crate::services::webhook::fire(project_id, "task_timeout", &format!("Task timed out: {}", title),
@@ -699,7 +700,7 @@ fn handle_process_lifecycle(
             emit_task_updated(db, app, task_id);
         } else {
             // Normal completion — no pending sub-tasks
-            tasks::update_status(db, task_id, "testing");
+            tasks::update_status(db, task_id, TaskStatus::Testing.as_str());
             tasks::pause_timer(db, task_id);
             tasks::set_completed(db, task_id);
             emit_task_updated(db, app, task_id);
@@ -905,13 +906,18 @@ pub fn start_test(
 
 ## Verification Steps (execute ALL in order, ONE command at a time)
 
+**IMPORTANT: Before starting each step, output a line like `[STEP N/4] Step Name` so the user can track progress.**
+
 ### Step 1: Build Check
+Output: `[STEP 1/4] Build Check`
 Run the project's build/compile command. Look for package.json (npm run build), Cargo.toml (cargo check), Makefile, etc. Report if build succeeds or fails.
 
 ### Step 2: Test Suite
+Output: `[STEP 2/4] Test Suite`
 First check if a test suite exists (look at package.json scripts, Cargo.toml, pytest.ini etc.). Only run tests if a test command is configured. Report test count, pass/fail counts. If no test suite exists, mark as "skip".
 
 ### Step 3: Code Review
+Output: `[STEP 3/4] Code Review`
 Review the changed files for:
 - Syntax errors or broken imports
 - Unhandled error cases
@@ -919,6 +925,7 @@ Review the changed files for:
 - Missing null/undefined checks
 
 ### Step 4: Acceptance Criteria
+Output: `[STEP 4/4] Acceptance Criteria`
 If acceptance criteria is specified, verify each criterion individually. Mark each as PASS or FAIL.
 
 ## REQUIRED OUTPUT FORMAT
@@ -950,13 +957,30 @@ After all checks, you MUST output this exact JSON block as your final output:
         },
     );
 
-    let model = "sonnet"; // Use sonnet for test verification (cost-effective)
+    let config = EngineConfig::from_project(project);
+    let model_str = config.auto_test_model.clone();
+    let model: &str = &model_str;
     let permission_mode = project.permission_mode.as_deref().unwrap_or("auto-accept");
     let allowed_tools = project.allowed_tools.as_deref().unwrap_or("");
 
-    tasks::add_log(&db, task_id, "Auto-test: Starting verification...", "system", None);
+    // Snapshot baseline usage so test-phase tokens are tracked additively
+    if let Some(current) = tasks::get_by_id(&db, task_id) {
+        EVENT_CTX.task_usage.lock().insert(task_id, UsageTracker {
+            baseline: UsageBaseline {
+                input: current.input_tokens.unwrap_or(0),
+                output: current.output_tokens.unwrap_or(0),
+                cache_read: current.cache_read_tokens.unwrap_or(0),
+                cache_creation: current.cache_creation_tokens.unwrap_or(0),
+                cost: current.total_cost.unwrap_or(0.0),
+            },
+            session: UsageSession::default(),
+        });
+    }
+
+    tasks::add_log(&db, task_id, &format!("Auto-test started (model: {})", model), "system", None);
+    tasks::add_log(&db, task_id, "Step 1/4: Build Check", "system", None);
     activity::add(&db, task.project_id, Some(task_id), "test_started", &format!("Auto-test started: {}", task.title), None);
-    app.emit("task:test_started", &serde_json::json!({"taskId": task_id})).ok();
+    app.emit("task:test_started", &serde_json::json!({"taskId": task_id, "model": model})).ok();
 
     let args = build_claude_args(&test_prompt, model, "low", permission_mode, allowed_tools, mcp_server_port);
     let working_dir = working_dir.to_string();
@@ -1046,7 +1070,9 @@ After all checks, you MUST output this exact JSON block as your final output:
         let status = child.wait().ok().and_then(|s| s.code()).unwrap_or(-1);
         ACTIVE_PROCESSES.lock().remove(&task_id);
         STARTING_TASKS.lock().remove(&task_id);
+        EVENT_CTX.task_usage.lock().remove(&task_id);
         EVENT_CTX.active_tool_calls.lock().retain(|_, tc| tc.task_id != task_id);
+        super::events::clear_task_file_access(task_id);
 
         let db = db::get_db();
 
@@ -1077,52 +1103,67 @@ After all checks, you MUST output this exact JSON block as your final output:
 
                     // Check if user manually changed task status while auto-test was running
                     let current_status = tasks::get_by_id(&db, task_id).and_then(|t| t.status).unwrap_or_default();
-                    if current_status != "testing" {
+                    if current_status != TaskStatus::Testing.as_str() {
                         tasks::add_log(&db, task_id, &format!("Auto-test completed ({}) but task was manually moved to '{}'. Skipping.", verdict, current_status), "info", None);
                         emit_task_updated(&db, &app, task_id);
                         app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "skipped"})).ok();
                     } else if verdict == "approve" {
                         tasks::add_log(&db, task_id, &format!("Auto-test PASSED: {}", summary), "success", None);
                         app.emit("task:log", &serde_json::json!({"taskId": task_id, "message": format!("Auto-test PASSED: {}", summary), "logType": "success"})).ok();
-                        tasks::update_status(&db, task_id, "done");
-                        tasks::finalize_timer(&db, task_id);
-                        // Regenerate lifecycle summary with test results included
-                        generate_lifecycle_summary(task_id, &db);
-                        emit_task_updated(&db, &app, task_id);
-                        activity::add(&db, project_id, Some(task_id), "task_approved", &format!("Task auto-approved: {}", task_title), None);
                         crate::services::notification::notify_test_passed(&app, &crate::services::notification::TaskNotification::new(&task_title, task_key.as_deref()));
                         crate::services::webhook::fire(project_id, "test_passed", &format!("Auto-test passed: {}", task_title),
                             serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title, "summary": summary}));
 
-                        if let (Some(done_task), Some(proj)) = (tasks::get_by_id(&db, task_id), projects::get_by_id(&db, project_id)) {
-                            // Auto-create PR if enabled
-                            auto_create_pr_public(&done_task, &working_dir, &proj, &db, &app);
-                            // Cleanup feature branch (skipped if auto_pr is on)
-                            let after_pr = tasks::get_by_id(&db, task_id).unwrap_or(done_task.clone());
-                            cleanup_task_branch(&after_pr, &working_dir, &proj);
+                        // Check if project requires manual approval before marking done
+                        let needs_approval = projects::get_by_id(&db, project_id)
+                            .map(|p| p.require_approval.unwrap_or(0) == 1)
+                            .unwrap_or(false);
 
-                            // Auto-close linked GitHub issue
-                            if proj.github_sync_enabled.unwrap_or(0) == 1 {
-                                if let Some(issue_num) = done_task.github_issue_number {
-                                    let repo = proj.github_repo.as_deref().unwrap_or("").to_string();
-                                    if !repo.is_empty() {
-                                        let pr_url = after_pr.pr_url.as_deref().unwrap_or("").to_string();
-                                        let tk = done_task.task_key.as_deref().unwrap_or("").to_string();
-                                        let comment = if !pr_url.is_empty() {
-                                            format!("Completed via Claude Board task `{}`. PR: {}", tk, pr_url)
-                                        } else {
-                                            format!("Completed via Claude Board task `{}`.", tk)
-                                        };
-                                        std::thread::spawn(move || {
-                                            if let Ok(token) = crate::commands::github::get_gh_token_pub() {
-                                                let _ = crate::services::github_sync::close_and_comment(&token, &repo, issue_num, &comment);
-                                            }
-                                        });
+                        if needs_approval {
+                            tasks::update_status(&db, task_id, TaskStatus::AwaitingApproval.as_str());
+                            emit_task_updated(&db, &app, task_id);
+                            tasks::add_log(&db, task_id, "Auto-test passed. Awaiting manual approval.", "system", None);
+                            activity::add(&db, project_id, Some(task_id), "awaiting_approval",
+                                &format!("Awaiting approval: {}", task_title), None);
+                            app.emit("task:awaiting_approval", &serde_json::json!({"taskId": task_id})).ok();
+                        } else {
+                            tasks::update_status(&db, task_id, TaskStatus::Done.as_str());
+                            tasks::finalize_timer(&db, task_id);
+                            // Regenerate lifecycle summary with test results included
+                            generate_lifecycle_summary(task_id, &db);
+                            emit_task_updated(&db, &app, task_id);
+                            activity::add(&db, project_id, Some(task_id), "task_approved", &format!("Task auto-approved: {}", task_title), None);
+
+                            if let (Some(done_task), Some(proj)) = (tasks::get_by_id(&db, task_id), projects::get_by_id(&db, project_id)) {
+                                // Auto-create PR if enabled
+                                auto_create_pr_public(&done_task, &working_dir, &proj, &db, &app);
+                                // Cleanup feature branch (skipped if auto_pr is on)
+                                let after_pr = tasks::get_by_id(&db, task_id).unwrap_or(done_task.clone());
+                                cleanup_task_branch(&after_pr, &working_dir, &proj);
+
+                                // Auto-close linked GitHub issue
+                                if proj.github_sync_enabled.unwrap_or(0) == 1 {
+                                    if let Some(issue_num) = done_task.github_issue_number {
+                                        let repo = proj.github_repo.as_deref().unwrap_or("").to_string();
+                                        if !repo.is_empty() {
+                                            let pr_url = after_pr.pr_url.as_deref().unwrap_or("").to_string();
+                                            let tk = done_task.task_key.as_deref().unwrap_or("").to_string();
+                                            let comment = if !pr_url.is_empty() {
+                                                format!("Completed via Claude Board task `{}`. PR: {}", tk, pr_url)
+                                            } else {
+                                                format!("Completed via Claude Board task `{}`.", tk)
+                                            };
+                                            std::thread::spawn(move || {
+                                                if let Ok(token) = crate::commands::github::get_gh_token_pub() {
+                                                    let _ = crate::services::github_sync::close_and_comment(&token, &repo, issue_num, &comment);
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             }
+                            crate::services::queue::on_task_completed(&db, &app, project_id, task_id);
                         }
-                        crate::services::queue::on_task_completed(&db, &app, project_id, task_id);
                     } else {
                         let fail_msg = if feedback.is_empty() { summary.clone() } else { format!("{} — {}", summary, feedback) };
                         tasks::add_log(&db, task_id, &format!("Auto-test FAILED: {}", fail_msg), "error", None);
@@ -1133,20 +1174,34 @@ After all checks, you MUST output this exact JSON block as your final output:
                             serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title, "summary": summary, "feedback": feedback}));
 
                         // Auto-revision: create revision record and restart task with test feedback
-                        // Cap at 3 auto-revisions to prevent infinite loop
                         let current_rev = tasks::get_by_id(&db, task_id).map(|t| t.revision_count.unwrap_or(0)).unwrap_or(0);
-                        const MAX_AUTO_REVISIONS: i64 = 3;
+                        let engine_config = projects::get_by_id(&db, project_id)
+                            .map(|p| EngineConfig::from_project(&p))
+                            .unwrap_or_else(|| EngineConfig::from_project(&projects::Project {
+                                id: 0, name: String::new(), slug: String::new(), working_dir: String::new(),
+                                icon: None, icon_seed: None, permission_mode: None, allowed_tools: None,
+                                auto_queue: None, max_concurrent: None, auto_branch: None, auto_pr: None,
+                                pr_base_branch: None, project_key: None, task_counter: None, max_retries: None,
+                                auto_test: None, test_prompt: None, task_timeout_minutes: None,
+                                github_repo: None, github_sync_enabled: None,
+                                max_auto_revisions: None, retry_base_delay_secs: None, retry_max_delay_secs: None,
+                                auto_test_model: None,
+                                circuit_breaker_threshold: None, circuit_breaker_active: None, consecutive_failures: None,
+                                require_approval: None,
+                                created_at: None, updated_at: None,
+                            }));
+                        let max_revisions = engine_config.max_auto_revisions;
 
-                        if current_rev < MAX_AUTO_REVISIONS {
+                        if current_rev < max_revisions {
                             let revision_feedback = if feedback.is_empty() { fail_msg.clone() } else { feedback.clone() };
                             tasks::increment_revision_count(&db, task_id);
                             let rev_num = current_rev + 1;
                             tasks::add_revision(&db, task_id, rev_num, &format!("Auto-test feedback:\n{}", revision_feedback));
-                            tasks::update_status(&db, task_id, "in_progress");
+                            tasks::update_status(&db, task_id, TaskStatus::InProgress.as_str());
                             tasks::set_resumed(&db, task_id);
                             activity::add(&db, project_id, Some(task_id), "auto_revision",
                                 &format!("Auto-revision #{} from test failure: {}", rev_num, task_title), None);
-                            tasks::add_log(&db, task_id, &format!("Auto-revision #{}/{}: Restarting with test feedback...", rev_num, MAX_AUTO_REVISIONS), "system", None);
+                            tasks::add_log(&db, task_id, &format!("Auto-revision #{}/{}: Restarting with test feedback...", rev_num, max_revisions), "system", None);
 
                             // Restart the task with revision context
                             if let (Some(updated_task), Some(proj)) = (tasks::get_by_id(&db, task_id), projects::get_by_id(&db, project_id)) {
@@ -1157,7 +1212,7 @@ After all checks, you MUST output this exact JSON block as your final output:
                             app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary, "autoRevision": rev_num})).ok();
                         } else {
                             // Max auto-revisions reached — leave in testing for manual review
-                            tasks::add_log(&db, task_id, &format!("Auto-revision limit ({}) reached. Leaving for manual review.", MAX_AUTO_REVISIONS), "error", None);
+                            tasks::add_log(&db, task_id, &format!("Auto-revision limit ({}) reached. Leaving for manual review.", max_revisions), "error", None);
                             app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary, "maxRevisionsReached": true})).ok();
                             emit_task_updated(&db, &app, task_id);
                         }
