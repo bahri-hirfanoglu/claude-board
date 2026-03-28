@@ -57,7 +57,7 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<WorkflowTemplate> {
         Ok(s) => s,
         Err(_) => return None,
     };
-    let result = stmt.query_row(params![id], |r| {
+    stmt.query_row(params![id], |r| {
         Ok(WorkflowTemplate {
             id: r.get(0)?,
             project_id: r.get(1)?,
@@ -67,8 +67,7 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<WorkflowTemplate> {
             created_at: r.get(5)?,
             updated_at: r.get(6)?,
         })
-    }).ok();
-    result
+    }).ok()
 }
 
 pub fn create(db: &DbPool, project_id: i64, name: &str, description: &str, steps: &str) -> i64 {
