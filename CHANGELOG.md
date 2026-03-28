@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.6.6] - 2026-03-28
+
+### Features
+- **Task Engine Refactor** — Declarative state machine with TaskStatus enum, transition validation table, and configurable EngineConfig replacing scattered string literals and hard-coded values
+- **Circuit Breaker** — Automatically pauses queue after N consecutive task failures to prevent cascade failures; configurable threshold per project with manual reset
+- **Conditional Workflows** — Dependency conditions: `on_success`, `on_failure`, `on_any` (in addition to default `always`); enables fallback tasks and post-failure cleanup chains
+- **Smart Queue Priority** — Critical path analysis: tasks blocking the most dependents run first; ORDER BY blocker_count DESC, priority, queue_position
+- **Approval Gates** — New `awaiting_approval` status; when enabled, auto-test passes route to approval instead of done; manual approve/reject workflow
+- **Workflow Templates** — Reusable task chain templates with step definitions, dependency setup, and condition types; one-click apply creates all tasks with proper DAG wiring
+- **Enhanced Pipeline Dashboard** — Real-time bottleneck detection, token burn rate (tok/min), circuit breaker status banner with reset, awaiting approval indicators, failed task counts
+- **Configurable Engine Parameters** — Max auto-revisions, retry base/max delay, auto-test model selection (haiku/sonnet/opus) — all per-project in Engine settings tab
+- **Auto-test Token Tracking** — Test verification phase tokens now counted toward task totals with proper UsageTracker baseline
+- **Auto-test Step Progress** — Step markers (Step 1/4: Build Check, etc.) logged to terminal during auto-test verification
+
+### UI Improvements
+- **Redesigned Project Modal** — Wider 720px layout with sidebar navigation, section-based cards, consistent Field/Toggle components, and reusable `input-field` CSS class
+- **Engine Settings Tab** — New dedicated tab for advanced engine parameters, circuit breaker, and approval gate configuration
+
 ## [1.6.5] - 2026-03-27
 
 ### Bug Fixes
