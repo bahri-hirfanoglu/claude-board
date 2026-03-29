@@ -208,12 +208,6 @@ fn ensure_task_worktree(task: &tasks::Task, working_dir: &str, project: &project
         git_hidden(args, dir).map(|o| o.status.success()).unwrap_or(false)
     };
 
-    let _git_output = |args: &[&str], dir: &str| -> Option<String> {
-        git_hidden(args, dir).ok()
-            .filter(|o| o.status.success())
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
-    };
-
     // Check if we're in a git repo
     if !git_ok(&["rev-parse", "--is-inside-work-tree"], working_dir) {
         return (working_dir.to_string(), None);

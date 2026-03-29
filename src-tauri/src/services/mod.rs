@@ -5,3 +5,4 @@ pub mod notification;
 pub mod github;
 pub mod github_sync;
 pub mod scanner;
+pub mod gsd;

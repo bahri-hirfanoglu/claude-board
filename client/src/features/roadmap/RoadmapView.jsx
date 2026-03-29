@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Plus,
   ChevronDown,
@@ -20,6 +20,12 @@ import {
   Hand,
   AlertTriangle,
   X,
+  Package,
+  Download,
+  RefreshCw,
+  Map,
+  BookOpen,
+  FolderOpen,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
@@ -1076,6 +1082,538 @@ function PhasePlanningModal({ phase, projectId, onClose, onRefresh }) {
 
 // ─── Main Component ───
 
+// Normalize phase number: "01" → "1", "001" → "1", "0" → "0"
+const normalizePhaseNum = (n) => {
+  const s = String(n).replace(/^0+/, '');
+  return s || '0';
+};
+
+const GSD_PHASE_STATUS_COLORS = {
+  pending: 'bg-surface-700 text-surface-400',
+  planning: 'bg-blue-500/20 text-blue-400',
+  in_progress: 'bg-amber-500/20 text-amber-400',
+  verifying: 'bg-purple-500/20 text-purple-400',
+  completed: 'bg-emerald-500/20 text-emerald-400',
+  failed: 'bg-red-500/20 text-red-400',
+  skipped: 'bg-surface-600 text-surface-500',
+};
+
+function GsdInstallPrompt({ projectId, onInstalled }) {
+  const [installing, setInstalling] = useState(false);
+  const [scope, setScope] = useState('global');
+  const [error, setError] = useState(null);
+
+  const handleInstall = async () => {
+    setInstalling(true);
+    setError(null);
+    try {
+      await api.gsdInstall(projectId, scope);
+      onInstalled();
+    } catch (e) {
+      setError(typeof e === 'string' ? e : e?.message || 'Installation failed');
+    } finally {
+      setInstalling(false);
+    }
+  };
+
+  return (
+    <div className="border border-surface-700 rounded-xl p-5 bg-gradient-to-br from-surface-800/80 to-surface-900 space-y-4">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl bg-claude/10 flex items-center justify-center flex-shrink-0">
+          <Package size={20} className="text-claude" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-surface-100">GSD (Get Shit Done)</h3>
+          <p className="text-xs text-surface-500 mt-1">
+            GSD is a spec-driven development framework that manages planning phases, roadmaps, and execution through
+            structured <code className="text-surface-400 bg-surface-800 px-1 rounded">.planning/</code> files.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="flex bg-surface-800 rounded-lg p-0.5">
+          <button
+            onClick={() => setScope('global')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${scope === 'global' ? 'bg-surface-700 text-surface-200' : 'text-surface-500 hover:text-surface-300'}`}
+          >
+            Global (~/.claude)
+          </button>
+          <button
+            onClick={() => setScope('local')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${scope === 'local' ? 'bg-surface-700 text-surface-200' : 'text-surface-500 hover:text-surface-300'}`}
+          >
+            Local (.claude/)
+          </button>
+        </div>
+        <button
+          onClick={handleInstall}
+          disabled={installing}
+          className="flex items-center gap-1.5 px-4 py-2 bg-claude hover:bg-claude/80 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+        >
+          {installing ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+          {installing ? 'Installing...' : 'Install GSD'}
+        </button>
+      </div>
+
+      {error && <p className="text-xs text-red-400 bg-red-500/10 px-3 py-2 rounded-lg">{error}</p>}
+    </div>
+  );
+}
+
+const GSD_ACTIONS = {
+  pending: {
+    label: 'Plan Phase',
+    icon: Brain,
+    command: 'plan-phase',
+    color: 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25',
+    prompt: (n, title) =>
+      `Run /gsd:plan-phase ${n} for phase "${title}". Research how to implement this phase, create detailed execution plans with task breakdown, dependencies, and verification criteria. Write the plans to .planning/phases/.`,
+  },
+  planning: {
+    label: 'Execute Phase',
+    icon: Play,
+    command: 'execute-phase',
+    color: 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25',
+    prompt: (n, title) =>
+      `Run /gsd:execute-phase ${n} for phase "${title}". Read the plans from .planning/phases/ and execute them in wave order. Make atomic commits for each completed task. Update STATE.md with progress.`,
+  },
+  in_progress: {
+    label: 'Continue',
+    icon: Play,
+    command: 'execute-phase',
+    color: 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25',
+    prompt: (n, title) =>
+      `Continue executing /gsd:execute-phase ${n} for phase "${title}". Check STATE.md and .planning/phases/ for remaining tasks and pick up where we left off.`,
+  },
+  completed: {
+    label: 'Verify',
+    icon: Eye,
+    command: 'verify-work',
+    color: 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25',
+    prompt: (n, title) =>
+      `Run /gsd:verify-work ${n} for phase "${title}". Verify the implementation against the success criteria and acceptance tests defined in the phase plans. Write verification results to .planning/phases/.`,
+  },
+  failed: {
+    label: 'Retry',
+    icon: RefreshCw,
+    command: 'execute-phase',
+    color: 'bg-red-500/15 text-red-400 hover:bg-red-500/25',
+    prompt: (n, title) =>
+      `Run /gsd:execute-phase ${n} for phase "${title}". The previous execution failed. Check .planning/phases/ for error context and retry the failed tasks.`,
+  },
+};
+
+function GsdFileRoadmap({ projectId }) {
+  const [gsdRoadmap, setGsdRoadmap] = useState(null);
+  const [gsdState, setGsdState] = useState(null);
+  const [phaseDetails, setPhaseDetails] = useState([]);
+  const [expandedPhase, setExpandedPhase] = useState(null);
+  const [expandedFile, setExpandedFile] = useState(null);
+  const [showRaw, setShowRaw] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [busyPhase, setBusyPhase] = useState(null);
+  const [planningPhase, setPlanningPhase] = useState(null);
+  const [planLogs, setPlanLogs] = useState([]);
+  const [phaseMsg, setPhaseMsg] = useState(null);
+  const [generatedPhases, setGeneratedPhases] = useState(new Set()); // phases that already have board tasks
+
+  const load = useCallback(async () => {
+    try {
+      const [roadmap, state, details, tasks] = await Promise.all([
+        api.gsdGetRoadmap(projectId),
+        api.gsdGetState(projectId),
+        api.gsdGetPhaseDetails(projectId),
+        api.getTasks(projectId).catch(() => []),
+      ]);
+      setGsdRoadmap(roadmap);
+      setGsdState(state);
+      setPhaseDetails(details);
+      // Check which phases already have generated board tasks (tag: "phase-N")
+      const generated = new Set();
+      for (const t of tasks) {
+        const tags = t.tags || '';
+        const match = tags.match(/phase-(\d+)/);
+        if (match && tags.includes('gsd')) generated.add(normalizePhaseNum(match[1]));
+      }
+      setGeneratedPhases(generated);
+    } catch {}
+    setLoading(false);
+  }, [projectId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Listen for planning events
+  useEffect(() => {
+    const unsubs = [
+      tauriListen('plan:log', (p) => {
+        if (p?.projectId !== projectId || !planningPhase) return;
+        setPlanLogs((prev) => [...prev.slice(-100), { type: p.type, message: p.message }]);
+      }),
+      tauriListen('plan:phase', (p) => {
+        if (p?.projectId !== projectId || !planningPhase) return;
+        setPlanLogs((prev) => [...prev, { type: 'phase', message: `Phase: ${p.phase}` }]);
+      }),
+      tauriListen('plan:completed', (p) => {
+        if (p?.projectId !== projectId || !planningPhase) return;
+        setPlanningPhase(null);
+        load(); // Refresh to pick up new PLAN files
+        if (p.error) {
+          setPhaseMsg({ type: 'error', text: `Planning failed: ${p.error}` });
+        } else {
+          setPhaseMsg({ type: 'success', text: `Planning complete. Click "Generate Tasks" to create board tasks.` });
+        }
+      }),
+    ];
+    return () => unsubs.forEach((fn) => fn());
+  }, [projectId, planningPhase, load]);
+
+  // Plan Phase: run via start_planning (inline, no worktree)
+  const handlePlanPhase = async (phase) => {
+    if (busyPhase || planningPhase) return;
+    setBusyPhase(phase.number);
+    setPlanningPhase(phase);
+    setPlanLogs([]);
+    setPhaseMsg(null);
+    try {
+      const topic = `GSD plan-phase ${phase.number}: ${phase.title}`;
+      const context = [
+        `## GSD Phase Planning`,
+        `Phase ${phase.number}: ${phase.title}`,
+        phase.description ? `Description: ${phase.description}` : '',
+        ``,
+        `## Instructions`,
+        `Research how to implement this phase and create detailed execution plans.`,
+        `Write PLAN.md files to .planning/phases/ directory following GSD format:`,
+        `- YAML front matter with: phase, plan, wave, depends_on, files_modified, autonomous`,
+        `- <tasks> section with <task type="auto"> elements containing: <name>, <files>, <action>, <verify>, <done>`,
+        `- Create 2-4 plans per phase, grouped by wave for parallel execution`,
+        `- Each task should be an atomic unit of work (15-60 min)`,
+      ].filter(Boolean).join('\n');
+      await api.startPlanning(projectId, { topic, context, model: 'sonnet' });
+    } catch (e) {
+      setPhaseMsg({ type: 'error', text: typeof e === 'string' ? e : e?.message || 'Failed to start planning' });
+      setPlanningPhase(null);
+    }
+    setBusyPhase(null);
+  };
+
+  // Other actions: verify, retry — creates a single task
+  const handleOtherAction = async (phase, action) => {
+    if (busyPhase) return;
+    setBusyPhase(phase.number);
+    setPhaseMsg(null);
+    try {
+      const task = await api.createTask(projectId, {
+        title: `GSD ${action.command}: Phase ${phase.number} - ${phase.title}`,
+        description: action.prompt(phase.number, phase.title),
+        taskType: 'chore',
+        model: 'sonnet',
+        tags: `gsd,gsd-${action.command},phase-${phase.number}`,
+      });
+      if (task?.id) {
+        await api.restartTask(task.id);
+        setPhaseMsg({
+          type: 'success',
+          text: `${action.label} started for Phase ${phase.number}. Task: ${task.task_key || task.title}`,
+        });
+      }
+    } catch (e) {
+      setPhaseMsg({ type: 'error', text: typeof e === 'string' ? e : e?.message || 'Failed' });
+    }
+    setBusyPhase(null);
+  };
+
+  // Generate Tasks: parse PLAN files → create board tasks → queue
+  const handleGenerateTasks = async (phase) => {
+    if (busyPhase) return;
+    setBusyPhase(phase.number);
+    setPhaseMsg(null);
+    try {
+      const created = await api.gsdCreateTasksFromPlans(projectId, phase.number, phase.title, true);
+      if (created?.length > 0) {
+        setGeneratedPhases((prev) => new Set([...prev, normalizePhaseNum(phase.number)]));
+        setPhaseMsg({
+          type: 'success',
+          text: `Phase ${phase.number}: ${created.length} tasks created and queued for execution.`,
+        });
+      } else {
+        setPhaseMsg({ type: 'error', text: `No tasks could be extracted from PLAN files for Phase ${phase.number}.` });
+      }
+    } catch (e) {
+      setPhaseMsg({ type: 'error', text: typeof e === 'string' ? e : e?.message || 'Failed' });
+    }
+    setBusyPhase(null);
+  };
+
+  if (loading) return null;
+  if (!gsdRoadmap) return null;
+
+  const phases = gsdRoadmap.phases || [];
+  const completed = phases.filter((p) => p.status === 'completed').length;
+
+  return (
+    <div className="border border-surface-700/50 rounded-xl bg-surface-900/30 overflow-hidden">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-surface-700/30 flex items-center gap-2">
+        <Map size={14} className="text-claude" />
+        <h3 className="text-sm font-semibold text-surface-200">.planning/ Roadmap</h3>
+        <span className="text-[10px] text-surface-500">
+          {completed}/{phases.length} phases
+        </span>
+        <div className="flex items-center gap-2 ml-auto">
+          {gsdState?.current_phase && (
+            <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full">
+              {gsdState.current_phase}
+            </span>
+          )}
+          {gsdState?.current_step && (
+            <span className="text-[10px] text-surface-500">
+              {gsdState.current_step}
+            </span>
+          )}
+          <button onClick={load} className="p-1 text-surface-500 hover:text-surface-300 transition-colors">
+            <RefreshCw size={12} />
+          </button>
+          <button
+            onClick={() => setShowRaw(!showRaw)}
+            className={`p-1 transition-colors ${showRaw ? 'text-claude' : 'text-surface-500 hover:text-surface-300'}`}
+            title="Show raw ROADMAP.md"
+          >
+            <FileText size={12} />
+          </button>
+        </div>
+      </div>
+
+      {/* Phase action feedback */}
+      {phaseMsg && (
+        <div
+          className={`mx-3 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
+            phaseMsg.type === 'success'
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+              : 'bg-red-500/10 text-red-400 border border-red-500/20'
+          }`}
+        >
+          {phaseMsg.type === 'success' ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+          <span className="flex-1">{phaseMsg.text}</span>
+          <button onClick={() => setPhaseMsg(null)} className="opacity-60 hover:opacity-100">
+            <X size={12} />
+          </button>
+        </div>
+      )}
+
+      {/* Planning in progress */}
+      {planningPhase && (
+        <div className="mx-3 mt-3 border border-blue-500/20 rounded-lg bg-blue-500/5 overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-blue-500/10">
+            <Loader2 size={12} className="animate-spin text-blue-400" />
+            <span className="text-xs font-medium text-blue-400">
+              Planning Phase {planningPhase.number}: {planningPhase.title}
+            </span>
+          </div>
+          <div className="max-h-40 overflow-y-auto p-2 space-y-0.5">
+            {planLogs.map((log, i) => (
+              <div
+                key={i}
+                className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                  log.type === 'error'
+                    ? 'text-red-400'
+                    : log.type === 'tool'
+                      ? 'text-surface-400'
+                      : log.type === 'phase'
+                        ? 'text-blue-400 font-medium'
+                        : 'text-surface-500'
+                }`}
+              >
+                {log.message}
+              </div>
+            ))}
+            {planLogs.length === 0 && (
+              <div className="text-[10px] text-surface-600 px-2">Starting planning agent...</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showRaw ? (
+        <pre className="p-4 text-xs text-surface-400 font-mono whitespace-pre-wrap max-h-96 overflow-y-auto">
+          {gsdRoadmap.raw}
+        </pre>
+      ) : (
+        <div className="p-3 space-y-1">
+          {/* Progress bar */}
+          {phases.length > 0 && (
+            <div className="mb-3">
+              <ProgressBar
+                total={phases.length}
+                done={completed}
+                inProgress={phases.filter((p) => p.status === 'in_progress').length}
+                failed={phases.filter((p) => p.status === 'failed').length}
+              />
+            </div>
+          )}
+
+          {phases.map((phase, i) => {
+            const phaseNum = normalizePhaseNum(phase.number);
+            const detail = phaseDetails.find((d) => {
+              const dNum = normalizePhaseNum(d.number);
+              return dNum === phaseNum;
+            });
+            const isExpanded = expandedPhase === phase.number;
+            const hasPlan = detail?.files.some((f) => f.name.toLowerCase().includes('plan'));
+            const hasGeneratedTasks = generatedPhases.has(phaseNum);
+            const isBusy = busyPhase === phase.number;
+
+            return (
+              <div
+                key={phase.number}
+                className="rounded-lg border border-surface-700/30 bg-surface-800/30 overflow-hidden"
+              >
+                <div className="flex items-center">
+                  <button
+                    onClick={() => setExpandedPhase(isExpanded ? null : phase.number)}
+                    className="flex-1 flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-800/60 transition-colors"
+                  >
+                    {isExpanded ? (
+                      <ChevronDown size={12} className="text-surface-500" />
+                    ) : (
+                      <ChevronRight size={12} className="text-surface-500" />
+                    )}
+                    <span className="text-[10px] font-mono text-surface-500 w-6">{phase.number}</span>
+                    <span className="text-xs text-surface-200 flex-1">{phase.title}</span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${GSD_PHASE_STATUS_COLORS[phase.status] || GSD_PHASE_STATUS_COLORS.pending}`}
+                    >
+                      {phase.status}
+                    </span>
+                    {detail && (
+                      <span className="text-[10px] text-surface-600">
+                        <FolderOpen size={10} className="inline -mt-0.5" /> {detail.files.length}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Phase action buttons — state machine */}
+                  <div className="flex items-center gap-1 mr-2">
+                    {/* No PLAN files yet → Plan Phase */}
+                    {!hasPlan && (phase.status === 'pending' || phase.status === 'planning') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handlePlanPhase(phase); }}
+                        disabled={!!busyPhase || !!planningPhase}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25"
+                      >
+                        {(isBusy || planningPhase?.number === phase.number) ? <Loader2 size={10} className="animate-spin" /> : <Brain size={10} />}
+                        {planningPhase?.number === phase.number ? 'Planning...' : 'Plan Phase'}
+                      </button>
+                    )}
+
+                    {/* Has PLAN files but no board tasks yet → Generate Tasks */}
+                    {hasPlan && !hasGeneratedTasks && (phase.status === 'pending' || phase.status === 'planning') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleGenerateTasks(phase); }}
+                        disabled={!!busyPhase}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-claude/15 text-claude hover:bg-claude/25"
+                      >
+                        {isBusy ? <Loader2 size={10} className="animate-spin" /> : <Zap size={10} />}
+                        Generate Tasks
+                      </button>
+                    )}
+
+                    {/* Completed → Verify */}
+                    {phase.status === 'completed' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleOtherAction(phase, GSD_ACTIONS.completed); }}
+                        disabled={!!busyPhase}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
+                      >
+                        <Eye size={10} />
+                        Verify
+                      </button>
+                    )}
+
+                    {/* Failed → Retry */}
+                    {phase.status === 'failed' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleGenerateTasks(phase); }}
+                        disabled={!!busyPhase}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-red-500/15 text-red-400 hover:bg-red-500/25"
+                      >
+                        <RefreshCw size={10} />
+                        Retry
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="px-3 pb-3 space-y-2 border-t border-surface-700/20">
+                    {phase.description && <p className="text-xs text-surface-500 mt-2 pl-7">{phase.description}</p>}
+
+                    {/* Phase files */}
+                    {detail &&
+                      detail.files.map((file) => {
+                        const fileKey = `${phase.number}-${file.name}`;
+                        const isFileExpanded = expandedFile === fileKey;
+                        const fileType = file.name.includes('PLAN')
+                          ? 'plan'
+                          : file.name.includes('CONTEXT')
+                            ? 'context'
+                            : file.name.includes('RESEARCH')
+                              ? 'research'
+                              : file.name.includes('VERIFICATION')
+                                ? 'verify'
+                                : file.name.includes('SUMMARY')
+                                  ? 'summary'
+                                  : 'other';
+                        const typeColors = {
+                          plan: 'text-blue-400',
+                          context: 'text-purple-400',
+                          research: 'text-amber-400',
+                          verify: 'text-emerald-400',
+                          summary: 'text-surface-400',
+                          other: 'text-surface-500',
+                        };
+
+                        return (
+                          <div key={file.name} className="ml-7">
+                            <button
+                              onClick={() => setExpandedFile(isFileExpanded ? null : fileKey)}
+                              className="flex items-center gap-2 w-full text-left py-1 hover:bg-surface-800/40 rounded px-2 -mx-2"
+                            >
+                              <BookOpen size={10} className={typeColors[fileType]} />
+                              <span className="text-[11px] font-mono text-surface-400">{file.name}</span>
+                              <span className="text-[10px] text-surface-600 ml-auto">
+                                {Math.round(file.content.length / 100) / 10}k
+                              </span>
+                            </button>
+                            {isFileExpanded && (
+                              <pre className="mt-1 p-3 bg-surface-900 rounded-lg text-[11px] text-surface-400 font-mono whitespace-pre-wrap max-h-64 overflow-y-auto border border-surface-700/30">
+                                {file.content}
+                              </pre>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                    {!detail && (
+                      <p className="text-[10px] text-surface-600 mt-2 pl-7 italic">
+                        No phase files yet — click &quot;Plan Phase&quot; to start.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+    </div>
+  );
+}
+
 export default function RoadmapView({ projectId, project }) {
   const { t } = useTranslation();
   const [roadmap, setRoadmap] = useState(null);
@@ -1083,6 +1621,16 @@ export default function RoadmapView({ projectId, project }) {
   const [showCreateMs, setShowCreateMs] = useState(false);
   const [newMs, setNewMs] = useState({ version: '', title: '', description: '' });
   const [planningPhase, setPlanningPhase] = useState(null);
+  const [gsdStatus, setGsdStatus] = useState(null);
+  const [gsdLoading, setGsdLoading] = useState(true);
+
+  const loadGsdStatus = useCallback(async () => {
+    try {
+      const status = await api.gsdCheckStatus(projectId);
+      setGsdStatus(status);
+    } catch {}
+    setGsdLoading(false);
+  }, [projectId]);
 
   const loadRoadmap = useCallback(async () => {
     try {
@@ -1094,7 +1642,8 @@ export default function RoadmapView({ projectId, project }) {
 
   useEffect(() => {
     loadRoadmap();
-  }, [loadRoadmap]);
+    loadGsdStatus();
+  }, [loadRoadmap, loadGsdStatus]);
 
   useEffect(() => {
     return tauriListen('roadmap:updated', (payload) => {
@@ -1120,6 +1669,55 @@ export default function RoadmapView({ projectId, project }) {
     try {
       await api.executePhase(projectId, phase.id);
     } catch {}
+  };
+
+  const [gsdIniting, setGsdIniting] = useState(false);
+  const [gsdInitMsg, setGsdInitMsg] = useState(null);
+  const [showGsdForm, setShowGsdForm] = useState(false);
+  const [gsdForm, setGsdForm] = useState({ description: '', goals: '', scope: '' });
+  const handleGsdInit = async () => {
+    if (gsdIniting) return;
+    if (!gsdForm.description.trim()) return;
+    setGsdIniting(true);
+    setGsdInitMsg(null);
+    const context = [
+      `## Project Context`,
+      gsdForm.description.trim(),
+      gsdForm.goals.trim() ? `\n## Goals\n${gsdForm.goals.trim()}` : '',
+      gsdForm.scope.trim() ? `\n## Scope / Constraints\n${gsdForm.scope.trim()}` : '',
+    ].filter(Boolean).join('\n');
+    try {
+      const task = await api.createTask(projectId, {
+        title: 'Initialize GSD Project',
+        description:
+          `Create the .planning/ directory for this project with PROJECT.md, REQUIREMENTS.md, ROADMAP.md, STATE.md, and config.json.\n\n` +
+          `${context}\n\n` +
+          `## Instructions\n` +
+          `1. Analyze the codebase to understand the tech stack and architecture\n` +
+          `2. Use the project context above to shape the roadmap\n` +
+          `3. Create PROJECT.md with project vision and constraints\n` +
+          `4. Create REQUIREMENTS.md with v1 scope (based on goals above)\n` +
+          `5. Create ROADMAP.md with **5-8 phases maximum** — each phase should be a meaningful chunk of work, not a single task. Fewer focused phases are better than many granular ones.\n` +
+          `6. Create STATE.md tracking current position\n` +
+          `7. Create config.json with default GSD settings\n` +
+          `8. Each phase in ROADMAP.md must have: ## Phase N: Title, a description, and Status: pending`,
+        taskType: 'chore',
+        model: 'sonnet',
+        tags: 'gsd-init',
+      });
+      if (task?.id) {
+        await api.restartTask(task.id);
+        setGsdInitMsg({
+          type: 'success',
+          text: `Task "${task.task_key || task.title}" created and started. Check the board to track progress.`,
+        });
+        setShowGsdForm(false);
+      }
+      loadGsdStatus();
+    } catch (e) {
+      setGsdInitMsg({ type: 'error', text: typeof e === 'string' ? e : e?.message || 'Failed to create task' });
+    }
+    setGsdIniting(false);
   };
 
   if (loading) {
@@ -1194,8 +1792,102 @@ export default function RoadmapView({ projectId, project }) {
         </div>
       )}
 
+      {/* GSD Package Integration */}
+      {!gsdLoading && gsdStatus && !gsdStatus.installed && (
+        <GsdInstallPrompt projectId={projectId} onInstalled={loadGsdStatus} />
+      )}
+
+      {/* GSD File-Based Roadmap */}
+      {gsdStatus?.has_planning && gsdStatus?.has_roadmap && <GsdFileRoadmap projectId={projectId} />}
+
+      {/* GSD Init */}
+      {gsdStatus?.installed && !gsdStatus?.has_planning && (
+        <div className="space-y-2">
+          {!showGsdForm && !gsdInitMsg?.type && (
+            <div className="flex items-center gap-3 px-4 py-3 bg-surface-800/40 border border-surface-700/30 rounded-xl">
+              <Package size={14} className="text-emerald-400 flex-shrink-0" />
+              <span className="text-xs text-surface-400 flex-1">
+                GSD installed.{' '}
+                <code className="text-surface-300 bg-surface-800 px-1 rounded">.planning/</code> directory needs to be
+                initialized.
+              </span>
+              <button
+                onClick={() => setShowGsdForm(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-claude/15 text-claude text-xs font-medium rounded-lg hover:bg-claude/25 transition-colors flex-shrink-0"
+              >
+                <Play size={12} />
+                Initialize Project
+              </button>
+            </div>
+          )}
+
+          {showGsdForm && !gsdInitMsg?.type && (
+            <div className="border border-surface-700 rounded-xl p-4 space-y-3 bg-surface-850">
+              <h3 className="text-sm font-medium text-surface-200">Initialize GSD Project</h3>
+              <p className="text-[11px] text-surface-500">
+                Describe your project so GSD can create a focused roadmap with the right phases.
+              </p>
+              <div className="space-y-2">
+                <textarea
+                  placeholder="What is this project? What does it do? (required)"
+                  value={gsdForm.description}
+                  onChange={(e) => setGsdForm((f) => ({ ...f, description: e.target.value }))}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-xs text-surface-200 placeholder-surface-600 resize-none"
+                  rows={3}
+                  autoFocus
+                />
+                <textarea
+                  placeholder="What are your goals for v1? What features matter most?"
+                  value={gsdForm.goals}
+                  onChange={(e) => setGsdForm((f) => ({ ...f, goals: e.target.value }))}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-xs text-surface-200 placeholder-surface-600 resize-none"
+                  rows={2}
+                />
+                <textarea
+                  placeholder="Any constraints or scope limits? (optional)"
+                  value={gsdForm.scope}
+                  onChange={(e) => setGsdForm((f) => ({ ...f, scope: e.target.value }))}
+                  className="w-full px-3 py-2 bg-surface-800 border border-surface-600 rounded-lg text-xs text-surface-200 placeholder-surface-600 resize-none"
+                  rows={2}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleGsdInit}
+                  disabled={gsdIniting || !gsdForm.description.trim()}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-claude hover:bg-claude/80 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {gsdIniting ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+                  {gsdIniting ? 'Creating...' : 'Create & Start'}
+                </button>
+                <button
+                  onClick={() => setShowGsdForm(false)}
+                  className="px-3 py-2 text-surface-500 text-xs rounded-lg hover:text-surface-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <span className="text-[10px] text-surface-600 ml-auto">5-8 phases will be generated</span>
+              </div>
+            </div>
+          )}
+
+          {gsdInitMsg && (
+            <div
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs ${
+                gsdInitMsg.type === 'success'
+                  ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                  : 'bg-red-500/10 border border-red-500/20 text-red-400'
+              }`}
+            >
+              {gsdInitMsg.type === 'success' ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+              <span>{gsdInitMsg.text}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Empty state */}
-      {milestones.length === 0 && !showCreateMs && (
+      {milestones.length === 0 && !showCreateMs && !gsdStatus?.has_roadmap && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Flag size={32} className="text-surface-600 mb-3" />
           <p className="text-sm text-surface-400 max-w-md">{t('roadmap.noMilestones')}</p>
