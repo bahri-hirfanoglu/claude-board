@@ -296,17 +296,18 @@ pub fn read_state(working_dir: &str) -> Option<GsdState> {
         }
 
         // "Phase: 1 of 5 (Foundation...)" or "Current Phase: ..."
-        if trimmed.starts_with("phase:") || trimmed.contains("current phase") || trimmed.contains("active phase") {
-            if current_phase.is_none() {
-                current_phase = extract_value(line);
-            }
+        if (trimmed.starts_with("phase:") || trimmed.contains("current phase") || trimmed.contains("active phase"))
+            && current_phase.is_none()
+        {
+            current_phase = extract_value(line);
         }
 
         // "Status: Ready to plan" or "Current step: ..."
-        if in_position_section && (trimmed.starts_with("status:") || trimmed.starts_with("plan:")) {
-            if current_step.is_none() {
-                current_step = extract_value(line);
-            }
+        if in_position_section
+            && (trimmed.starts_with("status:") || trimmed.starts_with("plan:"))
+            && current_step.is_none()
+        {
+            current_step = extract_value(line);
         }
         if trimmed.contains("current step") || trimmed.contains("next step") || trimmed.contains("next action") {
             current_step = extract_value(line);

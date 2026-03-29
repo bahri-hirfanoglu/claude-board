@@ -939,7 +939,6 @@ pub fn start(
     // Build CLI arguments
     let args = build_claude_args(&prompt, model, effort, permission_mode, allowed_tools, mcp_server_port);
 
-    let effective_dir = effective_dir;
     let project_working_dir = working_dir.to_string();
     let project_id = task.project_id;
     let task_title = task.title.clone();
