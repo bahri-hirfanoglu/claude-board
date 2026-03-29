@@ -329,6 +329,16 @@ pub fn run() {
             commands::roadmap::plan_phase,
             commands::roadmap::approve_phase_plan,
             commands::roadmap::execute_phase,
+            // GSD Package Integration
+            commands::gsd::gsd_check_status,
+            commands::gsd::gsd_install,
+            commands::gsd::gsd_get_roadmap,
+            commands::gsd::gsd_get_state,
+            commands::gsd::gsd_get_project,
+            commands::gsd::gsd_get_phase_details,
+            commands::gsd::gsd_get_config,
+            commands::gsd::gsd_parse_phase_plans,
+            commands::gsd::gsd_create_tasks_from_plans,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

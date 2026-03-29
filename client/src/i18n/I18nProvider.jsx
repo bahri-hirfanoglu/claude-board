@@ -24,8 +24,10 @@ const SUPPORTED = LANGUAGES.map((l) => l.code);
 const STORAGE_KEY = 'ui-lang';
 
 function detectLang() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored && SUPPORTED.includes(stored)) return stored;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored && SUPPORTED.includes(stored)) return stored;
+  } catch {}
   const nav = (navigator.language || '').split('-')[0];
   return SUPPORTED.includes(nav) ? nav : 'en';
 }
@@ -36,8 +38,9 @@ export function I18nProvider({ children }) {
   const [lang, setLangState] = useState(detectLang);
 
   const setLang = useCallback((code) => {
+    if (!SUPPORTED.includes(code)) return;
     setLangState(code);
-    localStorage.setItem(STORAGE_KEY, code);
+    try { localStorage.setItem(STORAGE_KEY, code); } catch {}
   }, []);
 
   const t = useCallback(

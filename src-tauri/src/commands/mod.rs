@@ -14,3 +14,4 @@ pub mod github;
 pub mod workflows;
 pub mod chat;
 pub mod roadmap;
+pub mod gsd;

@@ -344,6 +344,23 @@ export const api = {
             dependenciesEdges: dependenciesEdges || null,
           }),
         executePhase: (projectId, phaseId) => tauriCall('execute_phase', { projectId, phaseId }),
+        // ─── GSD Package Integration ───
+        gsdCheckStatus: (projectId) => tauriCall('gsd_check_status', { projectId }),
+        gsdInstall: (projectId, scope) => tauriCall('gsd_install', { projectId, scope: scope || null }),
+        gsdGetRoadmap: (projectId) => tauriCall('gsd_get_roadmap', { projectId }),
+        gsdGetState: (projectId) => tauriCall('gsd_get_state', { projectId }),
+        gsdGetProject: (projectId) => tauriCall('gsd_get_project', { projectId }),
+        gsdGetPhaseDetails: (projectId) => tauriCall('gsd_get_phase_details', { projectId }),
+        gsdGetConfig: (projectId) => tauriCall('gsd_get_config', { projectId }),
+        gsdParsePhasePlans: (projectId, phaseNumber) =>
+          tauriCall('gsd_parse_phase_plans', { projectId, phaseNumber }),
+        gsdCreateTasksFromPlans: (projectId, phaseNumber, phaseTitle, autoStart) =>
+          tauriCall('gsd_create_tasks_from_plans', {
+            projectId,
+            phaseNumber,
+            phaseTitle,
+            autoStart: autoStart ?? true,
+          }),
       }
     : {}),
 };
