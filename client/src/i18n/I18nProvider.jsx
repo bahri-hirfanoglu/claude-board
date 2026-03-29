@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
+import { api } from '../lib/api';
 import en from './locales/en';
 import tr from './locales/tr';
 
@@ -47,6 +48,20 @@ export function I18nProvider({ children }) {
     },
     [lang],
   );
+
+  // Sync language from backend settings on first load (setup saves to DB, not localStorage)
+  useEffect(() => {
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      api
+        .getAppSettings()
+        .then((s) => {
+          if (s?.language && SUPPORTED.includes(s.language)) {
+            setLang(s.language);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [setLang]);
 
   const value = useMemo(() => ({ lang, setLang, t, languages: LANGUAGES }), [lang, setLang, t]);
 
