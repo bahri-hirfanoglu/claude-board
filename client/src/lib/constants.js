@@ -107,3 +107,9 @@ export function getTagColor(tag) {
 // ─── Avatar ───
 export const AVATAR_COLORS = ['#DA7756', '#c4624a', '#e5936f', '#2a2520', '#918678'];
 export const AVATAR_VARIANTS = ['marble', 'beam', 'pixel', 'sunset', 'ring', 'bauhaus'];
+
+// ─── Prose (dark markdown) ───
+const PROSE_BASE =
+  'prose prose-invert prose-xs max-w-none prose-headings:text-surface-200 prose-headings:font-semibold prose-p:text-surface-400 prose-a:text-violet-400 prose-strong:text-surface-200 prose-code:text-violet-300 prose-code:bg-surface-700/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-900 prose-pre:border prose-pre:border-surface-700/50 prose-pre:rounded-lg prose-li:text-surface-400 prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1 prose-hr:border-surface-700';
+export const PROSE_DARK = `${PROSE_BASE} prose-headings:mt-4 prose-headings:mb-2 prose-p:my-1.5 prose-code:text-[11px]`;
+export const PROSE_DARK_SM = `${PROSE_BASE} prose-headings:mt-3 prose-headings:mb-1.5 prose-p:my-1 prose-code:text-[10px]`;

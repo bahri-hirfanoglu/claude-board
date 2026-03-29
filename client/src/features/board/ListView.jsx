@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   ChevronUp,
   ChevronDown,
@@ -11,6 +11,9 @@ import {
   Trash2,
   CheckCircle,
   FlaskConical,
+  CheckSquare,
+  Square,
+  MinusSquare,
 } from 'lucide-react';
 import { formatDuration, formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, PRIORITY_LABELS, PRIORITY_COLORS, MODEL_COLORS, COLUMNS } from '../../lib/constants';
@@ -32,6 +35,7 @@ export default function ListView({
   onViewLogs,
   onEditTask,
   onDeleteTask,
+  onBulkDelete,
   onReviewTask,
   onViewDetail,
 }) {
@@ -39,10 +43,29 @@ export default function ListView({
   const [sortField, setSortField] = useState('id');
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
-  // Reset pagination when tasks change (filter/search applied)
+  // Reset pagination and selection when tasks change
   useEffect(() => {
     setPage(1);
+    setSelectedIds(new Set());
+  }, [tasks]);
+
+  const toggleSelect = useCallback((taskId, e) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === tasks.length) return new Set();
+      return new Set(tasks.map((t) => t.id));
+    });
   }, [tasks]);
 
   const toggleSort = (field) => {
@@ -95,10 +118,45 @@ export default function ListView({
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2 bg-red-500/10 border-b border-red-500/20 flex-shrink-0">
+          <span className="text-xs text-red-300 font-medium">
+            {selectedIds.size} {t('common.selected')}
+          </span>
+          <button
+            onClick={() => {
+              const selected = tasks.filter((t) => selectedIds.has(t.id));
+              if (onBulkDelete) onBulkDelete(selected);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-300 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors"
+          >
+            <Trash2 size={12} />
+            {t('common.deleteSelected')}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-xs text-surface-400 hover:text-surface-200 transition-colors ml-auto"
+          >
+            {t('common.clearSelection')}
+          </button>
+        </div>
+      )}
       <div className="flex-1 overflow-auto">
         <table className="w-full text-xs">
           <thead className="sticky top-0 z-10 bg-surface-900">
             <tr className="border-b border-surface-800">
+              <th className="w-8 px-2 py-2.5 text-center">
+                <button onClick={toggleAll} className="text-surface-500 hover:text-surface-300 transition-colors">
+                  {selectedIds.size === 0 ? (
+                    <Square size={14} />
+                  ) : selectedIds.size === tasks.length ? (
+                    <CheckSquare size={14} className="text-claude" />
+                  ) : (
+                    <MinusSquare size={14} className="text-claude" />
+                  )}
+                </button>
+              </th>
               {columns.map((col) => (
                 <th
                   key={col.key}
@@ -129,9 +187,16 @@ export default function ListView({
               return (
                 <tr
                   key={task.id}
-                  className="border-b border-surface-800/50 hover:bg-surface-800/40 cursor-pointer transition-colors group"
+                  className={`border-b border-surface-800/50 hover:bg-surface-800/40 cursor-pointer transition-colors group ${selectedIds.has(task.id) ? 'bg-claude/5' : ''}`}
                   onClick={() => onViewDetail?.(task)}
                 >
+                  <td className="px-2 py-2 text-center" onClick={(e) => toggleSelect(task.id, e)}>
+                    {selectedIds.has(task.id) ? (
+                      <CheckSquare size={14} className="text-claude" />
+                    ) : (
+                      <Square size={14} className="text-surface-600 group-hover:text-surface-400" />
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-surface-600 font-mono text-[11px]">{task.task_key || `#${task.id}`}</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">

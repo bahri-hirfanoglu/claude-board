@@ -4,15 +4,24 @@ import { formatTokens, formatTimeAgo as timeAgo } from '../../lib/formatters';
 import { AVATAR_COLORS } from '../../lib/constants';
 import { MiniStatusBar } from './MiniStatusBar';
 
-export function ProjectCard({ project, onSelect, t }) {
+export function ProjectCard({ project, onSelect, onDelete, t }) {
   const total = project.total_tasks || 0;
   const tokens = formatTokens(project.total_tokens || 0);
   const variant = project.icon || 'marble';
   const seed = project.icon_seed || project.name;
 
+  const handleClick = (e) => {
+    if (e.shiftKey && onDelete) {
+      e.preventDefault();
+      onDelete(project);
+    } else {
+      onSelect(project);
+    }
+  };
+
   return (
     <button
-      onClick={() => onSelect(project)}
+      onClick={handleClick}
       className="group text-left p-5 rounded-xl bg-surface-800 border border-surface-700/50 hover:border-claude/40 hover:shadow-xl hover:shadow-black/20 transition-all duration-200 flex flex-col"
     >
       <div className="flex items-start gap-3.5 mb-3">

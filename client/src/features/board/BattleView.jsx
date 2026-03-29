@@ -368,7 +368,10 @@ export default function BattleView({ tasks, projectId }) {
     if (!IS_TAURI) return;
     return tauriListen('task:log', (payload) => {
       if (payload.logType === 'tool') {
-        const meta = payload.meta ? (typeof payload.meta === 'string' ? JSON.parse(payload.meta) : payload.meta) : {};
+        let meta = {};
+        try {
+          meta = payload.meta ? (typeof payload.meta === 'string' ? JSON.parse(payload.meta) : payload.meta) : {};
+        } catch {}
         setActionMap((prev) => ({ ...prev, [payload.taskId]: meta.toolName || 'Working...' }));
       }
     });

@@ -27,7 +27,12 @@ export function getDiffLineClass(line) {
 
 export function parseTestReport(testReport) {
   if (!testReport) return null;
-  return typeof testReport === 'string' ? JSON.parse(testReport) : testReport;
+  if (typeof testReport !== 'string') return testReport;
+  try {
+    return JSON.parse(testReport);
+  } catch {
+    return null;
+  }
 }
 
 export function getCheckStatusColors(status) {

@@ -116,7 +116,10 @@ export default function AgentCard({ task, onStop, onViewLogs }) {
     return tauriListen('task:log', (payload) => {
       if (payload.taskId !== task.id) return;
       if (payload.logType === 'tool') {
-        const meta = payload.meta ? (typeof payload.meta === 'string' ? JSON.parse(payload.meta) : payload.meta) : {};
+        let meta = {};
+        try {
+          meta = payload.meta ? (typeof payload.meta === 'string' ? JSON.parse(payload.meta) : payload.meta) : {};
+        } catch {}
         const toolName = meta.toolName || meta.tool || payload.message?.match(/^(\w+)/)?.[1] || 'Tool';
         const filePath = meta.file || meta.filePath || meta.path || meta.command || '';
         setLastTool({ name: toolName, path: filePath });

@@ -12,7 +12,9 @@ import {
   ExternalLink,
   Search,
 } from 'lucide-react';
+import Markdown from 'react-markdown';
 import { api } from '../../lib/api';
+import { PROSE_DARK, PROSE_DARK_SM } from '../../lib/constants';
 import { useTranslation } from '../../i18n/I18nProvider';
 
 const POPULAR_REPOS = [
@@ -79,7 +81,7 @@ export default function SkillsModal({ onClose }) {
               </button>
             )}
             <Wand2 size={16} className="text-violet-400" />
-            <h2 className="text-sm font-medium">{view === 'import' ? 'Import Skills' : t('skills.title')}</h2>
+            <h2 className="text-sm font-medium">{view === 'import' ? t('skills.import') : t('skills.title')}</h2>
             {view === 'browse' && (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-800 text-surface-500">
                 ~/.claude/skills/
@@ -93,7 +95,7 @@ export default function SkillsModal({ onClose }) {
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 rounded-lg transition-colors"
               >
                 <Github size={12} />
-                Import
+                {t('skills.import')}
               </button>
             )}
             <button
@@ -118,6 +120,7 @@ export default function SkillsModal({ onClose }) {
         ) : (
           <ImportView
             installedSkills={skills}
+            t={t}
             onInstalled={() => {
               loadSkills();
               setView('browse');
@@ -200,9 +203,11 @@ function BrowseView({ skills, loading, selected, onSelect, onDelete, t }) {
               <h3 className="text-sm font-semibold text-surface-200">{selected.name}</h3>
               <span className="text-[10px] text-surface-600">{(selected.size / 1024).toFixed(1)}KB</span>
             </div>
-            <pre className="text-xs text-surface-400 whitespace-pre-wrap bg-surface-800/50 rounded-lg p-3 border border-surface-700/50 leading-relaxed">
-              {selected.content}
-            </pre>
+            <div
+              className={`text-xs text-surface-400 bg-surface-800/50 rounded-lg p-4 border border-surface-700/50 leading-relaxed overflow-y-auto max-h-[60vh] ${PROSE_DARK}`}
+            >
+              <Markdown>{selected.content}</Markdown>
+            </div>
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-surface-600 text-xs">
@@ -215,7 +220,7 @@ function BrowseView({ skills, loading, selected, onSelect, onDelete, t }) {
 }
 
 // ─── Import from GitHub ───
-function ImportView({ installedSkills, onInstalled }) {
+function ImportView({ installedSkills, t, onInstalled }) {
   const [repoUrl, setRepoUrl] = useState('');
   const [fetching, setFetching] = useState(false);
   const [result, setResult] = useState(null);
@@ -265,7 +270,7 @@ function ImportView({ installedSkills, onInstalled }) {
         const content = await api.fetchSkillContent(skill.downloadUrl);
         setPreviewContent(content);
       } catch {
-        setPreviewContent('(Failed to load content)');
+        setPreviewContent(t('skills.failedPreview'));
       }
       setPreviewLoading(false);
     }
@@ -319,7 +324,7 @@ function ImportView({ installedSkills, onInstalled }) {
       {/* Popular repos */}
       {!result && !fetching && (
         <div>
-          <label className="block text-xs font-medium text-surface-400 mb-2">Popular Skill Repositories</label>
+          <label className="block text-xs font-medium text-surface-400 mb-2">{t('skills.popularRepos')}</label>
           <div className="space-y-1.5">
             {POPULAR_REPOS.map((repo) => (
               <button
@@ -346,7 +351,7 @@ function ImportView({ installedSkills, onInstalled }) {
       {!result && (
         <div>
           <label className="block text-xs font-medium text-surface-400 mb-1.5">
-            {fetching ? '' : 'Or enter a GitHub repository URL'}
+            {fetching ? '' : t('skills.enterRepoUrl')}
           </label>
           <div className="flex gap-2">
             <input
@@ -373,7 +378,7 @@ function ImportView({ installedSkills, onInstalled }) {
       {fetching && (
         <div className="flex items-center justify-center py-12 gap-2 text-surface-500 text-sm">
           <Loader2 size={16} className="animate-spin" />
-          Fetching skills from GitHub...
+          {t('skills.fetchingSkills')}
         </div>
       )}
 
@@ -399,10 +404,12 @@ function ImportView({ installedSkills, onInstalled }) {
               className="text-surface-500 hover:text-surface-300"
             >
               <ArrowLeft size={10} className="inline mr-0.5" />
-              Back
+              {t('common.back')}
             </button>
             <span className="text-violet-400 font-mono">{result.repo}</span>
-            <span className="text-surface-600">{result.skills?.length || 0} skills</span>
+            <span className="text-surface-600">
+              {result.skills?.length || 0} {t('skills.skillCount')}
+            </span>
             <a
               href={`https://github.com/${result.repo}`}
               target="_blank"
@@ -421,7 +428,7 @@ function ImportView({ installedSkills, onInstalled }) {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search skills..."
+                  placeholder={t('skills.searchSkills')}
                   className="w-full pl-8 pr-3 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 placeholder-surface-600"
                 />
               </div>
@@ -431,7 +438,7 @@ function ImportView({ installedSkills, onInstalled }) {
                   onChange={(e) => setSelectedCategory(e.target.value || null)}
                   className="px-2 py-1.5 bg-surface-800 border border-surface-700 rounded-lg text-xs text-surface-300 focus:outline-none focus:ring-1 focus:ring-violet-500"
                 >
-                  <option value="">All categories</option>
+                  <option value="">{t('skills.allCategories')}</option>
                   {result.categories.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -464,7 +471,8 @@ function ImportView({ installedSkills, onInstalled }) {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-surface-400">
                   {filteredSkills.length}
-                  {filteredSkills.length !== (result.skills?.length || 0) ? ` / ${result.skills.length}` : ''} skills
+                  {filteredSkills.length !== (result.skills?.length || 0) ? ` / ${result.skills.length}` : ''}{' '}
+                  {t('skills.skillCount')}
                 </span>
               </div>
               <div className="space-y-1 max-h-[45vh] overflow-y-auto pr-1">
@@ -498,7 +506,7 @@ function ImportView({ installedSkills, onInstalled }) {
                         </div>
                         {isInstalled ? (
                           <span className="flex items-center gap-1 text-[10px] text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 flex-shrink-0">
-                            <Check size={10} /> Installed
+                            <Check size={10} /> {t('skills.installed')}
                           </span>
                         ) : (
                           <button
@@ -510,7 +518,7 @@ function ImportView({ installedSkills, onInstalled }) {
                             className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-violet-300 bg-violet-500/15 hover:bg-violet-500/25 disabled:opacity-50 rounded-lg transition-colors flex-shrink-0"
                           >
                             {isInstalling ? <Loader2 size={10} className="animate-spin" /> : <Download size={10} />}
-                            Install
+                            {t('skills.install')}
                           </button>
                         )}
                       </div>
@@ -519,12 +527,14 @@ function ImportView({ installedSkills, onInstalled }) {
                         <div className="mt-1 mb-2 ml-7">
                           {previewLoading ? (
                             <div className="flex items-center gap-2 py-4 text-surface-500 text-xs">
-                              <Loader2 size={12} className="animate-spin" /> Loading...
+                              <Loader2 size={12} className="animate-spin" /> {t('common.loading')}
                             </div>
                           ) : (
-                            <pre className="text-[11px] text-surface-400 whitespace-pre-wrap bg-surface-950 rounded-lg p-3 border border-surface-700/50 leading-relaxed max-h-48 overflow-y-auto">
-                              {previewContent || '(empty)'}
-                            </pre>
+                            <div
+                              className={`text-[11px] text-surface-400 bg-surface-950 rounded-lg p-3 border border-surface-700/50 leading-relaxed max-h-48 overflow-y-auto ${PROSE_DARK_SM}`}
+                            >
+                              <Markdown>{previewContent || t('skills.empty_preview')}</Markdown>
+                            </div>
                           )}
                         </div>
                       )}
@@ -538,7 +548,7 @@ function ImportView({ installedSkills, onInstalled }) {
           {/* No results */}
           {filteredSkills.length === 0 && (result.directories?.length || 0) === 0 && (
             <div className="text-center py-8 text-surface-500 text-xs">
-              {searchQuery || selectedCategory ? 'No skills match your filter.' : 'No skills found in this repository.'}
+              {searchQuery || selectedCategory ? t('skills.noMatch') : t('skills.noSkills')}
             </div>
           )}
 
@@ -549,7 +559,7 @@ function ImportView({ installedSkills, onInstalled }) {
               className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors"
             >
               <Check size={14} />
-              Done — {installed.size} skill{installed.size !== 1 ? 's' : ''} installed
+              {t('skills.doneInstalled', { count: installed.size })}
             </button>
           )}
         </div>

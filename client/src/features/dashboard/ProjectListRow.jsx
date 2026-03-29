@@ -4,13 +4,23 @@ import { formatTokens } from '../../lib/formatters';
 import { AVATAR_COLORS } from '../../lib/constants';
 import { MiniStatusBar } from './MiniStatusBar';
 
-export function ProjectListRow({ project, onSelect, t }) {
+export function ProjectListRow({ project, onSelect, onDelete, t }) {
   const total = project.total_tasks || 0;
   const variant = project.icon || 'marble';
   const seed = project.icon_seed || project.name;
+
+  const handleClick = (e) => {
+    if (e.shiftKey && onDelete) {
+      e.preventDefault();
+      onDelete(project);
+    } else {
+      onSelect(project);
+    }
+  };
+
   return (
     <button
-      onClick={() => onSelect(project)}
+      onClick={handleClick}
       className="group w-full flex items-center gap-4 px-4 py-3 rounded-lg bg-surface-800/40 border border-surface-700/30 hover:border-claude/30 hover:bg-surface-800/60 transition-all text-left"
     >
       <div className="flex-shrink-0 rounded-lg overflow-hidden ring-1 ring-surface-700 group-hover:ring-claude/30">

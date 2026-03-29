@@ -47,6 +47,7 @@ export default function Board({
   onViewLogs,
   onEditTask,
   onDeleteTask,
+  onBulkDelete,
   onReviewTask,
   onViewDetail,
 }) {
@@ -380,6 +381,7 @@ export default function Board({
                 onViewLogs={onViewLogs}
                 onEditTask={onEditTask}
                 onDeleteTask={onDeleteTask}
+                onBulkDelete={onBulkDelete}
                 onReviewTask={onReviewTask}
                 onViewDetail={onViewDetail}
               />
