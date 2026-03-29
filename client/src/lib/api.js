@@ -352,8 +352,7 @@ export const api = {
         gsdGetProject: (projectId) => tauriCall('gsd_get_project', { projectId }),
         gsdGetPhaseDetails: (projectId) => tauriCall('gsd_get_phase_details', { projectId }),
         gsdGetConfig: (projectId) => tauriCall('gsd_get_config', { projectId }),
-        gsdParsePhasePlans: (projectId, phaseNumber) =>
-          tauriCall('gsd_parse_phase_plans', { projectId, phaseNumber }),
+        gsdParsePhasePlans: (projectId, phaseNumber) => tauriCall('gsd_parse_phase_plans', { projectId, phaseNumber }),
         gsdCreateTasksFromPlans: (projectId, phaseNumber, phaseTitle, autoStart) =>
           tauriCall('gsd_create_tasks_from_plans', {
             projectId,

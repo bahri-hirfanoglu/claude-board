@@ -1291,7 +1291,9 @@ function GsdFileRoadmap({ projectId }) {
         `- <tasks> section with <task type="auto"> elements containing: <name>, <files>, <action>, <verify>, <done>`,
         `- Create 2-4 plans per phase, grouped by wave for parallel execution`,
         `- Each task should be an atomic unit of work (15-60 min)`,
-      ].filter(Boolean).join('\n');
+      ]
+        .filter(Boolean)
+        .join('\n');
       await api.startPlanning(projectId, { topic, context, model: 'sonnet' });
     } catch (e) {
       setPhaseMsg({ type: 'error', text: typeof e === 'string' ? e : e?.message || 'Failed to start planning' });
@@ -1369,11 +1371,7 @@ function GsdFileRoadmap({ projectId }) {
               {gsdState.current_phase}
             </span>
           )}
-          {gsdState?.current_step && (
-            <span className="text-[10px] text-surface-500">
-              {gsdState.current_step}
-            </span>
-          )}
+          {gsdState?.current_step && <span className="text-[10px] text-surface-500">{gsdState.current_step}</span>}
           <button onClick={load} className="p-1 text-surface-500 hover:text-surface-300 transition-colors">
             <RefreshCw size={12} />
           </button>
@@ -1500,11 +1498,18 @@ function GsdFileRoadmap({ projectId }) {
                     {/* No PLAN files yet → Plan Phase */}
                     {!hasPlan && (phase.status === 'pending' || phase.status === 'planning') && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handlePlanPhase(phase); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePlanPhase(phase);
+                        }}
                         disabled={!!busyPhase || !!planningPhase}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25"
                       >
-                        {(isBusy || planningPhase?.number === phase.number) ? <Loader2 size={10} className="animate-spin" /> : <Brain size={10} />}
+                        {isBusy || planningPhase?.number === phase.number ? (
+                          <Loader2 size={10} className="animate-spin" />
+                        ) : (
+                          <Brain size={10} />
+                        )}
                         {planningPhase?.number === phase.number ? 'Planning...' : 'Plan Phase'}
                       </button>
                     )}
@@ -1512,7 +1517,10 @@ function GsdFileRoadmap({ projectId }) {
                     {/* Has PLAN files but no board tasks yet → Generate Tasks */}
                     {hasPlan && !hasGeneratedTasks && (phase.status === 'pending' || phase.status === 'planning') && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleGenerateTasks(phase); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGenerateTasks(phase);
+                        }}
                         disabled={!!busyPhase}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-claude/15 text-claude hover:bg-claude/25"
                       >
@@ -1524,7 +1532,10 @@ function GsdFileRoadmap({ projectId }) {
                     {/* Completed → Verify */}
                     {phase.status === 'completed' && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleOtherAction(phase, GSD_ACTIONS.completed); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOtherAction(phase, GSD_ACTIONS.completed);
+                        }}
                         disabled={!!busyPhase}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
                       >
@@ -1536,7 +1547,10 @@ function GsdFileRoadmap({ projectId }) {
                     {/* Failed → Retry */}
                     {phase.status === 'failed' && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleGenerateTasks(phase); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGenerateTasks(phase);
+                        }}
                         disabled={!!busyPhase}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-red-500/15 text-red-400 hover:bg-red-500/25"
                       >
@@ -1609,7 +1623,6 @@ function GsdFileRoadmap({ projectId }) {
           })}
         </div>
       )}
-
     </div>
   );
 }
@@ -1685,7 +1698,9 @@ export default function RoadmapView({ projectId, project }) {
       gsdForm.description.trim(),
       gsdForm.goals.trim() ? `\n## Goals\n${gsdForm.goals.trim()}` : '',
       gsdForm.scope.trim() ? `\n## Scope / Constraints\n${gsdForm.scope.trim()}` : '',
-    ].filter(Boolean).join('\n');
+    ]
+      .filter(Boolean)
+      .join('\n');
     try {
       const task = await api.createTask(projectId, {
         title: 'Initialize GSD Project',
@@ -1807,9 +1822,8 @@ export default function RoadmapView({ projectId, project }) {
             <div className="flex items-center gap-3 px-4 py-3 bg-surface-800/40 border border-surface-700/30 rounded-xl">
               <Package size={14} className="text-emerald-400 flex-shrink-0" />
               <span className="text-xs text-surface-400 flex-1">
-                GSD installed.{' '}
-                <code className="text-surface-300 bg-surface-800 px-1 rounded">.planning/</code> directory needs to be
-                initialized.
+                GSD installed. <code className="text-surface-300 bg-surface-800 px-1 rounded">.planning/</code>{' '}
+                directory needs to be initialized.
               </span>
               <button
                 onClick={() => setShowGsdForm(true)}

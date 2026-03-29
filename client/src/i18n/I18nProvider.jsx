@@ -40,7 +40,9 @@ export function I18nProvider({ children }) {
   const setLang = useCallback((code) => {
     if (!SUPPORTED.includes(code)) return;
     setLangState(code);
-    try { localStorage.setItem(STORAGE_KEY, code); } catch {}
+    try {
+      localStorage.setItem(STORAGE_KEY, code);
+    } catch {}
   }, []);
 
   const t = useCallback(
