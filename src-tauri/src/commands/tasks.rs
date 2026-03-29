@@ -190,8 +190,11 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
 fn execute_done_side_effects(db: &crate::db::DbPool, app: &AppHandle, id: i64, task: &tq::Task) {
     if let Some(project) = pq::get_by_id(db, task.project_id) {
         let fresh_task = tq::get_by_id(db, id).unwrap_or(task.clone());
-        runner::auto_create_pr_public(&fresh_task, &project.working_dir, &project, db, app);
+        // Use worktree dir for PR creation (where commits live), fall back to project dir
+        let pr_dir = runner::get_task_worktree(id).unwrap_or_else(|| project.working_dir.clone());
+        runner::auto_create_pr_public(&fresh_task, &pr_dir, &project, db, app);
         let after_pr = tq::get_by_id(db, id).unwrap_or(fresh_task.clone());
+        // Cleanup uses project root (manages worktrees and branches)
         runner::cleanup_task_branch(&after_pr, &project.working_dir, &project);
 
         // Auto-close linked GitHub issue

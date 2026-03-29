@@ -25,10 +25,13 @@ struct ProcessInfo {
 
 type ProcessMap = Mutex<HashMap<i64, ProcessInfo>>;
 type StartingSet = Mutex<HashSet<i64>>;
+type WorktreeMap = Mutex<HashMap<i64, String>>;
 
 static ACTIVE_PROCESSES: once_cell::sync::Lazy<ProcessMap> = once_cell::sync::Lazy::new(|| Mutex::new(HashMap::new()));
 static STARTING_TASKS: once_cell::sync::Lazy<StartingSet> = once_cell::sync::Lazy::new(|| Mutex::new(HashSet::new()));
 static EVENT_CTX: once_cell::sync::Lazy<EventContext> = once_cell::sync::Lazy::new(EventContext::new);
+/// Maps task_id → worktree directory path. Persists across start/test phases so auto-test reuses the same worktree.
+static TASK_WORKTREES: once_cell::sync::Lazy<WorktreeMap> = once_cell::sync::Lazy::new(|| Mutex::new(HashMap::new()));
 
 const AGENT_NAMES: &[&str] = &[
     "Nova", "Atlas", "Spark", "Echo", "Pulse", "Drift", "Flux", "Blaze",
@@ -62,11 +65,20 @@ fn emit_task_updated(db: &DbPool, app: &AppHandle, task_id: i64) {
 
 pub fn stop(task_id: i64, db: &DbPool, app: &AppHandle) {
     if let Some(info) = ACTIVE_PROCESSES.lock().remove(&task_id) {
+        let working_dir = info.working_dir.clone();
         kill_process(info.pid);
         STARTING_TASKS.lock().remove(&task_id);
         EVENT_CTX.task_usage.lock().remove(&task_id);
         EVENT_CTX.active_tool_calls.lock().retain(|_, tc| tc.task_id != task_id);
         super::events::clear_task_file_access(task_id);
+        // Clean up worktree — use project working_dir (parent of .worktrees)
+        // Determine project root: if working_dir is a worktree, its parent's parent is the project root
+        let project_root = if let Some(task) = tasks::get_by_id(db, task_id) {
+            projects::get_by_id(db, task.project_id).map(|p| p.working_dir).unwrap_or(working_dir)
+        } else {
+            working_dir
+        };
+        cleanup_task_worktree(task_id, &project_root);
         tasks::add_log(db, task_id, "Claude process stopped by user.", "system", None);
         app.emit("task:log", &serde_json::json!({
             "taskId": task_id, "message": "Claude process stopped by user.", "logType": "system"
@@ -132,6 +144,7 @@ pub fn enforce_timeouts(app: &AppHandle) {
 pub fn cleanup_all() {
     ACTIVE_PROCESSES.lock().clear();
     STARTING_TASKS.lock().clear();
+    TASK_WORKTREES.lock().clear();
     EVENT_CTX.task_usage.lock().clear();
     EVENT_CTX.active_tool_calls.lock().clear();
 }
@@ -175,31 +188,13 @@ fn generate_branch_slug(title: &str) -> String {
         .trim_end_matches('-').to_string()
 }
 
-fn ensure_task_branch(task: &tasks::Task, working_dir: &str, project: &projects::Project, db: &DbPool, app: &AppHandle) -> Option<String> {
-    if project.auto_branch.unwrap_or(1) == 0 { return None; }
-    let is_revision = task.revision_count.unwrap_or(0) > 0;
-    let slug = generate_branch_slug(&task.title);
-    let slug = if slug.is_empty() { format!("task-{}", task.id) } else { slug };
-    let branch_name = sanitize_branch_name(&task.branch_name.clone().unwrap_or_else(|| {
-        format!("{}/{}", task.task_type.as_deref().unwrap_or("feature"), slug)
-    }));
-
-    let exec = |cmd: &str| -> Result<String, String> {
-        let mut c = Command::new("git");
-        c.args(cmd.split_whitespace())
-            .current_dir(working_dir)
-            .stdout(Stdio::piped()).stderr(Stdio::piped());
-        #[cfg(target_os = "windows")]
-        c.creation_flags(CREATE_NO_WINDOW);
-        let output = c.output().map_err(|e| e.to_string())?;
-        if output.status.success() {
-            Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
-        } else {
-            Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
-        }
-    };
-
-    if exec("rev-parse --is-inside-work-tree").is_err() { return None; }
+/// Resolve the effective working directory for a task.
+/// If auto_branch is enabled, creates a git worktree for isolation.
+/// Returns (effective_working_dir, Option<branch_name>).
+fn ensure_task_worktree(task: &tasks::Task, working_dir: &str, project: &projects::Project, db: &DbPool, _app: &AppHandle) -> (String, Option<String>) {
+    if project.auto_branch.unwrap_or(1) == 0 {
+        return (working_dir.to_string(), None);
+    }
 
     let git_hidden = |args: &[&str], dir: &str| -> std::io::Result<std::process::Output> {
         let mut c = Command::new("git");
@@ -209,26 +204,134 @@ fn ensure_task_branch(task: &tasks::Task, working_dir: &str, project: &projects:
         c.output()
     };
 
+    let git_ok = |args: &[&str], dir: &str| -> bool {
+        git_hidden(args, dir).map(|o| o.status.success()).unwrap_or(false)
+    };
+
+    let _git_output = |args: &[&str], dir: &str| -> Option<String> {
+        git_hidden(args, dir).ok()
+            .filter(|o| o.status.success())
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+    };
+
+    // Check if we're in a git repo
+    if !git_ok(&["rev-parse", "--is-inside-work-tree"], working_dir) {
+        return (working_dir.to_string(), None);
+    }
+
+    let is_revision = task.revision_count.unwrap_or(0) > 0;
+    let slug = generate_branch_slug(&task.title);
+    let slug = if slug.is_empty() { format!("task-{}", task.id) } else { slug };
+    let branch_name = sanitize_branch_name(&task.branch_name.clone().unwrap_or_else(|| {
+        format!("{}/{}", task.task_type.as_deref().unwrap_or("feature"), slug)
+    }));
+    let base = project.pr_base_branch.as_deref().unwrap_or("main");
+
+    // For revisions, reuse existing worktree
     if is_revision {
-        if let Some(bn) = task.branch_name.as_deref() {
-            if let Ok(current) = exec("branch --show-current") {
-                if current != bn {
-                    let _ = git_hidden(&["checkout", bn], working_dir);
-                }
+        let existing = TASK_WORKTREES.lock().get(&task.id).cloned();
+        if let Some(wt_dir) = existing {
+            if Path::new(&wt_dir).exists() {
+                tasks::update_branch(db, task.id, &branch_name);
+                return (wt_dir, Some(branch_name));
             }
-        }
-    } else {
-        let base = project.pr_base_branch.as_deref().unwrap_or("main");
-        if git_hidden(&["rev-parse", "--verify", &branch_name], working_dir).map(|o| o.status.success()).unwrap_or(false) {
-            let _ = git_hidden(&["checkout", &branch_name], working_dir);
-        } else if git_hidden(&["checkout", "-b", &branch_name, base], working_dir).is_err() {
-            let _ = git_hidden(&["checkout", "-b", &branch_name], working_dir);
         }
     }
 
-    tasks::update_branch(db, task.id, &branch_name);
-    let _ = app;
-    Some(branch_name)
+    // Worktree directory: .worktrees/task-{id} relative to repo root
+    let worktree_dir = Path::new(working_dir).join(".worktrees").join(format!("task-{}", task.id));
+    let worktree_str = worktree_dir.to_string_lossy().to_string();
+
+    // If worktree already exists (e.g. from a previous failed run), remove it first
+    if worktree_dir.exists() {
+        let _ = git_hidden(&["worktree", "remove", "--force", &worktree_str], working_dir);
+        // Fallback: remove directory manually if git worktree remove failed
+        if worktree_dir.exists() {
+            std::fs::remove_dir_all(&worktree_dir).ok();
+        }
+        // Prune stale worktree references
+        let _ = git_hidden(&["worktree", "prune"], working_dir);
+    }
+
+    // Ensure .worktrees directory exists and is git-ignored
+    let worktrees_parent = Path::new(working_dir).join(".worktrees");
+    if !worktrees_parent.exists() {
+        std::fs::create_dir_all(&worktrees_parent).ok();
+        // Add .worktrees to .git/info/exclude so it doesn't show as untracked
+        let exclude_file = Path::new(working_dir).join(".git").join("info").join("exclude");
+        if let Ok(content) = std::fs::read_to_string(&exclude_file) {
+            if !content.contains(".worktrees") {
+                let mut new_content = content.trim_end().to_string();
+                new_content.push_str("\n.worktrees\n");
+                std::fs::write(&exclude_file, new_content).ok();
+            }
+        }
+    }
+
+    // Create worktree with branch
+    let branch_exists = git_ok(&["rev-parse", "--verify", &branch_name], working_dir);
+    let created = if branch_exists {
+        // Branch exists — create worktree checking out that branch
+        git_ok(&["worktree", "add", &worktree_str, &branch_name], working_dir)
+    } else {
+        // New branch — create worktree with new branch from base
+        git_ok(&["worktree", "add", "-b", &branch_name, &worktree_str, base], working_dir)
+            || git_ok(&["worktree", "add", "-b", &branch_name, &worktree_str], working_dir)
+    };
+
+    if created {
+        TASK_WORKTREES.lock().insert(task.id, worktree_str.clone());
+        tasks::update_branch(db, task.id, &branch_name);
+        log::info!("Created worktree for task {} at {} (branch: {})", task.id, worktree_str, branch_name);
+        (worktree_str, Some(branch_name))
+    } else {
+        // Fallback: use main working dir with branch checkout (legacy behavior)
+        log::warn!("Failed to create worktree for task {}, falling back to shared working dir", task.id);
+        if branch_exists {
+            let _ = git_hidden(&["checkout", &branch_name], working_dir);
+        } else if !git_ok(&["checkout", "-b", &branch_name, base], working_dir) {
+            let _ = git_hidden(&["checkout", "-b", &branch_name], working_dir);
+        }
+        tasks::update_branch(db, task.id, &branch_name);
+        (working_dir.to_string(), Some(branch_name))
+    }
+}
+
+/// Remove worktree for a task and clean up tracking state.
+fn cleanup_task_worktree(task_id: i64, working_dir: &str) {
+    let wt_dir = TASK_WORKTREES.lock().remove(&task_id);
+    if let Some(wt) = wt_dir {
+        let wt_path = Path::new(&wt);
+        if wt_path.exists() {
+            let mut cmd = Command::new("git");
+            cmd.args(["worktree", "remove", "--force", &wt])
+                .current_dir(working_dir)
+                .stdout(Stdio::null()).stderr(Stdio::null());
+            #[cfg(target_os = "windows")]
+            cmd.creation_flags(CREATE_NO_WINDOW);
+            cmd.output().ok();
+
+            // Fallback manual removal
+            if wt_path.exists() {
+                std::fs::remove_dir_all(wt_path).ok();
+            }
+        }
+        // Prune stale worktree references
+        let mut prune = Command::new("git");
+        prune.args(["worktree", "prune"])
+            .current_dir(working_dir)
+            .stdout(Stdio::null()).stderr(Stdio::null());
+        #[cfg(target_os = "windows")]
+        prune.creation_flags(CREATE_NO_WINDOW);
+        prune.output().ok();
+
+        log::info!("Cleaned up worktree for task {} at {}", task_id, wt);
+    }
+}
+
+/// Get the worktree directory for a task, if one exists.
+pub fn get_task_worktree(task_id: i64) -> Option<String> {
+    TASK_WORKTREES.lock().get(&task_id).cloned()
 }
 
 fn scan_git_info(working_dir: &str, task_id: i64, db: &DbPool) {
@@ -266,10 +369,13 @@ fn scan_git_info(working_dir: &str, task_id: i64, db: &DbPool) {
     tasks::update_git_info(db, task_id, &commits_json, pr_url.as_deref(), diff_stat.as_deref());
 }
 
-/// Delete feature branch (local + remote) after task completion.
+/// Delete feature branch (local + remote) and worktree after task completion.
 /// Skips if auto_pr is enabled (branch needed for open PR).
 /// Only acts if task has a branch and branch is not the base branch.
 pub fn cleanup_task_branch(task: &tasks::Task, working_dir: &str, project: &projects::Project) {
+    // Always clean up worktree regardless of other settings
+    cleanup_task_worktree(task.id, working_dir);
+
     if project.auto_branch.unwrap_or(1) == 0 { return; }
     // Don't delete branch if auto_pr is on — PR may still be open
     if project.auto_pr.unwrap_or(0) == 1 { return; }
@@ -289,9 +395,7 @@ pub fn cleanup_task_branch(task: &tasks::Task, working_dir: &str, project: &proj
         cmd.output().ok();
     };
 
-    // Switch to base branch before deleting
-    git(&["checkout", base]);
-    // Delete local branch
+    // Delete local branch (worktree already removed so branch is free)
     git(&["branch", "-D", branch]);
     // Delete remote branch (best-effort)
     git(&["push", "origin", "--delete", branch]);
@@ -612,6 +716,7 @@ fn handle_process_lifecycle(
     task_title: &str,
     task_key: Option<&str>,
     attach_dir: &Path,
+    project_working_dir: &str,
 ) {
     let pid = child.id();
     ACTIVE_PROCESSES.lock().insert(task_id, ProcessInfo {
@@ -683,6 +788,7 @@ fn handle_process_lifecycle(
     if was_user_stopped {
         tasks::add_log(db, task_id, "Task stopped by user.", "system", None);
         generate_lifecycle_summary(task_id, db);
+        cleanup_task_worktree(task_id, project_working_dir);
         emit_task_updated(db, app, task_id);
         app.emit("claude:finished", &serde_json::json!({"taskId": task_id, "exitCode": status})).ok();
         if attach_dir.exists() { std::fs::remove_dir_all(attach_dir).ok(); }
@@ -729,7 +835,7 @@ fn handle_process_lifecycle(
                     serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title}));
                 if let (Some(task), Some(proj)) = (tasks::get_by_id(db, task_id), project) {
                     let mcp_port = crate::config::load_from_handle(app).port;
-                    start_test(&task, app.clone(), working_dir, &proj, mcp_port);
+                    start_test(&task, app.clone(), project_working_dir, &proj, mcp_port);
                 }
                 // Don't cascade — auto-test completion handler will cascade when done
             } else {
@@ -747,6 +853,8 @@ fn handle_process_lifecycle(
         crate::services::notification::notify_task_failed(app, &crate::services::notification::TaskNotification::new(task_title, task_key), &format!("exit code {}", status));
         crate::services::webhook::fire(project_id, "task_failed", &format!("Task failed (exit {}): {}", status, task_title),
             serde_json::json!({"taskId": task_id, "taskKey": task_key, "title": task_title, "exitCode": status}));
+        // Clean up worktree on failure (will be re-created on retry)
+        cleanup_task_worktree(task_id, project_working_dir);
         crate::services::queue::handle_task_failure(db, app, project_id, task_id);
     }
 
@@ -781,9 +889,6 @@ pub fn start(
     // Assign agent name
     let agent_name = assign_agent_name(task_id, &db);
 
-    // Copy attachments to working dir
-    let (task_attachments, attach_dir) = copy_task_attachments(task_id, working_dir, &db);
-
     let revisions = tasks::get_revisions(&db, task_id);
     let enabled_snippets = snippets::get_enabled_by_project(&db, task.project_id);
     let role = task.role_id.and_then(|rid| roles::get_by_id(&db, rid));
@@ -800,11 +905,15 @@ pub fn start(
     // Load matching prompt template for this task type
     let template = templates::find_for_task(&db, task.project_id, task.task_type.as_deref().unwrap_or("feature"));
 
-    // Auto-create branch BEFORE building prompt so branch name is included in instructions
+    // Create isolated worktree (or just branch) BEFORE building prompt so branch name is included in instructions
     let mut task_clone = task.clone();
-    if let Some(branch) = ensure_task_branch(task, working_dir, project, &db, &app) {
+    let (effective_dir, branch_opt) = ensure_task_worktree(task, working_dir, project, &db, &app);
+    if let Some(branch) = branch_opt {
         task_clone.branch_name = Some(branch);
     }
+
+    // Copy attachments to effective dir (worktree if created, else working dir)
+    let (task_attachments, attach_dir) = copy_task_attachments(task_id, &effective_dir, &db);
 
     let prompt = build_prompt(&task_clone, &revisions, &enabled_snippets, &task_attachments, role.as_ref(), task.project_id, &parent_contexts, template.as_ref());
     let model = task.model.as_deref().unwrap_or("sonnet");
@@ -836,7 +945,8 @@ pub fn start(
     // Build CLI arguments
     let args = build_claude_args(&prompt, model, effort, permission_mode, allowed_tools, mcp_server_port);
 
-    let working_dir = working_dir.to_string();
+    let effective_dir = effective_dir;
+    let project_working_dir = working_dir.to_string();
     let project_id = task.project_id;
     let task_title = task.title.clone();
     let task_key = task.task_key.clone();
@@ -844,7 +954,7 @@ pub fn start(
     std::thread::spawn(move || {
         let mut cmd = Command::new("claude");
         cmd.args(&args)
-            .current_dir(&working_dir)
+            .current_dir(&effective_dir)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .stdin(Stdio::null());
@@ -864,7 +974,7 @@ pub fn start(
         };
 
         let db = db::get_db();
-        handle_process_lifecycle(task_id, child, &db, &app, &working_dir, project_id, &task_title, task_key.as_deref(), &attach_dir);
+        handle_process_lifecycle(task_id, child, &db, &app, &effective_dir, project_id, &task_title, task_key.as_deref(), &attach_dir, &project_working_dir);
     });
 
     true
@@ -1000,7 +1110,9 @@ After all checks, you MUST output this exact JSON block as your final output:
     app.emit("task:test_started", &serde_json::json!({"taskId": task_id, "model": model})).ok();
 
     let args = build_claude_args(&test_prompt, model, "low", permission_mode, allowed_tools, mcp_server_port);
-    let working_dir = working_dir.to_string();
+    // Reuse the task's worktree if one exists, otherwise fall back to project working dir
+    let effective_dir = get_task_worktree(task_id).unwrap_or_else(|| working_dir.to_string());
+    let project_working_dir = working_dir.to_string();
     let project_id = task.project_id;
     let task_title = task.title.clone();
     let task_key = task.task_key.clone();
@@ -1008,7 +1120,7 @@ After all checks, you MUST output this exact JSON block as your final output:
     std::thread::spawn(move || {
         let mut cmd = Command::new("claude");
         cmd.args(&args)
-            .current_dir(&working_dir)
+            .current_dir(&effective_dir)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .stdin(Stdio::null());
@@ -1031,7 +1143,7 @@ After all checks, you MUST output this exact JSON block as your final output:
             pid,
             started_at: std::time::Instant::now(),
             project_id,
-            working_dir: working_dir.to_string(),
+            working_dir: effective_dir.to_string(),
         });
         STARTING_TASKS.lock().remove(&task_id);
 
@@ -1152,11 +1264,11 @@ After all checks, you MUST output this exact JSON block as your final output:
                             activity::add(&db, project_id, Some(task_id), "task_approved", &format!("Task auto-approved: {}", task_title), None);
 
                             if let (Some(done_task), Some(proj)) = (tasks::get_by_id(&db, task_id), projects::get_by_id(&db, project_id)) {
-                                // Auto-create PR if enabled
-                                auto_create_pr_public(&done_task, &working_dir, &proj, &db, &app);
-                                // Cleanup feature branch (skipped if auto_pr is on)
+                                // Auto-create PR from worktree dir (where commits live)
+                                auto_create_pr_public(&done_task, &effective_dir, &proj, &db, &app);
+                                // Cleanup worktree + feature branch using project root dir
                                 let after_pr = tasks::get_by_id(&db, task_id).unwrap_or(done_task.clone());
-                                cleanup_task_branch(&after_pr, &working_dir, &proj);
+                                cleanup_task_branch(&after_pr, &project_working_dir, &proj);
 
                                 // Auto-close linked GitHub issue
                                 if proj.github_sync_enabled.unwrap_or(0) == 1 {
@@ -1220,10 +1332,10 @@ After all checks, you MUST output this exact JSON block as your final output:
                                 &format!("Auto-revision #{} from test failure: {}", rev_num, task_title), None);
                             tasks::add_log(&db, task_id, &format!("Auto-revision #{}/{}: Restarting with test feedback...", rev_num, max_revisions), "system", None);
 
-                            // Restart the task with revision context
+                            // Restart the task with revision context (uses project root, start() creates new worktree)
                             if let (Some(updated_task), Some(proj)) = (tasks::get_by_id(&db, task_id), projects::get_by_id(&db, project_id)) {
                                 let mcp_port = crate::config::load_from_handle(&app).port;
-                                start(&updated_task, app.clone(), &working_dir, &proj, mcp_port);
+                                start(&updated_task, app.clone(), &project_working_dir, &proj, mcp_port);
                             }
                             emit_task_updated(&db, &app, task_id);
                             app.emit("task:test_completed", &serde_json::json!({"taskId": task_id, "verdict": "reject", "summary": summary, "autoRevision": rev_num})).ok();

@@ -298,7 +298,6 @@ export default function SettingsModal({ onClose }) {
       // Sync language change
       if (key === 'language') {
         setLang(value);
-        localStorage.setItem('lang', value);
       }
 
       setSaving(true);
