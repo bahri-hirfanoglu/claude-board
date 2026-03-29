@@ -109,6 +109,7 @@ export default function AppLayout({
                 onViewLogs={taskActions.onViewLogs}
                 onEditTask={(task) => openModal('task', task)}
                 onDeleteTask={taskActions.onDelete}
+                onBulkDelete={taskActions.onBulkDelete}
                 onReviewTask={taskActions.onReview}
                 onViewDetail={(task) => openModal('detail', task)}
               />
@@ -118,6 +119,7 @@ export default function AppLayout({
                 onSelectProject={onNavigateToProject}
                 onNewProject={() => openModal('project')}
                 onOpenSettings={onOpenAppSettings}
+                onDeleteProject={projectActions.onDeleteById}
               />
             )}
           </div>

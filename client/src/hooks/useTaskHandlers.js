@@ -120,14 +120,43 @@ export function useTaskHandlers({
   const onDelete = useCallback(
     (task) => {
       setConfirm({
-        title: 'Delete Task',
-        message: `Are you sure you want to delete "${task.title}"?`,
+        title: t('toast.deleteTaskTitle'),
+        message: t('toast.deleteTaskConfirm', { title: task.title }),
         danger: true,
         onConfirm: async () => {
           setConfirm(null);
           await api.deleteTask(task.id);
           setTasks((prev) => prev.filter((x) => x.id !== task.id));
           addToast(t('toast.taskDeleted'), 'info');
+        },
+        onCancel: () => setConfirm(null),
+      });
+    },
+    [addToast, t, setTasks, setConfirm],
+  );
+
+  const onBulkDelete = useCallback(
+    (selectedTasks) => {
+      if (!selectedTasks?.length) return;
+      setConfirm({
+        title: t('toast.bulkDeleteTitle'),
+        message: t('toast.bulkDeleteMessage', { count: selectedTasks.length }),
+        danger: true,
+        onConfirm: async () => {
+          setConfirm(null);
+          const ids = selectedTasks.map((t) => t.id);
+          const results = await Promise.allSettled(ids.map((id) => api.deleteTask(id)));
+          const deletedIds = ids.filter((_, i) => results[i].status === 'fulfilled');
+          const failCount = ids.length - deletedIds.length;
+          if (deletedIds.length > 0) {
+            setTasks((prev) => prev.filter((x) => !deletedIds.includes(x.id)));
+          }
+          if (failCount > 0) {
+            addToast(t('toast.bulkDeletePartial', { count: failCount }), 'error');
+          }
+          if (deletedIds.length > 0) {
+            addToast(t('toast.bulkDeleted', { count: deletedIds.length }), 'info');
+          }
         },
         onCancel: () => setConfirm(null),
       });
@@ -166,5 +195,15 @@ export function useTaskHandlers({
     [addToast, t, setTasks, closeModal],
   );
 
-  return { onStatusChange, onCreate, onUpdate, onDelete, onViewLogs, onReview, onApprove, onRequestChanges };
+  return {
+    onStatusChange,
+    onCreate,
+    onUpdate,
+    onDelete,
+    onBulkDelete,
+    onViewLogs,
+    onReview,
+    onApprove,
+    onRequestChanges,
+  };
 }

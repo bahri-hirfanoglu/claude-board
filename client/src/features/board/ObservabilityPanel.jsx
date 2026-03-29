@@ -83,7 +83,10 @@ export default function ObservabilityPanel({ projectId }) {
     if (!IS_TAURI) return;
     return tauriListen('task:log', (payload) => {
       if (pausedRef.current) return;
-      const meta = payload.meta ? (typeof payload.meta === 'string' ? JSON.parse(payload.meta) : payload.meta) : {};
+      let meta = {};
+      try {
+        meta = payload.meta ? (typeof payload.meta === 'string' ? JSON.parse(payload.meta) : payload.meta) : {};
+      } catch {}
       if (payload.logType !== 'tool' && payload.logType !== 'tool_result') return;
 
       const entry = {

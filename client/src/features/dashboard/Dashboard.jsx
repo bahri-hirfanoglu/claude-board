@@ -85,7 +85,7 @@ function DashHeader({ t, dashTab, setDashTab, onNewProject, onOpenSettings }) {
   );
 }
 
-export default function Dashboard({ projects, onSelectProject, onNewProject, onOpenSettings }) {
+export default function Dashboard({ projects, onSelectProject, onNewProject, onOpenSettings, onDeleteProject }) {
   const { t } = useTranslation();
   const [summary, setSummary] = useState(summaryCache || []);
   const [groups, setGroups] = useState(groupsCache || []);
@@ -94,6 +94,15 @@ export default function Dashboard({ projects, onSelectProject, onNewProject, onO
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboard:viewMode') || 'grid');
   const [loading, setLoading] = useState(!summaryCache);
   const [dashTab, setDashTab] = useState('projects');
+
+  const handleDeleteProject = (project) => {
+    if (!onDeleteProject) return;
+    onDeleteProject(project, () => {
+      summaryCache = null;
+      groupsCache = null;
+      loadSummary();
+    });
+  };
 
   useEffect(() => {
     loadSummary();
@@ -339,13 +348,25 @@ export default function Dashboard({ projects, onSelectProject, onNewProject, onO
                       {viewMode === 'list' ? (
                         <div className="space-y-1.5">
                           {groupProjects.map((p) => (
-                            <ProjectListRow key={p.id} project={p} onSelect={onSelectProject} t={t} />
+                            <ProjectListRow
+                              key={p.id}
+                              project={p}
+                              onSelect={onSelectProject}
+                              onDelete={handleDeleteProject}
+                              t={t}
+                            />
                           ))}
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {groupProjects.map((p) => (
-                            <ProjectCard key={p.id} project={p} onSelect={onSelectProject} t={t} />
+                            <ProjectCard
+                              key={p.id}
+                              project={p}
+                              onSelect={onSelectProject}
+                              onDelete={handleDeleteProject}
+                              t={t}
+                            />
                           ))}
                         </div>
                       )}
@@ -364,7 +385,13 @@ export default function Dashboard({ projects, onSelectProject, onNewProject, onO
               /* Flat list */
               <div className="space-y-1.5">
                 {summary.map((p) => (
-                  <ProjectListRow key={p.id} project={p} onSelect={onSelectProject} t={t} />
+                  <ProjectListRow
+                    key={p.id}
+                    project={p}
+                    onSelect={onSelectProject}
+                    onDelete={handleDeleteProject}
+                    t={t}
+                  />
                 ))}
                 <button
                   onClick={onNewProject}
@@ -378,7 +405,7 @@ export default function Dashboard({ projects, onSelectProject, onNewProject, onO
               /* Flat grid */
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {summary.map((p) => (
-                  <ProjectCard key={p.id} project={p} onSelect={onSelectProject} t={t} />
+                  <ProjectCard key={p.id} project={p} onSelect={onSelectProject} onDelete={handleDeleteProject} t={t} />
                 ))}
                 <button
                   onClick={onNewProject}

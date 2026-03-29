@@ -35,8 +35,8 @@ export function useProjectHandlers({
   const onDelete = useCallback(() => {
     if (!currentProject) return;
     setConfirm({
-      title: 'Delete Project',
-      message: `Delete "${currentProject.name}"? All tasks will be deleted.`,
+      title: t('toast.deleteProjectTitle'),
+      message: t('toast.deleteProjectConfirm', { name: currentProject.name }),
       danger: true,
       onConfirm: async () => {
         setConfirm(null);
@@ -48,9 +48,29 @@ export function useProjectHandlers({
     });
   }, [currentProject, navigateToDashboard, addToast, t, setConfirm]);
 
+  const onDeleteById = useCallback(
+    (project, onAfterDelete) => {
+      if (!project?.id) return;
+      setConfirm({
+        title: t('toast.deleteProjectTitle'),
+        message: t('toast.deleteProjectConfirm', { name: project.name }),
+        danger: true,
+        onConfirm: async () => {
+          setConfirm(null);
+          await api.deleteProject(project.id);
+          if (currentProject?.id === project.id) navigateToDashboard();
+          addToast(t('toast.projectDeleted'), 'info');
+          onAfterDelete?.();
+        },
+        onCancel: () => setConfirm(null),
+      });
+    },
+    [currentProject, navigateToDashboard, addToast, t, setConfirm],
+  );
+
   const onEdit = useCallback(() => {
     if (currentProject) openModal('project', currentProject);
   }, [currentProject, openModal]);
 
-  return { onCreate, onUpdate, onDelete, onEdit };
+  return { onCreate, onUpdate, onDelete, onDeleteById, onEdit };
 }
