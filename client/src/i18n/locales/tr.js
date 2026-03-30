@@ -216,6 +216,8 @@ export default {
   'projectModal.maxConcurrent': 'Maks. E\u015f Zamanl\u0131',
   'projectModal.autoBranch': 'Otomatik Dal',
   'projectModal.autoBranchDesc': 'Her g\u00f6rev i\u00e7in \u00f6zellik dal\u0131 olu\u015ftur',
+  'projectModal.autoPush': 'Otomatik Push',
+  'projectModal.autoPushDesc': 'Dalları otomatik olarak uzak depoya gönder',
   'projectModal.autoPR': 'Otomatik PR',
   'projectModal.autoPRDesc': 'Tamamlandığında pull request oluştur',
   'projectModal.autoTest': 'Otomatik Test',

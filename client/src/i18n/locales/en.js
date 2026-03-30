@@ -213,6 +213,8 @@ export default {
   'projectModal.maxConcurrent': 'Max Concurrent',
   'projectModal.autoBranch': 'Auto Branch',
   'projectModal.autoBranchDesc': 'Create feature branch per task',
+  'projectModal.autoPush': 'Auto Push',
+  'projectModal.autoPushDesc': 'Push branches to remote automatically',
   'projectModal.autoPR': 'Auto PR',
   'projectModal.autoPRDesc': 'Create pull request on completion',
   'projectModal.autoTest': 'Auto Test',

@@ -49,7 +49,7 @@ pub fn update_project(
     icon: Option<String>, icon_seed: Option<String>,
     permission_mode: Option<String>, allowed_tools: Option<String>,
     auto_queue: Option<bool>, max_concurrent: Option<i64>,
-    auto_branch: Option<bool>, auto_pr: Option<bool>, pr_base_branch: Option<String>,
+    auto_branch: Option<bool>, auto_pr: Option<bool>, auto_push: Option<bool>, pr_base_branch: Option<String>,
     auto_test: Option<bool>, test_prompt: Option<String>,
     task_timeout_minutes: Option<i64>,
     max_retries: Option<i64>,
@@ -90,10 +90,11 @@ pub fn update_project(
     if let Some(retries) = max_retries {
         pq::update_max_retries(&db, id, retries);
     }
-    if auto_branch.is_some() || auto_pr.is_some() || pr_base_branch.is_some() {
+    if auto_branch.is_some() || auto_pr.is_some() || auto_push.is_some() || pr_base_branch.is_some() {
         pq::update_git_settings(&db, id,
             auto_branch.unwrap_or(project.auto_branch.unwrap_or(1) == 1),
             auto_pr.unwrap_or(project.auto_pr.unwrap_or(0) == 1),
+            auto_push.unwrap_or(project.auto_push.unwrap_or(0) == 1),
             pr_base_branch.as_deref().unwrap_or(project.pr_base_branch.as_deref().unwrap_or("main")));
     }
     if github_repo.is_some() || github_sync_enabled.is_some() {

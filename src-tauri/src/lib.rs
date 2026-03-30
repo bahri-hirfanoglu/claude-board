@@ -202,6 +202,7 @@ pub fn run() {
             commands::tasks::get_revisions,
             commands::tasks::get_task_detail,
             commands::tasks::reorder_queue,
+            commands::tasks::reorder_tasks,
             commands::tasks::set_task_dependency,
             commands::tasks::add_task_dependency,
             commands::tasks::remove_task_dependency,

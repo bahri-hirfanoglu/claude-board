@@ -391,8 +391,10 @@ pub fn cleanup_task_branch(task: &tasks::Task, working_dir: &str, project: &proj
 
     // Delete local branch (worktree already removed so branch is free)
     git(&["branch", "-D", branch]);
-    // Delete remote branch (best-effort)
-    git(&["push", "origin", "--delete", branch]);
+    // Delete remote branch (best-effort, only if auto_push is on)
+    if project.auto_push.unwrap_or(0) == 1 {
+        git(&["push", "origin", "--delete", branch]);
+    }
     log::info!("Cleaned up branch {} for task {}", branch, task.id);
 }
 
@@ -425,14 +427,16 @@ fn auto_create_pr(task: &tasks::Task, working_dir: &str, project: &projects::Pro
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
     };
 
-    // Push branch first
-    let mut push_cmd = Command::new("git");
-    push_cmd.args(["push", "-u", "origin", branch])
-        .current_dir(working_dir)
-        .stdout(Stdio::null()).stderr(Stdio::null());
-    #[cfg(target_os = "windows")]
-    push_cmd.creation_flags(CREATE_NO_WINDOW);
-    push_cmd.output().ok();
+    // Push branch (auto_pr implies push is needed for PR creation)
+    if project.auto_push.unwrap_or(0) == 1 || project.auto_pr.unwrap_or(0) == 1 {
+        let mut push_cmd = Command::new("git");
+        push_cmd.args(["push", "-u", "origin", branch])
+            .current_dir(working_dir)
+            .stdout(Stdio::null()).stderr(Stdio::null());
+        #[cfg(target_os = "windows")]
+        push_cmd.creation_flags(CREATE_NO_WINDOW);
+        push_cmd.output().ok();
+    }
 
     // Create PR
     let title = format!("{}: {}", task.task_type.as_deref().unwrap_or("feat"), task.title);
@@ -679,7 +683,8 @@ fn build_claude_args(
     });
     args.extend(["--mcp-config".to_string(), mcp_config.to_string()]);
 
-    // Permission mode
+    // Permission mode: "auto-accept" skips all permissions, "allow-tools" whitelists specific tools,
+    // "default" passes no flags (Claude CLI prompts user for each tool use)
     if permission_mode == "auto-accept" {
         args.push("--dangerously-skip-permissions".to_string());
     } else if permission_mode == "allow-tools" {
@@ -690,6 +695,7 @@ fn build_claude_args(
             for t in tools { args.extend(["--allowedTools".to_string(), t.to_string()]); }
         }
     }
+    // "default" mode: no permission flags — Claude CLI uses its default interactive approval
 
     if effort != "medium" {
         args.extend(["--effort".to_string(), effort.to_string()]);
@@ -909,7 +915,7 @@ pub fn start(
     // Copy attachments to effective dir (worktree if created, else working dir)
     let (task_attachments, attach_dir) = copy_task_attachments(task_id, &effective_dir, &db);
 
-    let prompt = build_prompt(&task_clone, &revisions, &enabled_snippets, &task_attachments, role.as_ref(), task.project_id, &parent_contexts, template.as_ref());
+    let prompt = build_prompt(&task_clone, &revisions, &enabled_snippets, &task_attachments, role.as_ref(), task.project_id, &parent_contexts, template.as_ref(), Some(project));
     let model = task.model.as_deref().unwrap_or("sonnet");
     let effort = task.thinking_effort.as_deref().unwrap_or("medium");
     let permission_mode = project.permission_mode.as_deref().unwrap_or("auto-accept");
@@ -1302,14 +1308,14 @@ After all checks, you MUST output this exact JSON block as your final output:
                             .unwrap_or_else(|| EngineConfig::from_project(&projects::Project {
                                 id: 0, name: String::new(), slug: String::new(), working_dir: String::new(),
                                 icon: None, icon_seed: None, permission_mode: None, allowed_tools: None,
-                                auto_queue: None, max_concurrent: None, auto_branch: None, auto_pr: None,
+                                auto_queue: None, max_concurrent: None, auto_branch: None, auto_pr: None, auto_push: None,
                                 pr_base_branch: None, project_key: None, task_counter: None, max_retries: None,
                                 auto_test: None, test_prompt: None, task_timeout_minutes: None,
                                 github_repo: None, github_sync_enabled: None,
                                 max_auto_revisions: None, retry_base_delay_secs: None, retry_max_delay_secs: None,
                                 auto_test_model: None,
                                 circuit_breaker_threshold: None, circuit_breaker_active: None, consecutive_failures: None,
-                                require_approval: None,
+                                require_approval: None, gsd_enabled: None,
                                 created_at: None, updated_at: None,
                             }));
                         let max_revisions = engine_config.max_auto_revisions;

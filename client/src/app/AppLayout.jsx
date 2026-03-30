@@ -112,6 +112,7 @@ export default function AppLayout({
                 onBulkDelete={taskActions.onBulkDelete}
                 onReviewTask={taskActions.onReview}
                 onViewDetail={(task) => openModal('detail', task)}
+                onReorderTasks={taskActions.onReorderTasks}
               />
             ) : (
               <Dashboard

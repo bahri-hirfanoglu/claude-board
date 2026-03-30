@@ -137,6 +137,13 @@ pub fn update_queue_position(db: &DbPool, task_id: i64, position: i64) {
     }
 }
 
+pub fn update_sort_order(db: &DbPool, task_id: i64, sort_order: i64) {
+    let conn = db.lock();
+    if let Err(e) = conn.execute("UPDATE tasks SET sort_order=?1 WHERE id=?2", params![sort_order, task_id]) {
+        log::error!("update_sort_order: {}", e);
+    }
+}
+
 pub fn update_depends_on(db: &DbPool, task_id: i64, depends_on: Option<i64>) {
     let conn = db.lock();
     if let Err(e) = conn.execute("UPDATE tasks SET depends_on=?1 WHERE id=?2", params![depends_on, task_id]) {

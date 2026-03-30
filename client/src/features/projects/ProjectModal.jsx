@@ -78,6 +78,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
   const [maxConcurrent, setMaxConcurrent] = useState(project?.max_concurrent || 1);
   const [autoBranch, setAutoBranch] = useState(project?.auto_branch !== undefined ? !!project.auto_branch : true);
   const [autoPr, setAutoPr] = useState(project?.auto_pr ? true : false);
+  const [autoPush, setAutoPush] = useState(project?.auto_push ? true : false);
   const [prBaseBranch, setPrBaseBranch] = useState(project?.pr_base_branch || 'main');
   const [autoTest, setAutoTest] = useState(project?.auto_test ? true : false);
   const [testPrompt, setTestPrompt] = useState(project?.test_prompt || '');
@@ -146,6 +147,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         maxConcurrent,
         autoBranch: !!autoBranch,
         autoPr: !!autoPr,
+        autoPush: !!autoPush,
         prBaseBranch: prBaseBranch.trim() || 'main',
         autoTest: !!autoTest,
         testPrompt: testPrompt.trim(),
@@ -441,6 +443,13 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                         onToggle={() => setAutoBranch(!autoBranch)}
                         label={t('projectModal.autoBranch')}
                         desc={t('projectModal.autoBranchDesc')}
+                        activeColor="violet"
+                      />
+                      <ToggleRow
+                        enabled={autoPush}
+                        onToggle={() => setAutoPush(!autoPush)}
+                        label={t('projectModal.autoPush')}
+                        desc={t('projectModal.autoPushDesc')}
                         activeColor="violet"
                       />
                       <ToggleRow

@@ -132,11 +132,17 @@ pub async fn github_check_status(repo: String) -> Result<serde_json::Value, Stri
 fn get_project_repo(project_id: i64) -> Result<String, String> {
     let pool = db::get_db();
     let conn = pool.lock();
-    let mut stmt = conn.prepare("SELECT github_repo FROM projects WHERE id = ?1")
+    let mut stmt = conn.prepare("SELECT github_repo, github_sync_enabled FROM projects WHERE id = ?1")
         .map_err(|e| e.to_string())?;
-    let repo: String = stmt.query_row([project_id], |row| {
-        row.get::<_, Option<String>>(0).map(|v| v.unwrap_or_default())
+    let (repo, sync_enabled): (String, i64) = stmt.query_row([project_id], |row| {
+        Ok((
+            row.get::<_, Option<String>>(0)?.unwrap_or_default(),
+            row.get::<_, Option<i64>>(1)?.unwrap_or(0),
+        ))
     }).map_err(|e| format!("Project not found: {}", e))?;
+    if sync_enabled != 1 {
+        return Err("GitHub sync is not enabled for this project. Enable it in Project Settings > GitHub.".into());
+    }
     Ok(repo)
 }
 
