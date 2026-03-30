@@ -123,6 +123,9 @@ export default {
   'board.summary': 'Summary',
   'board.clearFilter': 'Clear filter',
   'board.noTasks': 'No tasks',
+  'board.createDependency': 'Create Dependency',
+  'board.depDialogDesc': 'Choose the dependency direction between these tasks:',
+  'board.dependsOn': 'depends on',
 
   // ─── Task Card ───
   'card.startWorking': 'Start Working',
@@ -211,6 +214,7 @@ export default {
   'projectModal.autoQueueDisabled': 'Auto Queue Disabled',
   'projectModal.autoQueueDesc': 'Auto-start backlog tasks when a running task finishes',
   'projectModal.maxConcurrent': 'Max Concurrent',
+  'projectModal.permissionMode': 'Permission Mode',
   'projectModal.autoBranch': 'Auto Branch',
   'projectModal.autoBranchDesc': 'Create feature branch per task',
   'projectModal.autoPush': 'Auto Push',

@@ -73,8 +73,13 @@ export function I18nProvider({ children }) {
   return <I18nCtx.Provider value={value}>{children}</I18nCtx.Provider>;
 }
 
+const fallbackCtx = { lang: 'en', setLang: () => {}, t: (key) => key, languages: [] };
+
 export function useTranslation() {
   const ctx = useContext(I18nCtx);
-  if (!ctx) throw new Error('useTranslation must be inside I18nProvider');
+  if (!ctx) {
+    console.warn('useTranslation called outside I18nProvider — using fallback');
+    return fallbackCtx;
+  }
   return ctx;
 }

@@ -333,7 +333,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
               {/* ── Permissions ── */}
               {tab === 'permissions' && (
                 <div className="space-y-4">
-                  <Section title={t('projectModal.permissionMode') || 'Permission Mode'} icon={Shield}>
+                  <Section title={t('projectModal.permissionMode')} icon={Shield}>
                     <div className="grid gap-2">
                       {PERMISSION_MODES.map((mode) => {
                         const Icon = mode.icon;

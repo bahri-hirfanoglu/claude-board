@@ -459,13 +459,9 @@ export default function Board({
             >
               <div className="flex items-center gap-2 mb-4">
                 <Link2 size={16} className="text-blue-400" />
-                <h3 className="text-sm font-medium text-surface-100">
-                  {t('board.createDependency') || 'Create Dependency'}
-                </h3>
+                <h3 className="text-sm font-medium text-surface-100">{t('board.createDependency')}</h3>
               </div>
-              <p className="text-xs text-surface-400 mb-4">
-                {t('board.depDialogDesc') || 'Choose the dependency direction between these tasks:'}
-              </p>
+              <p className="text-xs text-surface-400 mb-4">{t('board.depDialogDesc')}</p>
 
               <div className="space-y-2">
                 <button
@@ -478,7 +474,7 @@ export default function Board({
                   </div>
                   <div className="flex flex-col items-center flex-shrink-0">
                     <ArrowRight size={14} className="text-blue-400" />
-                    <span className="text-[9px] text-blue-400 mt-0.5">{t('board.dependsOn') || 'depends on'}</span>
+                    <span className="text-[9px] text-blue-400 mt-0.5">{t('board.dependsOn')}</span>
                   </div>
                   <div className="flex-1 min-w-0 text-right">
                     <div className="text-xs font-medium text-surface-200 truncate">{depDialog.to.title}</div>
@@ -496,7 +492,7 @@ export default function Board({
                   </div>
                   <div className="flex flex-col items-center flex-shrink-0">
                     <ArrowRight size={14} className="text-blue-400" />
-                    <span className="text-[9px] text-blue-400 mt-0.5">{t('board.dependsOn') || 'depends on'}</span>
+                    <span className="text-[9px] text-blue-400 mt-0.5">{t('board.dependsOn')}</span>
                   </div>
                   <div className="flex-1 min-w-0 text-right">
                     <div className="text-xs font-medium text-surface-200 truncate">{depDialog.from.title}</div>

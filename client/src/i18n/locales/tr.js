@@ -124,7 +124,10 @@ export default {
   'board.list': 'Liste',
   'board.summary': '\u00d6zet',
   'board.clearFilter': 'Filtreyi temizle',
-  'board.noTasks': 'G\u00f6rev yok',
+  'board.noTasks': 'Görev yok',
+  'board.createDependency': 'Bağımlılık Oluştur',
+  'board.depDialogDesc': 'Bu görevler arasındaki bağımlılık yönünü seçin:',
+  'board.dependsOn': 'bağımlı',
 
   // ─── Task Card ───
   'card.startWorking': '\u00c7al\u0131\u015fmaya Ba\u015fla',
@@ -214,6 +217,7 @@ export default {
   'projectModal.autoQueueDesc':
     '\u00c7al\u0131\u015fan g\u00f6rev bitti\u011finde beklemedeki g\u00f6revleri otomatik ba\u015flat',
   'projectModal.maxConcurrent': 'Maks. E\u015f Zamanl\u0131',
+  'projectModal.permissionMode': 'İzin Modu',
   'projectModal.autoBranch': 'Otomatik Dal',
   'projectModal.autoBranchDesc': 'Her g\u00f6rev i\u00e7in \u00f6zellik dal\u0131 olu\u015ftur',
   'projectModal.autoPush': 'Otomatik Push',
