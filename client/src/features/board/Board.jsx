@@ -401,7 +401,11 @@ export default function Board({
 
         {viewMode === 'pipeline' && (
           <ErrorBoundary>
-            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>}>
+            <Suspense
+              fallback={
+                <div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>
+              }
+            >
               <div className="flex-1 overflow-hidden">
                 <PipelineView
                   tasks={filteredTasks}
@@ -416,7 +420,11 @@ export default function Board({
 
         {viewMode === 'orchestration' && (
           <ErrorBoundary>
-            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>}>
+            <Suspense
+              fallback={
+                <div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>
+              }
+            >
               <div className="flex-1 overflow-hidden">
                 <OrchestrationView
                   tasks={tasks}
@@ -432,7 +440,11 @@ export default function Board({
 
         {viewMode === 'analytics' && (
           <ErrorBoundary>
-            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>}>
+            <Suspense
+              fallback={
+                <div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>
+              }
+            >
               <div className="flex-1 overflow-hidden">
                 <AnalyticsView tasks={filteredTasks} projectId={projectId} />
               </div>
@@ -442,7 +454,11 @@ export default function Board({
 
         {viewMode === 'roadmap' && (
           <ErrorBoundary>
-            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>}>
+            <Suspense
+              fallback={
+                <div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>
+              }
+            >
               <div className="flex-1 overflow-auto">
                 <RoadmapView
                   projectId={projectId}

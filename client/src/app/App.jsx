@@ -120,11 +120,13 @@ function AppInner() {
   useEffect(() => {
     if (!IS_TAURI || !IS_MACOS) return;
     const count = tasks.filter((t) => t.is_running).length;
-    import('@tauri-apps/api/app').then((mod) => {
-      if (mod.setBadgeCount) {
-        mod.setBadgeCount(count > 0 ? count : null).catch(() => {});
-      }
-    }).catch(() => {});
+    import('@tauri-apps/api/app')
+      .then((mod) => {
+        if (mod.setBadgeCount) {
+          mod.setBadgeCount(count > 0 ? count : null).catch(() => {});
+        }
+      })
+      .catch(() => {});
   }, [tasks]);
 
   // Auto-open terminal when task NEWLY starts running (respects auto_open_terminal setting)
