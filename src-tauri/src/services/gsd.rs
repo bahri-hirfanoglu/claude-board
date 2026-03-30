@@ -121,7 +121,8 @@ pub fn install(working_dir: &str, scope: &str) -> Result<String, String> {
         _ => "--global",
     };
 
-    let mut cmd = Command::new("npx");
+    let npx = if cfg!(target_os = "windows") { "npx.cmd" } else { "npx" };
+    let mut cmd = Command::new(npx);
     cmd.args(["get-shit-done-cc@latest", "--claude", flag])
         .current_dir(working_dir)
         .stdout(Stdio::piped())
