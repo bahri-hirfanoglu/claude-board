@@ -94,12 +94,9 @@ export function ThinkingBlock({ message, time }) {
 
 // ─── Claude text block (with inline code/bold rendering) ───
 export function ClaudeText({ message, time, isThinking }) {
-  if (isThinking) {
-    return <ThinkingBlock message={message} time={time} />;
-  }
-
   // Simple inline rendering: **bold**, `code`, ```codeblock```
   const rendered = useMemo(() => {
+    if (isThinking) return null;
     if (!message) return null;
 
     // Check for code blocks
@@ -126,7 +123,11 @@ export function ClaudeText({ message, time, isThinking }) {
     }
 
     return <InlineText text={message} />;
-  }, [message]);
+  }, [message, isThinking]);
+
+  if (isThinking) {
+    return <ThinkingBlock message={message} time={time} />;
+  }
 
   return (
     <div className="flex items-start gap-2 py-1.5 text-[13px] text-surface-200">
