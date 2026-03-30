@@ -17,6 +17,7 @@ pub struct Project {
     pub max_concurrent: Option<i64>,
     pub auto_branch: Option<i64>,
     pub auto_pr: Option<i64>,
+    pub auto_push: Option<i64>,
     pub pr_base_branch: Option<String>,
     pub project_key: Option<String>,
     pub task_counter: Option<i64>,
@@ -34,6 +35,7 @@ pub struct Project {
     pub circuit_breaker_active: Option<i64>,
     pub consecutive_failures: Option<i64>,
     pub require_approval: Option<i64>,
+    pub gsd_enabled: Option<i64>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
@@ -66,6 +68,7 @@ fn row_to_project(row: &rusqlite::Row) -> rusqlite::Result<Project> {
         max_concurrent: row.get("max_concurrent")?,
         auto_branch: row.get("auto_branch")?,
         auto_pr: row.get("auto_pr")?,
+        auto_push: row.get("auto_push").ok().flatten(),
         pr_base_branch: row.get("pr_base_branch")?,
         project_key: row.get("project_key")?,
         task_counter: row.get("task_counter")?,
@@ -83,6 +86,7 @@ fn row_to_project(row: &rusqlite::Row) -> rusqlite::Result<Project> {
         circuit_breaker_active: row.get("circuit_breaker_active").ok().flatten(),
         consecutive_failures: row.get("consecutive_failures").ok().flatten(),
         require_approval: row.get("require_approval").ok().flatten(),
+        gsd_enabled: row.get("gsd_enabled").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -176,11 +180,11 @@ pub fn update_queue(db: &DbPool, id: i64, auto_queue: bool, max_concurrent: i64)
     ) { log::error!("update_queue: {}", e); }
 }
 
-pub fn update_git_settings(db: &DbPool, id: i64, auto_branch: bool, auto_pr: bool, pr_base_branch: &str) {
+pub fn update_git_settings(db: &DbPool, id: i64, auto_branch: bool, auto_pr: bool, auto_push: bool, pr_base_branch: &str) {
     let conn = db.lock();
     if let Err(e) = conn.execute(
-        "UPDATE projects SET auto_branch=?1,auto_pr=?2,pr_base_branch=?3,updated_at=datetime('now','localtime') WHERE id=?4",
-        params![auto_branch as i64, auto_pr as i64, pr_base_branch, id],
+        "UPDATE projects SET auto_branch=?1,auto_pr=?2,auto_push=?3,pr_base_branch=?4,updated_at=datetime('now','localtime') WHERE id=?5",
+        params![auto_branch as i64, auto_pr as i64, auto_push as i64, pr_base_branch, id],
     ) { log::error!("update_git_settings: {}", e); }
 }
 

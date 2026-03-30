@@ -205,6 +205,7 @@ export const api = {
     ? {
         getProjectGroups: () => tauriCall('get_project_groups'),
         reorderQueue: (projectId, taskIds) => tauriCall('reorder_queue', { projectId, taskIds }),
+        reorderTasks: (taskIds) => tauriCall('reorder_tasks', { taskIds }),
         setTaskDependency: (id, dependsOn) => tauriCall('set_task_dependency', { id, dependsOn }),
         addDependency: (taskId, dependsOnId, conditionType) =>
           tauriCall('add_task_dependency', {

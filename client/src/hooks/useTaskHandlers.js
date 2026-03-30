@@ -195,6 +195,35 @@ export function useTaskHandlers({
     [addToast, t, setTasks, closeModal],
   );
 
+  const onReorderTasks = useCallback(
+    async (orderedIds) => {
+      const orderedSet = new Set(orderedIds);
+      // Optimistic: reorder only within the affected status group
+      setTasks((prev) => {
+        const byId = new Map(prev.map((t) => [t.id, t]));
+        const reordered = orderedIds.map((id) => byId.get(id)).filter(Boolean);
+        // Replace matching tasks in-place, preserve order of everything else
+        const result = [];
+        let inserted = false;
+        for (const t of prev) {
+          if (orderedSet.has(t.id)) {
+            if (!inserted) {
+              result.push(...reordered);
+              inserted = true;
+            }
+          } else {
+            result.push(t);
+          }
+        }
+        return result;
+      });
+      try {
+        await api.reorderTasks(orderedIds);
+      } catch {}
+    },
+    [setTasks],
+  );
+
   return {
     onStatusChange,
     onCreate,
@@ -205,5 +234,6 @@ export function useTaskHandlers({
     onReview,
     onApprove,
     onRequestChanges,
+    onReorderTasks,
   };
 }

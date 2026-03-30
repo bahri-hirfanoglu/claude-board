@@ -3,6 +3,7 @@ use crate::db::snippets::Snippet;
 use crate::db::attachments::Attachment;
 use crate::db::roles::Role;
 use crate::db::templates::Template;
+use crate::db::projects::Project;
 
 #[allow(clippy::too_many_arguments)]
 pub fn build_prompt(
@@ -14,6 +15,7 @@ pub fn build_prompt(
     project_id: i64,
     parent_contexts: &[(String, String)],
     template: Option<&Template>,
+    project: Option<&Project>,
 ) -> String {
     let mut parts = Vec::new();
     let is_revision = !revisions.is_empty();
@@ -124,16 +126,41 @@ pub fn build_prompt(
     parts.push("- Complete this task thoroughly and commit your changes.".into());
 
     let branch = task.branch_name.as_deref().unwrap_or("");
+    let auto_branch_on = project.map(|p| p.auto_branch.unwrap_or(1) == 1).unwrap_or(true);
+    let auto_push_on = project.map(|p| p.auto_push.unwrap_or(0) == 1).unwrap_or(false);
+
     if !is_revision {
         if !branch.is_empty() {
-            parts.push(format!("- You are already on branch \"{}\". Commit and push your changes to this branch.", branch));
+            if auto_push_on {
+                parts.push(format!("- You are already on branch \"{}\". Commit and push your changes to this branch.", branch));
+            } else {
+                parts.push(format!("- You are already on branch \"{}\". Commit your changes to this branch. Do NOT run git push.", branch));
+            }
+        } else if auto_branch_on {
+            let branch_hint = format!("{}/task-{}", task.task_type.as_deref().unwrap_or("feature"), task.id);
+            if auto_push_on {
+                parts.push(format!("- Create a new branch named {}, commit, and push.", branch_hint));
+            } else {
+                parts.push(format!("- Create a new branch named {}, and commit your changes. Do NOT run git push.", branch_hint));
+            }
         } else {
-            parts.push(format!("- Create a new branch named {}/task-{}, commit, and push.", task.task_type.as_deref().unwrap_or("feature"), task.id));
+            // auto_branch OFF: work on current branch, no new branches
+            parts.push("- IMPORTANT: Do NOT create any new git branches. Do NOT run git checkout -b or git branch. Work on the current branch only.".into());
+            if !auto_push_on {
+                parts.push("- IMPORTANT: Do NOT run git push under any circumstances. Do NOT push to any remote.".into());
+            }
         }
     } else if !branch.is_empty() {
-        parts.push(format!("- You are on branch \"{}\". Commit and push your revision changes to this branch.", branch));
+        if auto_push_on {
+            parts.push(format!("- You are on branch \"{}\". Commit and push your revision changes to this branch.", branch));
+        } else {
+            parts.push(format!("- You are on branch \"{}\". Commit your revision changes to this branch. Do NOT run git push.", branch));
+        }
     } else {
-        parts.push("- Work on the existing branch. Commit and push your revision changes.".into());
+        parts.push("- Work on the existing branch. Commit your revision changes.".into());
+        if !auto_push_on {
+            parts.push("- IMPORTANT: Do NOT run git push under any circumstances.".into());
+        }
     }
 
     parts.push("- Write clear commit messages describing what was done.".into());

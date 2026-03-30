@@ -50,6 +50,7 @@ export default function Board({
   onBulkDelete,
   onReviewTask,
   onViewDetail,
+  onReorderTasks,
 }) {
   const { t } = useTranslation();
   const [draggedTask, setDraggedTask] = useState(null);
@@ -61,6 +62,13 @@ export default function Board({
   const tagDropdownRef = useRef(null);
   const [showGithubPanel, setShowGithubPanel] = useState(false);
   const [depDialog, setDepDialog] = useState(null); // { from: task, to: task }
+
+  const handleReorder = useCallback(
+    (taskIds) => {
+      if (onReorderTasks) onReorderTasks(taskIds);
+    },
+    [onReorderTasks],
+  );
 
   const handleDepDrop = useCallback((fromTask, toTask) => {
     if (fromTask.id === toTask.id) return;
@@ -339,6 +347,7 @@ export default function Board({
                 onStatusChange={onStatusChange}
                 onReviewTask={onReviewTask}
                 onViewDetail={onViewDetail}
+                onReorder={handleReorder}
                 onDepDrop={handleDepDrop}
                 isMobile
               />
@@ -364,6 +373,7 @@ export default function Board({
                   onStatusChange={onStatusChange}
                   onReviewTask={onReviewTask}
                   onViewDetail={onViewDetail}
+                  onReorder={handleReorder}
                   onDepDrop={handleDepDrop}
                 />
               ))}
