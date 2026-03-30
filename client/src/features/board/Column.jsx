@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, memo } from 'react';
 import TaskCard from './TaskCard';
 import { useTranslation } from '../../i18n/I18nProvider';
 
-export default function Column({
+const Column = memo(function Column({
   column,
   tasks,
   draggedTask,
@@ -130,4 +130,6 @@ export default function Column({
       </div>
     </div>
   );
-}
+});
+
+export default Column;

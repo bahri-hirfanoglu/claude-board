@@ -148,7 +148,7 @@ pub async fn finish(
         services::http_api::start_server(mcp_port).await;
     });
 
-    let _main_win = tauri::WebviewWindowBuilder::new(
+    let win_builder = tauri::WebviewWindowBuilder::new(
         &app,
         "main",
         tauri::WebviewUrl::App("index.html".into()),
@@ -157,9 +157,12 @@ pub async fn finish(
     .inner_size(1400.0, 900.0)
     .min_inner_size(800.0, 600.0)
     .center()
-    .disable_drag_drop_handler()
-    .build()
-    .ok();
+    .disable_drag_drop_handler();
+
+    #[cfg(target_os = "macos")]
+    let win_builder = win_builder.title_bar_style(tauri::TitleBarStyle::Overlay);
+
+    let _main_win = win_builder.build().ok();
 
     if let Some(setup) = app.get_webview_window("setup") {
         setup.close().ok();

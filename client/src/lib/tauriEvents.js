@@ -21,4 +21,6 @@ export function tauriListen(eventName, callback) {
   };
 }
 
-export { IS_TAURI };
+const IS_MACOS = typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent);
+
+export { IS_TAURI, IS_MACOS };

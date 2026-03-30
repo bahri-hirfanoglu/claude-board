@@ -18,7 +18,7 @@ import { api } from '../../lib/api';
 import { formatTokens } from '../../lib/formatters';
 import { useTranslation } from '../../i18n/I18nProvider';
 import LanguageSelector from '../../i18n/LanguageSelector';
-import { IS_TAURI } from '../../lib/tauriEvents';
+import { IS_TAURI, IS_MACOS } from '../../lib/tauriEvents';
 import ClaudeManager from '../claude-manager/ClaudeManager';
 import { MiniStatusBar } from './MiniStatusBar';
 import { ProjectCard } from './ProjectCard';
@@ -34,7 +34,10 @@ let suggestionsLoaded = false;
 
 function DashHeader({ t, dashTab, setDashTab, onNewProject, onOpenSettings }) {
   return (
-    <div className="flex items-center justify-between gap-4 mb-8">
+    <div
+      data-tauri-drag-region
+      className={`flex items-center justify-between gap-4 mb-8 ${IS_TAURI && IS_MACOS ? 'pt-3' : ''}`}
+    >
       <div className="min-w-0">
         <div className="flex items-center gap-3 mb-1">
           <span className="text-claude text-2xl flex-shrink-0">&#10022;</span>

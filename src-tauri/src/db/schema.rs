@@ -190,6 +190,7 @@ pub fn create_tables(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_task_deps_parent ON task_dependencies(depends_on_id)",
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_key_unique ON tasks(task_key) WHERE task_key != ''",
         "CREATE INDEX IF NOT EXISTS idx_scans_project ON scans(project_id, created_at DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_task_logs_task_type ON task_logs(task_id, log_type)",
     ];
     for idx in indexes {
         conn.execute_batch(idx).ok();
