@@ -45,6 +45,12 @@ Download the latest version for your platform:
 | **Linux** | [ClaudeBoard.AppImage](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Universal Linux |
 | **Linux (Debian)** | [ClaudeBoard.deb](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Ubuntu/Debian |
 
+> **macOS users:** If you see _"Claude Board.app is damaged and can't be opened"_, run this in Terminal after installing:
+> ```bash
+> xattr -cr /Applications/Claude\ Board.app
+> ```
+> This removes the macOS quarantine flag. The app is not code-signed with an Apple Developer certificate yet, which triggers this Gatekeeper warning.
+
 ## Features
 
 ### Orchestration & Planning

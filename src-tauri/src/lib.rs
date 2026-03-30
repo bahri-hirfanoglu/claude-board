@@ -12,7 +12,44 @@ mod setup;
 use tauri::{Emitter, Manager};
 use tauri::tray::{TrayIconBuilder, TrayIconEvent, MouseButton, MouseButtonState};
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+#[cfg(target_os = "macos")]
+use tauri::menu::{MenuItemBuilder, SubmenuBuilder};
 use tauri_plugin_updater::UpdaterExt;
+
+#[cfg(target_os = "macos")]
+fn build_macos_menu(app: &tauri::App) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
+    let app_menu = SubmenuBuilder::new(app, "Claude Board")
+        .about(None)
+        .separator()
+        .item(&MenuItemBuilder::new("Preferences...").accelerator("Cmd+,").id("preferences").build(app)?)
+        .separator()
+        .services()
+        .separator()
+        .hide()
+        .hide_others()
+        .show_all()
+        .separator()
+        .quit()
+        .build()?;
+
+    let edit_menu = SubmenuBuilder::new(app, "Edit")
+        .undo()
+        .redo()
+        .separator()
+        .cut()
+        .copy()
+        .paste()
+        .select_all()
+        .build()?;
+
+    let window_menu = SubmenuBuilder::new(app, "Window")
+        .minimize()
+        .separator()
+        .item(&MenuItemBuilder::new("Full Screen").accelerator("Ctrl+Cmd+F").id("fullscreen").build(app)?)
+        .build()?;
+
+    Ok(Menu::with_items(app, &[&app_menu, &edit_menu, &window_menu])?)
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -46,7 +83,7 @@ pub fn run() {
                     services::http_api::start_server(port).await;
                 });
 
-                let main_window = tauri::WebviewWindowBuilder::new(
+                let win_builder = tauri::WebviewWindowBuilder::new(
                     app,
                     "main",
                     tauri::WebviewUrl::App("index.html".into()),
@@ -55,8 +92,20 @@ pub fn run() {
                 .inner_size(1400.0, 900.0)
                 .min_inner_size(800.0, 600.0)
                 .center()
-                .disable_drag_drop_handler()
-                .build()?;
+                .disable_drag_drop_handler();
+
+                #[cfg(target_os = "macos")]
+                let win_builder = win_builder.title_bar_style(tauri::TitleBarStyle::Overlay);
+
+                let main_window = win_builder.build()?;
+
+                // ─── macOS App Menu ───
+                #[cfg(target_os = "macos")]
+                {
+                    if let Ok(menu) = build_macos_menu(app) {
+                        app.set_menu(menu).ok();
+                    }
+                }
 
                 // ─── System Tray (best-effort, don't crash if it fails) ───
                 if let Err(e) = (|| -> Result<(), Box<dyn std::error::Error>> {
@@ -341,6 +390,21 @@ pub fn run() {
             commands::gsd::gsd_parse_phase_plans,
             commands::gsd::gsd_create_tasks_from_plans,
         ])
+        .on_menu_event(|app, event| {
+            match event.id().as_ref() {
+                "preferences" => {
+                    app.emit("menu:preferences", ()).ok();
+                }
+                "fullscreen" => {
+                    if let Some(w) = app.get_webview_window("main") {
+                        if let Ok(fs) = w.is_fullscreen() {
+                            w.set_fullscreen(!fs).ok();
+                        }
+                    }
+                }
+                _ => {}
+            }
+        })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app_handle, event| {

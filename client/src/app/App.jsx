@@ -9,7 +9,7 @@ import { useTaskHandlers } from '../hooks/useTaskHandlers';
 import { useProjectHandlers } from '../hooks/useProjectHandlers';
 import { api, onApiError } from '../lib/api';
 import { socket } from '../lib/socket';
-import { tauriListen, IS_TAURI } from '../lib/tauriEvents';
+import { tauriListen, IS_TAURI, IS_MACOS } from '../lib/tauriEvents';
 import AppLayout from './AppLayout';
 import { StatusTransitionProvider } from '../features/board/StatusTransitionContext';
 import { I18nProvider, useTranslation } from '../i18n/I18nProvider';
@@ -101,15 +101,31 @@ function AppInner() {
         .catch((e) => console.error('Failed to load roles:', e));
   }, [closeModal, currentProject]);
 
+  // Stable ref for openModal (avoids stale closure in Tauri listeners)
+  const openModalRef = useRef(openModal);
+  openModalRef.current = openModal;
+
   // Listen for app updates
   useEffect(() => {
     if (!IS_TAURI) return;
     const unsubs = [
       tauriListen('update:available', (data) => setUpdateInfo(data)),
       tauriListen('update:ready', (data) => setUpdateInfo({ ...data, status: 'ready' })),
+      tauriListen('menu:preferences', () => openModalRef.current('appSettings')),
     ];
     return () => unsubs.forEach((fn) => fn());
   }, []);
+
+  // macOS dock badge: show running task count
+  useEffect(() => {
+    if (!IS_TAURI || !IS_MACOS) return;
+    const count = tasks.filter((t) => t.is_running).length;
+    import('@tauri-apps/api/app').then((mod) => {
+      if (mod.setBadgeCount) {
+        mod.setBadgeCount(count > 0 ? count : null).catch(() => {});
+      }
+    }).catch(() => {});
+  }, [tasks]);
 
   // Auto-open terminal when task NEWLY starts running (respects auto_open_terminal setting)
   const runningIdsRef = useRef(new Set());

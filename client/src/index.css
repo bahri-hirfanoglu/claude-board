@@ -301,3 +301,12 @@
 .chat-md-content .wmde-markdown strong {
   color: #ebe4d8 !important;
 }
+
+/* Respect macOS "Reduce motion" and other OS accessibility settings */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

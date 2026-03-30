@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import {
   LayoutGrid,
   List,
@@ -15,15 +15,15 @@ import {
 } from 'lucide-react';
 import Column from './Column';
 import ListView from './ListView';
-import PipelineView from './PipelineView';
-import OrchestrationView from './OrchestrationView';
-import AnalyticsView from './AnalyticsView';
+const PipelineView = lazy(() => import('./PipelineView'));
+const OrchestrationView = lazy(() => import('./OrchestrationView'));
+const AnalyticsView = lazy(() => import('./AnalyticsView'));
 import { COLUMNS, MODELS, MODEL_COLORS, MODEL_DOT_COLORS, MODEL_BG_ACTIVE, getTagColor } from '../../lib/constants';
 import { notifyError } from '../../lib/api';
 import { IS_TAURI } from '../../lib/tauriEvents';
 import GitHubIssuesPanel from './GitHubIssuesPanel';
 import ErrorBoundary from '../../components/ErrorBoundary';
-import RoadmapView from '../roadmap/RoadmapView';
+const RoadmapView = lazy(() => import('../roadmap/RoadmapView'));
 import { useTranslation } from '../../i18n/I18nProvider';
 import { parseTags } from './TagBadge';
 import { api } from '../../lib/api';
@@ -401,50 +401,58 @@ export default function Board({
 
         {viewMode === 'pipeline' && (
           <ErrorBoundary>
-            <div className="flex-1 overflow-hidden">
-              <PipelineView
-                tasks={filteredTasks}
-                onStatusChange={onStatusChange}
-                onViewLogs={onViewLogs}
-                onViewDetail={onViewDetail}
-              />
-            </div>
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>}>
+              <div className="flex-1 overflow-hidden">
+                <PipelineView
+                  tasks={filteredTasks}
+                  onStatusChange={onStatusChange}
+                  onViewLogs={onViewLogs}
+                  onViewDetail={onViewDetail}
+                />
+              </div>
+            </Suspense>
           </ErrorBoundary>
         )}
 
         {viewMode === 'orchestration' && (
           <ErrorBoundary>
-            <div className="flex-1 overflow-hidden">
-              <OrchestrationView
-                tasks={tasks}
-                projectId={projectId}
-                onViewLogs={onViewLogs}
-                onStatusChange={onStatusChange}
-                onViewDetail={onViewDetail}
-              />
-            </div>
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>}>
+              <div className="flex-1 overflow-hidden">
+                <OrchestrationView
+                  tasks={tasks}
+                  projectId={projectId}
+                  onViewLogs={onViewLogs}
+                  onStatusChange={onStatusChange}
+                  onViewDetail={onViewDetail}
+                />
+              </div>
+            </Suspense>
           </ErrorBoundary>
         )}
 
         {viewMode === 'analytics' && (
           <ErrorBoundary>
-            <div className="flex-1 overflow-hidden">
-              <AnalyticsView tasks={filteredTasks} projectId={projectId} />
-            </div>
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>}>
+              <div className="flex-1 overflow-hidden">
+                <AnalyticsView tasks={filteredTasks} projectId={projectId} />
+              </div>
+            </Suspense>
           </ErrorBoundary>
         )}
 
         {viewMode === 'roadmap' && (
           <ErrorBoundary>
-            <div className="flex-1 overflow-auto">
-              <RoadmapView
-                projectId={projectId}
-                project={project}
-                tasks={filteredTasks}
-                onViewDetail={onViewDetail}
-                onStatusChange={onStatusChange}
-              />
-            </div>
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>}>
+              <div className="flex-1 overflow-auto">
+                <RoadmapView
+                  projectId={projectId}
+                  project={project}
+                  tasks={filteredTasks}
+                  onViewDetail={onViewDetail}
+                  onStatusChange={onStatusChange}
+                />
+              </div>
+            </Suspense>
           </ErrorBoundary>
         )}
         {/* Dependency creation dialog */}

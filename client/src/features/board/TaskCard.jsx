@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import {
   Terminal,
   Pencil,
@@ -157,7 +157,7 @@ function MobileStatusTransition({ task, onStatusChange }) {
   );
 }
 
-export default function TaskCard({
+const TaskCard = memo(function TaskCard({
   task,
   onDragStart,
   onDragEnd,
@@ -484,4 +484,6 @@ export default function TaskCard({
       )}
     </>
   );
-}
+});
+
+export default TaskCard;

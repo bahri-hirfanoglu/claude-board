@@ -31,7 +31,7 @@ import Avatar from 'boring-avatars';
 import { AVATAR_COLORS } from '../../lib/constants';
 import { formatTokens as fmtTokens } from '../../lib/formatters';
 import { useTranslation } from '../../i18n/I18nProvider';
-import { IS_TAURI } from '../../lib/tauriEvents';
+import { IS_TAURI, IS_MACOS } from '../../lib/tauriEvents';
 import Tooltip from '../../components/Tooltip';
 
 function ProjectUsage({ tasks }) {
@@ -137,7 +137,12 @@ export default function Header({
   const otherProjects = projects.filter((p) => p.id !== currentProject.id);
 
   return (
-    <header className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-surface-900 border-b border-surface-700/50 gap-2">
+    <header
+      data-tauri-drag-region
+      className={`flex items-center justify-between py-2 sm:py-3 bg-surface-900 border-b border-surface-700/50 gap-2 ${
+        IS_TAURI && IS_MACOS ? 'pl-[78px] pr-3 sm:pr-6' : 'px-3 sm:px-6'
+      }`}
+    >
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         <Tooltip text={t('header.backToDashboard')}>
           <button
