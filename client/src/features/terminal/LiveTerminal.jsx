@@ -155,7 +155,8 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
   // ─── Filtering ───
   const filteredLogs = useMemo(() => {
     let r = logs;
-    if (filter === 'claude') r = r.filter((l) => l.log_type === 'claude');
+    if (filter === 'claude') r = r.filter((l) => l.log_type === 'claude' && !l.meta?.isThinking);
+    else if (filter === 'thinking') r = r.filter((l) => l.log_type === 'claude' && l.meta?.isThinking);
     else if (filter === 'tools') r = r.filter((l) => l.log_type === 'tool' || l.log_type === 'tool_result');
     else if (filter === 'system') r = r.filter((l) => l.log_type === 'system' || l.log_type === 'info');
     else if (filter === 'errors') r = r.filter((l) => l.log_type === 'error');
@@ -174,8 +175,9 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
   const stats = useMemo(() => {
     const tools = logs.filter((l) => l.log_type === 'tool' && !l.meta?.isResult).length;
     const errors = logs.filter((l) => l.log_type === 'error').length;
-    const turns = logs.filter((l) => l.log_type === 'claude').length;
-    return { tools, errors, turns };
+    const turns = logs.filter((l) => l.log_type === 'claude' && !l.meta?.isThinking).length;
+    const thinking = logs.filter((l) => l.log_type === 'claude' && l.meta?.isThinking).length;
+    return { tools, errors, turns, thinking };
   }, [logs]);
 
   const totalTokens = (task.input_tokens || 0) + (task.output_tokens || 0);
@@ -187,6 +189,7 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
   const FILTERS = [
     { id: 'all', label: 'All', count: null },
     { id: 'claude', label: 'Claude', count: stats.turns || null },
+    { id: 'thinking', label: 'Thinking', count: stats.thinking || null },
     { id: 'tools', label: 'Tools', count: stats.tools || null },
     { id: 'system', label: 'System', count: null },
     { id: 'errors', label: 'Errors', count: stats.errors || null, alert: stats.errors > 0 },
@@ -416,7 +419,15 @@ export default function LiveTerminal({ task, onClose, layout = 'side', onToggleL
             // Regular log entries
             const log = entry.log;
             if (log.log_type === 'claude') {
-              return <ClaudeText key={`log-${entry.index}`} message={log.message} time={log.created_at} />;
+              const isThinking = log.meta?.isThinking === true;
+              return (
+                <ClaudeText
+                  key={`log-${entry.index}`}
+                  message={log.message}
+                  time={log.created_at}
+                  isThinking={isThinking}
+                />
+              );
             }
             return <SystemLine key={`log-${entry.index}`} log={log} />;
           })

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Brain } from 'lucide-react';
 import { getToolIcon, getToolColor } from './terminalConstants';
 import { basename } from './terminalHelpers';
 
@@ -17,6 +18,7 @@ export function ActivityIndicator({ logs, isRunning }) {
         }
       }
       if (l.log_type === 'tool_result') return { phase: 'thinking' };
+      if (l.log_type === 'claude' && l.meta?.isThinking) return { phase: 'deep_thinking' };
       if (l.log_type === 'claude') return { phase: 'thinking' };
     }
     return { phase: 'starting' };
@@ -32,6 +34,15 @@ export function ActivityIndicator({ logs, isRunning }) {
         <Icon size={12} className="animate-pulse" />
         <span className="font-medium">{status.toolName}</span>
         {status.file && <span className="text-surface-500 truncate max-w-[150px]">{basename(status.file)}</span>}
+      </div>
+    );
+  }
+
+  if (status.phase === 'deep_thinking') {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-violet-400">
+        <Brain size={12} className="animate-pulse" />
+        <span className="font-medium">Thinking deeply...</span>
       </div>
     );
   }
