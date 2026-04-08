@@ -24,7 +24,7 @@ import { MiniStatusBar } from './MiniStatusBar';
 import { ProjectCard } from './ProjectCard';
 import { ProjectListRow } from './ProjectListRow';
 import { ClaudeUsageCard } from './ClaudeUsageCard';
-import { SuggestionBanner } from './SuggestionBanner';
+import { SuggestionBanner, filterDismissed } from './SuggestionBanner';
 
 // Cache outside component so it survives remounts
 let summaryCache = null;
@@ -150,7 +150,7 @@ export default function Dashboard({ projects, onSelectProject, onNewProject, onO
       api
         .getSuggestions()
         .then((sug) => {
-          suggestionsCache = Array.isArray(sug) ? sug : [];
+          suggestionsCache = filterDismissed(Array.isArray(sug) ? sug : []);
           suggestionsLoaded = true;
           setSuggestions(suggestionsCache);
         })

@@ -2,6 +2,29 @@ import { useState } from 'react';
 import { Lightbulb, Download, X, Loader2 } from 'lucide-react';
 import { api } from '../../lib/api';
 
+const DISMISSED_KEY = 'dismissed_suggestions';
+
+function getDismissed() {
+  try {
+    return JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function addDismissed(id) {
+  const dismissed = getDismissed();
+  if (!dismissed.includes(id)) {
+    dismissed.push(id);
+    localStorage.setItem(DISMISSED_KEY, JSON.stringify(dismissed));
+  }
+}
+
+export function filterDismissed(suggestions) {
+  const dismissed = getDismissed();
+  return suggestions.filter((s) => !dismissed.includes(s.id));
+}
+
 export function SuggestionBanner({ suggestions, setSuggestions, t }) {
   const [installing, setInstalling] = useState(null);
 
@@ -10,16 +33,20 @@ export function SuggestionBanner({ suggestions, setSuggestions, t }) {
       setInstalling(s.id);
       try {
         await api.installPlugin(s.actionArgs);
+        addDismissed(s.id);
         setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
       } catch {}
       setInstalling(null);
     } else if (s.action === 'navigate') {
-      // Could navigate to claude manager tab
+      addDismissed(s.id);
       setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
     }
   };
 
-  const dismiss = (id) => setSuggestions((prev) => prev.filter((x) => x.id !== id));
+  const dismiss = (id) => {
+    addDismissed(id);
+    setSuggestions((prev) => prev.filter((x) => x.id !== id));
+  };
 
   return (
     <div className="space-y-2 mb-6">
