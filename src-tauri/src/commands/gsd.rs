@@ -10,6 +10,20 @@ pub fn gsd_check_status(project_id: i64) -> Result<gsd::GsdStatus, String> {
 }
 
 #[tauri::command]
+pub fn gsd_health_check(project_id: i64) -> Result<gsd::HealthReport, String> {
+    let db = db::get_db();
+    let project = projects::get_by_id(&db, project_id).ok_or("Project not found")?;
+    Ok(gsd::run_health_checks(&project.working_dir))
+}
+
+#[tauri::command]
+pub fn gsd_list_todos(project_id: i64) -> Result<Vec<gsd::GsdTodo>, String> {
+    let db = db::get_db();
+    let project = projects::get_by_id(&db, project_id).ok_or("Project not found")?;
+    Ok(gsd::list_todos(&project.working_dir))
+}
+
+#[tauri::command]
 pub async fn gsd_install(app: AppHandle, project_id: i64, scope: Option<String>) -> Result<String, String> {
     let db = db::get_db();
     let project = projects::get_by_id(&db, project_id).ok_or("Project not found")?;

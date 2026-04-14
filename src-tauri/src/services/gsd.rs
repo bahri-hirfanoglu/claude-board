@@ -25,10 +25,226 @@ pub struct GsdPhase {
     pub description: Option<String>,
 }
 
+/// Canonical phase status values. Any status written to DB, emitted to UI, or
+/// round-tripped through ROADMAP.md MUST be one of these to keep DB and file
+/// representation comparable.
+pub const PHASE_STATUS_PENDING: &str = "pending";
+pub const PHASE_STATUS_PLANNING: &str = "planning";
+pub const PHASE_STATUS_IN_PROGRESS: &str = "in_progress";
+pub const PHASE_STATUS_VERIFYING: &str = "verifying";
+pub const PHASE_STATUS_COMPLETED: &str = "completed";
+pub const PHASE_STATUS_FAILED: &str = "failed";
+pub const PHASE_STATUS_BLOCKED: &str = "blocked";
+pub const PHASE_STATUS_SKIPPED: &str = "skipped";
+
+pub const PHASE_STATUSES: &[&str] = &[
+    PHASE_STATUS_PENDING,
+    PHASE_STATUS_PLANNING,
+    PHASE_STATUS_IN_PROGRESS,
+    PHASE_STATUS_VERIFYING,
+    PHASE_STATUS_COMPLETED,
+    PHASE_STATUS_FAILED,
+    PHASE_STATUS_BLOCKED,
+    PHASE_STATUS_SKIPPED,
+];
+
+/// Normalize any free-form status string (from ROADMAP.md, legacy DB rows, or
+/// user input) to one of the canonical values above. Unknown inputs fall back
+/// to `pending` so the rest of the system never has to handle unexpected values.
+/// Accepts emoji prefixes, capitalizations, partial words ("complete", "done").
+pub fn normalize_phase_status(raw: &str) -> &'static str {
+    let cleaned: String = raw
+        .chars()
+        .filter(|c| !matches!(c, '✅' | '⏳' | '🔄' | '❌' | '⚪' | '🚫' | '🔴' | '🟢' | '🟡' | '🔵' | '⏸'))
+        .collect();
+    let trimmed = cleaned.trim().trim_matches(['*', '`', ':', '-', ' ', '\t']);
+    let lower = trimmed.to_lowercase();
+
+    if lower.is_empty() {
+        // Emoji-only status lines
+        if raw.contains('✅') { return PHASE_STATUS_COMPLETED; }
+        if raw.contains('❌') { return PHASE_STATUS_FAILED; }
+        if raw.contains("🔄") || raw.contains("⏳") { return PHASE_STATUS_IN_PROGRESS; }
+        if raw.contains("🚫") { return PHASE_STATUS_BLOCKED; }
+        if raw.contains("⏸") { return PHASE_STATUS_PAUSED_FALLBACK; }
+        return PHASE_STATUS_PENDING;
+    }
+
+    // Exact matches first (fast path, authoritative)
+    for canon in PHASE_STATUSES {
+        if lower == *canon { return canon; }
+    }
+
+    // Fuzzy matching on common variants
+    if lower.contains("complete") || lower == "done" || lower == "finished" {
+        return PHASE_STATUS_COMPLETED;
+    }
+    if lower.contains("progress") || lower.contains("active") || lower == "running" || lower == "executing" {
+        return PHASE_STATUS_IN_PROGRESS;
+    }
+    if lower.contains("plan") {
+        return PHASE_STATUS_PLANNING;
+    }
+    if lower.contains("verif") || lower.contains("testing") || lower.contains("review") {
+        return PHASE_STATUS_VERIFYING;
+    }
+    if lower.contains("fail") || lower.contains("error") {
+        return PHASE_STATUS_FAILED;
+    }
+    if lower.contains("block") || lower.contains("stuck") {
+        return PHASE_STATUS_BLOCKED;
+    }
+    if lower.contains("skip") {
+        return PHASE_STATUS_SKIPPED;
+    }
+    if lower.contains("pend") || lower.contains("todo") || lower == "new" || lower.is_empty() {
+        return PHASE_STATUS_PENDING;
+    }
+
+    PHASE_STATUS_PENDING
+}
+
+// Fallback: we don't have a canonical "paused" in the enum, map to blocked.
+const PHASE_STATUS_PAUSED_FALLBACK: &str = PHASE_STATUS_BLOCKED;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct GsdRoadmap {
     pub phases: Vec<GsdPhase>,
     pub raw: String,
+}
+
+// ─── Health report ───
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct HealthCheck {
+    pub name: String,
+    pub status: String,  // "ok" | "warning" | "error"
+    pub message: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct HealthReport {
+    pub overall: String,  // "healthy" | "degraded" | "broken"
+    pub checks: Vec<HealthCheck>,
+}
+
+/// Run `.planning/` directory integrity checks. Mirrors what `/gsd:health`
+/// does from the CLI: file presence, parseability, and phase consistency.
+pub fn run_health_checks(working_dir: &str) -> HealthReport {
+    let mut checks: Vec<HealthCheck> = Vec::new();
+    let planning_dir = Path::new(working_dir).join(".planning");
+
+    // Check 1: .planning directory exists
+    if !planning_dir.exists() {
+        checks.push(HealthCheck {
+            name: ".planning/ directory".into(),
+            status: "error".into(),
+            message: Some("Directory not found — run /gsd:new-project to initialize".into()),
+        });
+        return HealthReport { overall: "broken".into(), checks };
+    }
+    checks.push(HealthCheck { name: ".planning/ directory".into(), status: "ok".into(), message: None });
+
+    // Checks 2-6: required files
+    let required_files: &[(&str, &str)] = &[
+        ("PROJECT.md", "Project vision & constraints"),
+        ("REQUIREMENTS.md", "Scope for current milestone"),
+        ("ROADMAP.md", "Phase breakdown"),
+        ("STATE.md", "Current position tracking"),
+        ("config.json", "GSD configuration"),
+    ];
+    for (file, desc) in required_files {
+        let p = planning_dir.join(file);
+        checks.push(if p.exists() {
+            HealthCheck { name: format!("{} present", file), status: "ok".into(), message: None }
+        } else {
+            HealthCheck {
+                name: format!("{} present", file),
+                status: "error".into(),
+                message: Some(format!("Missing — {}", desc)),
+            }
+        });
+    }
+
+    // Check 7: config.json parses as JSON
+    let config_path = planning_dir.join("config.json");
+    if config_path.exists() {
+        match std::fs::read_to_string(&config_path) {
+            Ok(raw) => {
+                if let Err(e) = serde_json::from_str::<serde_json::Value>(&raw) {
+                    checks.push(HealthCheck {
+                        name: "config.json parses".into(),
+                        status: "error".into(),
+                        message: Some(format!("Invalid JSON: {}", e)),
+                    });
+                } else {
+                    checks.push(HealthCheck { name: "config.json parses".into(), status: "ok".into(), message: None });
+                }
+            }
+            Err(e) => checks.push(HealthCheck {
+                name: "config.json readable".into(),
+                status: "error".into(),
+                message: Some(format!("{}", e)),
+            }),
+        }
+    }
+
+    // Check 8: ROADMAP.md has at least one phase
+    if let Some(roadmap) = read_roadmap(working_dir) {
+        if roadmap.phases.is_empty() {
+            checks.push(HealthCheck {
+                name: "ROADMAP.md phases".into(),
+                status: "warning".into(),
+                message: Some("No phases detected — check heading format (## Phase N: Title)".into()),
+            });
+        } else {
+            checks.push(HealthCheck {
+                name: "ROADMAP.md phases".into(),
+                status: "ok".into(),
+                message: Some(format!("{} phase(s) detected", roadmap.phases.len())),
+            });
+
+            // Check 9: phase numbers are unique
+            let mut seen = std::collections::HashSet::new();
+            let mut dupes: Vec<String> = Vec::new();
+            for p in &roadmap.phases {
+                if !seen.insert(p.number.clone()) {
+                    dupes.push(p.number.clone());
+                }
+            }
+            if dupes.is_empty() {
+                checks.push(HealthCheck { name: "Phase numbers unique".into(), status: "ok".into(), message: None });
+            } else {
+                checks.push(HealthCheck {
+                    name: "Phase numbers unique".into(),
+                    status: "warning".into(),
+                    message: Some(format!("Duplicate: {}", dupes.join(", "))),
+                });
+            }
+
+            // Check 10: each phase has canonical status
+            let non_canonical: Vec<String> = roadmap.phases.iter()
+                .filter(|p| !PHASE_STATUSES.contains(&p.status.as_str()))
+                .map(|p| format!("Phase {}: '{}'", p.number, p.status))
+                .collect();
+            if non_canonical.is_empty() {
+                checks.push(HealthCheck { name: "Phase statuses canonical".into(), status: "ok".into(), message: None });
+            } else {
+                checks.push(HealthCheck {
+                    name: "Phase statuses canonical".into(),
+                    status: "warning".into(),
+                    message: Some(format!("Non-canonical values: {}", non_canonical.join("; "))),
+                });
+            }
+        }
+    }
+
+    // Overall verdict: error > warning > ok
+    let has_error = checks.iter().any(|c| c.status == "error");
+    let has_warning = checks.iter().any(|c| c.status == "warning");
+    let overall = if has_error { "broken" } else if has_warning { "degraded" } else { "healthy" };
+
+    HealthReport { overall: overall.into(), checks }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -195,12 +411,12 @@ pub fn recompute_phase_status_from_tasks(
     let active = task_statuses.iter().filter(|s| matches!(s.as_str(), "in_progress" | "testing")).count();
     let failed = task_statuses.iter().filter(|s| s.as_str() == "failed").count();
 
-    let new_status = if done == total {
-        "completed"
+    let new_status: &'static str = if done == total {
+        PHASE_STATUS_COMPLETED
     } else if failed > 0 && active == 0 && done + failed == total {
-        "failed"
+        PHASE_STATUS_FAILED
     } else if active > 0 || done > 0 {
-        "in_progress"
+        PHASE_STATUS_IN_PROGRESS
     } else {
         return None; // all pending/backlog — leave file alone
     };
@@ -378,34 +594,19 @@ fn split_phase_number_title(s: &str) -> (String, String) {
 }
 
 fn parse_status_line(line: &str) -> Option<String> {
-    let line = line.replace("**", "").replace('*', "");
-    let lower = line.to_lowercase();
+    let stripped = line.replace("**", "").replace('*', "");
+    let lower = stripped.to_lowercase();
 
     for prefix in ["status:", "state:"] {
         if let Some(rest) = lower.strip_prefix(prefix) {
-            let status = rest.trim()
-                .trim_start_matches(['`', ' '])
-                .trim_end_matches(['`', ' '])
-                .to_string();
-            return match status.as_str() {
-                s if s.contains("complete") => Some("completed".into()),
-                s if s.contains("progress") || s.contains("active") => Some("in_progress".into()),
-                s if s.contains("plan") => Some("planning".into()),
-                s if s.contains("verif") => Some("verifying".into()),
-                s if s.contains("fail") => Some("failed".into()),
-                s if s.contains("skip") => Some("skipped".into()),
-                s if s.contains("pend") => Some("pending".into()),
-                _ => Some(status),
-            };
+            let normalized = normalize_phase_status(rest);
+            return Some(normalized.to_string());
         }
     }
 
-    // Check for status emoji patterns: ✅ ⏳ 🔄 ❌
-    if line.starts_with('✅') || line.contains("✅") {
-        return Some("completed".into());
-    }
-    if line.starts_with('⏳') || line.starts_with("🔄") {
-        return Some("in_progress".into());
+    // Emoji-only lines (no "Status:" prefix) — treat as implicit status markers
+    if line.contains('✅') || line.contains('❌') || line.contains('⏳') || line.contains("🔄") || line.contains("🚫") {
+        return Some(normalize_phase_status(line).to_string());
     }
 
     None
@@ -823,4 +1024,153 @@ pub fn read_config(working_dir: &str) -> Option<serde_json::Value> {
     let path = Path::new(working_dir).join(".planning").join("config.json");
     let content = std::fs::read_to_string(&path).ok()?;
     serde_json::from_str(&content).ok()
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct GsdTodo {
+    pub path: String,
+    pub filename: String,
+    pub title: String,
+    pub area: String,
+    pub status: String, // "pending" | "done"
+    pub preview: String,
+}
+
+/// List all todos under `.planning/todos/{pending,done}/**/*.md`.
+/// Returns empty vec if the directory doesn't exist.
+pub fn list_todos(working_dir: &str) -> Vec<GsdTodo> {
+    let todos_dir = Path::new(working_dir).join(".planning").join("todos");
+    if !todos_dir.exists() {
+        return Vec::new();
+    }
+
+    let mut result: Vec<GsdTodo> = Vec::new();
+    for status in &["pending", "done"] {
+        let bucket = todos_dir.join(status);
+        if !bucket.exists() { continue; }
+        collect_todos_recursive(&bucket, &bucket, status, &mut result);
+    }
+    // Sort: pending first, then by filename
+    result.sort_by(|a, b| {
+        let status_cmp = a.status.cmp(&b.status).reverse(); // pending > done
+        if status_cmp != std::cmp::Ordering::Equal { return status_cmp; }
+        a.filename.cmp(&b.filename)
+    });
+    result
+}
+
+fn collect_todos_recursive(root: &Path, current: &Path, status: &str, out: &mut Vec<GsdTodo>) {
+    let entries = match std::fs::read_dir(current) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let p = entry.path();
+        if p.is_dir() {
+            collect_todos_recursive(root, &p, status, out);
+        } else if p.extension().and_then(|e| e.to_str()) == Some("md") {
+            let filename = p.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+            // Area = first subdirectory under root (e.g. "general", "ui")
+            let area = p.strip_prefix(root).ok()
+                .and_then(|rel| rel.components().next())
+                .and_then(|c| c.as_os_str().to_str())
+                .filter(|s| *s != filename)
+                .unwrap_or("general").to_string();
+
+            let content = std::fs::read_to_string(&p).unwrap_or_default();
+            let (title, preview) = parse_todo_content(&content, &filename);
+
+            out.push(GsdTodo {
+                path: p.to_string_lossy().to_string(),
+                filename,
+                title,
+                area,
+                status: status.to_string(),
+                preview,
+            });
+        }
+    }
+}
+
+fn parse_todo_content(content: &str, filename: &str) -> (String, String) {
+    // Skip YAML frontmatter
+    let body_start = if content.starts_with("---") {
+        content.find("\n---\n").or_else(|| content.find("\n---\r\n")).map(|i| i + 5).unwrap_or(0)
+    } else { 0 };
+    let body = content[body_start..].trim();
+
+    // Try to extract a title: first `# Heading` line, then first non-empty line
+    let heading = body.lines()
+        .find(|l| l.trim_start().starts_with("# "))
+        .map(|l| l.trim_start_matches('#').trim().to_string());
+
+    let title = heading.unwrap_or_else(|| {
+        filename.trim_end_matches(".md").replace(['-', '_'], " ").trim().to_string()
+    });
+
+    let preview: String = body.lines()
+        .filter(|l| !l.trim_start().starts_with('#'))
+        .map(|l| l.trim())
+        .filter(|l| !l.is_empty())
+        .take(3)
+        .collect::<Vec<_>>()
+        .join(" ")
+        .chars().take(200).collect();
+
+    (title, preview)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_exact_canonical_values() {
+        for s in PHASE_STATUSES {
+            assert_eq!(normalize_phase_status(s), *s);
+        }
+    }
+
+    #[test]
+    fn normalize_fuzzy_variants() {
+        assert_eq!(normalize_phase_status("Completed"), PHASE_STATUS_COMPLETED);
+        assert_eq!(normalize_phase_status("complete"), PHASE_STATUS_COMPLETED);
+        assert_eq!(normalize_phase_status("done"), PHASE_STATUS_COMPLETED);
+        assert_eq!(normalize_phase_status("In Progress"), PHASE_STATUS_IN_PROGRESS);
+        assert_eq!(normalize_phase_status("active"), PHASE_STATUS_IN_PROGRESS);
+        assert_eq!(normalize_phase_status("running"), PHASE_STATUS_IN_PROGRESS);
+        assert_eq!(normalize_phase_status("planning phase"), PHASE_STATUS_PLANNING);
+        assert_eq!(normalize_phase_status("verifying"), PHASE_STATUS_VERIFYING);
+        assert_eq!(normalize_phase_status("testing"), PHASE_STATUS_VERIFYING);
+        assert_eq!(normalize_phase_status("FAILED"), PHASE_STATUS_FAILED);
+        assert_eq!(normalize_phase_status("error"), PHASE_STATUS_FAILED);
+        assert_eq!(normalize_phase_status("blocked"), PHASE_STATUS_BLOCKED);
+        assert_eq!(normalize_phase_status("skipped"), PHASE_STATUS_SKIPPED);
+        assert_eq!(normalize_phase_status("pending"), PHASE_STATUS_PENDING);
+        assert_eq!(normalize_phase_status("todo"), PHASE_STATUS_PENDING);
+    }
+
+    #[test]
+    fn normalize_emoji_prefixes() {
+        assert_eq!(normalize_phase_status("✅ Completed"), PHASE_STATUS_COMPLETED);
+        assert_eq!(normalize_phase_status("✅"), PHASE_STATUS_COMPLETED);
+        assert_eq!(normalize_phase_status("❌ failed"), PHASE_STATUS_FAILED);
+        assert_eq!(normalize_phase_status("🔄 in_progress"), PHASE_STATUS_IN_PROGRESS);
+        assert_eq!(normalize_phase_status("⏳"), PHASE_STATUS_IN_PROGRESS);
+        assert_eq!(normalize_phase_status("🚫 blocked"), PHASE_STATUS_BLOCKED);
+    }
+
+    #[test]
+    fn normalize_unknown_falls_back_to_pending() {
+        assert_eq!(normalize_phase_status("xyzzy"), PHASE_STATUS_PENDING);
+        assert_eq!(normalize_phase_status(""), PHASE_STATUS_PENDING);
+        assert_eq!(normalize_phase_status("   "), PHASE_STATUS_PENDING);
+    }
+
+    #[test]
+    fn normalize_handles_markdown_decorations() {
+        assert_eq!(normalize_phase_status("**completed**"), PHASE_STATUS_COMPLETED);
+        assert_eq!(normalize_phase_status("`in_progress`"), PHASE_STATUS_IN_PROGRESS);
+        assert_eq!(normalize_phase_status(": done"), PHASE_STATUS_COMPLETED);
+    }
 }

@@ -16,10 +16,14 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-          - os: macos-latest
-            target: x86_64-apple-darwin
-          - os: macos-latest
-            target: aarch64-apple-darwin
+          # macOS builds are disabled until an Apple Developer account is approved.
+          # Without a valid APPLE_CERTIFICATE, tauri-action's codesign step fails
+          # with "failed to import keychain certificate" and breaks the whole release.
+          # Re-enable by uncommenting when signing secrets are available.
+          # - os: macos-latest
+          #   target: x86_64-apple-darwin
+          # - os: macos-latest
+          #   target: aarch64-apple-darwin
 
     runs-on: ${{ matrix.os }}
 
@@ -48,7 +52,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # Apple Code Signing & Notarization (macOS only)
+          # Apple Code Signing & Notarization — pass secrets only when present.
+          # When the Apple Developer account is approved and secrets populated,
+          # uncomment the macOS matrix entries above; these env vars become active automatically.
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}

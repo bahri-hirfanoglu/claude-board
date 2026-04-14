@@ -299,7 +299,9 @@ pub fn run_migrations(conn: &Connection) {
 
     for (table, col, sql) in migrations {
         if !col_exists(conn, table, col) {
-            conn.execute_batch(sql).ok();
+            if let Err(e) = conn.execute_batch(sql) {
+                log::error!("Migration failed for {}.{}: {} — sql: {}", table, col, e, sql);
+            }
         }
     }
 

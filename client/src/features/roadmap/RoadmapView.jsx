@@ -26,8 +26,11 @@ import {
   Map,
   BookOpen,
   FolderOpen,
+  Activity,
+  XCircle,
+  ListTodo,
 } from 'lucide-react';
-import { api } from '../../lib/api';
+import { api, notifyError } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { tauriListen } from '../../lib/tauriEvents';
 
@@ -283,7 +286,93 @@ function PhaseCard({
     try {
       await api.updatePhase(phase.id, phase.title, phase.description, phase.goal, phase.success_criteria, newStatus);
       onRefresh();
-    } catch {}
+    } catch (e) {
+      console.error('Phase status change failed:', e);
+    }
+  };
+
+  // /gsd:list-phase-assumptions equivalent — surface risky assumptions Claude
+  // would be making about this phase before AI planning kicks off. Writes
+  // .planning/phase-N/ASSUMPTIONS.md that the user can review/edit before /gsd:plan-phase.
+  const [surfacing, setSurfacing] = useState(false);
+  const handleSurfaceAssumptions = async () => {
+    if (surfacing) return;
+    setSurfacing(true);
+    const criteriaList = criteria.map((c, i) => `${i + 1}. ${c.text || c.criterion || ''}`).join('\n');
+    const description =
+      `Surface the implicit assumptions Claude would make if asked to plan Phase ${phase.phase_number} — "${phase.title}" — and write them to .planning/phase-${phase.phase_number}/ASSUMPTIONS.md.\n\n` +
+      `## Phase Goal\n${phase.goal || '(no goal specified)'}\n\n` +
+      `## Success Criteria\n${criteriaList || '(none defined)'}\n\n` +
+      `## Instructions\n` +
+      `1. Read the phase goal and success criteria above\n` +
+      `2. Inspect the project codebase briefly (entry points, relevant modules)\n` +
+      `3. List the implicit assumptions that an AI planner would make, including:\n` +
+      `   - Which files/components are in scope vs. out of scope\n` +
+      `   - Which libraries/patterns should be used\n` +
+      `   - Which edge cases or non-goals are deferred\n` +
+      `   - Any ambiguous terms in the goal that have multiple interpretations\n` +
+      `4. Write .planning/phase-${phase.phase_number}/ASSUMPTIONS.md with:\n` +
+      `   - Numbered list of assumptions, each marked [RISKY] or [SAFE]\n` +
+      `   - Open questions the user should answer before planning`;
+    try {
+      const task = await api.createTask(projectId, {
+        title: `Surface assumptions — Phase ${phase.phase_number}`,
+        description,
+        taskType: 'docs',
+        model: 'sonnet',
+        acceptanceCriteria: `ASSUMPTIONS.md exists at .planning/phase-${phase.phase_number}/ with numbered assumptions and open questions`,
+        tags: JSON.stringify([`phase:${phase.phase_number}`, 'gsd-assumptions']),
+      });
+      if (task?.id) {
+        await api.restartTask(task.id);
+      }
+      onRefresh();
+    } catch (e) {
+      console.error('Surface assumptions failed:', e);
+    }
+    setSurfacing(false);
+  };
+
+  // /gsd:validate-phase equivalent — creates & starts a task that drives claude to
+  // audit the phase's implementation against its success criteria and emit
+  // .planning/phase-N/VALIDATION.md.
+  const [validating, setValidating] = useState(false);
+  const handleValidatePhase = async () => {
+    if (validating) return;
+    setValidating(true);
+    const criteriaList = criteria
+      .map((c, i) => `${i + 1}. [${c.verified ? 'VERIFIED' : 'UNVERIFIED'}] ${c.text || c.criterion || ''}`)
+      .join('\n');
+    const description =
+      `Validate Phase ${phase.phase_number} — "${phase.title}" against its success criteria and produce .planning/phase-${phase.phase_number}/VALIDATION.md.\n\n` +
+      `## Goal\n${phase.goal || '(no goal specified)'}\n\n` +
+      `## Success Criteria\n${criteriaList || '(none defined)'}\n\n` +
+      `## Instructions\n` +
+      `1. Read the phase description, goal, and success criteria above\n` +
+      `2. Inspect the actual code/artifacts in the project to confirm each criterion is met\n` +
+      `3. Run any relevant tests/builds\n` +
+      `4. Write .planning/phase-${phase.phase_number}/VALIDATION.md with:\n` +
+      `   - Status per criterion (MET / PARTIAL / FAILED)\n` +
+      `   - Evidence (file paths, test output) for each\n` +
+      `   - Gaps or follow-up work needed\n` +
+      `   - Overall verdict: ready / needs-work / failed`;
+    try {
+      const task = await api.createTask(projectId, {
+        title: `Validate Phase ${phase.phase_number}: ${phase.title}`,
+        description,
+        taskType: 'test',
+        model: 'sonnet',
+        acceptanceCriteria: `VALIDATION.md exists at .planning/phase-${phase.phase_number}/ with a verdict on each success criterion`,
+        tags: JSON.stringify([`phase:${phase.phase_number}`, 'gsd-validate']),
+      });
+      if (task?.id) {
+        await api.restartTask(task.id);
+      }
+      onRefresh();
+    } catch (e) {
+      console.error('Validate phase failed:', e);
+    }
+    setValidating(false);
   };
 
   return (
@@ -318,6 +407,19 @@ function PhaseCard({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                handleSurfaceAssumptions();
+              }}
+              disabled={surfacing}
+              className="p-1.5 rounded hover:bg-amber-500/20 text-surface-500 hover:text-amber-400 transition-colors disabled:opacity-50"
+              title="Surface assumptions before planning (ASSUMPTIONS.md)"
+            >
+              {surfacing ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
+            </button>
+          )}
+          {(phase.status === 'pending' || phase.status === 'planning') && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
                 onPlanPhase(phase);
               }}
               className="p-1.5 rounded hover:bg-blue-500/20 text-surface-500 hover:text-blue-400 transition-colors"
@@ -336,6 +438,19 @@ function PhaseCard({
               title="Execute Phase"
             >
               <Play size={14} />
+            </button>
+          )}
+          {(phase.status === 'in_progress' || phase.status === 'verifying' || phase.status === 'completed') && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleValidatePhase();
+              }}
+              disabled={validating}
+              className="p-1.5 rounded hover:bg-purple-500/20 text-surface-500 hover:text-purple-400 transition-colors disabled:opacity-50"
+              title="Validate Phase against success criteria"
+            >
+              {validating ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
             </button>
           )}
           <button
@@ -646,7 +761,47 @@ function MilestoneSection({ milestone, phases, onRefresh, projectId, onPlanPhase
     try {
       await api.updateMilestone(milestone.id, milestone.version, milestone.title, milestone.description, status);
       onRefresh();
-    } catch {}
+    } catch (e) {
+      console.error('Milestone status change failed:', e);
+    }
+  };
+
+  // /gsd:audit-milestone equivalent — dispatches a Claude task that audits the
+  // milestone for completeness against its original intent before archival.
+  const [auditing, setAuditing] = useState(false);
+  const handleAuditMilestone = async () => {
+    if (auditing) return;
+    setAuditing(true);
+    const phaseList = phases.map((p) => `  - Phase ${p.phase_number}: ${p.title} [${p.status}]`).join('\n');
+    const description =
+      `Audit milestone ${milestone.version} — "${milestone.title}" against its original intent before archival.\n\n` +
+      `## Description\n${milestone.description || '(none)'}\n\n` +
+      `## Phases in this milestone\n${phaseList || '(none)'}\n\n` +
+      `## Instructions\n` +
+      `1. Read PROJECT.md and REQUIREMENTS.md under .planning/\n` +
+      `2. Cross-reference the milestone's original scope with the phases above\n` +
+      `3. Identify any unmet goals, deferred features, or scope drift\n` +
+      `4. Write .planning/milestone-${milestone.version}/AUDIT.md with:\n` +
+      `   - Requirements vs. delivered (table)\n` +
+      `   - Gaps (should-be-fixed / acceptable-debt / out-of-scope)\n` +
+      `   - Ready-to-archive verdict (YES / CONDITIONAL / NO + reasons)`;
+    try {
+      const task = await api.createTask(projectId, {
+        title: `Audit Milestone ${milestone.version}: ${milestone.title}`,
+        description,
+        taskType: 'test',
+        model: 'sonnet',
+        acceptanceCriteria: `AUDIT.md exists at .planning/milestone-${milestone.version}/ with verdict`,
+        tags: JSON.stringify([`milestone:${milestone.version}`, 'gsd-audit']),
+      });
+      if (task?.id) {
+        await api.restartTask(task.id);
+      }
+      onRefresh();
+    } catch (e) {
+      console.error('Audit milestone failed:', e);
+    }
+    setAuditing(false);
   };
 
   const handleInsertPhase = async () => {
@@ -730,6 +885,14 @@ function MilestoneSection({ milestone, phases, onRefresh, projectId, onPlanPhase
               <option value="completed">{t('roadmap.completed')}</option>
               <option value="archived">{t('roadmap.archived')}</option>
             </select>
+            <button
+              onClick={handleAuditMilestone}
+              disabled={auditing}
+              className="p-1 rounded hover:bg-purple-500/20 text-surface-600 hover:text-purple-400 transition-colors disabled:opacity-50"
+              title="Audit milestone completeness"
+            >
+              {auditing ? <Loader2 size={12} className="animate-spin" /> : <Eye size={12} />}
+            </button>
             <button
               onClick={() => setEditingMs(true)}
               className="p-1 rounded hover:bg-surface-700 text-surface-600 hover:text-surface-400 transition-colors"
@@ -877,17 +1040,31 @@ function PhasePlanningModal({ phase, projectId, onClose, onRefresh }) {
   const [logs, setLogs] = useState([]);
   const [planTitle, setPlanTitle] = useState(`Plan for Phase ${phase.phase_number}`);
   const [activePlanId, setActivePlanId] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   const startPlanning = async () => {
     setStatus('planning');
     setLogs([]);
     setProposals([]);
+    setErrorMsg(null);
     try {
       const result = await api.planPhase(projectId, phase.id, model, 'medium');
       if (result?.planId) setActivePlanId(result.planId);
-    } catch {
+    } catch (e) {
+      const msg = typeof e === 'string' ? e : e?.message || 'Failed to start planning';
+      setErrorMsg(msg);
       setStatus('idle');
     }
+  };
+
+  const cancelPlanning = async () => {
+    try {
+      await api.cancelPlanning(projectId);
+    } catch (e) {
+      console.error('Cancel planning failed:', e);
+    }
+    setStatus('idle');
+    setActivePlanId(null);
   };
 
   // Listen for planning events - filtered by projectId
@@ -916,16 +1093,17 @@ function PhasePlanningModal({ phase, projectId, onClose, onRefresh }) {
           setDeps(p.dependencies || []);
           setStatus('proposals');
         } else {
-          // Show the analysis text so user knows planning finished but couldn't parse tasks
-          setLogs((prev) => [
-            ...prev,
-            {
-              type: 'error',
-              content: 'Planning finished but no tasks were parsed. Try again with more detail in the phase goal.',
-            },
-          ]);
+          const hint = p.error
+            ? `Planning failed: ${p.error}`
+            : 'Planning finished but no tasks were parsed. Try again with more detail in the phase goal.';
+          setErrorMsg(hint);
+          setLogs((prev) => [...prev, { type: 'error', content: hint }]);
           setStatus('idle');
         }
+      }),
+      tauriListen('plan:cancelled', (p) => {
+        if (p.projectId !== projectId) return;
+        setStatus('idle');
       }),
     ];
     return () => unsubs.forEach((u) => u());
@@ -933,11 +1111,14 @@ function PhasePlanningModal({ phase, projectId, onClose, onRefresh }) {
 
   const handleApprove = async () => {
     setStatus('approving');
+    setErrorMsg(null);
     try {
       await api.approvePhasePlan(projectId, phase.id, planTitle, proposals, model, deps);
       onRefresh();
       onClose();
-    } catch {
+    } catch (e) {
+      const msg = typeof e === 'string' ? e : e?.message || 'Failed to approve plan';
+      setErrorMsg(msg);
       setStatus('proposals');
     }
   };
@@ -964,6 +1145,15 @@ function PhasePlanningModal({ phase, projectId, onClose, onRefresh }) {
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-5 space-y-4">
+          {errorMsg && (
+            <div className="flex items-start gap-2 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded text-[11px] text-red-300">
+              <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
+              <span className="flex-1">{errorMsg}</span>
+              <button onClick={() => setErrorMsg(null)} className="text-red-400/60 hover:text-red-300">
+                <X size={12} />
+              </button>
+            </div>
+          )}
           {status === 'idle' && (
             <>
               <div className="space-y-2">
@@ -989,9 +1179,17 @@ function PhasePlanningModal({ phase, projectId, onClose, onRefresh }) {
 
           {status === 'planning' && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-blue-400">
-                <Loader2 size={14} className="animate-spin" />
-                Planning in progress...
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-blue-400">
+                  <Loader2 size={14} className="animate-spin" />
+                  Planning in progress...
+                </div>
+                <button
+                  onClick={cancelPlanning}
+                  className="text-[11px] px-2 py-1 bg-surface-800 border border-surface-700 text-surface-400 hover:text-red-400 hover:border-red-500/40 rounded"
+                >
+                  Cancel
+                </button>
               </div>
               <div className="bg-surface-900 rounded-lg p-3 max-h-48 overflow-auto">
                 {logs.map((l, i) => (
@@ -1679,7 +1877,9 @@ export default function RoadmapView({ projectId, project }) {
     try {
       const status = await api.gsdCheckStatus(projectId);
       setGsdStatus(status);
-    } catch {}
+    } catch (e) {
+      console.error('Failed to load GSD status:', e);
+    }
     setGsdLoading(false);
   }, [projectId]);
 
@@ -1687,7 +1887,9 @@ export default function RoadmapView({ projectId, project }) {
     try {
       const data = await api.getRoadmap(projectId);
       setRoadmap(data);
-    } catch {}
+    } catch (e) {
+      console.error('Failed to load roadmap:', e);
+    }
     setLoading(false);
   }, [projectId]);
 
@@ -1709,23 +1911,75 @@ export default function RoadmapView({ projectId, project }) {
       setNewMs({ version: '', title: '', description: '' });
       setShowCreateMs(false);
       loadRoadmap();
-    } catch {}
+    } catch (e) {
+      console.error('Create milestone failed:', e);
+    }
   };
 
   const handlePlanPhase = (phase) => {
     setPlanningPhase(phase);
   };
 
+  const [executingPhases, setExecutingPhases] = useState(() => new Set());
   const handleExecutePhase = async (phase) => {
+    if (executingPhases.has(phase.id)) return;
+    if (phase.status === 'in_progress') {
+      notifyError(`Phase ${phase.phase_number} is already in progress`);
+      return;
+    }
+    setExecutingPhases((prev) => {
+      const next = new Set(prev);
+      next.add(phase.id);
+      return next;
+    });
     try {
       await api.executePhase(projectId, phase.id);
-    } catch {}
+      loadRoadmap();
+    } catch (e) {
+      console.error('Execute phase failed:', e);
+    } finally {
+      setExecutingPhases((prev) => {
+        const next = new Set(prev);
+        next.delete(phase.id);
+        return next;
+      });
+    }
   };
 
   const [gsdIniting, setGsdIniting] = useState(false);
   const [gsdInitMsg, setGsdInitMsg] = useState(null);
   const [showGsdForm, setShowGsdForm] = useState(false);
   const [gsdForm, setGsdForm] = useState({ description: '', goals: '', scope: '' });
+  const [healthReport, setHealthReport] = useState(null);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [showHealth, setShowHealth] = useState(false);
+  const [todos, setTodos] = useState([]);
+  const [todosLoading, setTodosLoading] = useState(false);
+  const [showTodos, setShowTodos] = useState(false);
+
+  const runHealthCheck = useCallback(async () => {
+    setHealthLoading(true);
+    try {
+      const report = await api.gsdHealthCheck(projectId);
+      setHealthReport(report);
+      setShowHealth(true);
+    } catch (e) {
+      console.error('Health check failed:', e);
+    }
+    setHealthLoading(false);
+  }, [projectId]);
+
+  const loadTodos = useCallback(async () => {
+    setTodosLoading(true);
+    try {
+      const list = await api.gsdListTodos(projectId);
+      setTodos(list || []);
+      setShowTodos(true);
+    } catch (e) {
+      console.error('Load todos failed:', e);
+    }
+    setTodosLoading(false);
+  }, [projectId]);
   const handleGsdInit = async () => {
     if (gsdIniting) return;
     if (!gsdForm.description.trim()) return;
@@ -1791,13 +2045,162 @@ export default function RoadmapView({ projectId, project }) {
           <h2 className="text-lg font-semibold text-surface-100">{t('roadmap.title')}</h2>
           <p className="text-[10px] text-surface-600 mt-0.5">GSD Workflow - Milestone → Phase → Plan → Task</p>
         </div>
-        <button
-          onClick={() => setShowCreateMs(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-claude/15 text-claude text-xs font-medium rounded-lg hover:bg-claude/25 transition-colors"
-        >
-          <Plus size={14} /> {t('roadmap.createMilestone')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={loadTodos}
+            disabled={todosLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-800 border border-surface-700 text-surface-300 hover:text-surface-100 hover:border-surface-600 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+            title="Show captured todos from .planning/todos/"
+          >
+            {todosLoading ? <Loader2 size={14} className="animate-spin" /> : <ListTodo size={14} />}
+            Todos
+          </button>
+          <button
+            onClick={runHealthCheck}
+            disabled={healthLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-800 border border-surface-700 text-surface-300 hover:text-surface-100 hover:border-surface-600 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+            title="Check .planning/ directory integrity"
+          >
+            {healthLoading ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
+            Health
+          </button>
+          <button
+            onClick={() => setShowCreateMs(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-claude/15 text-claude text-xs font-medium rounded-lg hover:bg-claude/25 transition-colors"
+          >
+            <Plus size={14} /> {t('roadmap.createMilestone')}
+          </button>
+        </div>
       </div>
+
+      {/* Todos panel */}
+      {showTodos && (
+        <div className="border border-surface-700 rounded-xl p-4 space-y-2 bg-surface-850">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ListTodo size={14} className="text-amber-400" />
+              <h3 className="text-sm font-medium text-surface-100">
+                Todos{' '}
+                <span className="text-[10px] text-surface-500 font-normal">
+                  ({todos.filter((t) => t.status === 'pending').length} pending ·{' '}
+                  {todos.filter((t) => t.status === 'done').length} done)
+                </span>
+              </h3>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={loadTodos}
+                disabled={todosLoading}
+                className="p-1 text-surface-500 hover:text-surface-300 disabled:opacity-50"
+                title="Refresh"
+              >
+                <RefreshCw size={12} className={todosLoading ? 'animate-spin' : ''} />
+              </button>
+              <button onClick={() => setShowTodos(false)} className="p-1 text-surface-500 hover:text-surface-300">
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+          {todos.length === 0 ? (
+            <div className="text-[11px] text-surface-500 py-4 text-center">
+              No todos captured yet. Use <code className="text-surface-300">/gsd:add-todo</code> in a Claude session to
+              capture ideas.
+            </div>
+          ) : (
+            <div className="space-y-1 max-h-80 overflow-auto">
+              {todos.map((todo) => (
+                <div
+                  key={todo.path}
+                  className={`flex items-start gap-2 p-2 rounded border border-surface-700/50 ${todo.status === 'done' ? 'bg-surface-900/50 opacity-60' : 'bg-surface-900/80'}`}
+                >
+                  {todo.status === 'done' ? (
+                    <CheckCircle2 size={11} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <Circle size={11} className="text-surface-500 flex-shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-[11px] font-medium ${todo.status === 'done' ? 'text-surface-400 line-through' : 'text-surface-200'}`}
+                      >
+                        {todo.title}
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-800 text-surface-500 flex-shrink-0">
+                        {todo.area}
+                      </span>
+                    </div>
+                    {todo.preview && <p className="text-[10px] text-surface-500 mt-0.5 line-clamp-2">{todo.preview}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Health report panel */}
+      {showHealth && healthReport && (
+        <div className="border border-surface-700 rounded-xl p-4 space-y-2 bg-surface-850">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity
+                size={14}
+                className={
+                  healthReport.overall === 'healthy'
+                    ? 'text-emerald-400'
+                    : healthReport.overall === 'degraded'
+                      ? 'text-amber-400'
+                      : 'text-red-400'
+                }
+              />
+              <h3 className="text-sm font-medium text-surface-100">
+                Planning Directory Health:{' '}
+                <span
+                  className={
+                    healthReport.overall === 'healthy'
+                      ? 'text-emerald-400'
+                      : healthReport.overall === 'degraded'
+                        ? 'text-amber-400'
+                        : 'text-red-400'
+                  }
+                >
+                  {healthReport.overall}
+                </span>
+              </h3>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={runHealthCheck}
+                disabled={healthLoading}
+                className="p-1 text-surface-500 hover:text-surface-300 disabled:opacity-50"
+                title="Re-run checks"
+              >
+                <RefreshCw size={12} className={healthLoading ? 'animate-spin' : ''} />
+              </button>
+              <button onClick={() => setShowHealth(false)} className="p-1 text-surface-500 hover:text-surface-300">
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+          <div className="space-y-1">
+            {healthReport.checks.map((c, i) => (
+              <div key={i} className="flex items-start gap-2 text-[11px]">
+                {c.status === 'ok' ? (
+                  <CheckCircle2 size={11} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                ) : c.status === 'warning' ? (
+                  <AlertTriangle size={11} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <XCircle size={11} className="text-red-400 flex-shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <span className="text-surface-200">{c.name}</span>
+                  {c.message && <span className="text-surface-500"> — {c.message}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Create milestone form */}
       {showCreateMs && (

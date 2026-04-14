@@ -52,7 +52,22 @@ export default function PlanningModal({ projectId, onClose }) {
       effort,
       granularity,
     });
-  });
+  }, [
+    projectId,
+    phase,
+    planPhase,
+    logs,
+    analysis,
+    proposals,
+    dependencies,
+    stats,
+    error,
+    topic,
+    context,
+    model,
+    effort,
+    granularity,
+  ]);
 
   // Resume active session
   useEffect(() => {

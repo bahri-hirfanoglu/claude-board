@@ -347,6 +347,8 @@ export const api = {
         executePhase: (projectId, phaseId) => tauriCall('execute_phase', { projectId, phaseId }),
         // ─── GSD Package Integration ───
         gsdCheckStatus: (projectId) => tauriCall('gsd_check_status', { projectId }),
+        gsdHealthCheck: (projectId) => tauriCall('gsd_health_check', { projectId }),
+        gsdListTodos: (projectId) => tauriCall('gsd_list_todos', { projectId }),
         gsdInstall: (projectId, scope) => tauriCall('gsd_install', { projectId, scope: scope || null }),
         gsdGetRoadmap: (projectId) => tauriCall('gsd_get_roadmap', { projectId }),
         gsdGetState: (projectId) => tauriCall('gsd_get_state', { projectId }),

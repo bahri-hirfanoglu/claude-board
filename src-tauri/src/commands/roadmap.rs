@@ -76,6 +76,14 @@ pub fn update_phase(
         goal.as_deref().unwrap_or(""), success_criteria.as_deref().unwrap_or("[]"), status.trim(),
     );
     let phase = rm::get_phase(&db, id).ok_or("Failed to update phase")?;
+    // Sync canonical status back to .planning/ROADMAP.md so file doesn't drift from DB
+    if let Some(project) = pq::get_by_id(&db, phase.project_id) {
+        crate::services::gsd::update_roadmap_phase_status(
+            &project.working_dir,
+            &phase.phase_number,
+            &phase.status,
+        );
+    }
     app.emit("roadmap:updated", &phase.project_id).ok();
     Ok(phase)
 }
@@ -277,6 +285,12 @@ The tasks you create should collectively satisfy ALL success criteria above."#,
 
 /// Approve a phase plan: create tasks, link them to a new plan within the phase,
 /// and set up dependencies.
+///
+/// Failure semantics:
+/// - Validation errors (missing phase/project, empty task list) → return Err, nothing written
+/// - If plan record fails to create → return Err, nothing written
+/// - If 0 tasks successfully create → delete plan, return Err
+/// - Partial task creation → keep plan, record failures in activity log, return created tasks
 #[tauri::command]
 pub fn approve_phase_plan(
     app: AppHandle, project_id: i64, phase_id: i64,
@@ -286,6 +300,7 @@ pub fn approve_phase_plan(
     let db = db::get_db();
     let phase = rm::get_phase(&db, phase_id).ok_or("Phase not found")?;
     if pq::get_by_id(&db, project_id).is_none() { return Err("Project not found".into()); }
+    if tasks.is_empty() { return Err("No tasks provided".into()); }
     let model = model.unwrap_or_else(|| "sonnet".into());
 
     // Count existing plans to generate plan number
@@ -299,12 +314,26 @@ pub fn approve_phase_plan(
         plan_title.trim().to_string()
     };
     let plan_id = rm::create_plan(&db, phase_id, &plan_number, &title, "", 0);
+    if plan_id <= 0 {
+        return Err("Failed to create phase plan record".into());
+    }
 
-    // Create tasks and link them to the plan
+    // Create tasks and link them to the plan. Track per-index created/failed mapping
+    // so dependency edges reference the correct tasks (or are skipped for failed ones).
     let phase_tag = format!("phase:{}", phase.phase_number);
-    let mut created = Vec::new();
+    let mut created: Vec<tq::Task> = Vec::new();
+    // Parallel vector: None if task at this input index failed, Some(task_id) if created
+    let mut slot_to_task_id: Vec<Option<i64>> = Vec::with_capacity(tasks.len());
+    let mut failures: Vec<String> = Vec::new();
 
-    for t in &tasks {
+    for (idx, t) in tasks.iter().enumerate() {
+        let title_str = t.get("title").and_then(|v| v.as_str()).unwrap_or("").trim();
+        if title_str.is_empty() {
+            failures.push(format!("Task #{}: missing title", idx + 1));
+            slot_to_task_id.push(None);
+            continue;
+        }
+
         let mut task_tags = vec![phase_tag.clone()];
         if let Some(extra) = t.get("tags").and_then(|v| v.as_array()) {
             for tag in extra {
@@ -318,7 +347,7 @@ pub fn approve_phase_plan(
         let tags_json = serde_json::to_string(&task_tags).unwrap_or_else(|_| "[]".into());
 
         let task_id = tq::create(&db, project_id,
-            t.get("title").and_then(|v| v.as_str()).unwrap_or(""),
+            title_str,
             t.get("description").and_then(|v| v.as_str()).unwrap_or(""),
             t.get("priority").and_then(|v| v.as_i64()).unwrap_or(0),
             t.get("task_type").and_then(|v| v.as_str()).unwrap_or("feature"),
@@ -326,6 +355,12 @@ pub fn approve_phase_plan(
             &model, "medium", None,
             Some(&tags_json),
         );
+
+        if task_id <= 0 {
+            failures.push(format!("Task #{} ({}): DB insert failed", idx + 1, title_str));
+            slot_to_task_id.push(None);
+            continue;
+        }
 
         // Determine checkpoint type
         let checkpoint = t.get("checkpoint_type")
@@ -338,19 +373,34 @@ pub fn approve_phase_plan(
         if let Some(task) = tq::get_by_id(&db, task_id) {
             app.emit("task:created", &task).ok();
             created.push(task);
+            slot_to_task_id.push(Some(task_id));
+        } else {
+            failures.push(format!("Task #{} ({}): created but fetch failed", idx + 1, title_str));
+            slot_to_task_id.push(None);
         }
     }
 
-    // Create dependency edges
+    // Rollback: if nothing was created, drop the empty plan and report failure
+    if created.is_empty() {
+        rm::delete_plan(&db, plan_id);
+        let reason = if failures.is_empty() {
+            "All proposed tasks failed to create".to_string()
+        } else {
+            format!("All proposed tasks failed to create:\n  - {}", failures.join("\n  - "))
+        };
+        return Err(reason);
+    }
+
+    // Create dependency edges — skip edges that reference a failed task
     if let Some(deps) = dependencies_edges {
         for edge in &deps {
             if edge.len() == 2 {
                 let parent_idx = edge[0] as usize;
                 let child_idx = edge[1] as usize;
-                if parent_idx < created.len() && child_idx < created.len() {
-                    let parent_id = created[parent_idx].id;
-                    let child_id = created[child_idx].id;
-                    dependencies::add_dependency(&db, child_id, parent_id, None).ok();
+                let parent_id = slot_to_task_id.get(parent_idx).and_then(|v| *v);
+                let child_id = slot_to_task_id.get(child_idx).and_then(|v| *v);
+                if let (Some(p), Some(c)) = (parent_id, child_id) {
+                    dependencies::add_dependency(&db, c, p, None).ok();
                 }
             }
         }
@@ -364,9 +414,21 @@ pub fn approve_phase_plan(
         phase.success_criteria.as_deref().unwrap_or("[]"),
         "in_progress",
     );
+    if let Some(project) = pq::get_by_id(&db, project_id) {
+        crate::services::gsd::update_roadmap_phase_status(
+            &project.working_dir, &phase.phase_number, "in_progress",
+        );
+    }
 
-    activity::add(&db, project_id, None, "phase_plan_approved",
-        &format!("Phase {} plan approved: {} tasks created", phase.phase_number, created.len()), None);
+    let summary = if failures.is_empty() {
+        format!("Phase {} plan approved: {} tasks created", phase.phase_number, created.len())
+    } else {
+        format!(
+            "Phase {} plan partially approved: {}/{} tasks created. Failures: {}",
+            phase.phase_number, created.len(), tasks.len(), failures.join("; ")
+        )
+    };
+    activity::add(&db, project_id, None, "phase_plan_approved", &summary, None);
 
     app.emit("roadmap:updated", &project_id).ok();
 
@@ -376,24 +438,38 @@ pub fn approve_phase_plan(
     Ok(created)
 }
 
-/// Execute a phase: trigger the queue to start ready tasks
+/// Execute a phase: trigger the queue to start ready tasks.
+/// Idempotent — if phase is already in_progress, only re-triggers the queue without
+/// rewriting status (prevents double-click races and duplicate events).
 #[tauri::command]
 pub fn execute_phase(app: AppHandle, project_id: i64, phase_id: i64) -> Result<String, String> {
     let db = db::get_db();
     let phase = rm::get_phase(&db, phase_id).ok_or("Phase not found")?;
 
-    // Update phase status
-    rm::update_phase(
-        &db, phase_id, &phase.title,
-        phase.description.as_deref().unwrap_or(""),
-        phase.goal.as_deref().unwrap_or(""),
-        phase.success_criteria.as_deref().unwrap_or("[]"),
-        "in_progress",
-    );
+    let already_running = phase.status == "in_progress";
 
-    // Trigger queue to start ready tasks
+    if !already_running {
+        rm::update_phase(
+            &db, phase_id, &phase.title,
+            phase.description.as_deref().unwrap_or(""),
+            phase.goal.as_deref().unwrap_or(""),
+            phase.success_criteria.as_deref().unwrap_or("[]"),
+            "in_progress",
+        );
+        if let Some(project) = pq::get_by_id(&db, project_id) {
+            crate::services::gsd::update_roadmap_phase_status(
+                &project.working_dir, &phase.phase_number, "in_progress",
+            );
+        }
+        app.emit("roadmap:updated", &project_id).ok();
+    }
+
+    // start_next_queued is itself idempotent; always trigger to pick up unblocked tasks
     crate::services::queue::start_next_queued(&db, &app, project_id);
 
-    app.emit("roadmap:updated", &project_id).ok();
-    Ok(format!("Phase {} execution started", phase.phase_number))
+    Ok(if already_running {
+        format!("Phase {} queue re-triggered", phase.phase_number)
+    } else {
+        format!("Phase {} execution started", phase.phase_number)
+    })
 }
