@@ -183,6 +183,24 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
         }
     }
 
+    // GSD file-based roadmap: update ROADMAP.md phase status when all sibling
+    // tasks tagged `gsd,phase-N` reach a terminal state.
+    if let Some(phase_num) = crate::services::gsd::extract_gsd_phase_from_tags(final_task.tags.as_deref()) {
+        if let Some(project) = pq::get_by_id(&db, final_task.project_id) {
+            let statuses: Vec<String> = tq::get_by_project(&db, final_task.project_id)
+                .into_iter()
+                .filter(|t| crate::services::gsd::extract_gsd_phase_from_tags(t.tags.as_deref())
+                    .as_deref() == Some(phase_num.as_str()))
+                .filter_map(|t| t.status)
+                .collect();
+            if crate::services::gsd::recompute_phase_status_from_tasks(
+                &project.working_dir, &phase_num, &statuses,
+            ).is_some() {
+                app.emit("roadmap:updated", &final_task.project_id).ok();
+            }
+        }
+    }
+
     Ok(final_task)
 }
 

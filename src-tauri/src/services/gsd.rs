@@ -149,6 +149,139 @@ pub fn read_roadmap(working_dir: &str) -> Option<GsdRoadmap> {
     Some(GsdRoadmap { phases, raw })
 }
 
+/// Parse a task `tags` column value (CSV like "gsd,phase-2" or JSON array like
+/// ["gsd","phase-2"]) into a lowercase vector of individual tags.
+fn parse_task_tags(raw: &str) -> Vec<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || trimmed == "[]" {
+        return Vec::new();
+    }
+    if trimmed.starts_with('[') {
+        if let Ok(arr) = serde_json::from_str::<Vec<String>>(trimmed) {
+            return arr.into_iter().map(|s| s.trim().to_lowercase()).collect();
+        }
+    }
+    trimmed
+        .split(',')
+        .map(|s| s.trim().trim_matches(['"', '\'']).to_lowercase())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+/// Determine the GSD phase number encoded in a task's tags, e.g. `phase-2` →
+/// `"2"`. Requires the task to also carry the `gsd` marker.
+pub fn extract_gsd_phase_from_tags(raw_tags: Option<&str>) -> Option<String> {
+    let raw = raw_tags?;
+    let tags = parse_task_tags(raw);
+    if !tags.iter().any(|t| t == "gsd") {
+        return None;
+    }
+    tags.iter()
+        .find_map(|t| t.strip_prefix("phase-").map(|s| s.to_string()))
+}
+
+/// Aggregate status for a GSD phase based on its tagged tasks and sync
+/// ROADMAP.md accordingly. Returns the new status on success.
+pub fn recompute_phase_status_from_tasks(
+    working_dir: &str,
+    phase_number: &str,
+    task_statuses: &[String],
+) -> Option<String> {
+    if task_statuses.is_empty() {
+        return None;
+    }
+    let total = task_statuses.len();
+    let done = task_statuses.iter().filter(|s| s.as_str() == "done").count();
+    let active = task_statuses.iter().filter(|s| matches!(s.as_str(), "in_progress" | "testing")).count();
+    let failed = task_statuses.iter().filter(|s| s.as_str() == "failed").count();
+
+    let new_status = if done == total {
+        "completed"
+    } else if failed > 0 && active == 0 && done + failed == total {
+        "failed"
+    } else if active > 0 || done > 0 {
+        "in_progress"
+    } else {
+        return None; // all pending/backlog — leave file alone
+    };
+
+    if update_roadmap_phase_status(working_dir, phase_number, new_status) {
+        Some(new_status.to_string())
+    } else {
+        None
+    }
+}
+
+/// Update the Status: line for a given phase in ROADMAP.md. If no Status line
+/// exists under the phase heading, inserts one immediately after the heading.
+/// Returns true when the file was rewritten.
+pub fn update_roadmap_phase_status(working_dir: &str, phase_number: &str, new_status: &str) -> bool {
+    let path = Path::new(working_dir).join(".planning").join("ROADMAP.md");
+    let content = match std::fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => return false,
+    };
+
+    let target_norm = phase_number.trim_start_matches('0');
+    let lines: Vec<&str> = content.lines().collect();
+    let mut out: Vec<String> = Vec::with_capacity(lines.len() + 1);
+    let mut in_target = false;
+    let mut pending_insert = false;
+    let mut done = false;
+
+    for raw in lines.iter() {
+        let trimmed = raw.trim();
+
+        // Phase heading detection (## / ### lines)
+        if trimmed.starts_with('#') {
+            if let Some(phase) = parse_phase_header(trimmed) {
+                // Leaving a target phase without having replaced a Status line → insert before next heading
+                if in_target && pending_insert && !done {
+                    out.push(format!("**Status:** {}", new_status));
+                    out.push(String::new());
+                    done = true;
+                }
+                let phase_norm = phase.number.trim_start_matches('0');
+                in_target = !done && (phase_norm == target_norm || phase.number == phase_number);
+                pending_insert = in_target;
+                out.push(raw.to_string());
+                continue;
+            }
+        }
+
+        // Replace existing Status: / **Status:** line inside target phase
+        if in_target && pending_insert && parse_status_line(trimmed).is_some() {
+            let leading: String = raw.chars().take_while(|c| c.is_whitespace()).collect();
+            let after = &raw[leading.len()..];
+            let bullet = if after.starts_with("- ") { "- " }
+                else if after.starts_with("* ") { "* " }
+                else { "" };
+            out.push(format!("{}{}**Status:** {}", leading, bullet, new_status));
+            pending_insert = false;
+            done = true;
+            continue;
+        }
+
+        out.push(raw.to_string());
+    }
+
+    // Target phase ran to EOF without a Status line
+    if in_target && pending_insert && !done {
+        out.push(format!("**Status:** {}", new_status));
+        done = true;
+    }
+
+    if !done {
+        return false;
+    }
+
+    let mut new_content = out.join("\n");
+    if content.ends_with('\n') && !new_content.ends_with('\n') {
+        new_content.push('\n');
+    }
+    std::fs::write(&path, new_content).is_ok()
+}
+
 /// Parse phases from ROADMAP.md content.
 fn parse_roadmap_phases(content: &str) -> Vec<GsdPhase> {
     let mut phases = Vec::new();

@@ -1256,14 +1256,52 @@ function GsdFileRoadmap({ projectId }) {
         if (p?.projectId !== projectId || !planningPhase) return;
         setPlanLogs((prev) => [...prev, { type: 'phase', message: `Phase: ${p.phase}` }]);
       }),
-      tauriListen('plan:completed', (p) => {
+      tauriListen('plan:completed', async (p) => {
         if (p?.projectId !== projectId || !planningPhase) return;
+        const finishedPhase = planningPhase;
         setPlanningPhase(null);
-        load(); // Refresh to pick up new PLAN files
         if (p.error) {
+          await load();
           setPhaseMsg({ type: 'error', text: `Planning failed: ${p.error}` });
-        } else {
-          setPhaseMsg({ type: 'success', text: `Planning complete. Click "Generate Tasks" to create board tasks.` });
+          return;
+        }
+        // Pick up PLAN.md files the agent just wrote, then auto-generate tasks.
+        let details = [];
+        try {
+          details = await api.gsdGetPhaseDetails(projectId);
+        } catch {}
+        const phaseNum = normalizePhaseNum(finishedPhase.number);
+        const hasPlan = details.some((d) => {
+          const dNum = normalizePhaseNum(d.number);
+          return dNum === phaseNum && d.files?.some((f) => f.name.toLowerCase().includes('plan'));
+        });
+        await load();
+        if (!hasPlan) {
+          setPhaseMsg({
+            type: 'error',
+            text: `Planning finished but no PLAN.md files were written to .planning/phases/. Try again with a clearer phase goal.`,
+          });
+          return;
+        }
+        try {
+          const created = await api.gsdCreateTasksFromPlans(projectId, finishedPhase.number, finishedPhase.title, true);
+          if (created?.length > 0) {
+            setGeneratedPhases((prev) => new Set([...prev, phaseNum]));
+            setPhaseMsg({
+              type: 'success',
+              text: `Phase ${finishedPhase.number}: ${created.length} tasks created and queued for execution.`,
+            });
+          } else {
+            setPhaseMsg({
+              type: 'error',
+              text: `No tasks could be extracted from PLAN files for Phase ${finishedPhase.number}.`,
+            });
+          }
+        } catch (e) {
+          setPhaseMsg({
+            type: 'error',
+            text: typeof e === 'string' ? e : e?.message || 'Failed to generate tasks',
+          });
         }
       }),
     ];
