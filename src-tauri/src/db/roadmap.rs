@@ -207,10 +207,12 @@ pub fn update_phase(
     db: &DbPool, id: i64, title: &str, description: &str, goal: &str,
     success_criteria: &str, status: &str,
 ) {
+    // Normalize status to canonical enum value so DB never contains ad-hoc strings
+    let canonical = crate::services::gsd::normalize_phase_status(status);
     let conn = db.lock();
     conn.execute(
         "UPDATE phases SET title=?1,description=?2,goal=?3,success_criteria=?4,status=?5,updated_at=datetime('now','localtime') WHERE id=?6",
-        params![title, description, goal, success_criteria, status, id],
+        params![title, description, goal, success_criteria, canonical, id],
     ).ok();
 }
 

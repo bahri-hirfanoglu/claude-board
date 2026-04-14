@@ -73,7 +73,10 @@ pub fn run() {
         .setup(|app| {
             if let Some(cfg) = config::load(app) {
                 migration::migrate_from_electron(std::path::Path::new(&cfg.data_dir));
-                db::init_db(&cfg.data_dir);
+                if let Err(e) = db::init_db(&cfg.data_dir) {
+                    log::error!("Database initialization failed: {}", e);
+                    return Err(Box::<dyn std::error::Error>::from(e));
+                }
 
                 // Recover orphaned tasks and start auto-queue
                 services::queue::startup_recovery(app.handle());
@@ -381,6 +384,8 @@ pub fn run() {
             commands::roadmap::execute_phase,
             // GSD Package Integration
             commands::gsd::gsd_check_status,
+            commands::gsd::gsd_health_check,
+            commands::gsd::gsd_list_todos,
             commands::gsd::gsd_install,
             commands::gsd::gsd_get_roadmap,
             commands::gsd::gsd_get_state,

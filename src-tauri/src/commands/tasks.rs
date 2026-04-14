@@ -172,13 +172,22 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
     final_task.is_running = runner::is_running(id) || runner::is_starting(id);
     app.emit("task:updated", &final_task).ok();
 
-    // GSD Roadmap: propagate status to plan -> phase
+    // GSD Roadmap: propagate status to plan -> phase, then sync DB phase status
+    // back into .planning/ROADMAP.md so the file and DB never drift.
     if let Some(plan_id) = final_task.phase_plan_id {
         db::roadmap::recompute_plan_status(&db, plan_id);
         if let Some(plan) = db::roadmap::get_plan(&db, plan_id) {
             db::roadmap::recompute_phase_status(&db, plan.phase_id);
             if let Some(phase) = db::roadmap::get_phase(&db, plan.phase_id) {
                 app.emit("roadmap:updated", &phase.project_id).ok();
+                // Sync to ROADMAP.md if project has a .planning directory
+                if let Some(project) = pq::get_by_id(&db, phase.project_id) {
+                    crate::services::gsd::update_roadmap_phase_status(
+                        &project.working_dir,
+                        &phase.phase_number,
+                        &phase.status,
+                    );
+                }
             }
         }
     }

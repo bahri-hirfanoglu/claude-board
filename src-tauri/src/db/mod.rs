@@ -26,9 +26,10 @@ pub type DbPool = Arc<Mutex<Connection>>;
 static DB_POOL: OnceCell<DbPool> = OnceCell::new();
 static DATA_DIR: OnceCell<PathBuf> = OnceCell::new();
 
-pub fn init_db(data_dir: &str) -> DbPool {
+pub fn init_db(data_dir: &str) -> Result<DbPool, String> {
     let data_path = PathBuf::from(data_dir);
-    std::fs::create_dir_all(&data_path).ok();
+    std::fs::create_dir_all(&data_path)
+        .map_err(|e| format!("Failed to create data dir {:?}: {}", data_path, e))?;
     DATA_DIR.set(data_path.clone()).ok();
 
     let db_path = data_path.join("data.db");
@@ -39,16 +40,17 @@ pub fn init_db(data_dir: &str) -> DbPool {
         std::fs::copy(&legacy_path, &db_path).ok();
     }
 
-    let conn = Connection::open(&db_path).expect("Failed to open database");
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("Failed to open database at {:?}: {}", db_path, e))?;
     conn.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;")
-        .expect("Failed to set PRAGMA");
+        .map_err(|e| format!("Failed to set PRAGMA: {}", e))?;
 
     schema::create_tables(&conn);
     schema::run_migrations(&conn);
 
     let pool = Arc::new(Mutex::new(conn));
     DB_POOL.set(pool.clone()).ok();
-    pool
+    Ok(pool)
 }
 
 pub fn get_db() -> DbPool {

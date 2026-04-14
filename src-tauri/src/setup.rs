@@ -119,7 +119,10 @@ pub async fn finish(
         };
         config::save(&app_clone, &cfg);
         migration::migrate_from_electron(std::path::Path::new(&data_dir_clone));
-        db::init_db(&data_dir_clone);
+        if let Err(e) = db::init_db(&data_dir_clone) {
+            log::error!("Database initialization failed: {}", e);
+            panic!("Database initialization failed: {}", e);
+        }
 
         // Save language to app_settings
         let pool = db::get_db();
