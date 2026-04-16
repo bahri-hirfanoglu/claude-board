@@ -1,6 +1,6 @@
 [package]
 name = "claude-board"
-version = "1.8.0"
+version = "1.8.1"
 description = "Visual task management board for Claude Code"
 authors = ["Bahri Hirfanoglu <bahri@hirfanoglu.com>"]
 edition = "2021"
@@ -30,7 +30,7 @@ rand = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4"] }
 log = "0.4"
-env_logger = "0.11"
+tauri-plugin-log = "2"
 once_cell = "1"
 parking_lot = "0.12"
 tauri-plugin-updater = "2"

@@ -928,6 +928,9 @@ export default {
   'settings.platform': 'Platform',
   'settings.runtime': 'Runtime',
   'settings.madeBy': 'Made by Bahri Hirfanoglu',
+  'settings.diagnostics': 'Diagnostics',
+  'settings.logsDescription': 'If you hit a bug, open this folder and attach the latest log file to your report.',
+  'settings.openLogsDir': 'Open Logs Directory',
 
   // ─── Language selector ───
   'lang.en': 'English',

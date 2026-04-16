@@ -130,6 +130,7 @@ pub fn start_next_queued(db: &DbPool, app: &AppHandle, project_id: i64) {
         } else {
             tasks::set_resumed(db, task.id);
         }
+        crate::services::gsd::apply_task_status_cascade(db, Some(app), task.id);
 
         let updated = match tasks::get_by_id(db, task.id) {
             Some(t) => t,
@@ -217,6 +218,7 @@ pub fn handle_task_failure(db: &DbPool, app: &AppHandle, project_id: i64, task_i
     if retry_count < config.max_retries {
         tasks::increment_retry(db, task_id);
         tasks::update_status(db, task_id, TaskStatus::Backlog.as_str());
+        crate::services::gsd::apply_task_status_cascade(db, Some(app), task_id);
         let new_count = retry_count + 1;
         let final_delay = config.retry_delay(retry_count);
         tasks::set_retry_after(db, task_id, final_delay);
@@ -232,6 +234,7 @@ pub fn handle_task_failure(db: &DbPool, app: &AppHandle, project_id: i64, task_i
         // Retries exhausted — move to failed status
         tasks::increment_retry(db, task_id);
         tasks::update_status(db, task_id, TaskStatus::Failed.as_str());
+        crate::services::gsd::apply_task_status_cascade(db, Some(app), task_id);
         let msg = format!("Permanently failed after {} retries: {}", config.max_retries, task.title);
         tasks::add_log(db, task_id, &format!("All {} retries exhausted. Task will not auto-start. Move manually to retry.", config.max_retries), "error", None);
         activity::add(db, project_id, Some(task_id), "task_failed_permanent", &msg, None);

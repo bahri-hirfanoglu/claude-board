@@ -164,6 +164,10 @@ struct StatusBody {
 async fn change_status(Path(id): Path<i64>, Json(body): Json<StatusBody>) -> impl IntoResponse {
     let db = db::get_db();
     tasks::update_status(&db, id, &body.status);
+    // Keep GSD roadmap (DB + ROADMAP.md) in sync when task status is changed
+    // via the MCP HTTP bridge. No AppHandle here → UI refresh is skipped but
+    // the file/DB state stays consistent.
+    crate::services::gsd::apply_task_status_cascade(&db, None, id);
     match tasks::get_by_id(&db, id) {
         Some(t) => Json(to_json(&t)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),

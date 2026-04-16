@@ -53,9 +53,30 @@ fn build_macos_menu(app: &tauri::App) -> Result<Menu<tauri::Wry>, Box<dyn std::e
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    env_logger::init();
+    // Centralised logging: tauri-plugin-log writes a rotating log file per
+    // platform-standard app log directory, mirrors output to stdout in dev,
+    // and exposes the same sink to the frontend via its JS API. Earlier we
+    // used env_logger which only printed to stdout — no file artifact was
+    // kept, which made bug reports hard to triage.
+    let log_plugin = tauri_plugin_log::Builder::default()
+        .level(log::LevelFilter::Info)
+        // Noisy third-party crates: keep them at warn so the log stays useful.
+        .level_for("hyper", log::LevelFilter::Warn)
+        .level_for("reqwest", log::LevelFilter::Warn)
+        .level_for("rustls", log::LevelFilter::Warn)
+        .level_for("tungstenite", log::LevelFilter::Warn)
+        .level_for("h2", log::LevelFilter::Warn)
+        .max_file_size(5_000_000) // 5 MB per file
+        .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
+        .targets([
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir { file_name: None }),
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
+        ])
+        .build();
 
     tauri::Builder::default()
+        .plugin(log_plugin)
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
@@ -394,6 +415,9 @@ pub fn run() {
             commands::gsd::gsd_get_config,
             commands::gsd::gsd_parse_phase_plans,
             commands::gsd::gsd_create_tasks_from_plans,
+            // Logs (for bug reports)
+            commands::logs::get_logs_dir,
+            commands::logs::open_logs_dir,
         ])
         .on_menu_event(|app, event| {
             match event.id().as_ref() {

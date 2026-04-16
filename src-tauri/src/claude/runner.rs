@@ -824,6 +824,7 @@ fn handle_process_lifecycle(
             tasks::pause_timer(db, task_id);
             tasks::set_completed(db, task_id);
             emit_task_updated(db, app, task_id);
+            crate::services::gsd::apply_task_status_cascade(db, Some(app), task_id);
 
             // Auto-test: if enabled, start verification — don't cascade yet
             let project = projects::get_by_id(db, project_id);
@@ -1250,6 +1251,7 @@ After all checks, you MUST output this exact JSON block as your final output:
                         if needs_approval {
                             tasks::update_status(&db, task_id, TaskStatus::AwaitingApproval.as_str());
                             emit_task_updated(&db, &app, task_id);
+                            crate::services::gsd::apply_task_status_cascade(&db, Some(&app), task_id);
                             tasks::add_log(&db, task_id, "Auto-test passed. Awaiting manual approval.", "system", None);
                             activity::add(&db, project_id, Some(task_id), "awaiting_approval",
                                 &format!("Awaiting approval: {}", task_title), None);
@@ -1260,6 +1262,10 @@ After all checks, you MUST output this exact JSON block as your final output:
                             // Regenerate lifecycle summary with test results included
                             generate_lifecycle_summary(task_id, &db);
                             emit_task_updated(&db, &app, task_id);
+                            // Propagate auto-approved Done to GSD roadmap (ROADMAP.md + DB).
+                            // Without this, tasks completed by the runner never trigger
+                            // phase auto-verify, even though manual Done transitions do.
+                            crate::services::gsd::apply_task_status_cascade(&db, Some(&app), task_id);
                             activity::add(&db, project_id, Some(task_id), "task_approved", &format!("Task auto-approved: {}", task_title), None);
 
                             if let (Some(done_task), Some(proj)) = (tasks::get_by_id(&db, task_id), projects::get_by_id(&db, project_id)) {
@@ -1327,6 +1333,7 @@ After all checks, you MUST output this exact JSON block as your final output:
                             tasks::add_revision(&db, task_id, rev_num, &format!("Auto-test feedback:\n{}", revision_feedback));
                             tasks::update_status(&db, task_id, TaskStatus::InProgress.as_str());
                             tasks::set_resumed(&db, task_id);
+                            crate::services::gsd::apply_task_status_cascade(&db, Some(&app), task_id);
                             activity::add(&db, project_id, Some(task_id), "auto_revision",
                                 &format!("Auto-revision #{} from test failure: {}", rev_num, task_title), None);
                             tasks::add_log(&db, task_id, &format!("Auto-revision #{}/{}: Restarting with test feedback...", rev_num, max_revisions), "system", None);

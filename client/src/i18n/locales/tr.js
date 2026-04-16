@@ -953,6 +953,10 @@ export default {
   'settings.platform': 'Platform',
   'settings.runtime': '\u00c7al\u0131\u015fma Ortam\u0131',
   'settings.madeBy': 'Bahri Hirfanoglu taraf\u0131ndan yap\u0131ld\u0131',
+  'settings.diagnostics': 'Tan\u0131lama',
+  'settings.logsDescription':
+    'Bir hatayla kar\u015f\u0131la\u015f\u0131rsan\u0131z bu klas\u00f6r\u00fc a\u00e7\u0131p en g\u00fcncel log dosyas\u0131n\u0131 raporunuza ekleyin.',
+  'settings.openLogsDir': 'Log Klas\u00f6r\u00fcn\u00fc A\u00e7',
 
   // ─── Language selector ───
   'lang.en': 'English',

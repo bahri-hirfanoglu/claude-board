@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.1] - 2026-04-16
+
+### Bug fixes
+- **GSD phase auto-verify** — Phases now transition to `completed` in `.planning/ROADMAP.md` whenever all their tasks finish, including tasks closed by the runner's auto-approve path. Previously the cascade lived only in the manual `change_task_status` command, so runner-completed phases (e.g. a Phase 5 where the auto-test passed every task) never updated the roadmap file
+- Centralised the GSD cascade into a single `apply_task_status_cascade` helper and wired it into every status-mutation path (runner auto-approve, auto-revision, queue auto-start/retry/fail, MCP HTTP PATCH), eliminating the silent bypass
+
+### Logging / diagnostics
+- Added `tauri-plugin-log` as the global logger. Rust and frontend logs are now written to a rotating file in the platform-standard app log directory (5 MB per file, all files kept)
+- Frontend installs `window.onerror`, `unhandledrejection`, and a `console.error` mirror into the same sink so uncaught UI errors end up in the log file
+- Instrumented every previously-silent failure in the GSD auto-verify pipeline (`gsd.rs`) with `log::warn!` — missing phase heading in `ROADMAP.md`, unreadable file, task with `gsd` tag but no `phase-N`, etc. The next bug report can be triaged from the log file alone
+- **Settings → About → Diagnostics** exposes an "Open Logs Directory" button so users can ship the log folder with bug reports
+
 ## [1.7.1] - 2026-03-28
 
 ### Features
