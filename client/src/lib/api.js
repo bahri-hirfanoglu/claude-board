@@ -183,6 +183,11 @@ export const api = {
   getAppSettings: () => call('get_app_settings', 'GET', '/api/settings'),
   updateAppSettings: (data) => call('update_app_settings', 'PUT', '/api/settings', { data }, data),
 
+  // ─── Logs (bug reports) ───
+  // Tauri-only: the HTTP shim has no filesystem access.
+  getLogsDir: () => (IS_TAURI ? tauriCall('get_logs_dir') : Promise.reject(new Error('Tauri-only'))),
+  openLogsDir: () => (IS_TAURI ? tauriCall('open_logs_dir') : Promise.reject(new Error('Tauri-only'))),
+
   // ─── GitHub Issues sync ───
   githubDetectRepo: (workingDir) =>
     call('github_detect_repo', 'POST', '/api/github/detect-repo', { workingDir }, { workingDir }),

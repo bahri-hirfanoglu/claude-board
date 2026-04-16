@@ -172,43 +172,10 @@ pub fn change_task_status(app: AppHandle, id: i64, status: String, mcp_port: u16
     final_task.is_running = runner::is_running(id) || runner::is_starting(id);
     app.emit("task:updated", &final_task).ok();
 
-    // GSD Roadmap: propagate status to plan -> phase, then sync DB phase status
-    // back into .planning/ROADMAP.md so the file and DB never drift.
-    if let Some(plan_id) = final_task.phase_plan_id {
-        db::roadmap::recompute_plan_status(&db, plan_id);
-        if let Some(plan) = db::roadmap::get_plan(&db, plan_id) {
-            db::roadmap::recompute_phase_status(&db, plan.phase_id);
-            if let Some(phase) = db::roadmap::get_phase(&db, plan.phase_id) {
-                app.emit("roadmap:updated", &phase.project_id).ok();
-                // Sync to ROADMAP.md if project has a .planning directory
-                if let Some(project) = pq::get_by_id(&db, phase.project_id) {
-                    crate::services::gsd::update_roadmap_phase_status(
-                        &project.working_dir,
-                        &phase.phase_number,
-                        &phase.status,
-                    );
-                }
-            }
-        }
-    }
-
-    // GSD file-based roadmap: update ROADMAP.md phase status when all sibling
-    // tasks tagged `gsd,phase-N` reach a terminal state.
-    if let Some(phase_num) = crate::services::gsd::extract_gsd_phase_from_tags(final_task.tags.as_deref()) {
-        if let Some(project) = pq::get_by_id(&db, final_task.project_id) {
-            let statuses: Vec<String> = tq::get_by_project(&db, final_task.project_id)
-                .into_iter()
-                .filter(|t| crate::services::gsd::extract_gsd_phase_from_tags(t.tags.as_deref())
-                    .as_deref() == Some(phase_num.as_str()))
-                .filter_map(|t| t.status)
-                .collect();
-            if crate::services::gsd::recompute_phase_status_from_tasks(
-                &project.working_dir, &phase_num, &statuses,
-            ).is_some() {
-                app.emit("roadmap:updated", &final_task.project_id).ok();
-            }
-        }
-    }
+    // Propagate status change to both DB roadmap (plan/phase) and file-based
+    // GSD roadmap (.planning/ROADMAP.md). Single choke-point so every mutation
+    // path keeps the two in sync.
+    crate::services::gsd::apply_task_status_cascade(&db, Some(&app), id);
 
     Ok(final_task)
 }

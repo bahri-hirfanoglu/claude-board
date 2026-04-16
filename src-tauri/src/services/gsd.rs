@@ -392,8 +392,16 @@ pub fn extract_gsd_phase_from_tags(raw_tags: Option<&str>) -> Option<String> {
     if !tags.iter().any(|t| t == "gsd") {
         return None;
     }
-    tags.iter()
-        .find_map(|t| t.strip_prefix("phase-").map(|s| s.to_string()))
+    let phase = tags
+        .iter()
+        .find_map(|t| t.strip_prefix("phase-").map(|s| s.to_string()));
+    if phase.is_none() {
+        log::warn!(
+            "gsd::extract_gsd_phase_from_tags: task has `gsd` tag but no `phase-N` tag — tags were {:?}",
+            tags
+        );
+    }
+    phase
 }
 
 /// Aggregate status for a GSD phase based on its tagged tasks and sync
@@ -404,6 +412,10 @@ pub fn recompute_phase_status_from_tasks(
     task_statuses: &[String],
 ) -> Option<String> {
     if task_statuses.is_empty() {
+        log::debug!(
+            "gsd::recompute_phase_status_from_tasks: phase {} has no tasks — skipping",
+            phase_number
+        );
         return None;
     }
     let total = task_statuses.len();
@@ -418,13 +430,125 @@ pub fn recompute_phase_status_from_tasks(
     } else if active > 0 || done > 0 {
         PHASE_STATUS_IN_PROGRESS
     } else {
-        return None; // all pending/backlog — leave file alone
+        log::debug!(
+            "gsd::recompute_phase_status_from_tasks: phase {} all pending/backlog ({} tasks) — leaving ROADMAP.md untouched",
+            phase_number, total
+        );
+        return None;
     };
 
     if update_roadmap_phase_status(working_dir, phase_number, new_status) {
+        log::info!(
+            "gsd: phase {} → {} in ROADMAP.md ({}/{} done, {} active, {} failed)",
+            phase_number, new_status, done, total, active, failed
+        );
         Some(new_status.to_string())
     } else {
+        log::warn!(
+            "gsd::recompute_phase_status_from_tasks: computed {} for phase {} but could not write ROADMAP.md in {}",
+            new_status, phase_number, working_dir
+        );
         None
+    }
+}
+
+/// Apply the full GSD roadmap cascade after a task's status changes. This is
+/// the single choke-point that every task-status mutation path should call so
+/// ROADMAP.md and the DB roadmap never drift.
+///
+/// Runs both cascades when applicable:
+///  1. DB-based: if the task is linked to a `phase_plan_id`, recompute plan →
+///     phase statuses and sync the phase status back to ROADMAP.md.
+///  2. File-based: if the task carries `gsd,phase-N` tags, recompute the
+///     phase's aggregate status from all sibling tasks and update ROADMAP.md.
+///
+/// Pass `Some(&app)` to fan out `roadmap:updated` events for UI refresh. When
+/// called from a non-Tauri context (e.g. the MCP HTTP bridge) pass `None` —
+/// data still propagates correctly; only the UI push is skipped.
+///
+/// Failures are logged but never propagated — callers fire-and-forget.
+pub fn apply_task_status_cascade(
+    db: &crate::db::DbPool,
+    app: Option<&tauri::AppHandle>,
+    task_id: i64,
+) {
+    use crate::db::{projects as pq, roadmap, tasks as tq};
+    use tauri::Emitter;
+
+    let task = match tq::get_by_id(db, task_id) {
+        Some(t) => t,
+        None => {
+            log::warn!(
+                "gsd::apply_task_status_cascade: task {} not found — skipping cascade",
+                task_id
+            );
+            return;
+        }
+    };
+
+    // ── DB-based cascade (plan → phase → ROADMAP.md) ──
+    if let Some(plan_id) = task.phase_plan_id {
+        roadmap::recompute_plan_status(db, plan_id);
+        if let Some(plan) = roadmap::get_plan(db, plan_id) {
+            roadmap::recompute_phase_status(db, plan.phase_id);
+            if let Some(phase) = roadmap::get_phase(db, plan.phase_id) {
+                if let Some(a) = app {
+                    a.emit("roadmap:updated", &phase.project_id).ok();
+                }
+                if let Some(project) = pq::get_by_id(db, phase.project_id) {
+                    if !update_roadmap_phase_status(
+                        &project.working_dir,
+                        &phase.phase_number,
+                        &phase.status,
+                    ) {
+                        log::warn!(
+                            "gsd::apply_task_status_cascade[db]: failed to sync phase {} status '{}' to ROADMAP.md in {}",
+                            phase.phase_number, phase.status, project.working_dir
+                        );
+                    }
+                }
+            } else {
+                log::warn!(
+                    "gsd::apply_task_status_cascade[db]: plan {} points to missing phase {}",
+                    plan_id, plan.phase_id
+                );
+            }
+        } else {
+            log::warn!(
+                "gsd::apply_task_status_cascade[db]: task {} references missing plan {}",
+                task_id, plan_id
+            );
+        }
+    }
+
+    // ── File-based cascade (tags → ROADMAP.md) ──
+    if let Some(phase_num) = extract_gsd_phase_from_tags(task.tags.as_deref()) {
+        let project = match pq::get_by_id(db, task.project_id) {
+            Some(p) => p,
+            None => {
+                log::warn!(
+                    "gsd::apply_task_status_cascade[file]: project {} not found for task {}",
+                    task.project_id, task_id
+                );
+                return;
+            }
+        };
+        let statuses: Vec<String> = tq::get_by_project(db, task.project_id)
+            .into_iter()
+            .filter(|t| {
+                extract_gsd_phase_from_tags(t.tags.as_deref()).as_deref()
+                    == Some(phase_num.as_str())
+            })
+            .filter_map(|t| t.status)
+            .collect();
+
+        if recompute_phase_status_from_tasks(&project.working_dir, &phase_num, &statuses)
+            .is_some()
+        {
+            if let Some(a) = app {
+                a.emit("roadmap:updated", &task.project_id).ok();
+            }
+        }
     }
 }
 
@@ -435,7 +559,14 @@ pub fn update_roadmap_phase_status(working_dir: &str, phase_number: &str, new_st
     let path = Path::new(working_dir).join(".planning").join("ROADMAP.md");
     let content = match std::fs::read_to_string(&path) {
         Ok(c) => c,
-        Err(_) => return false,
+        Err(e) => {
+            log::warn!(
+                "gsd::update_roadmap_phase_status: cannot read {} — {}",
+                path.display(),
+                e
+            );
+            return false;
+        }
     };
 
     let target_norm = phase_number.trim_start_matches('0');
@@ -488,6 +619,13 @@ pub fn update_roadmap_phase_status(working_dir: &str, phase_number: &str, new_st
     }
 
     if !done {
+        log::warn!(
+            "gsd::update_roadmap_phase_status: phase '{}' heading not found in {} — expected '## Phase {}: …' or similar. Status '{}' not written.",
+            phase_number,
+            path.display(),
+            phase_number,
+            new_status
+        );
         return false;
     }
 
@@ -495,7 +633,17 @@ pub fn update_roadmap_phase_status(working_dir: &str, phase_number: &str, new_st
     if content.ends_with('\n') && !new_content.ends_with('\n') {
         new_content.push('\n');
     }
-    std::fs::write(&path, new_content).is_ok()
+    match std::fs::write(&path, &new_content) {
+        Ok(_) => true,
+        Err(e) => {
+            log::warn!(
+                "gsd::update_roadmap_phase_status: failed to write {} — {}",
+                path.display(),
+                e
+            );
+            false
+        }
+    }
 }
 
 /// Parse phases from ROADMAP.md content.
