@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Github,
   Map,
+  Terminal,
 } from 'lucide-react';
 import Column from './Column';
 import ListView from './ListView';
@@ -24,6 +25,7 @@ import { IS_TAURI } from '../../lib/tauriEvents';
 import GitHubIssuesPanel from './GitHubIssuesPanel';
 import ErrorBoundary from '../../components/ErrorBoundary';
 const RoadmapView = lazy(() => import('../roadmap/RoadmapView'));
+const ProjectTerminal = lazy(() => import('../terminal/ProjectTerminal'));
 import { useTranslation } from '../../i18n/I18nProvider';
 import { parseTags } from './TagBadge';
 import { api } from '../../lib/api';
@@ -35,6 +37,7 @@ const VIEWS = [
   { id: 'orchestration', labelKey: 'board.orchestration', icon: Workflow },
   { id: 'analytics', labelKey: 'board.analytics', icon: TrendingUp },
   { id: 'roadmap', labelKey: 'board.roadmap', icon: Map },
+  { id: 'terminal', labelKey: 'board.terminal', icon: Terminal },
 ];
 
 const MODEL_DOT = MODEL_DOT_COLORS;
@@ -467,6 +470,20 @@ export default function Board({
                   onViewDetail={onViewDetail}
                   onStatusChange={onStatusChange}
                 />
+              </div>
+            </Suspense>
+          </ErrorBoundary>
+        )}
+
+        {viewMode === 'terminal' && (
+          <ErrorBoundary>
+            <Suspense
+              fallback={
+                <div className="flex-1 flex items-center justify-center text-surface-500 text-sm">Loading...</div>
+              }
+            >
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <ProjectTerminal tasks={filteredTasks} />
               </div>
             </Suspense>
           </ErrorBoundary>
