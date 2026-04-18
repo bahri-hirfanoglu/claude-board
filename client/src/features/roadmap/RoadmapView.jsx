@@ -29,6 +29,7 @@ import {
   Activity,
   XCircle,
   ListTodo,
+  ArrowRight,
 } from 'lucide-react';
 import { api, notifyError } from '../../lib/api';
 import { useTranslation } from '../../i18n/I18nProvider';
@@ -1402,9 +1403,493 @@ const GSD_ACTIONS = {
   },
 };
 
+function parseTableRow(line) {
+  let l = line.trim();
+  if (l.startsWith('|')) l = l.slice(1);
+  if (l.endsWith('|')) l = l.slice(0, -1);
+  return l.split('|').map((s) => s.trim());
+}
+
+function isTableSeparator(line) {
+  const l = line.trim();
+  if (!l.includes('|') || !l.includes('-')) return false;
+  // e.g. "|---|---|" or "| :--- | ---: |"
+  return /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$/.test(l);
+}
+
+// Parse ROADMAP.md phase description into structured fields.
+// Handles: **Goal**, **Depends on**, **Requirements**, **Success Criteria**, **Plans**,
+// **Execution Order**, and markdown tables anywhere in the description.
+function parsePhaseDescription(raw) {
+  const result = {
+    goal: '',
+    dependsOn: '',
+    requirements: [],
+    successCriteria: [],
+    plans: [],
+    executionOrder: '',
+    tables: [],
+    other: [],
+  };
+  if (!raw) return result;
+
+  const splitCsv = (v) =>
+    v
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+  const lines = raw.split('\n');
+  let i = 0;
+  let section = null;
+
+  while (i < lines.length) {
+    const rawLine = lines[i];
+    const line = rawLine.trim();
+    if (!line) {
+      i++;
+      continue;
+    }
+
+    // Markdown table: header row | separator | body rows
+    if (line.startsWith('|') && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      const headers = parseTableRow(line);
+      const rows = [];
+      i += 2;
+      while (i < lines.length && lines[i].trim().startsWith('|') && !isTableSeparator(lines[i])) {
+        rows.push(parseTableRow(lines[i]));
+        i++;
+      }
+      result.tables.push({ headers, rows });
+      continue;
+    }
+
+    // **Label** (optional parens): value
+    const m = line.match(/^\*\*([^*]+)\*\*(?:\s*\([^)]*\))?\s*:?\s*(.*)$/);
+    if (m) {
+      const label = m[1].toLowerCase().trim();
+      const value = m[2].trim();
+      if (label === 'goal') {
+        result.goal = value;
+        section = 'goal';
+      } else if (label === 'depends on' || label === 'dependencies' || label === 'depends') {
+        result.dependsOn = value;
+        section = 'dependsOn';
+      } else if (label === 'requirements' || label === 'required') {
+        result.requirements = splitCsv(value);
+        section = 'requirements';
+      } else if (label === 'success criteria' || label === 'acceptance criteria') {
+        if (value) result.successCriteria.push(value);
+        section = 'successCriteria';
+      } else if (label === 'plans' || label === 'plan') {
+        result.plans = splitCsv(value);
+        section = 'plans';
+      } else if (label === 'execution order' || label === 'execution') {
+        result.executionOrder = value;
+        section = 'executionOrder';
+      } else {
+        section = 'other';
+        result.other.push(line);
+      }
+      i++;
+      continue;
+    }
+
+    // Numbered list (1. ...) — success criteria items
+    const numbered = line.match(/^\d+\.\s+(.+)$/);
+    if (numbered && section === 'successCriteria') {
+      result.successCriteria.push(numbered[1].trim());
+      i++;
+      continue;
+    }
+
+    // Bullet list
+    const bullet = line.match(/^[-*]\s+(.+)$/);
+    if (bullet && section === 'successCriteria') {
+      result.successCriteria.push(bullet[1].trim());
+      i++;
+      continue;
+    }
+
+    // Continuation — append to current section
+    if (section === 'goal') {
+      result.goal = (result.goal + ' ' + line).trim();
+    } else if (section === 'dependsOn') {
+      result.dependsOn = (result.dependsOn + ' ' + line).trim();
+    } else if (section === 'executionOrder') {
+      result.executionOrder = (result.executionOrder + ' ' + line).trim();
+    } else {
+      result.other.push(line);
+    }
+    i++;
+  }
+
+  return result;
+}
+
+function PhaseTable({ table }) {
+  if (!table || !table.headers?.length) return null;
+  return (
+    <div className="overflow-x-auto rounded-lg border border-surface-700/40">
+      <table className="w-full text-[11px]">
+        <thead>
+          <tr className="bg-surface-800/60">
+            {table.headers.map((h, i) => (
+              <th
+                key={i}
+                className="px-2.5 py-1.5 text-left font-semibold text-surface-300 border-b border-surface-700/40"
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {table.rows.map((row, ri) => (
+            <tr key={ri} className="odd:bg-surface-900/40 even:bg-surface-800/20">
+              {row.map((cell, ci) => (
+                <td
+                  key={ci}
+                  className={`px-2.5 py-1.5 text-surface-400 border-b border-surface-700/20 ${ci === 0 ? 'text-surface-300 font-medium' : ''}`}
+                >
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function PhaseDescription({ description }) {
+  if (!description) return null;
+  const p = parsePhaseDescription(description);
+  const hasStructured =
+    p.goal ||
+    p.dependsOn ||
+    p.requirements.length ||
+    p.successCriteria.length ||
+    p.plans.length ||
+    p.executionOrder ||
+    p.tables.length;
+
+  if (!hasStructured) {
+    return <p className="text-xs text-surface-500 mt-2 pl-7 whitespace-pre-wrap">{description}</p>;
+  }
+
+  return (
+    <div className="pl-7 mt-2 space-y-2.5">
+      {p.goal && (
+        <div className="flex items-start gap-2">
+          <Target size={12} className="text-claude mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-[9px] font-semibold text-claude uppercase tracking-wider mb-0.5">Goal</div>
+            <p className="text-xs text-surface-300 leading-relaxed">{p.goal}</p>
+          </div>
+        </div>
+      )}
+
+      {p.dependsOn && (
+        <div className="flex items-start gap-2">
+          <Link2 size={12} className="text-surface-500 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-[9px] font-semibold text-surface-500 uppercase tracking-wider mb-0.5">Depends on</div>
+            <p className="text-xs text-surface-400">{p.dependsOn}</p>
+          </div>
+        </div>
+      )}
+
+      {p.requirements.length > 0 && (
+        <div className="flex items-start gap-2">
+          <Flag size={12} className="text-blue-400 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-[9px] font-semibold text-blue-400 uppercase tracking-wider mb-1">
+              Requirements ({p.requirements.length})
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {p.requirements.map((r, i) => (
+                <span
+                  key={i}
+                  className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-300 border border-blue-500/20 rounded font-mono"
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {p.successCriteria.length > 0 && (
+        <div className="flex items-start gap-2">
+          <CheckCircle2 size={12} className="text-emerald-400 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-[9px] font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+              Success Criteria ({p.successCriteria.length})
+            </div>
+            <ol className="space-y-1">
+              {p.successCriteria.map((c, i) => (
+                <li key={i} className="text-xs text-surface-400 flex gap-2 leading-relaxed">
+                  <span className="text-surface-600 font-mono flex-shrink-0 select-none">{i + 1}.</span>
+                  <span>{c}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      )}
+
+      {p.plans.length > 0 && (
+        <div className="flex items-start gap-2">
+          <FileText size={12} className="text-surface-500 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-[9px] font-semibold text-surface-500 uppercase tracking-wider mb-1">
+              Plans ({p.plans.length})
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {p.plans.map((pl, i) => (
+                <span
+                  key={i}
+                  className="text-[10px] px-1.5 py-0.5 bg-surface-800 text-surface-300 border border-surface-700/50 rounded font-mono"
+                >
+                  {pl}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(p.executionOrder || p.tables.length > 0) && (
+        <div className="flex items-start gap-2">
+          <ArrowRight size={12} className="text-violet-400 mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="text-[9px] font-semibold text-violet-400 uppercase tracking-wider">Execution Order</div>
+            {p.executionOrder && <p className="text-xs text-surface-400 leading-relaxed">{p.executionOrder}</p>}
+            {p.tables.map((t, i) => (
+              <PhaseTable key={i} table={t} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {p.other.length > 0 && (
+        <p className="text-[11px] text-surface-500 whitespace-pre-wrap leading-relaxed">{p.other.join('\n')}</p>
+      )}
+    </div>
+  );
+}
+
+function extractProjectSummary(raw) {
+  if (!raw) return '';
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('---') || trimmed.startsWith('```')) continue;
+    return trimmed.length > 240 ? trimmed.slice(0, 240) + '…' : trimmed;
+  }
+  return '';
+}
+
+function GsdProjectOverview({ project, state }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!project) return null;
+  const summary = extractProjectSummary(project.raw);
+
+  return (
+    <div className="border border-surface-700/50 rounded-xl bg-surface-900/30 overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-surface-800/30 transition-colors"
+      >
+        {expanded ? (
+          <ChevronDown size={12} className="text-surface-500 flex-shrink-0" />
+        ) : (
+          <ChevronRight size={12} className="text-surface-500 flex-shrink-0" />
+        )}
+        <BookOpen size={14} className="text-claude flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-surface-200 truncate">{project.name || 'Project Overview'}</h3>
+            <span className="text-[9px] text-surface-600 font-mono flex-shrink-0">PROJECT.md</span>
+            {state?.current_phase && (
+              <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full flex-shrink-0">
+                {state.current_phase}
+              </span>
+            )}
+          </div>
+          {summary && !expanded && <p className="text-[11px] text-surface-500 mt-0.5 line-clamp-1">{summary}</p>}
+        </div>
+      </button>
+      {expanded && (
+        <div className="px-4 pb-4 space-y-3 border-t border-surface-700/20">
+          {(state?.current_phase || state?.current_step) && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+              {state.current_phase && (
+                <div>
+                  <span className="text-surface-500">Phase: </span>
+                  <span className="text-amber-400">{state.current_phase}</span>
+                </div>
+              )}
+              {state.current_step && (
+                <div>
+                  <span className="text-surface-500">Step: </span>
+                  <span className="text-surface-300">{state.current_step}</span>
+                </div>
+              )}
+            </div>
+          )}
+          <div>
+            <div className="text-[9px] font-mono text-surface-500 mb-1 uppercase tracking-wider">PROJECT.md</div>
+            <pre className="p-3 bg-surface-900 rounded-lg text-[11px] text-surface-400 font-mono whitespace-pre-wrap max-h-72 overflow-y-auto border border-surface-700/30">
+              {project.raw}
+            </pre>
+          </div>
+          {state?.raw && (
+            <div>
+              <div className="text-[9px] font-mono text-surface-500 mb-1 uppercase tracking-wider">STATE.md</div>
+              <pre className="p-3 bg-surface-900 rounded-lg text-[11px] text-surface-400 font-mono whitespace-pre-wrap max-h-48 overflow-y-auto border border-surface-700/30">
+                {state.raw}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PlanPreviewPanel({ phase, preview, loading, generating, hasGeneratedTasks, onLoad, onGenerate, onClear }) {
+  if (!preview) {
+    return (
+      <div className="ml-7 mt-2 pt-2 border-t border-surface-700/20 flex items-center gap-2">
+        <button
+          onClick={onLoad}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-2 py-1 text-[10px] text-surface-400 hover:text-surface-200 bg-surface-800/60 hover:bg-surface-700/60 rounded-md transition-colors disabled:opacity-50"
+          title="Parse PLAN.md files and preview the tasks that would be generated (without creating them)"
+        >
+          {loading ? <Loader2 size={10} className="animate-spin" /> : <Eye size={10} />}
+          {loading ? 'Parsing PLAN files…' : 'Preview parsed tasks'}
+        </button>
+        {hasGeneratedTasks && <span className="text-[9px] text-emerald-500/70 italic">tasks already generated</span>}
+      </div>
+    );
+  }
+
+  if (preview.length === 0) {
+    return (
+      <div className="ml-7 mt-2 pt-2 border-t border-surface-700/20">
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] text-amber-400 bg-amber-500/5 border border-amber-500/20">
+          <AlertTriangle size={10} />
+          <span className="flex-1">PLAN files parsed but no tasks were extracted. Check the XML task blocks.</span>
+          <button onClick={onClear} className="opacity-60 hover:opacity-100" title="Close preview">
+            <X size={10} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Group by wave (plain obj — `Map` is shadowed by the lucide-react icon import)
+  const waves = {};
+  for (const t of preview) {
+    const w = t.wave ?? 1;
+    if (!waves[w]) waves[w] = [];
+    waves[w].push(t);
+  }
+  const sortedWaves = Object.keys(waves)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  const typeColors = {
+    auto: 'bg-blue-500/15 text-blue-400',
+    manual: 'bg-purple-500/15 text-purple-400',
+    ask: 'bg-amber-500/15 text-amber-400',
+    checkpoint: 'bg-emerald-500/15 text-emerald-400',
+  };
+
+  return (
+    <div className="ml-7 mt-2 pt-2 border-t border-surface-700/20 space-y-2">
+      <div className="flex items-center gap-2">
+        <Eye size={10} className="text-claude" />
+        <span className="text-[10px] font-medium text-surface-300">
+          Parsed tasks preview
+          <span className="text-surface-600 font-normal">
+            {' '}
+            · {preview.length} tasks · {sortedWaves.length} waves
+          </span>
+        </span>
+        <button
+          onClick={onClear}
+          className="ml-auto text-surface-500 hover:text-surface-300 p-0.5"
+          title="Close preview"
+        >
+          <X size={10} />
+        </button>
+      </div>
+
+      <div className="space-y-1.5 max-h-72 overflow-y-auto rounded-md bg-surface-900/40 border border-surface-700/30 p-2">
+        {sortedWaves.map((waveNum) => (
+          <div key={waveNum} className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] font-semibold text-surface-500 uppercase tracking-wider">Wave {waveNum}</span>
+              <span className="text-[9px] text-surface-600">
+                {waves[waveNum].length} task{waves[waveNum].length === 1 ? '' : 's'}
+                {waveNum > 1 ? ' · runs after previous wave' : ' · runs first'}
+              </span>
+            </div>
+            {waves[waveNum].map((t, i) => {
+              const tColor = typeColors[t.task_type] || typeColors.auto;
+              return (
+                <div
+                  key={`${waveNum}-${i}`}
+                  className="px-2 py-1.5 rounded-md bg-surface-800/60 border border-surface-700/40 space-y-0.5"
+                >
+                  <div className="flex items-start gap-2">
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono ${tColor}`}>{t.task_type}</span>
+                    <span className="text-[11px] text-surface-200 flex-1 font-medium">{t.task_name || 'Untitled'}</span>
+                    <span className="text-[9px] text-surface-600 font-mono flex-shrink-0">plan-{t.plan_number}</span>
+                  </div>
+                  {t.files && (
+                    <div className="text-[10px] text-surface-500 font-mono pl-1 truncate" title={t.files}>
+                      <span className="text-surface-600">files:</span> {t.files}
+                    </div>
+                  )}
+                  {t.done_criteria && (
+                    <div className="text-[10px] text-surface-500 pl-1 line-clamp-2">
+                      <span className="text-surface-600">done:</span> {t.done_criteria}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      {!hasGeneratedTasks && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onGenerate}
+            disabled={generating}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium bg-claude/15 text-claude hover:bg-claude/25 rounded-md transition-colors disabled:opacity-50"
+          >
+            {generating ? <Loader2 size={10} className="animate-spin" /> : <Zap size={10} />}
+            {generating ? 'Creating…' : `Generate ${preview.length} task${preview.length === 1 ? '' : 's'}`}
+          </button>
+          <span className="text-[10px] text-surface-600">Phase {phase.number} will be queued for execution</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GsdFileRoadmap({ projectId }) {
   const [gsdRoadmap, setGsdRoadmap] = useState(null);
   const [gsdState, setGsdState] = useState(null);
+  const [gsdProject, setGsdProject] = useState(null);
   const [phaseDetails, setPhaseDetails] = useState([]);
   const [expandedPhase, setExpandedPhase] = useState(null);
   const [expandedFile, setExpandedFile] = useState(null);
@@ -1415,17 +1900,21 @@ function GsdFileRoadmap({ projectId }) {
   const [planLogs, setPlanLogs] = useState([]);
   const [phaseMsg, setPhaseMsg] = useState(null);
   const [generatedPhases, setGeneratedPhases] = useState(new Set()); // phases that already have board tasks
+  const [planPreviews, setPlanPreviews] = useState({}); // phaseNum → parsed GsdPlanTask[]
+  const [previewLoadingPhase, setPreviewLoadingPhase] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const [roadmap, state, details, tasks] = await Promise.all([
+      const [roadmap, state, project, details, tasks] = await Promise.all([
         api.gsdGetRoadmap(projectId),
         api.gsdGetState(projectId),
+        api.gsdGetProject(projectId).catch(() => null),
         api.gsdGetPhaseDetails(projectId),
         api.getTasks(projectId).catch(() => []),
       ]);
       setGsdRoadmap(roadmap);
       setGsdState(state);
+      setGsdProject(project);
       setPhaseDetails(details);
       // Check which phases already have generated board tasks (tag: "phase-N")
       const generated = new Set();
@@ -1564,6 +2053,36 @@ function GsdFileRoadmap({ projectId }) {
     setBusyPhase(null);
   };
 
+  // Preview Tasks: parse PLAN files without creating anything
+  const handlePreviewTasks = async (phase) => {
+    if (previewLoadingPhase) return;
+    setPreviewLoadingPhase(phase.number);
+    setPhaseMsg(null);
+    try {
+      const parsed = await api.gsdParsePhasePlans(projectId, phase.number);
+      const key = normalizePhaseNum(phase.number);
+      setPlanPreviews((prev) => ({ ...prev, [key]: parsed || [] }));
+      if (!parsed || parsed.length === 0) {
+        setPhaseMsg({
+          type: 'error',
+          text: `No tasks could be parsed from PLAN files for Phase ${phase.number}. Check the PLAN.md syntax.`,
+        });
+      }
+    } catch (e) {
+      setPhaseMsg({ type: 'error', text: typeof e === 'string' ? e : e?.message || 'Failed to parse PLAN files' });
+    }
+    setPreviewLoadingPhase(null);
+  };
+
+  const clearPreview = (phaseNumber) => {
+    const key = normalizePhaseNum(phaseNumber);
+    setPlanPreviews((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
   // Generate Tasks: parse PLAN files → create board tasks → queue
   const handleGenerateTasks = async (phase) => {
     if (busyPhase) return;
@@ -1573,6 +2092,7 @@ function GsdFileRoadmap({ projectId }) {
       const created = await api.gsdCreateTasksFromPlans(projectId, phase.number, phase.title, true);
       if (created?.length > 0) {
         setGeneratedPhases((prev) => new Set([...prev, normalizePhaseNum(phase.number)]));
+        clearPreview(phase.number);
         setPhaseMsg({
           type: 'success',
           text: `Phase ${phase.number}: ${created.length} tasks created and queued for execution.`,
@@ -1593,272 +2113,289 @@ function GsdFileRoadmap({ projectId }) {
   const completed = phases.filter((p) => p.status === 'completed').length;
 
   return (
-    <div className="border border-surface-700/50 rounded-xl bg-surface-900/30 overflow-hidden">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-surface-700/30 flex items-center gap-2">
-        <Map size={14} className="text-claude" />
-        <h3 className="text-sm font-semibold text-surface-200">.planning/ Roadmap</h3>
-        <span className="text-[10px] text-surface-500">
-          {completed}/{phases.length} phases
-        </span>
-        <div className="flex items-center gap-2 ml-auto">
-          {gsdState?.current_phase && (
-            <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full">
-              {gsdState.current_phase}
-            </span>
-          )}
-          {gsdState?.current_step && <span className="text-[10px] text-surface-500">{gsdState.current_step}</span>}
-          <button onClick={load} className="p-1 text-surface-500 hover:text-surface-300 transition-colors">
-            <RefreshCw size={12} />
-          </button>
-          <button
-            onClick={() => setShowRaw(!showRaw)}
-            className={`p-1 transition-colors ${showRaw ? 'text-claude' : 'text-surface-500 hover:text-surface-300'}`}
-            title="Show raw ROADMAP.md"
-          >
-            <FileText size={12} />
-          </button>
-        </div>
-      </div>
-
-      {/* Phase action feedback */}
-      {phaseMsg && (
-        <div
-          className={`mx-3 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
-            phaseMsg.type === 'success'
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-              : 'bg-red-500/10 text-red-400 border border-red-500/20'
-          }`}
-        >
-          {phaseMsg.type === 'success' ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
-          <span className="flex-1">{phaseMsg.text}</span>
-          <button onClick={() => setPhaseMsg(null)} className="opacity-60 hover:opacity-100">
-            <X size={12} />
-          </button>
-        </div>
-      )}
-
-      {/* Planning in progress */}
-      {planningPhase && (
-        <div className="mx-3 mt-3 border border-blue-500/20 rounded-lg bg-blue-500/5 overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-blue-500/10">
-            <Loader2 size={12} className="animate-spin text-blue-400" />
-            <span className="text-xs font-medium text-blue-400">
-              Planning Phase {planningPhase.number}: {planningPhase.title}
-            </span>
-          </div>
-          <div className="max-h-40 overflow-y-auto p-2 space-y-0.5">
-            {planLogs.map((log, i) => (
-              <div
-                key={i}
-                className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                  log.type === 'error'
-                    ? 'text-red-400'
-                    : log.type === 'tool'
-                      ? 'text-surface-400'
-                      : log.type === 'phase'
-                        ? 'text-blue-400 font-medium'
-                        : 'text-surface-500'
-                }`}
-              >
-                {log.message}
-              </div>
-            ))}
-            {planLogs.length === 0 && (
-              <div className="text-[10px] text-surface-600 px-2">Starting planning agent...</div>
+    <div className="space-y-3">
+      <GsdProjectOverview project={gsdProject} state={gsdState} />
+      <div className="border border-surface-700/50 rounded-xl bg-surface-900/30 overflow-hidden">
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-surface-700/30 flex items-center gap-2">
+          <Map size={14} className="text-claude" />
+          <h3 className="text-sm font-semibold text-surface-200">.planning/ Roadmap</h3>
+          <span className="text-[10px] text-surface-500">
+            {completed}/{phases.length} phases
+          </span>
+          <div className="flex items-center gap-2 ml-auto">
+            {gsdState?.current_phase && (
+              <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full">
+                {gsdState.current_phase}
+              </span>
             )}
+            {gsdState?.current_step && <span className="text-[10px] text-surface-500">{gsdState.current_step}</span>}
+            <button onClick={load} className="p-1 text-surface-500 hover:text-surface-300 transition-colors">
+              <RefreshCw size={12} />
+            </button>
+            <button
+              onClick={() => setShowRaw(!showRaw)}
+              className={`p-1 transition-colors ${showRaw ? 'text-claude' : 'text-surface-500 hover:text-surface-300'}`}
+              title="Show raw ROADMAP.md"
+            >
+              <FileText size={12} />
+            </button>
           </div>
         </div>
-      )}
 
-      {showRaw ? (
-        <pre className="p-4 text-xs text-surface-400 font-mono whitespace-pre-wrap max-h-96 overflow-y-auto">
-          {gsdRoadmap.raw}
-        </pre>
-      ) : (
-        <div className="p-3 space-y-1">
-          {/* Progress bar */}
-          {phases.length > 0 && (
-            <div className="mb-3">
-              <ProgressBar
-                total={phases.length}
-                done={completed}
-                inProgress={phases.filter((p) => p.status === 'in_progress').length}
-                failed={phases.filter((p) => p.status === 'failed').length}
-              />
+        {/* Phase action feedback */}
+        {phaseMsg && (
+          <div
+            className={`mx-3 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
+              phaseMsg.type === 'success'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+            }`}
+          >
+            {phaseMsg.type === 'success' ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+            <span className="flex-1">{phaseMsg.text}</span>
+            <button onClick={() => setPhaseMsg(null)} className="opacity-60 hover:opacity-100">
+              <X size={12} />
+            </button>
+          </div>
+        )}
+
+        {/* Planning in progress */}
+        {planningPhase && (
+          <div className="mx-3 mt-3 border border-blue-500/20 rounded-lg bg-blue-500/5 overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-blue-500/10">
+              <Loader2 size={12} className="animate-spin text-blue-400" />
+              <span className="text-xs font-medium text-blue-400">
+                Planning Phase {planningPhase.number}: {planningPhase.title}
+              </span>
             </div>
-          )}
-
-          {phases.map((phase, i) => {
-            const phaseNum = normalizePhaseNum(phase.number);
-            const detail = phaseDetails.find((d) => {
-              const dNum = normalizePhaseNum(d.number);
-              return dNum === phaseNum;
-            });
-            const isExpanded = expandedPhase === phase.number;
-            const hasPlan = detail?.files.some((f) => f.name.toLowerCase().includes('plan'));
-            const hasGeneratedTasks = generatedPhases.has(phaseNum);
-            const isBusy = busyPhase === phase.number;
-
-            return (
-              <div
-                key={phase.number}
-                className="rounded-lg border border-surface-700/30 bg-surface-800/30 overflow-hidden"
-              >
-                <div className="flex items-center">
-                  <button
-                    onClick={() => setExpandedPhase(isExpanded ? null : phase.number)}
-                    className="flex-1 flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-800/60 transition-colors"
-                  >
-                    {isExpanded ? (
-                      <ChevronDown size={12} className="text-surface-500" />
-                    ) : (
-                      <ChevronRight size={12} className="text-surface-500" />
-                    )}
-                    <span className="text-[10px] font-mono text-surface-500 w-6">{phase.number}</span>
-                    <span className="text-xs text-surface-200 flex-1">{phase.title}</span>
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${GSD_PHASE_STATUS_COLORS[phase.status] || GSD_PHASE_STATUS_COLORS.pending}`}
-                    >
-                      {phase.status}
-                    </span>
-                    {detail && (
-                      <span className="text-[10px] text-surface-600">
-                        <FolderOpen size={10} className="inline -mt-0.5" /> {detail.files.length}
-                      </span>
-                    )}
-                  </button>
-
-                  {/* Phase action buttons — state machine */}
-                  <div className="flex items-center gap-1 mr-2">
-                    {/* No PLAN files yet → Plan Phase */}
-                    {!hasPlan && (phase.status === 'pending' || phase.status === 'planning') && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePlanPhase(phase);
-                        }}
-                        disabled={!!busyPhase || !!planningPhase}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25"
-                      >
-                        {isBusy || planningPhase?.number === phase.number ? (
-                          <Loader2 size={10} className="animate-spin" />
-                        ) : (
-                          <Brain size={10} />
-                        )}
-                        {planningPhase?.number === phase.number ? 'Planning...' : 'Plan Phase'}
-                      </button>
-                    )}
-
-                    {/* Has PLAN files but no board tasks yet → Generate Tasks */}
-                    {hasPlan && !hasGeneratedTasks && (phase.status === 'pending' || phase.status === 'planning') && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleGenerateTasks(phase);
-                        }}
-                        disabled={!!busyPhase}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-claude/15 text-claude hover:bg-claude/25"
-                      >
-                        {isBusy ? <Loader2 size={10} className="animate-spin" /> : <Zap size={10} />}
-                        Generate Tasks
-                      </button>
-                    )}
-
-                    {/* Completed → Verify */}
-                    {phase.status === 'completed' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOtherAction(phase, GSD_ACTIONS.completed);
-                        }}
-                        disabled={!!busyPhase}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
-                      >
-                        <Eye size={10} />
-                        Verify
-                      </button>
-                    )}
-
-                    {/* Failed → Retry */}
-                    {phase.status === 'failed' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleGenerateTasks(phase);
-                        }}
-                        disabled={!!busyPhase}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-red-500/15 text-red-400 hover:bg-red-500/25"
-                      >
-                        <RefreshCw size={10} />
-                        Retry
-                      </button>
-                    )}
-                  </div>
+            <div className="max-h-40 overflow-y-auto p-2 space-y-0.5">
+              {planLogs.map((log, i) => (
+                <div
+                  key={i}
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                    log.type === 'error'
+                      ? 'text-red-400'
+                      : log.type === 'tool'
+                        ? 'text-surface-400'
+                        : log.type === 'phase'
+                          ? 'text-blue-400 font-medium'
+                          : 'text-surface-500'
+                  }`}
+                >
+                  {log.message}
                 </div>
+              ))}
+              {planLogs.length === 0 && (
+                <div className="text-[10px] text-surface-600 px-2">Starting planning agent...</div>
+              )}
+            </div>
+          </div>
+        )}
 
-                {isExpanded && (
-                  <div className="px-3 pb-3 space-y-2 border-t border-surface-700/20">
-                    {phase.description && <p className="text-xs text-surface-500 mt-2 pl-7">{phase.description}</p>}
-
-                    {/* Phase files */}
-                    {detail &&
-                      detail.files.map((file) => {
-                        const fileKey = `${phase.number}-${file.name}`;
-                        const isFileExpanded = expandedFile === fileKey;
-                        const fileType = file.name.includes('PLAN')
-                          ? 'plan'
-                          : file.name.includes('CONTEXT')
-                            ? 'context'
-                            : file.name.includes('RESEARCH')
-                              ? 'research'
-                              : file.name.includes('VERIFICATION')
-                                ? 'verify'
-                                : file.name.includes('SUMMARY')
-                                  ? 'summary'
-                                  : 'other';
-                        const typeColors = {
-                          plan: 'text-blue-400',
-                          context: 'text-purple-400',
-                          research: 'text-amber-400',
-                          verify: 'text-emerald-400',
-                          summary: 'text-surface-400',
-                          other: 'text-surface-500',
-                        };
-
-                        return (
-                          <div key={file.name} className="ml-7">
-                            <button
-                              onClick={() => setExpandedFile(isFileExpanded ? null : fileKey)}
-                              className="flex items-center gap-2 w-full text-left py-1 hover:bg-surface-800/40 rounded px-2 -mx-2"
-                            >
-                              <BookOpen size={10} className={typeColors[fileType]} />
-                              <span className="text-[11px] font-mono text-surface-400">{file.name}</span>
-                              <span className="text-[10px] text-surface-600 ml-auto">
-                                {Math.round(file.content.length / 100) / 10}k
-                              </span>
-                            </button>
-                            {isFileExpanded && (
-                              <pre className="mt-1 p-3 bg-surface-900 rounded-lg text-[11px] text-surface-400 font-mono whitespace-pre-wrap max-h-64 overflow-y-auto border border-surface-700/30">
-                                {file.content}
-                              </pre>
-                            )}
-                          </div>
-                        );
-                      })}
-
-                    {!detail && (
-                      <p className="text-[10px] text-surface-600 mt-2 pl-7 italic">
-                        No phase files yet — click &quot;Plan Phase&quot; to start.
-                      </p>
-                    )}
-                  </div>
-                )}
+        {showRaw ? (
+          <pre className="p-4 text-xs text-surface-400 font-mono whitespace-pre-wrap max-h-96 overflow-y-auto">
+            {gsdRoadmap.raw}
+          </pre>
+        ) : (
+          <div className="p-3 space-y-1">
+            {/* Progress bar */}
+            {phases.length > 0 && (
+              <div className="mb-3">
+                <ProgressBar
+                  total={phases.length}
+                  done={completed}
+                  inProgress={phases.filter((p) => p.status === 'in_progress').length}
+                  failed={phases.filter((p) => p.status === 'failed').length}
+                />
               </div>
-            );
-          })}
-        </div>
-      )}
+            )}
+
+            {phases.map((phase, i) => {
+              const phaseNum = normalizePhaseNum(phase.number);
+              const detail = phaseDetails.find((d) => {
+                const dNum = normalizePhaseNum(d.number);
+                return dNum === phaseNum;
+              });
+              const isExpanded = expandedPhase === phase.number;
+              const hasPlan = detail?.files.some((f) => f.name.toLowerCase().includes('plan'));
+              const hasGeneratedTasks = generatedPhases.has(phaseNum);
+              const isBusy = busyPhase === phase.number;
+
+              return (
+                <div
+                  key={phase.number}
+                  className="rounded-lg border border-surface-700/30 bg-surface-800/30 overflow-hidden"
+                >
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => setExpandedPhase(isExpanded ? null : phase.number)}
+                      className="flex-1 flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-800/60 transition-colors"
+                    >
+                      {isExpanded ? (
+                        <ChevronDown size={12} className="text-surface-500" />
+                      ) : (
+                        <ChevronRight size={12} className="text-surface-500" />
+                      )}
+                      <span className="text-[10px] font-mono text-surface-500 w-6">{phase.number}</span>
+                      <span className="text-xs text-surface-200 flex-1">{phase.title}</span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${GSD_PHASE_STATUS_COLORS[phase.status] || GSD_PHASE_STATUS_COLORS.pending}`}
+                      >
+                        {phase.status}
+                      </span>
+                      {detail && (
+                        <span className="text-[10px] text-surface-600">
+                          <FolderOpen size={10} className="inline -mt-0.5" /> {detail.files.length}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Phase action buttons — state machine */}
+                    <div className="flex items-center gap-1 mr-2">
+                      {/* No PLAN files yet → Plan Phase */}
+                      {!hasPlan && (phase.status === 'pending' || phase.status === 'planning') && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlanPhase(phase);
+                          }}
+                          disabled={!!busyPhase || !!planningPhase}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25"
+                        >
+                          {isBusy || planningPhase?.number === phase.number ? (
+                            <Loader2 size={10} className="animate-spin" />
+                          ) : (
+                            <Brain size={10} />
+                          )}
+                          {planningPhase?.number === phase.number ? 'Planning...' : 'Plan Phase'}
+                        </button>
+                      )}
+
+                      {/* Has PLAN files but no board tasks yet → Generate Tasks */}
+                      {hasPlan && !hasGeneratedTasks && (phase.status === 'pending' || phase.status === 'planning') && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleGenerateTasks(phase);
+                          }}
+                          disabled={!!busyPhase}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-claude/15 text-claude hover:bg-claude/25"
+                        >
+                          {isBusy ? <Loader2 size={10} className="animate-spin" /> : <Zap size={10} />}
+                          Generate Tasks
+                        </button>
+                      )}
+
+                      {/* Completed → Verify */}
+                      {phase.status === 'completed' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOtherAction(phase, GSD_ACTIONS.completed);
+                          }}
+                          disabled={!!busyPhase}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
+                        >
+                          <Eye size={10} />
+                          Verify
+                        </button>
+                      )}
+
+                      {/* Failed → Retry */}
+                      {phase.status === 'failed' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleGenerateTasks(phase);
+                          }}
+                          disabled={!!busyPhase}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors disabled:opacity-40 bg-red-500/15 text-red-400 hover:bg-red-500/25"
+                        >
+                          <RefreshCw size={10} />
+                          Retry
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="px-3 pb-3 space-y-2 border-t border-surface-700/20">
+                      <PhaseDescription description={phase.description} />
+
+                      {/* Phase files */}
+                      {detail &&
+                        detail.files.map((file) => {
+                          const fileKey = `${phase.number}-${file.name}`;
+                          const isFileExpanded = expandedFile === fileKey;
+                          const fileType = file.name.includes('PLAN')
+                            ? 'plan'
+                            : file.name.includes('CONTEXT')
+                              ? 'context'
+                              : file.name.includes('RESEARCH')
+                                ? 'research'
+                                : file.name.includes('VERIFICATION')
+                                  ? 'verify'
+                                  : file.name.includes('SUMMARY')
+                                    ? 'summary'
+                                    : 'other';
+                          const typeColors = {
+                            plan: 'text-blue-400',
+                            context: 'text-purple-400',
+                            research: 'text-amber-400',
+                            verify: 'text-emerald-400',
+                            summary: 'text-surface-400',
+                            other: 'text-surface-500',
+                          };
+
+                          return (
+                            <div key={file.name} className="ml-7">
+                              <button
+                                onClick={() => setExpandedFile(isFileExpanded ? null : fileKey)}
+                                className="flex items-center gap-2 w-full text-left py-1 hover:bg-surface-800/40 rounded px-2 -mx-2"
+                              >
+                                <BookOpen size={10} className={typeColors[fileType]} />
+                                <span className="text-[11px] font-mono text-surface-400">{file.name}</span>
+                                <span className="text-[10px] text-surface-600 ml-auto">
+                                  {Math.round(file.content.length / 100) / 10}k
+                                </span>
+                              </button>
+                              {isFileExpanded && (
+                                <pre className="mt-1 p-3 bg-surface-900 rounded-lg text-[11px] text-surface-400 font-mono whitespace-pre-wrap max-h-64 overflow-y-auto border border-surface-700/30">
+                                  {file.content}
+                                </pre>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                      {/* Parsed-task preview — shows what tasks would be generated from PLAN.md files */}
+                      {hasPlan && (
+                        <PlanPreviewPanel
+                          phase={phase}
+                          preview={planPreviews[phaseNum]}
+                          loading={previewLoadingPhase === phase.number}
+                          generating={busyPhase === phase.number}
+                          hasGeneratedTasks={hasGeneratedTasks}
+                          onLoad={() => handlePreviewTasks(phase)}
+                          onGenerate={() => handleGenerateTasks(phase)}
+                          onClear={() => clearPreview(phase.number)}
+                        />
+                      )}
+
+                      {!detail && (
+                        <p className="text-[10px] text-surface-600 mt-2 pl-7 italic">
+                          No phase files yet — click &quot;Plan Phase&quot; to start.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

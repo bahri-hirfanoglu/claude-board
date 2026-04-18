@@ -490,7 +490,7 @@ pub fn collect_stats(working_dir: &str) -> ScanStats {
     }
 
     // Top 5 largest files
-    file_sizes.sort_by(|a, b| b.1.cmp(&a.1));
+    file_sizes.sort_by_key(|f| std::cmp::Reverse(f.1));
     file_sizes.truncate(5);
 
     // Build language stats with percentages
