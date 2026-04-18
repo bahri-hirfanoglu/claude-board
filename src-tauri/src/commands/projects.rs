@@ -26,6 +26,20 @@ pub fn create_project(
     name: String, slug: String, working_dir: String,
     icon: Option<String>, icon_seed: Option<String>,
     permission_mode: Option<String>, allowed_tools: Option<String>,
+    // Automation settings — captured at creation time so the project
+    // starts with the user's choices instead of DB defaults.
+    auto_queue: Option<bool>, max_concurrent: Option<i64>,
+    auto_branch: Option<bool>, auto_pr: Option<bool>, auto_push: Option<bool>, pr_base_branch: Option<String>,
+    auto_test: Option<bool>, test_prompt: Option<String>,
+    task_timeout_minutes: Option<i64>,
+    max_retries: Option<i64>,
+    github_repo: Option<String>, github_sync_enabled: Option<i64>,
+    max_auto_revisions: Option<i64>,
+    retry_base_delay_secs: Option<i64>,
+    retry_max_delay_secs: Option<i64>,
+    auto_test_model: Option<String>,
+    circuit_breaker_threshold: Option<i64>,
+    require_approval: Option<bool>,
 ) -> Result<pq::Project, String> {
     let db = db::get_db();
     if name.trim().is_empty() { return Err("Name is required".into()); }
@@ -35,6 +49,48 @@ pub fn create_project(
 
     let id = pq::create(&db, name.trim(), slug.trim(), working_dir.trim(),
         icon.as_deref(), icon_seed.as_deref(), permission_mode.as_deref(), allowed_tools.as_deref());
+
+    // Persist any settings the user chose at creation time. Each helper is only
+    // called when at least one of its grouped fields is provided, so DB defaults
+    // remain in place for anything not set.
+    if auto_queue.is_some() || max_concurrent.is_some() {
+        pq::update_queue(&db, id, auto_queue.unwrap_or(false), max_concurrent.unwrap_or(1));
+    }
+    if auto_branch.is_some() || auto_pr.is_some() || auto_push.is_some() || pr_base_branch.is_some() {
+        pq::update_git_settings(&db, id,
+            auto_branch.unwrap_or(true),
+            auto_pr.unwrap_or(false),
+            auto_push.unwrap_or(false),
+            pr_base_branch.as_deref().unwrap_or("main"));
+    }
+    if auto_test.is_some() || test_prompt.is_some() {
+        pq::update_test_settings(&db, id, auto_test.unwrap_or(false), test_prompt.as_deref().unwrap_or(""));
+    }
+    if let Some(timeout) = task_timeout_minutes {
+        pq::update_timeout(&db, id, timeout);
+    }
+    if let Some(retries) = max_retries {
+        pq::update_max_retries(&db, id, retries);
+    }
+    if github_repo.is_some() || github_sync_enabled.is_some() {
+        pq::update_github_settings(&db, id,
+            github_repo.as_deref().unwrap_or(""),
+            github_sync_enabled.unwrap_or(0) == 1);
+    }
+    if max_auto_revisions.is_some() || retry_base_delay_secs.is_some() || retry_max_delay_secs.is_some() || auto_test_model.is_some() {
+        pq::update_engine_settings(&db, id,
+            max_auto_revisions.unwrap_or(0),
+            retry_base_delay_secs.unwrap_or(0),
+            retry_max_delay_secs.unwrap_or(0),
+            auto_test_model.as_deref().unwrap_or(""));
+    }
+    if let Some(threshold) = circuit_breaker_threshold {
+        pq::update_circuit_breaker_settings(&db, id, threshold);
+    }
+    if let Some(approval) = require_approval {
+        pq::update_approval_settings(&db, id, approval);
+    }
+
     let project = pq::get_by_id(&db, id).ok_or("Failed to retrieve created project")?;
     app.emit("project:created", &project).ok();
     activity::add(&db, project.id, None, "project_created", &format!("Project created: {}", project.name), None);
