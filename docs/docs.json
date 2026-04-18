@@ -61,6 +61,7 @@
                   "features/approval-gates",
                   "features/workflow-templates",
                   "features/planning-mode",
+                  "features/roadmap",
                   "features/retry-backoff",
                   "features/failed-status",
                   "features/task-timeout"
@@ -71,6 +72,7 @@
                 "icon": "play",
                 "pages": [
                   "features/terminal",
+                  "features/project-terminal",
                   "features/split-terminal",
                   "features/session-replay",
                   "features/auto-test",
@@ -205,6 +207,7 @@
                   "tr/features/dependencies",
                   "tr/features/queue",
                   "tr/features/planning-mode",
+                  "tr/features/roadmap",
                   "tr/features/retry-backoff",
                   "tr/features/failed-status",
                   "tr/features/task-timeout"
@@ -215,6 +218,7 @@
                 "icon": "play",
                 "pages": [
                   "tr/features/terminal",
+                  "tr/features/project-terminal",
                   "tr/features/split-terminal",
                   "tr/features/session-replay",
                   "tr/features/auto-test",

@@ -1,0 +1,94 @@
+---
+title: "Proje Terminali"
+description: "Projedeki tüm çalışan görevlerin loglarını tek canlı terminalde, göreve özel renkli rozetlerle izleyin"
+icon: "terminal"
+---
+
+**Proje Terminali** sekmesi, mevcut projedeki her görevin log çıktısını tek bir canlı akışta birleştirir. Her görev için ayrı terminal açmak yerine tek besleme alırsınız; her satırın başında göreve özel renkli `[TASK-KEY]` rozeti vardır — böylece hangi CLI'ın ne yazdığını bir bakışta anlarsınız.
+
+<Frame>
+  <img src="/images/feature-terminal.svg" alt="Proje Terminali sekmesi" />
+</Frame>
+
+## Sekmeyi açma
+
+Herhangi bir projeyi aç, üst görünüm sekmelerindeki **Terminal** ikonuna tıkla (Roadmap'in yanında). Sekme logları, görev başına Canlı Terminal'in kullandığı aynı `task:log` olayı üzerinden gerçek zamanlı akıtır — başlatmana gerek yok, bir ajan satır yayınladığı an burada görünür.
+
+## Göreve özel renkli ön ek
+
+Her satırda, görevin `task_type`'ına göre renklendirilmiş bir `[TASK-KEY]` rozeti bulunur:
+
+| Tür        | Renk       |
+|------------|------------|
+| `feature`  | Mavi       |
+| `bugfix`   | Kırmızı    |
+| `refactor` | Mor        |
+| `docs`     | Yeşil      |
+| `test`     | Sarı       |
+| `chore`    | Gri        |
+
+Rozetin üzerine gelirsen görev başlığı görünür. Zaman damgası sabit genişlikte bir sütunda gösterilir — bu sayede mesajlar birden fazla satıra yayılsa bile sütunlar düzgün hizalanır.
+
+## Birleşik / Ayrı görünüm
+
+Üst bölümdeki iki mod arasında geçiş yapabilirsin:
+
+<Tabs>
+  <Tab title="Birleşik (Unified)">
+    Tüm aktif görevlerin olay varış zamanına göre sıralandığı tek, otomatik kayan bir log. Varsayılan mod — paralel ajanları bağlamı kaybetmeden takip etmenin en hızlı yolu.
+  </Tab>
+  <Tab title="Ayrı (Split)">
+    Her aktif göreve bir panel, duyarlı bir grid içinde. Grid, aktif görev sayısına göre uyarlanır:
+
+    - 2 görev → 1 × 2
+    - 3–4 görev → 2 × 2
+    - 5–9 görev → 3 × 3
+    - 10+ görev → 4 sütun
+
+    Her panel bağımsız otomatik kayar; bir panelde imleci durdurursan diğerleri sabitlenmez.
+  </Tab>
+</Tabs>
+
+## Aktif filtresi
+
+**Active only** anahtarı (varsayılan AÇIK) görünümü yalnızca aktif veya incelemedeki görevlerle sınırlar. Aşağıdakilerden biri doğruysa görev aktif sayılır:
+
+- `is_running` = `true`
+- `status` = `in_progress`
+- `status` = `review` (görev testte)
+- `status` = `verifying`
+
+Tamamlanan veya duraklatılmış görevlerin loglarını da görmek istersen **All tasks**'a geç — geçmişi taramak veya durumlar arasındaki çıktıları kıyaslamak için faydalı.
+
+## Akış kontrolleri
+
+<Columns cols={3}>
+  <Card title="Pause" icon="pause">
+    Görünümü dondurur. Yeni log olayları kuyruğa alınır (rozet kaç tane olduğunu gösterir). Resume'e basınca sıralı olarak boşaltılır.
+  </Card>
+  <Card title="Resume" icon="play">
+    Kuyruktaki tüm olayları görünüme döker ve canlı akışı yeniden açar. Tampon limitini aşarsa eski kayıtlar kırpılır.
+  </Card>
+  <Card title="Clear" icon="trash">
+    Mevcut görünümü (ve duraklatma kuyruğunu) boşaltır. Arka uç logları dokunulmaz — görev başına Canlı Terminal'de tüm geçmiş korunur.
+  </Card>
+</Columns>
+
+## Otomatik kaydırma davranışı
+
+Sayfanın altındayken görünüm alta yapışık kalır. Yukarı kaydırdığında otomatik kaydırma durur, böylece eski çıktıları okuyabilirsin; sağ altta bir **aşağı ok** butonu belirir — canlı kuyruğa geri dönmek için ona bas.
+
+## Ne zaman kullanmalı
+
+- **Paralel orkestrasyon izleme** — DAG / kuyruk üzerinden aynı anda birden çok ajan çalışıyorsa Split mod her ajana kendi görüntü alanını verir.
+- **Zincir halindeki görevleri debug etme** — Unified modda Active only kapatıldığında bir planın yürütülmesindeki neden-sonuç zincirinin tam zaman çizelgesini görürsün.
+- **Bağlam kaybetmeden triyaj** — ajanlar çalışırken Terminal sekmesinde kal; sadece bir ajan tamamlandığında veya inceleme istediğinde panoya dön.
+
+<Info>
+  Olay veri yoluna abonelik sekme mount olduğunda tek sefer kaydedilir ve görev listesi güncellemelerinde yeniden aboneliğe gitmez. Yani bir React yeniden render'ı ile yeni dinleyicinin bağlanması arasında log olayları asla düşmez.
+</Info>
+
+## Sınırlar
+
+- Görünüm bellekte en son 3000 satırı tutar (limit aşılırsa ~%70'e kırpılır). Eski satırlar görünümden kayar ama görev başına veritabanında kalır; sonradan ihtiyaç olursa oradan erişilir.
+- Split modu en fazla 4 sütuna sığar; ~16'dan fazla eşzamanlı aktif görevde paneller oldukça daralır — bu ölçekte Unified modu daha iyi uyar.

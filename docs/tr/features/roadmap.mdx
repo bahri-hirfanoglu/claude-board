@@ -1,0 +1,113 @@
+---
+title: "Yol Haritası"
+description: "Kilometre taşlarını ve fazları AI destekli yol haritası görünümünde planlayın — GSD (Get Shit Done) spec-driven workflow ile entegre"
+icon: "map"
+---
+
+**Yol Haritası** görünümü, bir projenin kilometre taşlarına ve fazlarına kuş bakışı bir perspektif sağlar. Projede `.planning/` dizini varsa [GSD](https://github.com/bahri-hirfanoglu/gsd) spec-driven geliştirme çerçevesine köprü kurar.
+
+<Frame>
+  <img src="/images/feature-planning.svg" alt="Yol Haritası görünümü" />
+</Frame>
+
+## Yol Haritasını açma
+
+Herhangi bir projeyi aç, üst görünüm sekmelerinden **Roadmap**'e tıkla. Görünüm, üç yığın bölümden oluşur:
+
+1. **Proje Özeti** — `.planning/PROJECT.md` özeti ve güncel durum (GSD başlatılmışsa)
+2. **.planning/ Roadmap** — GSD dosya tabanlı yol haritası, faz başına aksiyonlarla
+3. **Milestones** — klasik DB tabanlı kilometre taşları ve fazlar; GSD'den bağımsız
+
+Projede `.planning/` dizini yoksa yalnızca Milestones bölümü görünür.
+
+## Proje Özeti paneli
+
+`.planning/PROJECT.md` mevcutsa, Yol Haritası'nın en üstünde daraltılabilir bir kart çıkar:
+
+- **Başlık**: proje adı (PROJECT.md'nin H1'i) + kısa özet satırı + STATE.md'deki `current_phase` rozeti
+- **Genişletilmiş**: STATE.md'den mevcut faz / adım + tam PROJECT.md ve STATE.md içerikleri
+
+Roadmap sekmesinden ayrılmadan projenin ne olduğunu ve GSD akışının şu an nerede olduğunu hatırlamak için kullan.
+
+## Yapılandırılmış faz açıklaması
+
+`ROADMAP.md` içindeki faz açıklamaları genelde şu kalıba uyar:
+
+```markdown
+## Phase 1: Foundation and Tech Debt
+
+**Goal**: The codebase runs on a fully supported, bug-free dependency stack
+**Depends on**: Nothing (first phase)
+**Requirements**: TECH-01, TECH-02, TECH-03
+**Success Criteria** (what must be TRUE):
+1. Terminal renders correctly
+2. No orphaned shell processes
+**Plans**: plan-1-xterm-upgrade, plan-2-server-fixes
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 1. Foundation | 0/4 | Not started |
+```
+
+Görünüm bunu ham markdown olarak dökmek yerine **parse eder** ve ikonlu, rozeti, chip'li bölümlere ayırır:
+
+| Bölüm              | Görsel                                          |
+|--------------------|-------------------------------------------------|
+| Goal               | Target ikon · vurgulu renk · gövde metni        |
+| Depends on         | Link ikon · gövde metni                         |
+| Requirements       | Flag ikon · sayaç · chip listesi                |
+| Success Criteria   | Check ikon · sayaç · numaralı liste             |
+| Plans              | File ikon · sayaç · chip listesi                |
+| Execution Order    | Arrow ikon · gövde metni + markdown tablosu     |
+
+Açıklamanın herhangi bir yerindeki markdown tabloları artık zebra satırlı ve ilk sütunu vurgulanmış gerçek HTML tabloları olarak render edilir — ham `| --- |` satırları yok.
+
+## Faz aksiyonları
+
+Her faz satırı, durumuna göre bir state-machine aksiyon butonu gösterir:
+
+<Steps>
+  <Step title="pending / planning (henüz PLAN.md yok)" icon="brain">
+    **Plan Phase** — fazın nasıl uygulanacağını araştıran ve `.planning/phases/phase-N/` altına `PLAN.md` dosyaları yazan bir Claude ajanını başlatır. İlerleme yerinde akar.
+  </Step>
+  <Step title="PLAN.md var (henüz görev yok)" icon="zap">
+    **Generate Tasks** — PLAN.md dosyalarını parse edip wave tabanlı bağımlılıklarla pano görevleri oluşturur. Kuyruk anında alır.
+  </Step>
+  <Step title="completed" icon="eye">
+    **Verify** — başarı kriterlerine göre uygulamayı yeniden kontrol eden `/gsd:verify-work` görevi oluşturur.
+  </Step>
+  <Step title="failed" icon="rotate">
+    **Retry** — mevcut PLAN.md dosyalarından görev üretimini tekrar çalıştırır.
+  </Step>
+</Steps>
+
+### Parse edilmiş görevleri önizle
+
+**Generate Tasks**'a basmadan önce fazı genişlet ve **Preview parsed tasks**'a tıkla. Görünüm, hiç görev oluşturmadan `PLAN.md`'den parse edilen görev listesini çeker ve şunları gösterir:
+
+- Görevler **wave**'lere göre gruplanmış (wave N, wave N-1'den sonra çalışır)
+- Her görev için: tür rozeti · ad · plan dosyası · dokunulan dosyalar · done kriteri
+
+Listeyi incele; doğru görünüyorsa önizleme içindeki **Generate N tasks** ile oluştur. Planları önce düzenlemek istersen `×` ile önizlemeyi kapatabilirsin.
+
+## .planning/ roadmap başlığı
+
+Fazların üstünde `.planning/ Roadmap` kartının başlığı şunları gösterir:
+
+- Genel ilerleme çubuğu (completed / in-progress / failed / pending)
+- Mevcut faz + mevcut adım (STATE.md'den)
+- Dosyaları diskten yeniden okumak için yenile butonu
+- **Raw toggle** — kaynağı görmek istersen tüm `ROADMAP.md`'nin önceden biçimlendirilmiş görünümü
+
+## Sağlık kontrolü
+
+Yol Haritası araç çubuğundaki **Health** butonu `gsd_health_check`'i çağırır ve `.planning/` dizininin sağlıklı, bozulmuş veya kırık olup olmadığını raporlar — manuel düzenlemelerden sonra faydalıdır.
+
+## Todos
+
+**Todos** butonu, `.planning/todos/pending` ve `.planning/todos/done` altındaki tüm todo'ları alan ve önizleme ile listeler. Fikirleri yakalamak için bir Claude oturumunda `/gsd:add-todo` kullan; sonradan incelemek üzere burada görünürler.
+
+<Info>
+  GSD entegrasyonu opsiyoneldir. `.planning/` dizini olmayan projeler de Milestone bölümünü alır — GSD kullanmadan da kilometre taşları oluşturabilir, faz ekleyebilir ve bir faza AI planlaması çalıştırabilirsin.
+</Info>
