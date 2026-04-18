@@ -250,8 +250,29 @@ export default function PlanningModal({ projectId, onClose }) {
 
   const isActive = phase === 'thinking';
 
+  const handleClose = () => {
+    if (phase === 'approved') {
+      Object.assign(getCache(projectId), {
+        phase: 'idle',
+        planPhase: 'starting',
+        logs: [],
+        analysis: '',
+        proposals: [],
+        dependencies: [],
+        stats: { elapsed: 0, tokens: { input: 0, output: 0 }, toolCalls: 0, turns: 0 },
+        error: null,
+        topic: '',
+        context: '',
+      });
+    }
+    onClose();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={handleClose}
+    >
       <div
         className="bg-surface-900 border border-surface-700/50 rounded-2xl w-full max-w-3xl mx-4 shadow-2xl flex flex-col"
         style={{ maxHeight: '90vh' }}
@@ -264,7 +285,7 @@ export default function PlanningModal({ projectId, onClose }) {
             <h2 className="text-sm font-semibold">{t('planning.title')}</h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 rounded-lg hover:bg-surface-800 text-surface-400 transition-colors"
           >
             <X size={16} />
@@ -389,7 +410,7 @@ export default function PlanningModal({ projectId, onClose }) {
                 {t('planning.planAgain')}
               </button>
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-colors"
               >
                 <ArrowRight size={14} /> {t('planning.doneViewBoard')}
@@ -398,7 +419,7 @@ export default function PlanningModal({ projectId, onClose }) {
           ) : (
             <>
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="px-4 py-2.5 text-sm text-surface-300 bg-surface-800 hover:bg-surface-700 rounded-xl transition-colors"
               >
                 {t('planning.cancelBtn')}
