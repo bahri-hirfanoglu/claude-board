@@ -56,11 +56,13 @@ Download the latest version for your platform:
 ### Orchestration & Planning
 - **Multi-Agent Orchestration** &mdash; DAG-based dependency graph with visual mission control, drag-to-connect edges, and node repositioning
 - **Planning Mode** &mdash; AI-powered task breakdown with DAG preview, review/approve/revise workflow
+- **Roadmap & GSD Integration** &mdash; Milestones and phases with structured phase descriptions (Goal, Requirements, Success Criteria, Plans, Execution Order tables), PLAN.md task preview before task generation, and PROJECT.md / STATE.md overview for [GSD](https://github.com/bahri-hirfanoglu/gsd) spec-driven projects
 - **Task Dependencies** &mdash; Multi-parent DAG dependencies with cycle detection and wave-based execution
 - **Task Queue** &mdash; Auto-queue to chain tasks with configurable concurrency (1-50 agents)
 
 ### Execution & Testing
 - **Live Terminal** &mdash; Watch agent tool calls, file edits, and bash commands in real-time with expandable cards
+- **Project Terminal** &mdash; Unified tab that streams every active task's logs side-by-side with color-coded `[TASK-KEY]` per-line badges; split-grid mode gives each agent its own auto-scrolling pane
 - **Split Terminal** &mdash; View multiple agent outputs side by side (vertical or horizontal split)
 - **Auto Test** &mdash; Automatic verification of completed tasks &mdash; runs tests, checks acceptance criteria, auto-approves on success
 - **Session Replay** &mdash; Timeline-based replay of agent actions with color-coded event types
@@ -68,7 +70,7 @@ Download the latest version for your platform:
 
 ### Project Management
 - **Kanban Board** &mdash; Drag-and-drop tasks across Backlog, In Progress, Testing, Done
-- **Multiple Views** &mdash; Board, List, Pipeline, Orchestration, and Summary views
+- **Multiple Views** &mdash; Board, List, Pipeline, Orchestration, Analytics, Roadmap, and Terminal views
 - **Review System** &mdash; Approve completed work or request changes with revision feedback
 - **Enhanced Dashboard** &mdash; Priority/model/type distribution, top-cost tasks, throughput metrics
 
