@@ -500,6 +500,7 @@ export default {
   // ─── Orkestrasyon ───
   'board.analytics': 'Analitik',
   'board.roadmap': 'Yol Haritası',
+  'board.terminal': 'Terminal',
   'roadmap.title': 'Proje Yol Haritası',
   'roadmap.noMilestones': 'Henüz kilometre taşı yok. Yol haritanızı planlamaya başlamak için bir tane oluşturun.',
   'roadmap.createMilestone': 'Kilometre Taşı Oluştur',

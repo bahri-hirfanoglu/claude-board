@@ -491,6 +491,7 @@ export default {
   // ─── Orchestration ───
   'board.analytics': 'Analytics',
   'board.roadmap': 'Roadmap',
+  'board.terminal': 'Terminal',
   'roadmap.title': 'Project Roadmap',
   'roadmap.noMilestones': 'No milestones yet. Create one to start planning your roadmap.',
   'roadmap.createMilestone': 'Create Milestone',
