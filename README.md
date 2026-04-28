@@ -40,16 +40,12 @@ Download the latest version for your platform:
 | Platform | Download | Notes |
 |----------|----------|-------|
 | **Windows** | [ClaudeBoard-Setup.exe](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | NSIS installer |
-| **macOS (Intel)** | [ClaudeBoard-x64.dmg](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Intel Macs |
-| **macOS (Apple Silicon)** | [ClaudeBoard-arm64.dmg](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | M1/M2/M3/M4 Macs |
+| **macOS (Intel)** | [ClaudeBoard-x64.dmg](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Intel Macs &mdash; signed & notarized |
+| **macOS (Apple Silicon)** | [ClaudeBoard-arm64.dmg](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | M1/M2/M3/M4 Macs &mdash; signed & notarized |
 | **Linux** | [ClaudeBoard.AppImage](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Universal Linux |
 | **Linux (Debian)** | [ClaudeBoard.deb](https://github.com/bahri-hirfanoglu/claude-board/releases/latest) | Ubuntu/Debian |
 
-> **macOS users:** If you see _"Claude Board.app is damaged and can't be opened"_, run this in Terminal after installing:
-> ```bash
-> xattr -cr /Applications/Claude\ Board.app
-> ```
-> This removes the macOS quarantine flag. The app is not code-signed with an Apple Developer certificate yet, which triggers this Gatekeeper warning.
+> **macOS users:** Starting with **v1.9.2**, builds are code-signed with an Apple Developer ID certificate and notarized by Apple, so they open without Gatekeeper warnings. Just drag `Claude Board.app` into your Applications folder and launch.
 
 ## Features
 
