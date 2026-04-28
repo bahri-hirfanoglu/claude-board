@@ -1,6 +1,6 @@
 [package]
 name = "claude-board"
-version = "1.9.1"
+version = "1.9.2"
 description = "Visual task management board for Claude Code"
 authors = ["Bahri Hirfanoglu <bahri@hirfanoglu.com>"]
 edition = "2021"
