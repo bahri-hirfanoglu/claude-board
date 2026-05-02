@@ -1,18 +1,37 @@
 # Changelog
 
+## [1.11.0] - 2026-05-02
+
+### Features
+
+- **Auto-PR for non-GitHub providers (#150)** — Auto-PR now supports **GitLab** (`glab mr create`), **Azure DevOps** (`az repos pr create`), and **Gitea / Forgejo** (`tea pr create`) in addition to GitHub. The provider is auto-detected from the project's `git remote get-url origin` output, with a per-project **PR Provider** dropdown in Project Settings → Automation that lets you override the choice (useful for self-hosted GitLab and Gitea). The same one-shot CLI auth model applies: install the relevant CLI and run its login command (`glab auth login`, `az login && az extension add -n azure-devops`, or `tea login add`).
+- **Project modal shows the detected provider** — When `PR Provider` is set to "Auto-detect", the form displays the inferred provider (or warns when the origin URL doesn't match any supported host).
+- **Cross-platform** — All four providers work on Windows, macOS, and Linux; CLI binaries are platform-agnostic.
+
+### Internals
+
+- New module `services/pr_providers.rs` with provider enum, URL-based detection, CLI availability check, and per-provider creation paths. Returns a typed `PrCreateOutcome` (Created / CliMissing / NotAuthenticated / Failed / Skipped) so the runner emits clear, actionable task logs (e.g. "Install glab from https://gitlab.com/gitlab-org/cli", "Run: az login").
+- `runner.rs::auto_create_pr` refactored to dispatch through the new module; the previous GitHub-only inline implementation is gone.
+- `commands/git_utils.rs::check_git_repo` now also returns the detected provider so the project modal can render it without an extra round-trip.
+- New `pr_provider` column on `projects` (default `auto`).
+- 7 unit tests covering URL detection (`github.com`, `gitlab.com` and self-hosted, `dev.azure.com`, `visualstudio.com`, `ssh.dev.azure.com`, `codeberg.org`, `gitea.*`) and setting parsing.
+
 ## [1.10.0] - 2026-05-02
 
 ### Features
+
 - **Dynamic model registry** — Settings → Models tab lists built-in Claude aliases and pinned versions (Haiku 4.5, Sonnet 4.6, Opus 4.6, Opus 4.7, Opus 4.7 1M context) and lets you add your own custom models with id, label, color, and per-Mtok input/output costs. Custom models persist in a new `custom_models` SQLite table and surface in every model picker (project auto-test model, task model, templates, planning)
 - **Git-aware project automation** — When the working directory of a project is not a git repository, Auto Branch / Auto Push / Auto PR toggles are disabled and a banner with a "Initialize git here" button appears in the project modal. Status is probed on directory change with a debounced `check_git_repo` Tauri command
 - **Expanded effort levels** — Added `xhigh` and `max` to match the values accepted by `claude --effort`. Pickers across task creation, templates, planning, and settings reflect the wider range
 - **Auto-approve on completion without auto-test** — Projects with `require_approval=false` (auto-approve) and `auto_test=false` now move tasks straight from `testing` to `done` after Claude finishes, instead of leaving them stuck in `testing`. The full auto-approve finalization runs (timer, lifecycle summary, auto-PR, branch cleanup, GitHub issue close)
 
 ### Bug fixes
+
 - **MCP sidecar discovery** — `runner.rs` now resolves `mcp-server.js` from `<exe-dir>/resources/` (Tauri's bundled layout) before falling back to `<exe-dir>/mcp-server.js`. Previously the sidecar was never found in dev/release builds, so per-task MCP tool calls (status updates, log push, etc.) silently failed
 - **Maximum update depth in `useModels`** — Replaced the `useSyncExternalStore` snapshot pattern with a simpler `useState` + module-level subscriber set, eliminating the render loop that hit the React update budget on app start
 
 ### Internals
+
 - New Tauri commands: `check_git_repo`, `init_git_repo`, `list_models`, `add_custom_model`, `update_custom_model`, `delete_custom_model`
 - New modules: `commands/git_utils.rs`, `commands/models.rs`, `db/custom_models.rs`, `client/src/lib/useModels.js`, `client/src/lib/useGitRepoStatus.js`
 - Built-in model id collision check now diffs against the full built-in list (aliases + pinned versions) instead of the three aliases
@@ -20,10 +39,12 @@
 ## [1.8.1] - 2026-04-16
 
 ### Bug fixes
+
 - **GSD phase auto-verify** — Phases now transition to `completed` in `.planning/ROADMAP.md` whenever all their tasks finish, including tasks closed by the runner's auto-approve path. Previously the cascade lived only in the manual `change_task_status` command, so runner-completed phases (e.g. a Phase 5 where the auto-test passed every task) never updated the roadmap file
 - Centralised the GSD cascade into a single `apply_task_status_cascade` helper and wired it into every status-mutation path (runner auto-approve, auto-revision, queue auto-start/retry/fail, MCP HTTP PATCH), eliminating the silent bypass
 
 ### Logging / diagnostics
+
 - Added `tauri-plugin-log` as the global logger. Rust and frontend logs are now written to a rotating file in the platform-standard app log directory (5 MB per file, all files kept)
 - Frontend installs `window.onerror`, `unhandledrejection`, and a `console.error` mirror into the same sink so uncaught UI errors end up in the log file
 - Instrumented every previously-silent failure in the GSD auto-verify pipeline (`gsd.rs`) with `log::warn!` — missing phase heading in `ROADMAP.md`, unreadable file, task with `gsd` tag but no `phase-N`, etc. The next bug report can be triaged from the log file alone
@@ -32,6 +53,7 @@
 ## [1.7.1] - 2026-03-28
 
 ### Features
+
 - **GSD Roadmap View** — Full "Get Stuff Done" workflow integration with Milestone → Phase → Plan → Task hierarchy
 - **AI Phase Planning** — Click the Brain button on any phase to let Claude analyze your codebase and generate an executable task breakdown with dependencies
 - **Checkpoint Types** — Tasks classified as auto, human-verify, decision, or human-action for GSD-style execution control
@@ -43,11 +65,13 @@
 - **Manual Status Control** — Dropdown to manually set phase status (pending/planning/in_progress/verifying/completed/failed)
 
 ### Database
+
 - New tables: milestones, phases, phase_plans, phase_plan_tasks
 - New columns: tasks.phase_plan_id, projects.gsd_enabled
 - Automatic status recomputation across plan → phase hierarchy
 
 ### Planning
+
 - GSD-aware planning prompt with checkpoint_type guidance
 - Success criteria included in AI planning context
 - Phase goal and description enriched prompt for better task generation
@@ -55,6 +79,7 @@
 ## [1.7.0] - 2026-03-28
 
 ### Features
+
 - **Command Palette (Ctrl+K)** — Fuzzy search across tasks, projects, and quick actions. Keyboard navigation, inline task actions (Start, Approve, Logs), shortcut hints
 - **Battle Arena View** — Gamified orchestration view where agents fight with emoji projectiles (🔥⚡💫❄️☠️💣), HP bars, explosion effects, critical hit damage numbers, file conflict clash lines, victory/defeat animations
 - **Agent Avatars & Names** — Each running agent gets a random character name (Nova, Atlas, Spark, etc.) with a unique avatar. Names appear in agent cards, terminal logs, and battle view
@@ -63,6 +88,7 @@
 - **Enhanced Dashboard** — Quick actions bar with Ctrl+K hint, stat cards with icons and glow effects, active task pulse animation
 
 ### Orchestration
+
 - **Circuit Breaker** — Auto-pause queue after N consecutive failures with manual reset
 - **Conditional Workflows** — on_success/on_failure/on_any dependency conditions
 - **Smart Queue Priority** — Critical path analysis (tasks blocking most dependents run first)
@@ -71,6 +97,7 @@
 - **Enhanced Pipeline Stats** — Bottleneck detection, burn rate, circuit breaker banner, approval indicators
 
 ### UI Improvements
+
 - **Redesigned Project Modal** — 720px sidebar layout with Section cards, Field/Toggle components
 - **Compact Header Toolbar** — Icon-only toggle group replacing 8 separate buttons
 - **Status Animations** — New violet approval effect, red fail flash with X mark
@@ -78,6 +105,7 @@
 - **Auto-open terminal** — Default changed to off; respects app settings toggle
 
 ### Engine
+
 - **Task State Machine** — Declarative TaskStatus enum, transition validation table, EngineConfig
 - **Configurable Parameters** — Max auto-revisions, retry delays, auto-test model per project
 - **Agent name assignment** — Stored in tasks.agent_name column
@@ -85,6 +113,7 @@
 ## [1.6.6] - 2026-03-28
 
 ### Features
+
 - **Task Engine Refactor** — Declarative state machine with TaskStatus enum, transition validation table, and configurable EngineConfig replacing scattered string literals and hard-coded values
 - **Circuit Breaker** — Automatically pauses queue after N consecutive task failures to prevent cascade failures; configurable threshold per project with manual reset
 - **Conditional Workflows** — Dependency conditions: `on_success`, `on_failure`, `on_any` (in addition to default `always`); enables fallback tasks and post-failure cleanup chains
@@ -97,12 +126,14 @@
 - **Auto-test Step Progress** — Step markers (Step 1/4: Build Check, etc.) logged to terminal during auto-test verification
 
 ### UI Improvements
+
 - **Redesigned Project Modal** — Wider 720px layout with sidebar navigation, section-based cards, consistent Field/Toggle components, and reusable `input-field` CSS class
 - **Engine Settings Tab** — New dedicated tab for advanced engine parameters, circuit breaker, and approval gate configuration
 
 ## [1.6.5] - 2026-03-27
 
 ### Bug Fixes
+
 - **Stats exclude deleted tasks** — All 13 statistics queries now filter out soft-deleted tasks (project stats, global usage, model breakdown, timeline, project list counts)
 - **Stop on any status change** — Running tasks now properly stopped when dragged to backlog, testing, or any non-running status (was only stopping from in_progress)
 - **No auto-retry on manual stop** — Manually stopping or moving a task no longer triggers auto-retry; retry state (count + delay) fully reset on backlog transition
@@ -119,6 +150,7 @@
 ## [1.6.4] - 2026-03-27
 
 ### Features
+
 - **Enhanced Codebase Scan** — Complete rewrite of the scan system with 5 analysis presets (Quick, Detailed, API Docs, Architecture, Custom), .gitignore-aware file filtering, project type auto-detection, pre-scan statistics, progress bar with cancel, and adjustable Claude max-turns based on codebase size
 - **Scan History** — All scan results saved to database with full history view, past scan viewing, deletion, and diff comparison between current and historical scans
 - **Markdown Preview** — Scan results now render as formatted Markdown with eye/edit toggle; edit mode for raw text, preview mode for rendered output
@@ -127,11 +159,13 @@
 - **Scanner Service** — New Rust service with .gitignore parser, 40+ language detection, file tree generator, and codebase statistics collector
 
 ### Bug Fixes
+
 - **Scan Crash Fix** — Fixed `result.trim is not a function` error caused by backend returning JSON object instead of string
 - **GitHub Sync "0" Badge** — Fixed `github_sync_enabled` integer `0` being rendered as text by React's `&&` operator
 - **Emojis Replaced** — All scan preset emojis replaced with proper Lucide icons (Zap, SearchCode, Radio, Blocks, PenLine)
 
 ### Improvements
+
 - **i18n Completeness** — All remaining ProjectModal hardcoded strings (Browse, Detect, Check Connection, GitHub status messages, Randomize) now use translation keys with Turkish translations
 - **Column Badge** — Empty board columns no longer show "0" count badge
 - **MCP Port Config** — All hardcoded port 4000 values now read from app config
@@ -142,11 +176,13 @@
 ## [1.6.3] - 2026-03-27
 
 ### Bug Fixes
+
 - **MCP Port Hardcoded** — All 4 hardcoded `port: 4000` values now read from app config, enabling multiple instances
 - **Retry Timing Bug** — `get_next_queued` now respects `retry_after` datetime, preventing premature task restarts
 - **Column Badge** — Empty columns no longer show "0" badge in board header
 
 ### Improvements
+
 - **i18n Completeness** — All remaining hardcoded strings in TaskModal (Prompt, Listening, Dictate), ProjectModal (Task Timeout, Max Retries), and LiveTerminal (Running, Done, Stop, Restart, Pause, Resume, etc.) now use translation keys with Turkish translations
 - **Folder Picker** — Working directory input now has a native "Browse" button (Tauri only) using `@tauri-apps/plugin-dialog`
 - **ErrorBoundary on Modals** — All 14 modals wrapped with ErrorBoundary to prevent full app crash on modal errors
@@ -157,6 +193,7 @@
 ## [1.6.2] - 2026-03-27
 
 ### Bug Fixes
+
 - **Rust Panic/Unwrap Elimination** — Removed all `panic!()` and unsafe `.unwrap()` from production code; replaced with proper `Result` error handling
 - **Shell Injection Prevention** — Branch names sanitized + git arguments passed as arrays instead of format strings
 - **DB Transaction Safety** — GitHub issue import wrapped in transaction to prevent partial imports and race conditions
@@ -173,6 +210,7 @@
 - **Attachment File Cleanup** — Delete now checks file existence before removal, logs warnings on failure
 
 ### Improvements
+
 - **Confirmation Dialogs** — Added confirmation before deleting attachments and removing task dependencies
 - **Warning Toast Type** — Added amber warning toast alongside existing success/error/info types
 - **Loading States** — Added loading spinners to PipelineView and OrchestrationView
@@ -189,6 +227,7 @@
 ## [1.6.1] - 2026-03-27
 
 ### Bug Fixes
+
 - **Branch Name Mismatch** — Branch now created before prompt so Claude uses the correct branch name (was: prompt says `task-79` but actual branch is `events-page-header`)
 - **Auto-PR on Auto-Test Approval** — PR is now created when auto-test approves a task (was: direct DB update bypassed all automation)
 - **GitHub Issue Close on Done** — Issues now close in all done transitions including auto-test approval, not just manual approve
@@ -200,11 +239,13 @@
 ## [1.6.0] - 2026-03-26
 
 ### Features
+
 - **GitHub Issues Sync** — Browse open issues from your repo in a side panel, selectively import as tasks with `github` tag, auto-close issues when tasks are approved. Uses `gh` CLI authentication (no PAT needed). Auto-detect repo from git remote
 - **GitHub CLI Check in Setup** — Setup wizard now checks for `gh` CLI (optional) alongside Claude CLI, Git, and port availability
 - **GitHub Issue Badge** — Task cards show linked issue number (#42) with click-to-open link
 
 ### Improvements
+
 - **Async GitHub API** — All GitHub network calls use async reqwest (non-blocking)
 - **Bug Fixes** — Fixed PlanningModal timer stale closure, Board dependency silent catch, task status race condition, OrchestrationView unhandled rejection, Rust process kill logging, 4xx error toast visibility
 - **Configurable MCP Port** — Port configurable via VITE_MCP_PORT environment variable
@@ -214,12 +255,14 @@
 ## [1.5.16] - 2026-03-26
 
 ### Features
+
 - **Landing Page Overhaul**: Orchestration-focused redesign with interactive DAG hero, 4 switchable views (Graph/Timeline/Live/Board), animated capability ticker, 8 HTML-based preview mockups
 - **Documentation i18n**: Full Turkish translation for all 51 documentation pages with Mintlify language switcher
 - **Landing Page i18n**: TR/EN language toggle with localStorage persistence for the web landing page
 - **Documentation Enrichment**: 12 doc pages enhanced with Steps, Tabs, Accordions, Cards, and richer examples
 
 ### Improvements
+
 - **Component Decomposition**: 4 monolithic components broken into 32 focused modules — LiveTerminal (746→200), Dashboard (637→150), TaskDetailModal (600→180), PlanningModal (1012→250)
 - **Error Handling Cleanup**: Removed redundant console.error calls; API layer handles all user-facing error toasts globally
 - **Setup Wizard Docs**: Updated for 6-step wizard with system check details
@@ -227,6 +270,7 @@
 ## [1.5.15] - 2026-03-26
 
 ### Features
+
 - **Setup Wizard Overhaul**: 6-step guided setup with system check (Claude CLI, Git, port), language selection (EN/TR), project configuration with collapsible details (permissions, auto-queue, git integration), default model/notification preferences, and animated summary with confetti
 - **Failed Status**: New dedicated board column for permanently failed tasks with red indicators across all views (Board, List, Pipeline, Timeline, DependencyGraph, Summary, StatusTransition)
 - **Exponential Backoff Retry**: Failed tasks wait before retrying (30s×2^n, max 10min, ±20% jitter). New `retry_after` DB field prevents premature restarts
@@ -240,6 +284,7 @@
 - **Branch Cleanup**: Completed tasks auto-delete feature branches (local + remote). Skipped when auto_pr is active to preserve open PRs
 
 ### Improvements
+
 - **Onboarding Redesign**: Glassmorphism cards with gradient accents, direction-aware slide animations, floating particles on welcome/done screens, feature grid with staggered pop-in, step dots progress indicator
 - **Testing Badge**: Purple FlaskConical badge always visible when task is in testing status. Animated when auto-test process is actively running
 - **Max Retries UI**: Configurable from project settings (0-10, default 2)
@@ -247,6 +292,7 @@
 - **Dependency Graph Layout**: Done tasks align within dependency wave instead of separate left column
 
 ### Engine Hardening (v1.5.12)
+
 - **TOCTOU Race Fix**: Atomic check-and-insert for STARTING_TASKS prevents duplicate task starts
 - **Panic-Free DB Layer**: Replaced ~100+ bare `.unwrap()` with `log::error!` + graceful fallbacks across entire database layer
 - **Poison-Free Mutexes**: Migrated from `std::sync::Mutex` to `parking_lot::Mutex` in runner and events
@@ -256,6 +302,7 @@
 - **HTTP API Cleanup**: All 20 bare `.unwrap()` in http_api.rs replaced with `to_json()` helper
 
 ### Database
+
 - `retry_after DATETIME` column for backoff scheduling
 - `task_timeout_minutes INTEGER` column on projects
 - `language TEXT` column in config
@@ -276,11 +323,13 @@ See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag
 ## [1.5.11] - 2026-03-25
 
 ### Features
+
 - Onboarding tour, retry system, i18n improvements, lifecycle summary
 
 ## [1.5.7] - 2026-03-24
 
 ### Features
+
 - **Auto Test**: Automatic verification of completed tasks — runs tests, checks acceptance criteria, auto-approves on success. Configurable per-project with custom test instructions
 - **Skill Import from GitHub**: Browse, preview, and install skills from any public GitHub repository. Includes popular repo shortcuts (awesome-claude-code, etc.) with directory navigation
 - **Split Terminal**: View multiple agent outputs side by side (vertical) or stacked (horizontal). Split controls always visible in bottom terminal toolbar
@@ -292,6 +341,7 @@ See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag
 - **Planning Rich Logs**: Tool calls in planning mode now render as expandable cards with icons, status indicators, and output preview (same design as live terminal)
 
 ### Improvements
+
 - **Enhanced Dashboard**: Summary view now shows priority distribution, model usage breakdown, input/output token split, throughput metric, average cost per task, and top-cost tasks
 - **Stats Panel Fix**: Fixed field name mismatch (snake_case vs camelCase) causing all stats to show as 0/empty. Added serde rename_all to all stats structs
 - **Custom Max Concurrent**: Project settings now support typing custom concurrency values (1-50) in addition to preset buttons
@@ -301,6 +351,7 @@ See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag
 - **Documentation Reorganized**: Sidebar categorized into logical groups (Orchestration, Execution, Git, AI Config, etc.) with 4 new feature pages
 
 ### Fixes
+
 - **Critical: Process Deadlock**: Fixed stderr pipe buffer deadlock that caused tasks to hang, especially with multiple concurrent tasks. Stderr is now drained in a background thread
 - **Stderr Visibility**: Agent warnings, rate limits, and errors from stderr are now visible in task terminal logs (previously invisible and lost)
 - **Dependency Error Handling**: Replaced silent .ok()/.unwrap() with proper Result propagation. Validation errors use correct error type
@@ -312,6 +363,7 @@ See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag
 ## [1.5.6] - 2026-03-24
 
 ### Features
+
 - **Multi-Agent Orchestration**: DAG-based task dependency system with cycle detection — tasks can have multiple parent dependencies, wave-based parallel execution
 - **Orchestration View**: New board view mode with interactive SVG dependency graph, live agent cards showing real-time token/cost/elapsed, wave progress bar with pipeline stats
 - **Dependency Editor**: Visual dependency management in task modal — searchable task picker, parent/child cards with status indicators, cycle detection warnings
@@ -321,6 +373,7 @@ See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag
 - **Dependency Graph API**: New commands `addDependency`, `removeDependency`, `getTaskDependencies`, `getExecutionWaves`, `getDependencyGraph`
 
 ### Improvements
+
 - **Pipeline View**: Now shows multiple parent dependencies per task instead of single `depends_on`
 - **Task Delete Cascade**: Deleting a task emits update events for dependent children
 - **Dependency Graph Layout**: Adaptive spacing for wide fan-out, orphan task handling, disconnected component support
@@ -328,17 +381,20 @@ See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag
 - **Voice Agent Language Sync**: Auto-detects UI language for initial voice language, fixed stale closure bug in language switching
 
 ### Fixes
+
 - **Voice assistant temporarily disabled** pending TTS voice selection fix on Windows/WebView2
 
 ## [1.5.5] - 2026-03-24
 
 ### Refactoring
+
 - **App.jsx state decomposition**: Extracted `useModalState`, `useTaskHandlers`, `useProjectHandlers` hooks — reduced 24 useState to 7, AppLayout props from 70+ to 25
 - **API consolidation**: Unified dual Tauri/HTTP API definitions with single `call()` dispatcher — each method defined once instead of twice
 - **TaskModal decomposition**: Split 632-line TaskModal into `TemplateSelector`, `TaskOptionsPanel`, `TokenEstimate` sub-components
 - **runner.rs decomposition**: Extracted `copy_task_attachments`, `build_claude_args`, `handle_process_lifecycle` from monolithic `start()` function
 
 ### Improvements
+
 - **Rust error handling**: Added `AppError` enum with `NotFound`, `Database`, `Io`, `Process` variants; replaced 8 `.unwrap()` panic points with proper `?` error propagation in CRUD commands
 - **JSDoc type definitions**: Added `@typedef` for all entity types (Project, Task, Template, Snippet, Role, Webhook, etc.) enabling IDE autocompletion
 - **Constants centralization**: Consolidated scattered constant definitions from 6+ files into single source of truth
@@ -347,20 +403,24 @@ See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag
 ## [1.5.4] - 2026-03-24
 
 ### Features
+
 - **Token Counter**: Real-time token estimation and cost preview in task creation modal — shows estimated tokens, input cost per model (Haiku/Sonnet/Opus), and character count
 - **Custom Commands Viewer**: Browse and inspect `~/.claude/commands/*.md` files — split-pane modal with command list and content preview
 - **Custom Skills Viewer**: Browse and inspect `~/.claude/skills/*.md` files — split-pane modal with skill list and content preview
 
 ### Performance
+
 - **Non-blocking dashboard**: Project list now loads instantly from DB; slow CLI-based calls (suggestions, project groups) load in background
 - **Eliminated startup Loading screen**: Dashboard no longer blocks on `getSuggestions()` and `getProjectGroups()` which shell out to claude/git
 
 ### Fixes
+
 - **CMD window flash on Windows**: Added `CREATE_NO_WINDOW` flag to `git config` check in suggestions, preventing console windows from briefly appearing on startup
 
 ## [1.0.0] - 2026-03-23
 
 ### Architecture
+
 - **Tauri v2**: Native desktop application built with Tauri v2 and Rust backend
 - **Rust Backend**: Database, Claude runner, webhook dispatcher, API handlers — all in Rust
 - **rusqlite**: Bundled SQLite for zero-dependency database access
@@ -369,6 +429,7 @@ See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag
 - **Auto-updater**: GitHub Releases integration for seamless updates
 
 ### Features
+
 - Kanban board with drag-and-drop task management
 - Live terminal — watch Claude code in real-time
 - Planning mode — AI-powered task breakdown
@@ -387,6 +448,7 @@ See release notes: https://github.com/bahri-hirfanoglu/claude-board/releases/tag
 - Model filter and timeline view
 
 ### Platforms
+
 - Windows (x64) — `.exe` and `.msi`
 - macOS (Intel & Apple Silicon) — `.dmg`
 - Linux — `.AppImage`, `.deb`, `.rpm`

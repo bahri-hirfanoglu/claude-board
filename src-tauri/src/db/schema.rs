@@ -213,11 +213,17 @@ fn col_exists(conn: &Connection, table: &str, col: &str) -> bool {
     let sql = format!("PRAGMA table_info({})", table);
     let mut stmt = match conn.prepare(&sql) {
         Ok(s) => s,
-        Err(e) => { log::error!("col_exists prepare: {}", e); return false; }
+        Err(e) => {
+            log::error!("col_exists prepare: {}", e);
+            return false;
+        }
     };
     let rows = match stmt.query_map([], |row| row.get::<_, String>(1)) {
         Ok(r) => r,
-        Err(e) => { log::error!("col_exists query: {}", e); return false; }
+        Err(e) => {
+            log::error!("col_exists query: {}", e);
+            return false;
+        }
     };
     for name in rows.flatten() {
         if name == col {
@@ -229,90 +235,366 @@ fn col_exists(conn: &Connection, table: &str, col: &str) -> bool {
 
 pub fn run_migrations(conn: &Connection) {
     let migrations: Vec<(&str, &str, &str)> = vec![
-        ("projects", "icon", "ALTER TABLE projects ADD COLUMN icon TEXT DEFAULT 'marble'"),
-        ("projects", "icon_seed", "ALTER TABLE projects ADD COLUMN icon_seed TEXT DEFAULT ''"),
-        ("projects", "permission_mode", "ALTER TABLE projects ADD COLUMN permission_mode TEXT DEFAULT 'auto-accept'"),
-        ("projects", "allowed_tools", "ALTER TABLE projects ADD COLUMN allowed_tools TEXT DEFAULT ''"),
-        ("projects", "auto_queue", "ALTER TABLE projects ADD COLUMN auto_queue INTEGER DEFAULT 0"),
-        ("projects", "max_concurrent", "ALTER TABLE projects ADD COLUMN max_concurrent INTEGER DEFAULT 1"),
-        ("projects", "auto_branch", "ALTER TABLE projects ADD COLUMN auto_branch INTEGER DEFAULT 1"),
-        ("projects", "auto_pr", "ALTER TABLE projects ADD COLUMN auto_pr INTEGER DEFAULT 0"),
-        ("projects", "pr_base_branch", "ALTER TABLE projects ADD COLUMN pr_base_branch TEXT DEFAULT 'main'"),
-        ("projects", "project_key", "ALTER TABLE projects ADD COLUMN project_key TEXT DEFAULT ''"),
-        ("projects", "task_counter", "ALTER TABLE projects ADD COLUMN task_counter INTEGER DEFAULT 1000"),
-        ("tasks", "started_at", "ALTER TABLE tasks ADD COLUMN started_at DATETIME"),
-        ("tasks", "completed_at", "ALTER TABLE tasks ADD COLUMN completed_at DATETIME"),
-        ("tasks", "task_type", "ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'feature'"),
-        ("tasks", "acceptance_criteria", "ALTER TABLE tasks ADD COLUMN acceptance_criteria TEXT DEFAULT ''"),
-        ("tasks", "model", "ALTER TABLE tasks ADD COLUMN model TEXT DEFAULT 'sonnet'"),
-        ("tasks", "thinking_effort", "ALTER TABLE tasks ADD COLUMN thinking_effort TEXT DEFAULT 'medium'"),
-        ("tasks", "input_tokens", "ALTER TABLE tasks ADD COLUMN input_tokens INTEGER DEFAULT 0"),
-        ("tasks", "output_tokens", "ALTER TABLE tasks ADD COLUMN output_tokens INTEGER DEFAULT 0"),
-        ("tasks", "cache_read_tokens", "ALTER TABLE tasks ADD COLUMN cache_read_tokens INTEGER DEFAULT 0"),
-        ("tasks", "cache_creation_tokens", "ALTER TABLE tasks ADD COLUMN cache_creation_tokens INTEGER DEFAULT 0"),
-        ("tasks", "total_cost", "ALTER TABLE tasks ADD COLUMN total_cost REAL DEFAULT 0"),
-        ("tasks", "num_turns", "ALTER TABLE tasks ADD COLUMN num_turns INTEGER DEFAULT 0"),
-        ("tasks", "rate_limit_hits", "ALTER TABLE tasks ADD COLUMN rate_limit_hits INTEGER DEFAULT 0"),
-        ("tasks", "model_used", "ALTER TABLE tasks ADD COLUMN model_used TEXT"),
-        ("tasks", "revision_count", "ALTER TABLE tasks ADD COLUMN revision_count INTEGER DEFAULT 0"),
-        ("tasks", "queue_position", "ALTER TABLE tasks ADD COLUMN queue_position INTEGER DEFAULT 0"),
-        ("tasks", "commits", "ALTER TABLE tasks ADD COLUMN commits TEXT DEFAULT '[]'"),
-        ("tasks", "pr_url", "ALTER TABLE tasks ADD COLUMN pr_url TEXT"),
-        ("tasks", "diff_stat", "ALTER TABLE tasks ADD COLUMN diff_stat TEXT"),
-        ("tasks", "work_duration_ms", "ALTER TABLE tasks ADD COLUMN work_duration_ms INTEGER DEFAULT 0"),
-        ("tasks", "last_resumed_at", "ALTER TABLE tasks ADD COLUMN last_resumed_at DATETIME"),
-        ("tasks", "role_id", "ALTER TABLE tasks ADD COLUMN role_id INTEGER"),
-        ("tasks", "task_key", "ALTER TABLE tasks ADD COLUMN task_key TEXT DEFAULT ''"),
-        ("task_logs", "meta", "ALTER TABLE task_logs ADD COLUMN meta TEXT"),
-        ("tasks", "depends_on", "ALTER TABLE tasks ADD COLUMN depends_on INTEGER"),
-        ("tasks", "retry_count", "ALTER TABLE tasks ADD COLUMN retry_count INTEGER DEFAULT 0"),
-        ("projects", "max_retries", "ALTER TABLE projects ADD COLUMN max_retries INTEGER DEFAULT 0"),
-        ("tasks", "test_report", "ALTER TABLE tasks ADD COLUMN test_report TEXT"),
-        ("projects", "auto_test", "ALTER TABLE projects ADD COLUMN auto_test INTEGER DEFAULT 0"),
-        ("projects", "test_prompt", "ALTER TABLE projects ADD COLUMN test_prompt TEXT DEFAULT ''"),
+        (
+            "projects",
+            "icon",
+            "ALTER TABLE projects ADD COLUMN icon TEXT DEFAULT 'marble'",
+        ),
+        (
+            "projects",
+            "icon_seed",
+            "ALTER TABLE projects ADD COLUMN icon_seed TEXT DEFAULT ''",
+        ),
+        (
+            "projects",
+            "permission_mode",
+            "ALTER TABLE projects ADD COLUMN permission_mode TEXT DEFAULT 'auto-accept'",
+        ),
+        (
+            "projects",
+            "allowed_tools",
+            "ALTER TABLE projects ADD COLUMN allowed_tools TEXT DEFAULT ''",
+        ),
+        (
+            "projects",
+            "auto_queue",
+            "ALTER TABLE projects ADD COLUMN auto_queue INTEGER DEFAULT 0",
+        ),
+        (
+            "projects",
+            "max_concurrent",
+            "ALTER TABLE projects ADD COLUMN max_concurrent INTEGER DEFAULT 1",
+        ),
+        (
+            "projects",
+            "auto_branch",
+            "ALTER TABLE projects ADD COLUMN auto_branch INTEGER DEFAULT 1",
+        ),
+        (
+            "projects",
+            "auto_pr",
+            "ALTER TABLE projects ADD COLUMN auto_pr INTEGER DEFAULT 0",
+        ),
+        (
+            "projects",
+            "pr_base_branch",
+            "ALTER TABLE projects ADD COLUMN pr_base_branch TEXT DEFAULT 'main'",
+        ),
+        (
+            "projects",
+            "project_key",
+            "ALTER TABLE projects ADD COLUMN project_key TEXT DEFAULT ''",
+        ),
+        (
+            "projects",
+            "task_counter",
+            "ALTER TABLE projects ADD COLUMN task_counter INTEGER DEFAULT 1000",
+        ),
+        (
+            "tasks",
+            "started_at",
+            "ALTER TABLE tasks ADD COLUMN started_at DATETIME",
+        ),
+        (
+            "tasks",
+            "completed_at",
+            "ALTER TABLE tasks ADD COLUMN completed_at DATETIME",
+        ),
+        (
+            "tasks",
+            "task_type",
+            "ALTER TABLE tasks ADD COLUMN task_type TEXT DEFAULT 'feature'",
+        ),
+        (
+            "tasks",
+            "acceptance_criteria",
+            "ALTER TABLE tasks ADD COLUMN acceptance_criteria TEXT DEFAULT ''",
+        ),
+        (
+            "tasks",
+            "model",
+            "ALTER TABLE tasks ADD COLUMN model TEXT DEFAULT 'sonnet'",
+        ),
+        (
+            "tasks",
+            "thinking_effort",
+            "ALTER TABLE tasks ADD COLUMN thinking_effort TEXT DEFAULT 'medium'",
+        ),
+        (
+            "tasks",
+            "input_tokens",
+            "ALTER TABLE tasks ADD COLUMN input_tokens INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "output_tokens",
+            "ALTER TABLE tasks ADD COLUMN output_tokens INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "cache_read_tokens",
+            "ALTER TABLE tasks ADD COLUMN cache_read_tokens INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "cache_creation_tokens",
+            "ALTER TABLE tasks ADD COLUMN cache_creation_tokens INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "total_cost",
+            "ALTER TABLE tasks ADD COLUMN total_cost REAL DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "num_turns",
+            "ALTER TABLE tasks ADD COLUMN num_turns INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "rate_limit_hits",
+            "ALTER TABLE tasks ADD COLUMN rate_limit_hits INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "model_used",
+            "ALTER TABLE tasks ADD COLUMN model_used TEXT",
+        ),
+        (
+            "tasks",
+            "revision_count",
+            "ALTER TABLE tasks ADD COLUMN revision_count INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "queue_position",
+            "ALTER TABLE tasks ADD COLUMN queue_position INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "commits",
+            "ALTER TABLE tasks ADD COLUMN commits TEXT DEFAULT '[]'",
+        ),
+        (
+            "tasks",
+            "pr_url",
+            "ALTER TABLE tasks ADD COLUMN pr_url TEXT",
+        ),
+        (
+            "tasks",
+            "diff_stat",
+            "ALTER TABLE tasks ADD COLUMN diff_stat TEXT",
+        ),
+        (
+            "tasks",
+            "work_duration_ms",
+            "ALTER TABLE tasks ADD COLUMN work_duration_ms INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "last_resumed_at",
+            "ALTER TABLE tasks ADD COLUMN last_resumed_at DATETIME",
+        ),
+        (
+            "tasks",
+            "role_id",
+            "ALTER TABLE tasks ADD COLUMN role_id INTEGER",
+        ),
+        (
+            "tasks",
+            "task_key",
+            "ALTER TABLE tasks ADD COLUMN task_key TEXT DEFAULT ''",
+        ),
+        (
+            "task_logs",
+            "meta",
+            "ALTER TABLE task_logs ADD COLUMN meta TEXT",
+        ),
+        (
+            "tasks",
+            "depends_on",
+            "ALTER TABLE tasks ADD COLUMN depends_on INTEGER",
+        ),
+        (
+            "tasks",
+            "retry_count",
+            "ALTER TABLE tasks ADD COLUMN retry_count INTEGER DEFAULT 0",
+        ),
+        (
+            "projects",
+            "max_retries",
+            "ALTER TABLE projects ADD COLUMN max_retries INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "test_report",
+            "ALTER TABLE tasks ADD COLUMN test_report TEXT",
+        ),
+        (
+            "projects",
+            "auto_test",
+            "ALTER TABLE projects ADD COLUMN auto_test INTEGER DEFAULT 0",
+        ),
+        (
+            "projects",
+            "test_prompt",
+            "ALTER TABLE projects ADD COLUMN test_prompt TEXT DEFAULT ''",
+        ),
         // Orchestration: context handoff & conditional workflows
-        ("tasks", "context_summary", "ALTER TABLE tasks ADD COLUMN context_summary TEXT"),
-        ("task_dependencies", "condition_type", "ALTER TABLE task_dependencies ADD COLUMN condition_type TEXT DEFAULT 'always'"),
+        (
+            "tasks",
+            "context_summary",
+            "ALTER TABLE tasks ADD COLUMN context_summary TEXT",
+        ),
+        (
+            "task_dependencies",
+            "condition_type",
+            "ALTER TABLE task_dependencies ADD COLUMN condition_type TEXT DEFAULT 'always'",
+        ),
         // Sub-task spawning
-        ("tasks", "parent_task_id", "ALTER TABLE tasks ADD COLUMN parent_task_id INTEGER"),
-        ("tasks", "awaiting_subtasks", "ALTER TABLE tasks ADD COLUMN awaiting_subtasks INTEGER DEFAULT 0"),
+        (
+            "tasks",
+            "parent_task_id",
+            "ALTER TABLE tasks ADD COLUMN parent_task_id INTEGER",
+        ),
+        (
+            "tasks",
+            "awaiting_subtasks",
+            "ALTER TABLE tasks ADD COLUMN awaiting_subtasks INTEGER DEFAULT 0",
+        ),
         // Tags
-        ("tasks", "tags", "ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT '[]'"),
+        (
+            "tasks",
+            "tags",
+            "ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT '[]'",
+        ),
         // Lifecycle summary
-        ("tasks", "lifecycle_summary", "ALTER TABLE tasks ADD COLUMN lifecycle_summary TEXT"),
+        (
+            "tasks",
+            "lifecycle_summary",
+            "ALTER TABLE tasks ADD COLUMN lifecycle_summary TEXT",
+        ),
         // Task timeout
-        ("projects", "task_timeout_minutes", "ALTER TABLE projects ADD COLUMN task_timeout_minutes INTEGER DEFAULT 0"),
+        (
+            "projects",
+            "task_timeout_minutes",
+            "ALTER TABLE projects ADD COLUMN task_timeout_minutes INTEGER DEFAULT 0",
+        ),
         // Retry backoff: timestamp after which task can be retried
-        ("tasks", "retry_after", "ALTER TABLE tasks ADD COLUMN retry_after DATETIME"),
+        (
+            "tasks",
+            "retry_after",
+            "ALTER TABLE tasks ADD COLUMN retry_after DATETIME",
+        ),
         // GitHub Issues sync
-        ("projects", "github_repo", "ALTER TABLE projects ADD COLUMN github_repo TEXT DEFAULT ''"),
-        ("projects", "github_sync_enabled", "ALTER TABLE projects ADD COLUMN github_sync_enabled INTEGER DEFAULT 0"),
-        ("tasks", "github_issue_number", "ALTER TABLE tasks ADD COLUMN github_issue_number INTEGER"),
-        ("tasks", "github_issue_url", "ALTER TABLE tasks ADD COLUMN github_issue_url TEXT"),
+        (
+            "projects",
+            "github_repo",
+            "ALTER TABLE projects ADD COLUMN github_repo TEXT DEFAULT ''",
+        ),
+        (
+            "projects",
+            "github_sync_enabled",
+            "ALTER TABLE projects ADD COLUMN github_sync_enabled INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "github_issue_number",
+            "ALTER TABLE tasks ADD COLUMN github_issue_number INTEGER",
+        ),
+        (
+            "tasks",
+            "github_issue_url",
+            "ALTER TABLE tasks ADD COLUMN github_issue_url TEXT",
+        ),
         // Soft delete
-        ("tasks", "deleted_at", "ALTER TABLE tasks ADD COLUMN deleted_at TEXT DEFAULT NULL"),
+        (
+            "tasks",
+            "deleted_at",
+            "ALTER TABLE tasks ADD COLUMN deleted_at TEXT DEFAULT NULL",
+        ),
         // Engine configuration (extracted hard-coded values)
-        ("projects", "max_auto_revisions", "ALTER TABLE projects ADD COLUMN max_auto_revisions INTEGER DEFAULT 0"),
-        ("projects", "retry_base_delay_secs", "ALTER TABLE projects ADD COLUMN retry_base_delay_secs INTEGER DEFAULT 0"),
-        ("projects", "retry_max_delay_secs", "ALTER TABLE projects ADD COLUMN retry_max_delay_secs INTEGER DEFAULT 0"),
-        ("projects", "auto_test_model", "ALTER TABLE projects ADD COLUMN auto_test_model TEXT DEFAULT ''"),
+        (
+            "projects",
+            "max_auto_revisions",
+            "ALTER TABLE projects ADD COLUMN max_auto_revisions INTEGER DEFAULT 0",
+        ),
+        (
+            "projects",
+            "retry_base_delay_secs",
+            "ALTER TABLE projects ADD COLUMN retry_base_delay_secs INTEGER DEFAULT 0",
+        ),
+        (
+            "projects",
+            "retry_max_delay_secs",
+            "ALTER TABLE projects ADD COLUMN retry_max_delay_secs INTEGER DEFAULT 0",
+        ),
+        (
+            "projects",
+            "auto_test_model",
+            "ALTER TABLE projects ADD COLUMN auto_test_model TEXT DEFAULT ''",
+        ),
         // Circuit breaker
-        ("projects", "circuit_breaker_threshold", "ALTER TABLE projects ADD COLUMN circuit_breaker_threshold INTEGER DEFAULT 0"),
-        ("projects", "circuit_breaker_active", "ALTER TABLE projects ADD COLUMN circuit_breaker_active INTEGER DEFAULT 0"),
-        ("projects", "consecutive_failures", "ALTER TABLE projects ADD COLUMN consecutive_failures INTEGER DEFAULT 0"),
+        (
+            "projects",
+            "circuit_breaker_threshold",
+            "ALTER TABLE projects ADD COLUMN circuit_breaker_threshold INTEGER DEFAULT 0",
+        ),
+        (
+            "projects",
+            "circuit_breaker_active",
+            "ALTER TABLE projects ADD COLUMN circuit_breaker_active INTEGER DEFAULT 0",
+        ),
+        (
+            "projects",
+            "consecutive_failures",
+            "ALTER TABLE projects ADD COLUMN consecutive_failures INTEGER DEFAULT 0",
+        ),
         // Approval gates
-        ("projects", "require_approval", "ALTER TABLE projects ADD COLUMN require_approval INTEGER DEFAULT 0"),
-        ("tasks", "agent_name", "ALTER TABLE tasks ADD COLUMN agent_name TEXT DEFAULT ''"),
+        (
+            "projects",
+            "require_approval",
+            "ALTER TABLE projects ADD COLUMN require_approval INTEGER DEFAULT 0",
+        ),
+        (
+            "tasks",
+            "agent_name",
+            "ALTER TABLE tasks ADD COLUMN agent_name TEXT DEFAULT ''",
+        ),
         // GSD Roadmap
-        ("tasks", "phase_plan_id", "ALTER TABLE tasks ADD COLUMN phase_plan_id INTEGER"),
-        ("projects", "gsd_enabled", "ALTER TABLE projects ADD COLUMN gsd_enabled INTEGER DEFAULT 0"),
-        ("projects", "auto_push", "ALTER TABLE projects ADD COLUMN auto_push INTEGER DEFAULT 0"),
+        (
+            "tasks",
+            "phase_plan_id",
+            "ALTER TABLE tasks ADD COLUMN phase_plan_id INTEGER",
+        ),
+        (
+            "projects",
+            "gsd_enabled",
+            "ALTER TABLE projects ADD COLUMN gsd_enabled INTEGER DEFAULT 0",
+        ),
+        (
+            "projects",
+            "auto_push",
+            "ALTER TABLE projects ADD COLUMN auto_push INTEGER DEFAULT 0",
+        ),
+        // PR provider override (auto / github / gitlab / azure_devops / gitea / none)
+        (
+            "projects",
+            "pr_provider",
+            "ALTER TABLE projects ADD COLUMN pr_provider TEXT DEFAULT 'auto'",
+        ),
     ];
 
     for (table, col, sql) in migrations {
         if !col_exists(conn, table, col) {
             if let Err(e) = conn.execute_batch(sql) {
-                log::error!("Migration failed for {}.{}: {} — sql: {}", table, col, e, sql);
+                log::error!(
+                    "Migration failed for {}.{}: {} — sql: {}",
+                    table,
+                    col,
+                    e,
+                    sql
+                );
             }
         }
     }
@@ -321,9 +603,9 @@ pub fn run_migrations(conn: &Connection) {
     // SQLite doesn't support ALTER CHECK, so we recreate the table if needed
     {
         // Check if 'failed' status is allowed by trying a dummy update
-        let needs_migration = conn.execute(
-            "UPDATE tasks SET status='failed' WHERE id=-1", []
-        ).is_err();
+        let needs_migration = conn
+            .execute("UPDATE tasks SET status='failed' WHERE id=-1", [])
+            .is_err();
         if needs_migration {
             log::info!("Migrating tasks table to support 'failed' status...");
             let tx_result: Result<(), rusqlite::Error> = (|| {
@@ -355,7 +637,8 @@ pub fn run_migrations(conn: &Connection) {
                         FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
                     )")?;
 
-                conn.execute_batch("
+                conn.execute_batch(
+                    "
                     INSERT INTO tasks_new SELECT
                         id, project_id, title, description, status, priority, task_type,
                         acceptance_criteria, model, thinking_effort, sort_order, queue_position,
@@ -368,7 +651,8 @@ pub fn run_migrations(conn: &Connection) {
                         test_report, depends_on, retry_count,
                         context_summary, parent_task_id, awaiting_subtasks,
                         tags, lifecycle_summary, retry_after
-                    FROM tasks")?;
+                    FROM tasks",
+                )?;
 
                 conn.execute_batch("DROP TABLE tasks")?;
                 conn.execute_batch("ALTER TABLE tasks_new RENAME TO tasks")?;
@@ -394,7 +678,8 @@ pub fn run_migrations(conn: &Connection) {
     }
 
     // Create workflow_templates table
-    conn.execute_batch("
+    conn.execute_batch(
+        "
         CREATE TABLE IF NOT EXISTS workflow_templates (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             project_id INTEGER NOT NULL,
@@ -405,13 +690,18 @@ pub fn run_migrations(conn: &Connection) {
             updated_at DATETIME DEFAULT (datetime('now','localtime')),
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
         )
-    ").ok();
+    ",
+    )
+    .ok();
 
     // Migrate tasks table to support 'awaiting_approval' status (remove CHECK constraint)
     {
-        let needs_migration = conn.execute(
-            "UPDATE tasks SET status='awaiting_approval' WHERE id=-1", []
-        ).is_err();
+        let needs_migration = conn
+            .execute(
+                "UPDATE tasks SET status='awaiting_approval' WHERE id=-1",
+                [],
+            )
+            .is_err();
         if needs_migration {
             log::info!("Migrating tasks table to support 'awaiting_approval' status...");
             let tx_result: Result<(), rusqlite::Error> = (|| {
@@ -443,7 +733,8 @@ pub fn run_migrations(conn: &Connection) {
                         FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
                     )
                 ")?;
-                conn.execute_batch("
+                conn.execute_batch(
+                    "
                     INSERT INTO tasks_v3 SELECT
                         id, project_id, title, description, status, priority, task_type,
                         acceptance_criteria, model, thinking_effort, sort_order, queue_position,
@@ -458,7 +749,8 @@ pub fn run_migrations(conn: &Connection) {
                         tags, lifecycle_summary, retry_after,
                         github_issue_number, github_issue_url, deleted_at
                     FROM tasks
-                ")?;
+                ",
+                )?;
                 conn.execute_batch("DROP TABLE tasks")?;
                 conn.execute_batch("ALTER TABLE tasks_v3 RENAME TO tasks")?;
                 conn.execute_batch("
@@ -481,7 +773,8 @@ pub fn run_migrations(conn: &Connection) {
     }
 
     // Achievements table
-    conn.execute_batch("
+    conn.execute_batch(
+        "
         CREATE TABLE IF NOT EXISTS achievements (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             project_id INTEGER NOT NULL,
@@ -491,8 +784,13 @@ pub fn run_migrations(conn: &Connection) {
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
             UNIQUE(project_id, achievement_key)
         )
-    ").ok();
-    conn.execute_batch("CREATE INDEX IF NOT EXISTS idx_achievements_project ON achievements(project_id)").ok();
+    ",
+    )
+    .ok();
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_achievements_project ON achievements(project_id)",
+    )
+    .ok();
 
     // GSD Roadmap tables
     conn.execute_batch("
@@ -552,23 +850,31 @@ pub fn run_migrations(conn: &Connection) {
         );
     ").ok();
 
-    conn.execute_batch("
+    conn.execute_batch(
+        "
         CREATE INDEX IF NOT EXISTS idx_milestones_project ON milestones(project_id);
         CREATE INDEX IF NOT EXISTS idx_phases_milestone ON phases(milestone_id);
         CREATE INDEX IF NOT EXISTS idx_phases_project ON phases(project_id);
         CREATE INDEX IF NOT EXISTS idx_phase_plans_phase ON phase_plans(phase_id);
         CREATE INDEX IF NOT EXISTS idx_phase_plan_tasks_plan ON phase_plan_tasks(plan_id);
         CREATE INDEX IF NOT EXISTS idx_phase_plan_tasks_task ON phase_plan_tasks(task_id);
-    ").ok();
+    ",
+    )
+    .ok();
 
     // Backfill empty model fields
-    conn.execute("UPDATE tasks SET model='sonnet' WHERE model IS NULL OR model=''", []).ok();
+    conn.execute(
+        "UPDATE tasks SET model='sonnet' WHERE model IS NULL OR model=''",
+        [],
+    )
+    .ok();
 
     // Migrate depends_on → task_dependencies table
     conn.execute_batch(
         "INSERT OR IGNORE INTO task_dependencies (task_id, depends_on_id)
-         SELECT id, depends_on FROM tasks WHERE depends_on IS NOT NULL"
-    ).ok();
+         SELECT id, depends_on FROM tasks WHERE depends_on IS NOT NULL",
+    )
+    .ok();
 
     // Generate project_key for projects that don't have one
     backfill_project_keys(conn);
@@ -579,10 +885,14 @@ pub fn generate_project_key(slug: &str) -> String {
     if slug.is_empty() {
         return "PRJ".to_string();
     }
-    let cleaned: String = slug.chars().filter(|c| c.is_alphanumeric() || *c == '-').collect();
+    let cleaned: String = slug
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '-')
+        .collect();
     let parts: Vec<&str> = cleaned.split('-').filter(|s| !s.is_empty()).collect();
     if parts.len() >= 2 {
-        parts.iter()
+        parts
+            .iter()
             .map(|p| p.chars().next().unwrap_or('X'))
             .collect::<String>()
             .to_uppercase()
@@ -592,26 +902,39 @@ pub fn generate_project_key(slug: &str) -> String {
     } else {
         let alpha: String = slug.chars().filter(|c| c.is_alphabetic()).collect();
         let key: String = alpha.chars().take(3).collect();
-        if key.is_empty() { "PRJ".to_string() } else { key.to_uppercase() }
+        if key.is_empty() {
+            "PRJ".to_string()
+        } else {
+            key.to_uppercase()
+        }
     }
 }
 
 fn backfill_project_keys(conn: &Connection) {
     let mut stmt = match conn.prepare("SELECT id, slug, project_key FROM projects") {
         Ok(s) => s,
-        Err(e) => { log::error!("backfill_project_keys prepare: {}", e); return; }
+        Err(e) => {
+            log::error!("backfill_project_keys prepare: {}", e);
+            return;
+        }
     };
-    let rows: Vec<(i64, String, Option<String>)> = match stmt.query_map([], |row| {
-        Ok((row.get(0)?, row.get(1)?, row.get(2)?))
-    }) {
-        Ok(r) => r.flatten().collect(),
-        Err(e) => { log::error!("backfill_project_keys query: {}", e); return; }
-    };
+    let rows: Vec<(i64, String, Option<String>)> =
+        match stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?))) {
+            Ok(r) => r.flatten().collect(),
+            Err(e) => {
+                log::error!("backfill_project_keys query: {}", e);
+                return;
+            }
+        };
 
     for (id, slug, key) in rows {
         if key.as_deref().unwrap_or("").is_empty() {
             let new_key = generate_project_key(&slug);
-            conn.execute("UPDATE projects SET project_key=?1 WHERE id=?2", rusqlite::params![new_key, id]).ok();
+            conn.execute(
+                "UPDATE projects SET project_key=?1 WHERE id=?2",
+                rusqlite::params![new_key, id],
+            )
+            .ok();
         }
     }
 }
@@ -636,10 +959,18 @@ fn backfill_task_keys(conn: &Connection) {
         Err(e) => { log::error!("backfill_task_keys prepare: {}", e); return; }
     };
     let rows: Vec<(i64, String, i64, String)> = match stmt.query_map([], |row| {
-        Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get::<_, String>(3).unwrap_or_default()))
+        Ok((
+            row.get(0)?,
+            row.get(1)?,
+            row.get(2)?,
+            row.get::<_, String>(3).unwrap_or_default(),
+        ))
     }) {
         Ok(r) => r.flatten().collect(),
-        Err(e) => { log::error!("backfill_task_keys query: {}", e); return; }
+        Err(e) => {
+            log::error!("backfill_task_keys query: {}", e);
+            return;
+        }
     };
 
     if rows.is_empty() {
@@ -650,11 +981,19 @@ fn backfill_task_keys(conn: &Connection) {
     let mut counters = std::collections::HashMap::new();
     let mut cstmt = match conn.prepare("SELECT id, task_counter FROM projects") {
         Ok(s) => s,
-        Err(e) => { log::error!("backfill_task_keys counters: {}", e); return; }
+        Err(e) => {
+            log::error!("backfill_task_keys counters: {}", e);
+            return;
+        }
     };
-    let crow: Vec<(i64, i64)> = match cstmt.query_map([], |row| Ok((row.get(0)?, row.get::<_, i64>(1).unwrap_or(1000)))) {
+    let crow: Vec<(i64, i64)> = match cstmt.query_map([], |row| {
+        Ok((row.get(0)?, row.get::<_, i64>(1).unwrap_or(1000)))
+    }) {
         Ok(r) => r.flatten().collect(),
-        Err(e) => { log::error!("backfill_task_keys counter query: {}", e); return; }
+        Err(e) => {
+            log::error!("backfill_task_keys counter query: {}", e);
+            return;
+        }
     };
     for (pid, counter) in crow {
         counters.insert(pid, counter);
@@ -664,15 +1003,27 @@ fn backfill_task_keys(conn: &Connection) {
         let counter = counters.entry(*project_id).or_insert(1000);
         *counter += 1;
         let prefix = get_type_prefix(task_type);
-        let pkey = if project_key.is_empty() { "PRJ" } else { project_key.as_str() };
+        let pkey = if project_key.is_empty() {
+            "PRJ"
+        } else {
+            project_key.as_str()
+        };
         let key = format!("{}-{}-{}", prefix, pkey, counter);
-        conn.execute("UPDATE tasks SET task_key=?1 WHERE id=?2", rusqlite::params![key, tid]).ok();
+        conn.execute(
+            "UPDATE tasks SET task_key=?1 WHERE id=?2",
+            rusqlite::params![key, tid],
+        )
+        .ok();
     }
 
     for (pid, counter) in &counters {
-        conn.execute("UPDATE projects SET task_counter=?1 WHERE id=?2", rusqlite::params![counter, pid]).ok();
+        conn.execute(
+            "UPDATE projects SET task_counter=?1 WHERE id=?2",
+            rusqlite::params![counter, pid],
+        )
+        .ok();
     }
 }
 
-pub use get_type_prefix as type_prefix;
 pub use generate_project_key as project_key_from_slug;
+pub use get_type_prefix as type_prefix;

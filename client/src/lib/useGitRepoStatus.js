@@ -32,6 +32,7 @@ export function useGitRepoStatus(path, { debounceMs = 350, enabled = true } = {}
               hasRemote: !!(res.has_remote ?? res.hasRemote),
               currentBranch: res.current_branch ?? res.currentBranch ?? null,
               pathExists: !!(res.path_exists ?? res.pathExists),
+              detectedProvider: res.detected_provider ?? res.detectedProvider ?? 'unknown',
             }
           : null;
         setStatus(normalized);

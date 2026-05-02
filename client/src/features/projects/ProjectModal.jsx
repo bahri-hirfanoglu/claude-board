@@ -92,6 +92,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
   const [autoTestModel, setAutoTestModel] = useState(project?.auto_test_model || '');
   const [circuitBreakerThreshold, setCircuitBreakerThreshold] = useState(project?.circuit_breaker_threshold || 0);
   const [requireApproval, setRequireApproval] = useState(!!project?.require_approval);
+  const [prProvider, setPrProvider] = useState(project?.pr_provider || 'auto');
   const [githubRepo, setGithubRepo] = useState(project?.github_repo || '');
   const [githubSyncEnabled, setGithubSyncEnabled] = useState(!!project?.github_sync_enabled);
   const [githubValidating, setGithubValidating] = useState(false);
@@ -200,6 +201,7 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
         autoTestModel: autoTestModel || '',
         circuitBreakerThreshold: circuitBreakerThreshold || 0,
         requireApproval: !!requireApproval,
+        prProvider: prProvider || 'auto',
         githubRepo,
         githubSyncEnabled: githubSyncEnabled ? 1 : 0,
       });
@@ -530,6 +532,34 @@ export default function ProjectModal({ project, onSubmit, onClose }) {
                         activeColor="violet"
                       />
                     </div>
+
+                    {autoPr && !gitDisabled && (
+                      <Field label={t('projectModal.prProvider')} hint={t('projectModal.prProviderHint')}>
+                        <select
+                          value={prProvider}
+                          onChange={(e) => setPrProvider(e.target.value)}
+                          className="input-field"
+                        >
+                          <option value="auto">{t('projectModal.prProviderAuto')}</option>
+                          <option value="github">GitHub (gh CLI)</option>
+                          <option value="gitlab">GitLab (glab CLI)</option>
+                          <option value="azure_devops">Azure DevOps (az CLI)</option>
+                          <option value="gitea">Gitea / Forgejo (tea CLI)</option>
+                          <option value="none">{t('projectModal.prProviderNone')}</option>
+                        </select>
+                        {prProvider === 'auto' &&
+                          gitStatus?.detectedProvider &&
+                          gitStatus.detectedProvider !== 'unknown' && (
+                            <p className="text-[10px] text-emerald-400 mt-1">
+                              {t('projectModal.detectedProvider')}:{' '}
+                              <span className="font-medium">{gitStatus.detectedProvider}</span>
+                            </p>
+                          )}
+                        {prProvider === 'auto' && gitStatus?.detectedProvider === 'unknown' && gitStatus?.hasRemote && (
+                          <p className="text-[10px] text-amber-400 mt-1">{t('projectModal.providerNotDetected')}</p>
+                        )}
+                      </Field>
+                    )}
                   </Section>
 
                   {/* Auto Test */}

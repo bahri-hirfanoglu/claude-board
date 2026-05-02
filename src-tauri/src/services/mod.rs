@@ -1,8 +1,9 @@
-pub mod queue;
-pub mod webhook;
-pub mod http_api;
-pub mod notification;
 pub mod github;
 pub mod github_sync;
-pub mod scanner;
 pub mod gsd;
+pub mod http_api;
+pub mod notification;
+pub mod pr_providers;
+pub mod queue;
+pub mod scanner;
+pub mod webhook;

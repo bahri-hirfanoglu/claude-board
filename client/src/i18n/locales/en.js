@@ -223,6 +223,14 @@ export default {
   'projectModal.autoPushDesc': 'Push branches to remote automatically',
   'projectModal.autoPR': 'Auto PR',
   'projectModal.autoPRDesc': 'Create pull request on completion',
+  'projectModal.prProvider': 'PR Provider',
+  'projectModal.prProviderHint':
+    'Which CLI Auto-PR uses. Auto-detect reads the origin URL; pick a specific provider for self-hosted GitLab / Gitea instances.',
+  'projectModal.prProviderAuto': 'Auto-detect',
+  'projectModal.prProviderNone': 'Disabled (no Auto-PR)',
+  'projectModal.detectedProvider': 'Detected',
+  'projectModal.providerNotDetected':
+    'Could not auto-detect provider from origin URL. Pick one explicitly to enable Auto-PR.',
   'projectModal.notGitRepoWarning':
     'This folder is not a git repository. Auto-branch, Auto-push, and Auto-PR are unavailable until git is initialized.',
   'projectModal.gitInit': 'Initialize git here',

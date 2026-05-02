@@ -1,7 +1,7 @@
+use super::schema::project_key_from_slug;
+use super::DbPool;
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
-use super::DbPool;
-use super::schema::project_key_from_slug;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
@@ -36,6 +36,7 @@ pub struct Project {
     pub consecutive_failures: Option<i64>,
     pub require_approval: Option<i64>,
     pub gsd_enabled: Option<i64>,
+    pub pr_provider: Option<String>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
@@ -87,6 +88,7 @@ fn row_to_project(row: &rusqlite::Row) -> rusqlite::Result<Project> {
         consecutive_failures: row.get("consecutive_failures").ok().flatten(),
         require_approval: row.get("require_approval").ok().flatten(),
         gsd_enabled: row.get("gsd_enabled").ok().flatten(),
+        pr_provider: row.get("pr_provider").ok().flatten(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -96,11 +98,17 @@ pub fn get_all(db: &DbPool) -> Vec<Project> {
     let conn = db.lock();
     let mut stmt = match conn.prepare("SELECT * FROM projects ORDER BY name") {
         Ok(s) => s,
-        Err(e) => { log::error!("get_all: {}", e); return vec![]; }
+        Err(e) => {
+            log::error!("get_all: {}", e);
+            return vec![];
+        }
     };
     let result = match stmt.query_map([], row_to_project) {
         Ok(rows) => rows.flatten().collect(),
-        Err(e) => { log::error!("get_all: {}", e); vec![] }
+        Err(e) => {
+            log::error!("get_all: {}", e);
+            vec![]
+        }
     };
     result
 }
@@ -109,28 +117,36 @@ pub fn get_by_id(db: &DbPool, id: i64) -> Option<Project> {
     let conn = db.lock();
     let mut stmt = match conn.prepare("SELECT * FROM projects WHERE id=?1") {
         Ok(s) => s,
-        Err(e) => { log::error!("get_by_id: {}", e); return None; }
+        Err(e) => {
+            log::error!("get_by_id: {}", e);
+            return None;
+        }
     };
-    stmt.query_row(params![id], row_to_project)
-        .ok()
+    stmt.query_row(params![id], row_to_project).ok()
 }
 
 pub fn get_by_slug(db: &DbPool, slug: &str) -> Option<Project> {
     let conn = db.lock();
     let mut stmt = match conn.prepare("SELECT * FROM projects WHERE slug=?1") {
         Ok(s) => s,
-        Err(e) => { log::error!("get_by_slug: {}", e); return None; }
+        Err(e) => {
+            log::error!("get_by_slug: {}", e);
+            return None;
+        }
     };
-    stmt.query_row(params![slug], row_to_project)
-        .ok()
+    stmt.query_row(params![slug], row_to_project).ok()
 }
 
 #[allow(clippy::too_many_arguments)]
 pub fn create(
     db: &DbPool,
-    name: &str, slug: &str, working_dir: &str,
-    icon: Option<&str>, icon_seed: Option<&str>,
-    permission_mode: Option<&str>, allowed_tools: Option<&str>,
+    name: &str,
+    slug: &str,
+    working_dir: &str,
+    icon: Option<&str>,
+    icon_seed: Option<&str>,
+    permission_mode: Option<&str>,
+    allowed_tools: Option<&str>,
 ) -> i64 {
     let conn = db.lock();
     let project_key = project_key_from_slug(slug);
@@ -153,10 +169,15 @@ pub fn create(
 
 #[allow(clippy::too_many_arguments)]
 pub fn update(
-    db: &DbPool, id: i64,
-    name: &str, slug: &str, working_dir: &str,
-    icon: Option<&str>, icon_seed: Option<&str>,
-    permission_mode: Option<&str>, allowed_tools: Option<&str>,
+    db: &DbPool,
+    id: i64,
+    name: &str,
+    slug: &str,
+    working_dir: &str,
+    icon: Option<&str>,
+    icon_seed: Option<&str>,
+    permission_mode: Option<&str>,
+    allowed_tools: Option<&str>,
 ) {
     let conn = db.lock();
     if let Err(e) = conn.execute(
@@ -180,7 +201,14 @@ pub fn update_queue(db: &DbPool, id: i64, auto_queue: bool, max_concurrent: i64)
     ) { log::error!("update_queue: {}", e); }
 }
 
-pub fn update_git_settings(db: &DbPool, id: i64, auto_branch: bool, auto_pr: bool, auto_push: bool, pr_base_branch: &str) {
+pub fn update_git_settings(
+    db: &DbPool,
+    id: i64,
+    auto_branch: bool,
+    auto_pr: bool,
+    auto_push: bool,
+    pr_base_branch: &str,
+) {
     let conn = db.lock();
     if let Err(e) = conn.execute(
         "UPDATE projects SET auto_branch=?1,auto_pr=?2,auto_push=?3,pr_base_branch=?4,updated_at=datetime('now','localtime') WHERE id=?5",
@@ -201,7 +229,9 @@ pub fn update_max_retries(db: &DbPool, id: i64, max_retries: i64) {
     if let Err(e) = conn.execute(
         "UPDATE projects SET max_retries=?1,updated_at=datetime('now','localtime') WHERE id=?2",
         params![max_retries, id],
-    ) { log::error!("update_max_retries: {}", e); }
+    ) {
+        log::error!("update_max_retries: {}", e);
+    }
 }
 
 pub fn update_timeout(db: &DbPool, id: i64, timeout_minutes: i64) {
@@ -220,7 +250,14 @@ pub fn update_github_settings(db: &DbPool, id: i64, github_repo: &str, github_sy
     ) { log::error!("update_github_settings: {}", e); }
 }
 
-pub fn update_engine_settings(db: &DbPool, id: i64, max_auto_revisions: i64, retry_base_delay_secs: i64, retry_max_delay_secs: i64, auto_test_model: &str) {
+pub fn update_engine_settings(
+    db: &DbPool,
+    id: i64,
+    max_auto_revisions: i64,
+    retry_base_delay_secs: i64,
+    retry_max_delay_secs: i64,
+    auto_test_model: &str,
+) {
     let conn = db.lock();
     if let Err(e) = conn.execute(
         "UPDATE projects SET max_auto_revisions=?1,retry_base_delay_secs=?2,retry_max_delay_secs=?3,auto_test_model=?4,updated_at=datetime('now','localtime') WHERE id=?5",
@@ -242,7 +279,12 @@ pub fn increment_consecutive_failures(db: &DbPool, id: i64) -> i64 {
         "UPDATE projects SET consecutive_failures=consecutive_failures+1,updated_at=datetime('now','localtime') WHERE id=?1",
         params![id],
     ).ok();
-    conn.query_row("SELECT consecutive_failures FROM projects WHERE id=?1", params![id], |r| r.get(0)).unwrap_or(0)
+    conn.query_row(
+        "SELECT consecutive_failures FROM projects WHERE id=?1",
+        params![id],
+        |r| r.get(0),
+    )
+    .unwrap_or(0)
 }
 
 pub fn reset_consecutive_failures(db: &DbPool, id: i64) {
@@ -269,6 +311,15 @@ pub fn deactivate_circuit_breaker(db: &DbPool, id: i64) {
     ).ok();
 }
 
+pub fn update_pr_provider(db: &DbPool, id: i64, provider: &str) {
+    let conn = db.lock();
+    conn.execute(
+        "UPDATE projects SET pr_provider=?1,updated_at=datetime('now','localtime') WHERE id=?2",
+        params![provider, id],
+    )
+    .ok();
+}
+
 pub fn update_approval_settings(db: &DbPool, id: i64, require_approval: bool) {
     let conn = db.lock();
     conn.execute(
@@ -279,7 +330,9 @@ pub fn update_approval_settings(db: &DbPool, id: i64, require_approval: bool) {
 
 pub fn delete(db: &DbPool, id: i64) {
     let conn = db.lock();
-    if let Err(e) = conn.execute("DELETE FROM projects WHERE id=?1", params![id]) { log::error!("delete: {}", e); }
+    if let Err(e) = conn.execute("DELETE FROM projects WHERE id=?1", params![id]) {
+        log::error!("delete: {}", e);
+    }
 }
 
 pub fn get_summary(db: &DbPool) -> Vec<ProjectSummary> {
@@ -313,7 +366,10 @@ pub fn get_summary(db: &DbPool) -> Vec<ProjectSummary> {
         })
     }) {
         Ok(rows) => rows.flatten().collect(),
-        Err(e) => { log::error!("get_summary: {}", e); vec![] }
+        Err(e) => {
+            log::error!("get_summary: {}", e);
+            vec![]
+        }
     };
     result
 }

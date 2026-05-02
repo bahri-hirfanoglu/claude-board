@@ -226,6 +226,14 @@ export default {
   'projectModal.autoPushDesc': 'Dalları otomatik olarak uzak depoya gönder',
   'projectModal.autoPR': 'Otomatik PR',
   'projectModal.autoPRDesc': 'Tamamlandığında pull request oluştur',
+  'projectModal.prProvider': 'PR Sağlayıcısı',
+  'projectModal.prProviderHint':
+    "Auto-PR'ın hangi CLI'yı kullanacağı. Otomatik tespit origin URL'ini okur; self-hosted GitLab / Gitea sunucuları için açıkça seçin.",
+  'projectModal.prProviderAuto': 'Otomatik tespit',
+  'projectModal.prProviderNone': 'Devre dışı (Auto-PR yok)',
+  'projectModal.detectedProvider': 'Algılanan',
+  'projectModal.providerNotDetected':
+    "Origin URL'inden sağlayıcı otomatik tespit edilemedi. Auto-PR'ı etkinleştirmek için açıkça seçin.",
   'projectModal.notGitRepoWarning':
     'Bu klasör bir git deposu değil. Git başlatılana kadar Otomatik Dal, Otomatik Push ve Otomatik PR kullanılamaz.',
   'projectModal.gitInit': 'Burada git başlat',
