@@ -15,15 +15,15 @@
     "@uiw/react-md-editor": "^4.1.1",
     "boring-avatars": "^2.0.4",
     "lucide-react": "^0.460.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "react-markdown": "^10.1.0",
     "socket.io-client": "^4.8.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.5.0",
