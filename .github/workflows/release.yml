@@ -43,7 +43,7 @@ jobs:
         run: cd client && npm ci
 
       - name: Build Tauri
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_BUNDLER_DMG_IGNORE_CI: false
