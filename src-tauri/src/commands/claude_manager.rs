@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use serde_json::Value;
 
 #[cfg(target_os = "windows")]
@@ -689,7 +689,7 @@ pub async fn get_suggestions() -> Result<Value, String> {
         }
 
         // Check git config
-        let mut git_cmd = Command::new("git");
+        let mut git_cmd = crate::child_env::command("git");
         git_cmd.args(["config", "user.name"])
             .stdout(Stdio::piped()).stderr(Stdio::null());
         #[cfg(target_os = "windows")]

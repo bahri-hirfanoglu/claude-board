@@ -7,7 +7,7 @@ use parking_lot::Mutex;
 use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, BufReader};
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use tauri::{AppHandle, Emitter};
 
 #[cfg(target_os = "windows")]
@@ -188,7 +188,7 @@ pub fn cleanup_all() {
 fn kill_process(pid: u32) {
     #[cfg(target_os = "windows")]
     {
-        if let Err(e) = Command::new("taskkill")
+        if let Err(e) = std::process::Command::new("taskkill")
             .args(["/pid", &pid.to_string(), "/T", "/F"])
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -253,7 +253,7 @@ fn ensure_task_worktree(
     }
 
     let git_hidden = |args: &[&str], dir: &str| -> std::io::Result<std::process::Output> {
-        let mut c = Command::new("git");
+        let mut c = crate::child_env::command("git");
         c.args(args)
             .current_dir(dir)
             .stdout(Stdio::piped())
@@ -390,7 +390,7 @@ fn cleanup_task_worktree(task_id: i64, working_dir: &str) {
     if let Some(wt) = wt_dir {
         let wt_path = Path::new(&wt);
         if wt_path.exists() {
-            let mut cmd = Command::new("git");
+            let mut cmd = crate::child_env::command("git");
             cmd.args(["worktree", "remove", "--force", &wt])
                 .current_dir(working_dir)
                 .stdout(Stdio::null())
@@ -405,7 +405,7 @@ fn cleanup_task_worktree(task_id: i64, working_dir: &str) {
             }
         }
         // Prune stale worktree references
-        let mut prune = Command::new("git");
+        let mut prune = crate::child_env::command("git");
         prune
             .args(["worktree", "prune"])
             .current_dir(working_dir)
@@ -426,7 +426,7 @@ pub fn get_task_worktree(task_id: i64) -> Option<String> {
 
 fn scan_git_info(working_dir: &str, task_id: i64, db: &DbPool) {
     let exec = |args: &[&str]| -> Option<String> {
-        let mut cmd = Command::new("git");
+        let mut cmd = crate::child_env::command("git");
         cmd.args(args)
             .current_dir(working_dir)
             .stdout(Stdio::piped())
@@ -505,7 +505,7 @@ pub fn cleanup_task_branch(task: &tasks::Task, working_dir: &str, project: &proj
     }
 
     let git = |args: &[&str]| {
-        let mut cmd = Command::new("git");
+        let mut cmd = crate::child_env::command("git");
         cmd.args(args)
             .current_dir(working_dir)
             .stdout(Stdio::null())
@@ -564,7 +564,7 @@ fn auto_create_pr(
 
     // Push branch (auto_pr implies push is needed for any provider).
     {
-        let mut push_cmd = Command::new("git");
+        let mut push_cmd = crate::child_env::command("git");
         push_cmd
             .args(["push", "-u", "origin", branch])
             .current_dir(working_dir)

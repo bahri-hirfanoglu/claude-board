@@ -1,4 +1,3 @@
-use std::process::Command;
 use tauri::{AppHandle, Emitter};
 use crate::db;
 use crate::services::github;
@@ -24,7 +23,7 @@ fn silent_cmd(program: &str, args: &[&str]) -> std::io::Result<std::process::Out
 /// Detect GitHub repo (owner/repo) from git remote in a working directory
 #[tauri::command]
 pub fn github_detect_repo(working_dir: String) -> Result<String, String> {
-    let mut cmd = Command::new("git");
+    let mut cmd = crate::child_env::command("git");
     cmd.args(["remote", "get-url", "origin"])
         .current_dir(&working_dir)
         .stdout(std::process::Stdio::piped())

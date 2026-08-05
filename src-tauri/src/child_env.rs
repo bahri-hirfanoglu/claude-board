@@ -24,6 +24,58 @@ fn home() -> Option<PathBuf> {
         .map(PathBuf::from)
 }
 
+/// Immediate subdirectories of `parent`, newest name last so callers can reverse
+/// for a highest-version-first ordering. Empty when `parent` does not exist.
+fn subdirs(parent: &Path) -> Vec<PathBuf> {
+    let mut out: Vec<PathBuf> = match std::fs::read_dir(parent) {
+        Ok(entries) => entries
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.is_dir())
+            .collect(),
+        Err(_) => return Vec::new(),
+    };
+    out.sort();
+    out
+}
+
+/// Node version managers install each version under its own directory and put the
+/// active one on `PATH` from a shell function, so the directory is only reachable
+/// after the shell's rc files run. These are the layouts to fall back on when the
+/// login shell cannot be consulted, newest version first.
+fn node_manager_dirs(home: &Path) -> Vec<PathBuf> {
+    let mut dirs = Vec::new();
+
+    for version in subdirs(&home.join(".nvm").join("versions").join("node"))
+        .into_iter()
+        .rev()
+    {
+        dirs.push(version.join("bin"));
+    }
+
+    for base in [
+        home.join(".fnm").join("node-versions"),
+        home.join("Library")
+            .join("Application Support")
+            .join("fnm")
+            .join("node-versions"),
+    ] {
+        for version in subdirs(&base).into_iter().rev() {
+            dirs.push(version.join("installation").join("bin"));
+        }
+    }
+
+    dirs.push(home.join(".asdf").join("shims"));
+    for version in subdirs(&home.join(".asdf").join("installs").join("nodejs"))
+        .into_iter()
+        .rev()
+    {
+        dirs.push(version.join("bin"));
+    }
+
+    dirs
+}
+
 /// Directories tools are commonly installed into, beyond the launchd default.
 /// Ordered by how likely they are to hold the binary the user actually runs.
 fn extra_dirs() -> Vec<PathBuf> {
@@ -31,14 +83,78 @@ fn extra_dirs() -> Vec<PathBuf> {
     if let Some(home) = home() {
         dirs.push(home.join(".local").join("bin")); // official Claude Code installer
         dirs.push(home.join(".bun").join("bin"));
-        dirs.push(home.join(".volta").join("bin"));
+        dirs.push(home.join(".volta").join("bin")); // volta shims
         dirs.push(home.join(".npm-global").join("bin"));
         dirs.push(home.join(".yarn").join("bin"));
         dirs.push(home.join("bin"));
+        dirs.extend(node_manager_dirs(&home));
     }
     dirs.push(PathBuf::from("/opt/homebrew/bin")); // Apple silicon Homebrew
     dirs.push(PathBuf::from("/usr/local/bin")); // Intel Homebrew, manual installs
     dirs
+}
+
+/// Markers that isolate the value from anything an interactive rc file prints.
+const PATH_OPEN: &str = "<<<CB_PATH:";
+const PATH_CLOSE: &str = ":CB_PATH>>>";
+
+/// `PATH` as the user's login shell reports it.
+///
+/// Version managers such as nvm are shell functions, so the directory holding the
+/// active Node lives on `PATH` only after the rc files run — asking the shell is
+/// the only way to learn which version is active. Runs interactively (`-i`)
+/// because zsh users typically initialise those managers in `.zshrc`.
+///
+/// Returns `None` rather than hanging: stdin is closed so an rc file cannot block
+/// on input, and the child is killed if it outlives the deadline.
+fn login_shell_path() -> Option<String> {
+    let shell = std::env::var("SHELL").ok()?;
+    if shell.is_empty() {
+        return None;
+    }
+
+    let script = format!("printf '{}%s{}' \"$PATH\"", PATH_OPEN, PATH_CLOSE);
+    let mut child = std::process::Command::new(&shell)
+        .args(["-ilc", &script])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .ok()?;
+
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) if std::time::Instant::now() < deadline => {
+                std::thread::sleep(std::time::Duration::from_millis(25));
+            }
+            Ok(None) => {
+                log::warn!("login shell did not report PATH within 5s; killing it");
+                child.kill().ok();
+                child.wait().ok();
+                return None;
+            }
+            Err(_) => return None,
+        }
+    }
+
+    let out = child.wait_with_output().ok()?;
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    extract_marked_path(&stdout).map(str::to_string)
+}
+
+/// The `PATH` between the markers, or `None` when the shell printed neither.
+fn extract_marked_path(output: &str) -> Option<&str> {
+    let start = output.find(PATH_OPEN)? + PATH_OPEN.len();
+    let rest = &output[start..];
+    let end = rest.find(PATH_CLOSE)?;
+    let value = &rest[..end];
+    if value.is_empty() {
+        None
+    } else {
+        Some(value)
+    }
 }
 
 /// The inherited `PATH` followed by any [`extra_dirs`] not already on it.
@@ -54,13 +170,27 @@ fn build_search_dirs() -> Vec<PathBuf> {
         .map(|p| std::env::split_paths(&p).collect::<Vec<_>>())
         .unwrap_or_default();
 
-    let mut dirs: Vec<PathBuf> = Vec::with_capacity(inherited.len());
-    for dir in inherited.into_iter().chain(extra_dirs()) {
+    let from_shell: Vec<PathBuf> = shell_path()
+        .map(|p| std::env::split_paths(p).collect())
+        .unwrap_or_default();
+
+    let mut dirs: Vec<PathBuf> = Vec::with_capacity(inherited.len() + from_shell.len());
+    for dir in inherited
+        .into_iter()
+        .chain(from_shell)
+        .chain(extra_dirs())
+    {
         if !dirs.contains(&dir) {
             dirs.push(dir);
         }
     }
     dirs
+}
+
+/// The login shell's `PATH`, probed once. `None` when the shell cannot be asked.
+fn shell_path() -> Option<&'static String> {
+    static SHELL_PATH: OnceLock<Option<String>> = OnceLock::new();
+    SHELL_PATH.get_or_init(login_shell_path).as_ref()
 }
 
 /// `PATH` to hand to child processes.
@@ -76,10 +206,15 @@ pub fn search_path() -> &'static str {
     })
 }
 
-/// First `dirs` entry containing an executable named `program`, honouring the
-/// platform's executable suffix.
+/// First `dirs` entry containing an executable named `program`, applying the
+/// platform's executable suffix unless the name already carries an extension —
+/// `npx.cmd` must not become `npx.cmd.exe`.
 fn find_program(program: &str, dirs: &[PathBuf]) -> Option<PathBuf> {
-    let filename = format!("{}{}", program, std::env::consts::EXE_SUFFIX);
+    let filename = if Path::new(program).extension().is_some() {
+        program.to_string()
+    } else {
+        format!("{}{}", program, std::env::consts::EXE_SUFFIX)
+    };
     dirs.iter()
         .map(|dir| dir.join(&filename))
         .find(|candidate| is_executable_file(candidate))
@@ -239,6 +374,89 @@ mod tests {
         assert_eq!(find_program("claude", std::slice::from_ref(&tmp)), None);
 
         std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn marked_path_is_extracted_from_noisy_shell_output() {
+        let noisy = format!(
+            "\u{1b}[1msome prompt\u{1b}[0m\nwarning: rc file chatter\n{}/usr/bin:/bin{}",
+            PATH_OPEN, PATH_CLOSE
+        );
+        assert_eq!(extract_marked_path(&noisy), Some("/usr/bin:/bin"));
+    }
+
+    #[test]
+    fn marked_path_is_none_when_absent_or_empty() {
+        assert_eq!(extract_marked_path("no markers here"), None);
+        assert_eq!(extract_marked_path(&format!("{}{}", PATH_OPEN, PATH_CLOSE)), None);
+        // An opening marker with no close is not a value.
+        assert_eq!(extract_marked_path(&format!("{}/usr/bin", PATH_OPEN)), None);
+    }
+
+    #[test]
+    fn find_program_does_not_append_a_suffix_to_a_name_that_has_one() {
+        let tmp = std::env::temp_dir().join(format!("cb-child-env-ext-{}", std::process::id()));
+        std::fs::create_dir_all(&tmp).unwrap();
+        let exe = tmp.join("npx.cmd");
+        std::fs::write(&exe, b"@echo off").unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&exe, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+
+        // Would look for npx.cmd.exe on Windows if the suffix were applied blindly.
+        assert_eq!(
+            find_program("npx.cmd", std::slice::from_ref(&tmp)),
+            Some(exe.clone())
+        );
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn node_manager_dirs_offer_nvm_versions_newest_first() {
+        let tmp = std::env::temp_dir().join(format!("cb-child-env-nvm-{}", std::process::id()));
+        let versions = tmp.join(".nvm").join("versions").join("node");
+        for v in ["v18.1.0", "v20.20.2"] {
+            std::fs::create_dir_all(versions.join(v).join("bin")).unwrap();
+        }
+
+        let dirs = node_manager_dirs(&tmp);
+        let nvm: Vec<&PathBuf> = dirs.iter().filter(|d| d.starts_with(&versions)).collect();
+        assert_eq!(nvm.len(), 2);
+        assert_eq!(nvm[0], &versions.join("v20.20.2").join("bin"), "newest first");
+
+        // asdf shims are offered even when no nodejs install directory exists.
+        assert!(dirs.contains(&tmp.join(".asdf").join("shims")));
+
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    /// Regression test for an installed build failing with "No such file or
+    /// directory": under launchd's PATH neither claude nor npx is reachable by
+    /// bare name. Run under a minimal environment to reproduce that case:
+    ///   env -i HOME=$HOME SHELL=$SHELL PATH=/usr/bin:/bin:/usr/sbin:/sbin <test-bin> --ignored
+    #[test]
+    #[ignore = "environment-dependent; run manually, including under a minimal PATH"]
+    fn tools_resolve_to_absolute_paths() {
+        for name in ["claude", "npx", "git"] {
+            let resolved = program(name);
+            assert_ne!(resolved, name, "{name} did not resolve to a path");
+            assert!(
+                Path::new(&resolved).is_absolute(),
+                "{name} resolved to {resolved}, which is not absolute"
+            );
+            eprintln!("{name} -> {resolved}");
+        }
+    }
+
+    #[test]
+    #[ignore = "spawns the user's login shell; run manually with --ignored"]
+    fn login_shell_reports_a_usable_path() {
+        let path = login_shell_path().expect("login shell reported no PATH");
+        assert!(path.contains(std::path::MAIN_SEPARATOR), "not a path list: {path}");
+        eprintln!("login shell PATH entries: {}", path.split(':').count());
     }
 
     #[test]

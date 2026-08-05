@@ -371,7 +371,7 @@ fn detect_namespace(working_dir: &str) -> String {
 }
 
 fn git_namespace(working_dir: &str) -> Option<String> {
-    let mut cmd = std::process::Command::new("git");
+    let mut cmd = crate::child_env::command("git");
     cmd.args(["remote", "get-url", "origin"])
         .current_dir(working_dir)
         .stdout(std::process::Stdio::piped())

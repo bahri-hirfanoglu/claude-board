@@ -1,6 +1,6 @@
 use serde::Serialize;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -20,7 +20,7 @@ pub struct GitRepoStatus {
 }
 
 fn git_output(args: &[&str], dir: &str) -> Option<std::process::Output> {
-    let mut c = Command::new("git");
+    let mut c = crate::child_env::command("git");
     c.args(args)
         .current_dir(dir)
         .stdout(Stdio::piped())

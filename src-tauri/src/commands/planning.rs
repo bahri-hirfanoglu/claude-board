@@ -335,7 +335,7 @@ pub fn cancel_planning(app: AppHandle, project_id: i64) -> Result<(), String> {
         .ok_or("No active planning session")?;
     #[cfg(target_os = "windows")]
     {
-        if let Err(e) = Command::new("taskkill")
+        if let Err(e) = std::process::Command::new("taskkill")
             .args(["/pid", &pid.to_string(), "/T", "/F"])
             .stdout(Stdio::null()).stderr(Stdio::null())
             .creation_flags(CREATE_NO_WINDOW)

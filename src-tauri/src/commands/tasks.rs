@@ -536,7 +536,7 @@ pub fn get_task_diff(taskId: i64) -> Result<serde_json::Value, String> {
     let working_dir = &project.working_dir;
 
     let exec = |args: &[&str]| -> Option<String> {
-        let mut cmd = std::process::Command::new("git");
+        let mut cmd = crate::child_env::command("git");
         cmd.args(args).current_dir(working_dir)
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::null());

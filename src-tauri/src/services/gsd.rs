@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use serde::{Serialize, Deserialize};
 
 #[cfg(target_os = "windows")]
@@ -338,7 +338,7 @@ pub fn install(working_dir: &str, scope: &str) -> Result<String, String> {
     };
 
     let npx = if cfg!(target_os = "windows") { "npx.cmd" } else { "npx" };
-    let mut cmd = Command::new(npx);
+    let mut cmd = crate::child_env::command(npx);
     cmd.args(["get-shit-done-cc@latest", "--claude", flag])
         .current_dir(working_dir)
         .stdout(Stdio::piped())
