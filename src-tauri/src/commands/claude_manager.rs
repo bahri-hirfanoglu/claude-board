@@ -12,7 +12,7 @@ fn strip_ansi(s: &str) -> String {
 }
 
 fn run_claude_sync(args: Vec<String>) -> Result<String, String> {
-    let mut cmd = Command::new("claude");
+    let mut cmd = crate::child_env::claude_command();
     cmd.args(&args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -585,7 +585,7 @@ pub async fn scan_codebase(
     })).ok();
 
     let result_text = tauri::async_runtime::spawn_blocking(move || {
-        let mut cmd = Command::new("claude");
+        let mut cmd = crate::child_env::claude_command();
         cmd.args(["-p", &prompt, "--output-format", "text", "--max-turns", max_turns, "--dangerously-skip-permissions"])
             .current_dir(&working_dir)
             .stdout(Stdio::piped())

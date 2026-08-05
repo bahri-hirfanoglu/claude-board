@@ -1490,7 +1490,7 @@ pub fn start(
     let task_key = task.task_key.clone();
 
     std::thread::spawn(move || {
-        let mut cmd = Command::new("claude");
+        let mut cmd = crate::child_env::claude_command();
         cmd.args(&args)
             .current_dir(&effective_dir)
             .stdout(Stdio::piped())
@@ -1707,7 +1707,7 @@ After all checks, you MUST output this exact JSON block as your final output:
     let task_key = task.task_key.clone();
 
     std::thread::spawn(move || {
-        let mut cmd = Command::new("claude");
+        let mut cmd = crate::child_env::claude_command();
         cmd.args(&args)
             .current_dir(&effective_dir)
             .stdout(Stdio::piped())

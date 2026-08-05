@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+mod child_env;
 mod claude;
 mod commands;
 mod config;

@@ -10,7 +10,9 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 /// Run a command silently (no visible terminal window on Windows)
 fn silent_cmd(program: &str, args: &[&str]) -> std::io::Result<std::process::Output> {
-    let mut cmd = Command::new(program);
+    // Resolved through child_env: an installed app inherits launchd's PATH and
+    // would not find gh outside /usr/bin.
+    let mut cmd = crate::child_env::command(program);
     cmd.args(args)
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());

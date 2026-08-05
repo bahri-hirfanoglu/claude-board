@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::process::Command;
 use tauri::Manager;
 
 use crate::{config, db, migration, services};
@@ -10,7 +9,9 @@ use std::os::windows::process::CommandExt;
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 fn silent_cmd(program: &str, args: &[&str]) -> Option<String> {
-    let mut cmd = Command::new(program);
+    // Resolved through child_env: an installed app inherits launchd's PATH and
+    // would not find claude, git or gh outside /usr/bin.
+    let mut cmd = crate::child_env::command(program);
     cmd.args(args)
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());

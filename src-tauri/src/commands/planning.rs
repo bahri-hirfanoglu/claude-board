@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use parking_lot::Mutex;
 use once_cell::sync::Lazy;
 use tauri::{AppHandle, Emitter};
@@ -51,8 +51,8 @@ pub fn start_planning(
     activity::add(&db, project_id, None, "plan_started", &format!("Planning started: {}", topic.trim()), None);
 
     std::thread::spawn(move || {
-        log::info!("Planning: spawning claude in {}", &working_dir);
-        let mut cmd = Command::new("claude");
+        log::info!("Planning: spawning claude in {}", working_dir);
+        let mut cmd = crate::child_env::claude_command();
         cmd.args(&args)
             .current_dir(&working_dir)
             .stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null());
@@ -84,7 +84,7 @@ pub fn start_planning(
             for line in reader.lines().map_while(Result::ok) {
                 let line = line.trim().to_string();
                 if line.is_empty() { continue; }
-                log::warn!("Planning stderr: {}", &line);
+                log::warn!("Planning stderr: {}", line);
                 app_err.emit("plan:log", &serde_json::json!({
                     "projectId": project_id, "planId": &pid_clone,
                     "type": "error", "message": line
