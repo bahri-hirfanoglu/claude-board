@@ -1,3 +1,4 @@
+pub mod app;
 pub mod projects;
 pub mod tasks;
 pub mod stats;

@@ -260,7 +260,11 @@ function AppInner() {
               <span>v{updateInfo.version} is ready. Restart to update.</span>
               <button
                 onClick={() => {
-                  window.__TAURI_INTERNALS__?.invoke('plugin:process|restart').catch(() => window.location.reload());
+                  // `restart_app` is our own command; `plugin:process|restart`
+                  // needs tauri-plugin-process, which this app does not bundle,
+                  // so it always failed and only reloaded the webview — leaving
+                  // the downloaded update unapplied.
+                  window.__TAURI_INTERNALS__?.invoke('restart_app').catch(() => window.location.reload());
                 }}
                 className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded text-xs"
               >

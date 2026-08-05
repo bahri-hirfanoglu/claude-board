@@ -48,7 +48,24 @@ fn build_macos_menu(app: &tauri::App) -> Result<Menu<tauri::Wry>, Box<dyn std::e
         .item(&MenuItemBuilder::new("Full Screen").accelerator("Ctrl+Cmd+F").id("fullscreen").build(app)?)
         .build()?;
 
-    Ok(Menu::with_items(app, &[&app_menu, &edit_menu, &window_menu])?)
+    // The real update banner needs a published release to appear, so a debug
+    // build gets a menu item that fakes the `update:ready` event and exercises
+    // the banner and the restart command. Compiled out of release builds.
+    #[cfg(debug_assertions)]
+    let debug_menu = SubmenuBuilder::new(app, "Debug")
+        .item(
+            &MenuItemBuilder::new("Simulate Update Ready")
+                .id("simulate_update")
+                .build(app)?,
+        )
+        .build()?;
+
+    #[cfg(debug_assertions)]
+    let menu = Menu::with_items(app, &[&app_menu, &edit_menu, &window_menu, &debug_menu])?;
+    #[cfg(not(debug_assertions))]
+    let menu = Menu::with_items(app, &[&app_menu, &edit_menu, &window_menu])?;
+
+    Ok(menu)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -416,6 +433,7 @@ pub fn run() {
             commands::gsd::gsd_parse_phase_plans,
             commands::gsd::gsd_create_tasks_from_plans,
             // Logs (for bug reports)
+            commands::app::restart_app,
             commands::logs::get_logs_dir,
             commands::logs::open_logs_dir,
             // Git utilities
@@ -431,6 +449,17 @@ pub fn run() {
             match event.id().as_ref() {
                 "preferences" => {
                     app.emit("menu:preferences", ()).ok();
+                }
+                #[cfg(debug_assertions)]
+                "simulate_update" => {
+                    // Same shape the updater emits, so the banner and its
+                    // "Restart Now" button take the real code path.
+                    log::info!("Simulating update:ready");
+                    app.emit(
+                        "update:ready",
+                        serde_json::json!({ "version": "0.0.0-simulated", "status": "ready" }),
+                    )
+                    .ok();
                 }
                 "fullscreen" => {
                     if let Some(w) = app.get_webview_window("main") {

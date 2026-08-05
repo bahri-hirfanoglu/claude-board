@@ -34,58 +34,69 @@ let suggestionsCache = null;
 let suggestionsLoaded = false;
 
 function DashHeader({ t, dashTab, setDashTab, onNewProject, onOpenSettings }) {
+  // Drag regions are "deep" rather than bare: a bare data-tauri-drag-region only
+  // drags when the mousedown target is the element itself, which almost never
+  // happens in a header full of children. Buttons still block the drag.
+  //
+  // The strip is separate because the scroll container's own `py-8` owns the top
+  // 32px of the window — the band the macOS traffic lights sit in — so this
+  // header starts below them and cannot cover that band itself. Nothing else is
+  // clickable up there, so an overlay is safe.
   return (
-    <div
-      data-tauri-drag-region
-      className={`flex items-center justify-between gap-4 mb-8 ${IS_TAURI && IS_MACOS ? 'pt-3' : ''}`}
-    >
-      <div className="min-w-0">
-        <div className="flex items-center gap-3 mb-1">
-          <span className="text-claude text-2xl flex-shrink-0">&#10022;</span>
-          <h1 className="text-xl font-bold tracking-tight">{t('dashboard.title')}</h1>
-        </div>
-        <div className="flex items-center gap-1 mt-2">
-          <button
-            onClick={() => setDashTab('projects')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dashTab === 'projects' ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'}`}
-          >
-            <Layers size={12} className="inline mr-1.5 -mt-0.5" />
-            {t('dashboard.projects')}
-          </button>
-          {IS_TAURI && (
+    <>
+      {IS_TAURI && IS_MACOS && <div data-tauri-drag-region="deep" className="fixed top-0 left-0 right-0 h-8 z-30" />}
+      <div
+        data-tauri-drag-region="deep"
+        className={`flex items-center justify-between gap-4 mb-8 ${IS_TAURI && IS_MACOS ? 'pt-3' : ''}`}
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-claude text-2xl flex-shrink-0">&#10022;</span>
+            <h1 className="text-xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+          </div>
+          <div className="flex items-center gap-1 mt-2">
             <button
-              onClick={() => setDashTab('claude-manager')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dashTab === 'claude-manager' ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'}`}
+              onClick={() => setDashTab('projects')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dashTab === 'projects' ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'}`}
             >
-              <Bot size={12} className="inline mr-1.5 -mt-0.5" />
-              {t('cm.title')}
+              <Layers size={12} className="inline mr-1.5 -mt-0.5" />
+              {t('dashboard.projects')}
+            </button>
+            {IS_TAURI && (
+              <button
+                onClick={() => setDashTab('claude-manager')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${dashTab === 'claude-manager' ? 'bg-claude/15 text-claude' : 'text-surface-500 hover:text-surface-300 hover:bg-surface-800/50'}`}
+              >
+                <Bot size={12} className="inline mr-1.5 -mt-0.5" />
+                {t('cm.title')}
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <span className="text-[10px] text-surface-600 font-mono">v{__APP_VERSION__}</span>
+          <LanguageSelector />
+          {onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              className="p-2 rounded-lg text-surface-400 hover:text-claude hover:bg-surface-800/60 transition-colors"
+              title={t('settings.title')}
+            >
+              <Settings size={16} />
+            </button>
+          )}
+          {dashTab === 'projects' && (
+            <button
+              onClick={onNewProject}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex-shrink-0 whitespace-nowrap"
+            >
+              <Plus size={15} />
+              {t('dashboard.newProject')}
             </button>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <span className="text-[10px] text-surface-600 font-mono">v{__APP_VERSION__}</span>
-        <LanguageSelector />
-        {onOpenSettings && (
-          <button
-            onClick={onOpenSettings}
-            className="p-2 rounded-lg text-surface-400 hover:text-claude hover:bg-surface-800/60 transition-colors"
-            title={t('settings.title')}
-          >
-            <Settings size={16} />
-          </button>
-        )}
-        {dashTab === 'projects' && (
-          <button
-            onClick={onNewProject}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-claude hover:bg-claude-light text-sm font-medium transition-colors flex-shrink-0 whitespace-nowrap"
-          >
-            <Plus size={15} />
-            {t('dashboard.newProject')}
-          </button>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 

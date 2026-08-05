@@ -136,9 +136,13 @@ export default function Header({
 
   const otherProjects = projects.filter((p) => p.id !== currentProject.id);
 
+  // The drag region is "deep" rather than bare: a bare data-tauri-drag-region
+  // only drags when the mousedown target is the element itself, which almost
+  // never happens in a header full of children. Buttons and inputs still block
+  // the drag, so their clicks keep working.
   return (
     <header
-      data-tauri-drag-region
+      data-tauri-drag-region="deep"
       className={`flex items-center justify-between py-2 sm:py-3 bg-surface-900 border-b border-surface-700/50 gap-2 ${
         IS_TAURI && IS_MACOS ? 'pl-[78px] pr-3 sm:pr-6' : 'px-3 sm:px-6'
       }`}
