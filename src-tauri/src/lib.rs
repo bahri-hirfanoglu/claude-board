@@ -102,6 +102,13 @@ pub fn run() {
                 // Recover orphaned tasks and start auto-queue
                 services::queue::startup_recovery(app.handle());
 
+                // Refresh the model catalog in the background. Blocking HTTP on a
+                // dedicated thread keeps the splash screen and the model dropdown
+                // off the network path entirely.
+                std::thread::spawn(|| {
+                    services::model_catalog::sync_if_stale(&db::get_db());
+                });
+
                 let port = cfg.port;
                 tauri::async_runtime::spawn(async move {
                     services::http_api::start_server(port).await;
@@ -427,6 +434,8 @@ pub fn run() {
             commands::models::update_custom_model,
             commands::models::delete_model,
             commands::models::reset_model,
+            commands::models::refresh_models,
+            commands::models::models_synced_at,
         ])
         .on_menu_event(|app, event| {
             match event.id().as_ref() {

@@ -6,6 +6,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::db::DbPool;
+
 /// A model entry the UI can render.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ModelEntry {
@@ -193,11 +195,73 @@ pub fn derive_models(body: &str) -> Vec<ModelEntry> {
     out
 }
 
+const UPSTREAM_URL: &str = "https://models.dev/api.json";
+const SYNC_TTL_HOURS: i64 = 24;
+
+/// Fetches the upstream payload. Split out so tests drive `sync_with` directly
+/// and never touch the network.
+pub fn fetch_upstream() -> Result<String, String> {
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| format!("client build: {}", e))?;
+    let res = client
+        .get(UPSTREAM_URL)
+        .send()
+        .map_err(|e| format!("fetch {}: {}", UPSTREAM_URL, e))?;
+    if !res.status().is_success() {
+        return Err(format!("fetch {}: HTTP {}", UPSTREAM_URL, res.status()));
+    }
+    res.text().map_err(|e| format!("read body: {}", e))
+}
+
+/// Derives the catalog from `fetch` and swaps it into the cache. Returns the row
+/// count written. A failed fetch or an unreadable payload leaves the previous
+/// cache untouched, so being offline degrades to stale data rather than none.
+pub fn sync_with<F>(db: &DbPool, fetch: F) -> Result<usize, String>
+where
+    F: FnOnce() -> Result<String, String>,
+{
+    let body = fetch()?;
+    let rows = derive_models(&body);
+    if rows.is_empty() {
+        return Err("upstream payload yielded no models".into());
+    }
+    crate::db::model_catalog::replace_upstream(db, &rows)?;
+    Ok(rows.len())
+}
+
+/// Syncs only when the cache is missing or older than the TTL. Errors are logged
+/// and swallowed — a background refresh must never surface as a user-facing failure.
+pub fn sync_if_stale(db: &DbPool) {
+    if let Some(ts) = crate::db::model_catalog::synced_at(db) {
+        let fresh = crate::db::model_catalog::hours_since(db, &ts)
+            .map(|h| h < SYNC_TTL_HOURS)
+            .unwrap_or(false);
+        if fresh {
+            log::debug!("model catalog is fresh (synced {}), skipping sync", ts);
+            return;
+        }
+    }
+    match sync_with(db, fetch_upstream) {
+        Ok(n) => log::info!("model catalog synced: {} entries", n),
+        Err(e) => log::warn!("model catalog sync failed, keeping cache: {}", e),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use parking_lot::Mutex;
+    use std::sync::Arc;
 
     const FIXTURE: &str = include_str!("testdata/models_dev_anthropic.json");
+
+    fn pool() -> DbPool {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        crate::db::schema::create_tables(&conn);
+        Arc::new(Mutex::new(conn))
+    }
 
     fn find<'a>(rows: &'a [ModelEntry], value: &str) -> Option<&'a ModelEntry> {
         rows.iter().find(|r| r.value == value)
@@ -287,5 +351,46 @@ mod tests {
         let rows = derive_models(body);
         assert!(rows.iter().any(|r| r.value == "good"));
         assert!(!rows.iter().any(|r| r.value == "no_cost"));
+    }
+
+    #[test]
+    fn sync_writes_the_derived_catalog() {
+        let db = pool();
+        let n = sync_with(&db, || Ok(FIXTURE.to_string())).unwrap();
+        assert!(n > 10, "expected a full catalog, got {}", n);
+        let stored = crate::db::model_catalog::list_upstream(&db);
+        assert_eq!(stored.len(), n);
+        assert!(stored.iter().any(|r| r.value == "opus"));
+        assert!(crate::db::model_catalog::synced_at(&db).is_some());
+    }
+
+    #[test]
+    fn sync_keeps_the_previous_cache_when_the_fetch_fails() {
+        let db = pool();
+        sync_with(&db, || Ok(FIXTURE.to_string())).unwrap();
+        let before = crate::db::model_catalog::list_upstream(&db).len();
+
+        let err = sync_with(&db, || Err("offline".to_string())).unwrap_err();
+        assert!(err.contains("offline"));
+        assert_eq!(crate::db::model_catalog::list_upstream(&db).len(), before);
+    }
+
+    #[test]
+    fn sync_keeps_the_previous_cache_when_the_payload_is_garbage() {
+        let db = pool();
+        sync_with(&db, || Ok(FIXTURE.to_string())).unwrap();
+        let before = crate::db::model_catalog::list_upstream(&db).len();
+
+        assert!(sync_with(&db, || Ok("<html>503</html>".to_string())).is_err());
+        assert_eq!(crate::db::model_catalog::list_upstream(&db).len(), before);
+    }
+
+    #[test]
+    #[ignore = "hits the network; run manually with --ignored"]
+    fn live_upstream_fetch_succeeds() {
+        let body = fetch_upstream().expect("live fetch failed");
+        let rows = derive_models(&body);
+        assert!(rows.iter().any(|r| r.value == "opus"), "no opus alias in live payload");
+        assert!(rows.len() > 10, "live payload yielded only {} rows", rows.len());
     }
 }

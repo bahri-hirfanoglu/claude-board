@@ -23,7 +23,7 @@ rusqlite = { version = "0.40", features = ["bundled"] }
 tokio = { version = "1", features = ["full"] }
 axum = "0.8"
 tower-http = { version = "0.7", features = ["cors"] }
-reqwest = { version = "0.12", features = ["json", "blocking"] }
+reqwest = { version = "0.12", features = ["json", "blocking", "gzip"] }
 sha2 = "0.11"
 hex = "0.4"
 rand = "0.8"

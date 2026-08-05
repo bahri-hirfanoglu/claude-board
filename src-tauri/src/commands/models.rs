@@ -179,6 +179,18 @@ pub fn reset_model(model_id: String) -> Result<(), String> {
     db::model_catalog::remove_tombstone(&db, model_id)
 }
 
+/// Forces a sync now, ignoring the TTL. Backs the Refresh button in Settings.
+#[tauri::command]
+pub fn refresh_models() -> Result<usize, String> {
+    let db = db::get_db();
+    crate::services::model_catalog::sync_with(&db, crate::services::model_catalog::fetch_upstream)
+}
+
+#[tauri::command]
+pub fn models_synced_at() -> Option<String> {
+    db::model_catalog::synced_at(&db::get_db())
+}
+
 #[cfg(test)]
 mod merge_tests {
     use super::*;
