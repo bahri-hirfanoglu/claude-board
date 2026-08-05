@@ -206,7 +206,10 @@ export default function OnboardingTour({ active, onComplete, hasProject }) {
   const [dir, setDir] = useState(1); // 1=forward, -1=back (for animation direction)
   const [animKey, setAnimKey] = useState(0);
 
-  const steps = getSteps(t, hasProject);
+  // Memoized so `cur` keeps a stable identity across renders — the positioning
+  // effect below depends on it, and a fresh object each render would make that
+  // effect re-run after every state update it causes.
+  const steps = useMemo(() => getSteps(t, hasProject), [t, hasProject]);
   const cur = steps[step];
 
   useEffect(() => {
