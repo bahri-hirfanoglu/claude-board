@@ -808,6 +808,7 @@ export default {
   'cm.agents.desc':
     'Ajanlar \u00f6zel ara\u00e7lara ve yeteneklere sahip uzmanla\u015fm\u0131\u015f Claude \u00f6rnekleridir.',
   'cm.agents.user': 'Kullan\u0131c\u0131 Ajanlar\u0131',
+  'cm.agents.builtin': 'Dahili Ajanlar',
   'cm.agents.plugin': 'Eklenti Ajanları',
   'cm.agents.empty': 'Yap\u0131land\u0131r\u0131lm\u0131\u015f ajan yok',
   // Hooks

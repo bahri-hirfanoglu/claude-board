@@ -305,18 +305,79 @@ pub async fn save_claude_settings(settings: Value) -> Result<(), String> {
 }
 
 // ─── Agents ───
-/// Agent definitions discovered on disk, from `~/.claude/agents` and the
-/// `agents/` directory of each installed plugin.
+/// Agents compiled into the CLI, which exist in no file on disk.
+///
+/// This list is maintained by hand because the CLI exposes no way to enumerate
+/// them: `claude agents` is the background-agent TUI and requires a TTY, and its
+/// `--json` mode returns running sessions (pid/cwd/status), not definitions. The
+/// names and descriptions here are taken from the agent registry inside the
+/// `claude` binary. Expect to revisit this when the CLI gains or renames a
+/// built-in agent.
+///
+/// Tuple shape: `(name, model, description)`.
+fn builtin_agent_defs() -> [(&'static str, &'static str, &'static str); 6] {
+    [
+        (
+            "general-purpose",
+            "inherit",
+            "General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks.",
+        ),
+        (
+            "Explore",
+            "inherit",
+            "Read-only search agent for broad fan-out searches across many files, directories, and naming conventions.",
+        ),
+        (
+            "Plan",
+            "inherit",
+            "Software architect agent for designing implementation plans, identifying critical files, and weighing architectural trade-offs.",
+        ),
+        (
+            "claude",
+            "inherit",
+            "Catch-all for any task that does not fit a more specific agent.",
+        ),
+        (
+            "claude-code-guide",
+            "sonnet",
+            "Answers questions about Claude Code, the Agent SDK, the Claude API, and Claude in Slack.",
+        ),
+        (
+            "statusline-setup",
+            "sonnet",
+            "Configures the user's Claude Code status line setting.",
+        ),
+    ]
+}
+
+fn builtin_agents(out: &mut Vec<Value>) {
+    for (name, model, description) in builtin_agent_defs() {
+        out.push(serde_json::json!({
+            "name": name,
+            "model": model,
+            "description": description,
+            "tools": "",
+            "type": "builtin",
+            "source": Value::Null,
+            "path": Value::Null,
+        }));
+    }
+}
+
+/// Every agent definition available to the CLI: the built-ins compiled into it,
+/// plus what is on disk in `~/.claude/agents` and the `agents/` directory of each
+/// installed plugin.
 ///
 /// The CLI has no non-interactive listing for definitions — `claude agents` is
 /// the background-agent TUI and requires a TTY, and its `--json` mode reports
-/// running sessions rather than definitions — so these are read directly.
-/// Agents built into the CLI live in no file and are therefore not listed.
+/// running sessions rather than definitions — so the on-disk ones are read
+/// directly and the built-ins come from `builtin_agent_defs`.
 #[tauri::command]
 pub async fn list_agents() -> Result<Value, String> {
     tauri::async_runtime::spawn_blocking(|| {
         let home = dirs_home();
         let mut agents = Vec::new();
+        builtin_agents(&mut agents);
         scan_agent_dir(&home.join(".claude").join("agents"), "user", None, &mut agents);
         for (plugin, path) in installed_plugin_paths(&home) {
             scan_agent_dir(&path.join("agents"), "plugin", Some(&plugin), &mut agents);
@@ -1077,6 +1138,38 @@ mod tests {
     fn installed_plugin_paths_tolerates_missing_manifest() {
         let home = std::env::temp_dir().join("claude_board_no_manifest_test");
         assert!(installed_plugin_paths(&home).is_empty());
+    }
+
+    #[test]
+    fn builtin_agents_are_listed_with_the_builtin_type() {
+        let mut out = Vec::new();
+        builtin_agents(&mut out);
+
+        assert_eq!(out.len(), builtin_agent_defs().len());
+        for agent in &out {
+            assert_eq!(agent["type"], "builtin");
+            // Built-ins live in no file, so the fields that describe a location
+            // stay null rather than pointing at something that does not exist.
+            assert!(agent["source"].is_null(), "{} carried a source", agent["name"]);
+            assert!(agent["path"].is_null(), "{} carried a path", agent["name"]);
+            assert!(!agent["name"].as_str().unwrap_or_default().is_empty());
+            assert!(!agent["description"].as_str().unwrap_or_default().is_empty());
+            assert!(!agent["model"].as_str().unwrap_or_default().is_empty());
+        }
+
+        let names: Vec<&str> = out.iter().map(|a| a["name"].as_str().unwrap()).collect();
+        for expected in ["general-purpose", "Explore", "Plan", "statusline-setup"] {
+            assert!(names.contains(&expected), "{} missing from the built-in list", expected);
+        }
+    }
+
+    #[test]
+    fn builtin_agents_have_no_duplicate_names() {
+        let mut names: Vec<&str> = builtin_agent_defs().iter().map(|(n, _, _)| *n).collect();
+        names.sort_unstable();
+        let before = names.len();
+        names.dedup();
+        assert_eq!(names.len(), before, "duplicate name in the built-in list");
     }
 
     #[test]
