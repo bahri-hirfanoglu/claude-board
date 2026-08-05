@@ -1,18 +1,28 @@
 //! Environment for spawned child processes.
 //!
-//! A GUI app launched from Finder or the Dock inherits launchd's `PATH`, which is
-//! `/usr/bin:/bin:/usr/sbin:/sbin` unless the user has run `launchctl setenv`.
-//! Tools installed under `~/.local/bin` — where the official Claude Code
+//! On macOS a GUI app launched from Finder or the Dock inherits launchd's `PATH`,
+//! which is `/usr/bin:/bin:/usr/sbin:/sbin` unless the user has run
+//! `launchctl setenv`. Tools under `~/.local/bin` — where the official Claude Code
 //! installer puts `claude` — or under Homebrew are therefore invisible, and
-//! spawning `claude` fails with "No such file or directory (os error 2)".
+//! spawning them fails with "No such file or directory (os error 2)". Running
+//! under `tauri dev` hides this entirely, because that process starts from a
+//! terminal and inherits the shell's `PATH`, so the bug appears only in an
+//! installed build with identical configuration.
 //!
-//! Running under `tauri dev` hides this entirely, because that process is started
-//! from a terminal and inherits the shell's `PATH`. The bug only appears in an
-//! installed build, with identical configuration.
+//! Rather than trusting the inherited `PATH`, child processes get one extended
+//! with the login shell's `PATH` and the usual install locations, and programs are
+//! resolved to an absolute path whenever one can be found.
 //!
-//! So rather than trusting the inherited `PATH`, child processes get one extended
-//! with the usual install locations, and `claude` is resolved to an absolute path
-//! whenever it can be found.
+//! Platform differences this handles:
+//!
+//! - **Windows** inherits the user and system `PATH` from the registry, so the
+//!   shell probe is skipped. Executable extensions come from `PATHEXT`, which
+//!   matters because npm ships `npx.cmd` rather than `npx.exe`.
+//! - **Unix** carries an executable bit, so a readable-but-not-executable file is
+//!   not a match.
+//! - **Node version managers** put only the active version's directory on `PATH`,
+//!   from a shell function, so that directory cannot be named ahead of time. The
+//!   shell probe covers it; enumerating nvm, fnm and asdf layouts is the fallback.
 
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
@@ -107,7 +117,16 @@ const PATH_CLOSE: &str = ":CB_PATH>>>";
 ///
 /// Returns `None` rather than hanging: stdin is closed so an rc file cannot block
 /// on input, and the child is killed if it outlives the deadline.
+///
+/// Windows is skipped. A GUI process there inherits the user and system `PATH`
+/// from the registry, so nothing is missing from the inherited value, and `-ilc`
+/// is POSIX shell syntax — a `SHELL` pointing at Git Bash would report MSYS paths
+/// like `/c/Users/...` that `Command` cannot use.
 fn login_shell_path() -> Option<String> {
+    if cfg!(windows) {
+        return None;
+    }
+
     let shell = std::env::var("SHELL").ok()?;
     if shell.is_empty() {
         return None;
@@ -206,17 +225,40 @@ pub fn search_path() -> &'static str {
     })
 }
 
-/// First `dirs` entry containing an executable named `program`, applying the
-/// platform's executable suffix unless the name already carries an extension —
-/// `npx.cmd` must not become `npx.cmd.exe`.
+/// Filenames to try for `program`, in order.
+///
+/// A name that already carries an extension is used as-is, so `npx.cmd` is not
+/// looked up as `npx.cmd.exe`. Otherwise Windows tries each `PATHEXT` entry,
+/// because an executable's extension there is a matter of configuration and npm
+/// ships `npx.cmd` rather than `npx.exe`. Elsewhere the bare name is the name.
+fn candidate_filenames(program: &str) -> Vec<String> {
+    if Path::new(program).extension().is_some() {
+        return vec![program.to_string()];
+    }
+
+    if !cfg!(windows) {
+        return vec![program.to_string()];
+    }
+
+    let pathext =
+        std::env::var("PATHEXT").unwrap_or_else(|_| ".COM;.EXE;.BAT;.CMD".to_string());
+    let mut names: Vec<String> = pathext
+        .split(';')
+        .map(str::trim)
+        .filter(|ext| !ext.is_empty())
+        .map(|ext| format!("{}{}", program, ext.to_ascii_lowercase()))
+        .collect();
+    names.push(program.to_string());
+    names
+}
+
+/// First executable named `program` found by scanning `dirs` in order, trying each
+/// candidate filename within a directory before moving to the next — the same
+/// precedence a shell applies.
 fn find_program(program: &str, dirs: &[PathBuf]) -> Option<PathBuf> {
-    let filename = if Path::new(program).extension().is_some() {
-        program.to_string()
-    } else {
-        format!("{}{}", program, std::env::consts::EXE_SUFFIX)
-    };
+    let names = candidate_filenames(program);
     dirs.iter()
-        .map(|dir| dir.join(&filename))
+        .flat_map(|dir| names.iter().map(move |name| dir.join(name)))
         .find(|candidate| is_executable_file(candidate))
 }
 
@@ -412,6 +454,27 @@ mod tests {
         );
 
         std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn candidate_filenames_respect_an_existing_extension() {
+        // Must not become npx.cmd.exe on Windows.
+        assert_eq!(candidate_filenames("npx.cmd"), vec!["npx.cmd".to_string()]);
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn candidate_filenames_are_just_the_name_off_windows() {
+        assert_eq!(candidate_filenames("npx"), vec!["npx".to_string()]);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn candidate_filenames_cover_pathext_on_windows() {
+        let names = candidate_filenames("npx");
+        assert!(names.contains(&"npx.cmd".to_string()), "npm ships npx.cmd, not npx.exe");
+        assert!(names.contains(&"npx.exe".to_string()));
+        assert!(names.contains(&"npx".to_string()), "extensionless name is the last resort");
     }
 
     #[test]
