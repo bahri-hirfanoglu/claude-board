@@ -6,6 +6,7 @@ mod config;
 mod db;
 mod error;
 mod migration;
+mod paths;
 mod services;
 mod setup;
 

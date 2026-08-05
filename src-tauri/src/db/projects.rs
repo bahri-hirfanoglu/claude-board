@@ -1,5 +1,6 @@
 use super::schema::project_key_from_slug;
 use super::DbPool;
+use crate::paths::expand_tilde;
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
 
@@ -60,7 +61,9 @@ fn row_to_project(row: &rusqlite::Row) -> rusqlite::Result<Project> {
         id: row.get("id")?,
         name: row.get("name")?,
         slug: row.get("slug")?,
-        working_dir: row.get("working_dir")?,
+        // Expanded on read so paths stored before normalization existed
+        // still resolve on the filesystem.
+        working_dir: expand_tilde(&row.get::<_, String>("working_dir")?),
         icon: row.get("icon")?,
         icon_seed: row.get("icon_seed")?,
         permission_mode: row.get("permission_mode")?,
@@ -150,6 +153,7 @@ pub fn create(
 ) -> i64 {
     let conn = db.lock();
     let project_key = project_key_from_slug(slug);
+    let working_dir = expand_tilde(working_dir);
     match conn.execute(
         "INSERT INTO projects (name,slug,working_dir,icon,icon_seed,permission_mode,allowed_tools,project_key) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
         params![
@@ -180,6 +184,7 @@ pub fn update(
     allowed_tools: Option<&str>,
 ) {
     let conn = db.lock();
+    let working_dir = expand_tilde(working_dir);
     if let Err(e) = conn.execute(
         "UPDATE projects SET name=?1,slug=?2,working_dir=?3,icon=?4,icon_seed=?5,permission_mode=?6,allowed_tools=?7,updated_at=datetime('now','localtime') WHERE id=?8",
         params![
@@ -372,4 +377,65 @@ pub fn get_summary(db: &DbPool) -> Vec<ProjectSummary> {
         }
     };
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use parking_lot::Mutex;
+    use rusqlite::Connection;
+    use std::sync::Arc;
+
+    fn test_db() -> DbPool {
+        let conn = Connection::open_in_memory().expect("in-memory db");
+        crate::db::schema::create_tables(&conn);
+        Arc::new(Mutex::new(conn))
+    }
+
+    fn home() -> String {
+        std::env::var("HOME").expect("HOME set in test environment")
+    }
+
+    /// A working dir stored as `~/workspace` must come back expanded, or
+    /// `Command::current_dir` fails with ENOENT when launching Claude.
+    #[test]
+    fn reads_legacy_tilde_working_dir_expanded() {
+        let db = test_db();
+        {
+            let conn = db.lock();
+            conn.execute(
+                "INSERT INTO projects (name,slug,working_dir) VALUES ('My Workspace','my-workspace','~/workspace')",
+                [],
+            )
+            .expect("insert legacy row");
+        }
+
+        let project = get_by_slug(&db, "my-workspace").expect("project found");
+        assert_eq!(project.working_dir, format!("{}/workspace", home()));
+    }
+
+    #[test]
+    fn create_stores_expanded_working_dir() {
+        let db = test_db();
+        let id = create(&db, "Board", "board", "~/workspace", None, None, None, None);
+        let project = get_by_id(&db, id).expect("project found");
+        assert_eq!(project.working_dir, format!("{}/workspace", home()));
+    }
+
+    #[test]
+    fn update_stores_expanded_working_dir() {
+        let db = test_db();
+        let id = create(&db, "Board", "board", "/tmp/board", None, None, None, None);
+        update(&db, id, "Board", "board", "~/workspace", None, None, None, None);
+        let project = get_by_id(&db, id).expect("project found");
+        assert_eq!(project.working_dir, format!("{}/workspace", home()));
+    }
+
+    #[test]
+    fn absolute_working_dir_is_preserved() {
+        let db = test_db();
+        let id = create(&db, "Board", "board", "/Users/x/code", None, None, None, None);
+        let project = get_by_id(&db, id).expect("project found");
+        assert_eq!(project.working_dir, "/Users/x/code");
+    }
 }
