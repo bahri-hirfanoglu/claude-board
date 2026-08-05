@@ -29,7 +29,7 @@ import { api } from '../../lib/api';
 import { formatTimeAgo } from '../../lib/formatters';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { IS_TAURI } from '../../lib/tauriEvents';
-import { EFFORT_OPTIONS } from '../../lib/constants';
+import { DEFAULT_EFFORT, DEFAULT_MODEL, EFFORT_OPTIONS } from '../../lib/constants';
 import { useModels, refreshModels } from '../../lib/useModels';
 
 const TABS = [
@@ -670,8 +670,10 @@ const DEFAULT_SETTINGS = {
   launch_at_startup: false,
   minimize_to_tray: false,
   confirm_before_delete: true,
-  default_model: 'sonnet',
-  default_effort: 'medium',
+  // Shared with the task defaults rather than repeated, so the settings form and
+  // a newly created task cannot disagree about what the default is.
+  default_model: DEFAULT_MODEL,
+  default_effort: DEFAULT_EFFORT,
   language: 'en',
   notify_task_completed: true,
   notify_task_failed: true,
