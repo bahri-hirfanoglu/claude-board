@@ -163,6 +163,21 @@ pub fn create_tables(conn: &Connection) {
             updated_at DATETIME DEFAULT (datetime('now','localtime'))
         );
 
+        CREATE TABLE IF NOT EXISTS upstream_models (
+            model_id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            color TEXT,
+            input_cost_per_mtok REAL,
+            output_cost_per_mtok REAL,
+            sort_order INTEGER DEFAULT 0,
+            synced_at DATETIME DEFAULT (datetime('now','localtime'))
+        );
+
+        CREATE TABLE IF NOT EXISTS model_tombstones (
+            model_id TEXT PRIMARY KEY,
+            created_at DATETIME DEFAULT (datetime('now','localtime'))
+        );
+
         CREATE TABLE IF NOT EXISTS scans (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             project_id INTEGER NOT NULL,
@@ -880,18 +895,33 @@ pub fn run_migrations(conn: &Connection) {
     backfill_project_keys(conn);
     backfill_task_keys(conn);
 
-    // Seed the default model list into the editable custom_models table (once)
-    seed_default_models(conn);
+    // Split the formerly-seeded defaults out of custom_models so the upstream
+    // sync can own them (see services::model_catalog).
+    migrate_models_v2(conn);
 }
 
-/// One-time seed of the default models into the editable `custom_models` table.
-/// Gated by an `app_settings` flag so it runs exactly once — later user edits
-/// and deletions are preserved across launches. Existing ids are left untouched
-/// (INSERT OR IGNORE on the UNIQUE model_id).
-fn seed_default_models(conn: &Connection) {
+/// Marks the model split as done so it never runs twice.
+fn mark_models_migrated(conn: &Connection) {
+    conn.execute(
+        "INSERT INTO app_settings (key, value) VALUES ('models_migrated_v2', 'true')
+         ON CONFLICT(key) DO UPDATE SET value='true'",
+        [],
+    )
+    .ok();
+}
+
+/// Splits the legacy one-shot seed out of `custom_models`.
+///
+/// Before the upstream sync existed, `custom_models` held both the shipped
+/// defaults and the user's own rows with nothing to tell them apart. This
+/// resolves each row against the legacy seed exactly once: an untouched default
+/// is dropped (upstream supplies it), an edited default or a user-added row is
+/// kept as an override, and a seed id that is missing altogether becomes a
+/// tombstone so the sync does not resurrect something the user deleted.
+pub(crate) fn migrate_models_v2(conn: &Connection) {
     let already = conn
         .query_row(
-            "SELECT value FROM app_settings WHERE key='models_seeded'",
+            "SELECT value FROM app_settings WHERE key='models_migrated_v2'",
             [],
             |r| r.get::<_, String>(0),
         )
@@ -901,25 +931,61 @@ fn seed_default_models(conn: &Connection) {
         return;
     }
 
-    for (i, (model_id, label, color, input, output)) in
-        crate::commands::models::default_seed_models().iter().enumerate()
-    {
-        if let Err(e) = conn.execute(
-            "INSERT OR IGNORE INTO custom_models
-                (model_id, label, color, input_cost_per_mtok, output_cost_per_mtok, sort_order)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![model_id, label, color, input, output, (i as i64) * 10],
-        ) {
-            log::error!("seed_default_models: {} failed: {}", model_id, e);
+    let legacy_seeded = conn
+        .query_row(
+            "SELECT value FROM app_settings WHERE key='models_seeded'",
+            [],
+            |r| r.get::<_, String>(0),
+        )
+        .map(|v| v == "true")
+        .unwrap_or(false);
+    if !legacy_seeded {
+        // Fresh install: nothing was ever seeded, so there is nothing to split.
+        mark_models_migrated(conn);
+        return;
+    }
+
+    for (model_id, label, color, input, output) in crate::commands::models::default_seed_models() {
+        let row = conn.query_row(
+            "SELECT label, color, input_cost_per_mtok, output_cost_per_mtok
+             FROM custom_models WHERE model_id=?1",
+            params![model_id],
+            |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, Option<String>>(1)?,
+                    r.get::<_, Option<f64>>(2)?,
+                    r.get::<_, Option<f64>>(3)?,
+                ))
+            },
+        );
+
+        match row {
+            Ok((got_label, got_color, got_input, got_output)) => {
+                let untouched = got_label == label
+                    && got_color.as_deref() == Some(color)
+                    && got_input == Some(input)
+                    && got_output == Some(output);
+                if untouched {
+                    conn.execute(
+                        "DELETE FROM custom_models WHERE model_id=?1",
+                        params![model_id],
+                    )
+                    .ok();
+                }
+            }
+            Err(_) => {
+                // The user deleted this default — keep it deleted.
+                conn.execute(
+                    "INSERT OR IGNORE INTO model_tombstones (model_id) VALUES (?1)",
+                    params![model_id],
+                )
+                .ok();
+            }
         }
     }
 
-    conn.execute(
-        "INSERT INTO app_settings (key, value) VALUES ('models_seeded', 'true')
-         ON CONFLICT(key) DO UPDATE SET value='true'",
-        [],
-    )
-    .ok();
+    mark_models_migrated(conn);
 }
 
 pub fn generate_project_key(slug: &str) -> String {
@@ -1068,3 +1134,100 @@ fn backfill_task_keys(conn: &Connection) {
 
 pub use generate_project_key as project_key_from_slug;
 pub use get_type_prefix as type_prefix;
+
+#[cfg(test)]
+mod model_migration_tests {
+    use super::*;
+    use rusqlite::Connection;
+
+    /// A database at the pre-migration state: schema in place, defaults seeded
+    /// the old way, `models_seeded` already set.
+    fn seeded_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        create_tables(&conn);
+        for (i, (model_id, label, color, input, output)) in
+            crate::commands::models::default_seed_models().iter().enumerate()
+        {
+            conn.execute(
+                "INSERT INTO custom_models (model_id, label, color, input_cost_per_mtok, output_cost_per_mtok, sort_order)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                params![model_id, label, color, input, output, (i as i64) * 10],
+            ).unwrap();
+        }
+        conn.execute(
+            "INSERT INTO app_settings (key, value) VALUES ('models_seeded','true')",
+            [],
+        ).unwrap();
+        conn
+    }
+
+    fn ids(conn: &Connection, sql: &str) -> Vec<String> {
+        let mut stmt = conn.prepare(sql).unwrap();
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0)).unwrap();
+        rows.flatten().collect()
+    }
+
+    #[test]
+    fn drops_untouched_defaults_so_upstream_can_own_them() {
+        let conn = seeded_db();
+        migrate_models_v2(&conn);
+        assert!(ids(&conn, "SELECT model_id FROM custom_models").is_empty());
+        assert!(ids(&conn, "SELECT model_id FROM model_tombstones").is_empty());
+    }
+
+    #[test]
+    fn keeps_a_default_the_user_edited() {
+        let conn = seeded_db();
+        conn.execute("UPDATE custom_models SET label='My Opus' WHERE model_id='opus'", []).unwrap();
+        migrate_models_v2(&conn);
+        assert_eq!(ids(&conn, "SELECT model_id FROM custom_models"), vec!["opus"]);
+    }
+
+    #[test]
+    fn keeps_a_default_whose_cost_the_user_changed() {
+        let conn = seeded_db();
+        conn.execute("UPDATE custom_models SET input_cost_per_mtok=99.0 WHERE model_id='sonnet'", []).unwrap();
+        migrate_models_v2(&conn);
+        assert_eq!(ids(&conn, "SELECT model_id FROM custom_models"), vec!["sonnet"]);
+    }
+
+    #[test]
+    fn keeps_rows_the_user_added() {
+        let conn = seeded_db();
+        conn.execute(
+            "INSERT INTO custom_models (model_id, label) VALUES ('my-local-model','Local')",
+            [],
+        ).unwrap();
+        migrate_models_v2(&conn);
+        assert_eq!(ids(&conn, "SELECT model_id FROM custom_models"), vec!["my-local-model"]);
+    }
+
+    #[test]
+    fn tombstones_defaults_the_user_deleted() {
+        let conn = seeded_db();
+        conn.execute("DELETE FROM custom_models WHERE model_id='claude-opus-4-6'", []).unwrap();
+        migrate_models_v2(&conn);
+        assert_eq!(ids(&conn, "SELECT model_id FROM model_tombstones"), vec!["claude-opus-4-6"]);
+    }
+
+    #[test]
+    fn runs_once_and_leaves_later_user_rows_alone() {
+        let conn = seeded_db();
+        migrate_models_v2(&conn);
+        conn.execute(
+            "INSERT INTO custom_models (model_id, label) VALUES ('opus','Re-added by user')",
+            [],
+        ).unwrap();
+        migrate_models_v2(&conn);
+        assert_eq!(ids(&conn, "SELECT model_id FROM custom_models"), vec!["opus"]);
+    }
+
+    #[test]
+    fn fresh_install_migrates_to_an_empty_catalog() {
+        let conn = Connection::open_in_memory().unwrap();
+        create_tables(&conn);
+        migrate_models_v2(&conn);
+        assert!(ids(&conn, "SELECT model_id FROM custom_models").is_empty());
+        assert!(ids(&conn, "SELECT model_id FROM model_tombstones").is_empty());
+    }
+}
