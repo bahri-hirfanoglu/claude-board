@@ -455,7 +455,7 @@ function AgentsTab() {
   if (loading) return <LoadingState />;
   if (error) return <ErrorBanner message={error} />;
   const userAgents = (agents || []).filter((a) => a.type === 'user');
-  const builtinAgents = (agents || []).filter((a) => a.type === 'builtin');
+  const pluginAgents = (agents || []).filter((a) => a.type === 'plugin');
   return (
     <div className="space-y-4">
       <p className="text-xs text-surface-500">{t('cm.agents.desc')}</p>
@@ -469,12 +469,12 @@ function AgentsTab() {
           ))}
         </div>
       )}
-      {builtinAgents.length > 0 && (
+      {pluginAgents.length > 0 && (
         <div className="space-y-1.5">
           <span className="text-[10px] text-surface-500 font-medium">
-            {t('cm.agents.builtin')} ({builtinAgents.length})
+            {t('cm.agents.plugin')} ({pluginAgents.length})
           </span>
-          {builtinAgents.map((a, i) => (
+          {pluginAgents.map((a, i) => (
             <AgentCard key={i} agent={a} />
           ))}
         </div>
@@ -491,10 +491,22 @@ function AgentCard({ agent }) {
     inherit: 'text-surface-400',
   };
   return (
-    <div className="flex items-center gap-3 bg-surface-800/50 rounded-lg px-3 py-2.5 border border-surface-700/30">
-      <Bot size={14} className={agent.type === 'builtin' ? 'text-blue-400' : 'text-claude'} />
-      <span className="text-sm font-medium text-surface-200 flex-1">{agent.name}</span>
-      <span className={`text-[10px] font-mono ${colors[agent.model] || 'text-surface-400'}`}>{agent.model}</span>
+    <div className="flex items-start gap-3 bg-surface-800/50 rounded-lg px-3 py-2.5 border border-surface-700/30">
+      <Bot size={14} className={`mt-0.5 shrink-0 ${agent.type === 'plugin' ? 'text-blue-400' : 'text-claude'}`} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-medium text-surface-200 truncate">{agent.name}</span>
+          {agent.source && (
+            <span className="text-[10px] font-mono text-surface-500 shrink-0">{agent.source}</span>
+          )}
+        </div>
+        {agent.description && (
+          <p className="text-xs text-surface-500 line-clamp-2 mt-0.5">{agent.description}</p>
+        )}
+      </div>
+      <span className={`text-[10px] font-mono shrink-0 mt-0.5 ${colors[agent.model] || 'text-surface-400'}`}>
+        {agent.model}
+      </span>
     </div>
   );
 }

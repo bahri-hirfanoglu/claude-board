@@ -794,7 +794,7 @@ export default {
   // Agents
   'cm.agents.desc': 'Agents are specialized Claude instances with custom tools and capabilities.',
   'cm.agents.user': 'User Agents',
-  'cm.agents.builtin': 'Built-in Agents',
+  'cm.agents.plugin': 'Plugin Agents',
   'cm.agents.empty': 'No agents configured',
   // Hooks
   'cm.hooks.desc': 'Hooks run shell commands in response to Claude events.',

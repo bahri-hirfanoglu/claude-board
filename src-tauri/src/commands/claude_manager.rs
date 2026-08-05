@@ -103,21 +103,111 @@ fn parse_marketplace_list(out: &str) -> Value {
     Value::Array(list)
 }
 
-fn parse_agents(out: &str) -> Value {
-    let mut agents = Vec::new();
-    let mut section = "";
-    for line in out.lines() {
-        let line = line.trim();
-        if line.starts_with("User agents") { section = "user"; continue; }
-        if line.starts_with("Built-in agents") { section = "builtin"; continue; }
-        if line.is_empty() || line.ends_with("active agents") { continue; }
-        if let Some(dot_pos) = line.find('·') {
-            agents.push(serde_json::json!({"name": line[..dot_pos].trim(), "model": line[dot_pos+2..].trim(), "type": section}));
-        } else if !line.is_empty() {
-            agents.push(serde_json::json!({"name": line, "model": "inherit", "type": section}));
+/// Split leading `---` YAML front matter from a markdown document.
+fn split_front_matter(content: &str) -> (&str, &str) {
+    let rest = match content.strip_prefix("---") {
+        Some(r) => r,
+        None => return ("", content),
+    };
+    match rest.find("\n---") {
+        Some(end) => {
+            let body = &rest[end + 4..];
+            let body = body.strip_prefix("\r\n").or_else(|| body.strip_prefix('\n')).unwrap_or(body);
+            (&rest[..end], body)
+        }
+        None => ("", content),
+    }
+}
+
+/// Read a top-level scalar from YAML front matter, following `|` / `>` block
+/// scalars and `- item` lists onto their continuation lines.
+fn yaml_field(yaml: &str, key: &str) -> Option<String> {
+    let mut lines = yaml.lines().peekable();
+    while let Some(line) = lines.next() {
+        // Only top-level keys; an indented `name:` belongs to a nested mapping.
+        if line.starts_with(char::is_whitespace) { continue; }
+        let rest = match line.trim_end().strip_prefix(&format!("{}:", key)) {
+            Some(r) => r,
+            None => continue,
+        };
+        let inline = rest.trim();
+        if !inline.is_empty() && !matches!(inline, "|" | ">" | "|-" | ">-" | "|+" | ">+") {
+            return Some(inline.trim_matches('"').trim_matches('\'').trim().to_string());
+        }
+        // Block scalar or list: gather the indented lines that follow.
+        let mut parts = Vec::new();
+        while let Some(next) = lines.peek() {
+            if next.trim().is_empty() {
+                lines.next();
+                continue;
+            }
+            if !next.starts_with(char::is_whitespace) { break; }
+            parts.push(next.trim().to_string());
+            lines.next();
+        }
+        let is_list = parts.iter().all(|p| p.starts_with("- "));
+        let joined = if is_list {
+            parts.iter().map(|p| p[2..].trim()).collect::<Vec<_>>().join(", ")
+        } else {
+            parts.join(" ")
+        };
+        return if joined.is_empty() { None } else { Some(joined) };
+    }
+    None
+}
+
+/// Build an agent entry from a `*.md` definition file, or `None` if unreadable.
+fn read_agent_file(path: &std::path::Path, kind: &str, source: Option<&str>) -> Option<Value> {
+    let content = std::fs::read_to_string(path).ok()?;
+    let (front_matter, _) = split_front_matter(&content);
+    let fallback = path.file_stem()?.to_string_lossy().to_string();
+    Some(serde_json::json!({
+        "name": yaml_field(front_matter, "name").unwrap_or(fallback),
+        "model": yaml_field(front_matter, "model").unwrap_or_else(|| "inherit".into()),
+        "description": yaml_field(front_matter, "description").unwrap_or_default(),
+        "tools": yaml_field(front_matter, "tools").unwrap_or_default(),
+        "type": kind,
+        "source": source,
+        "path": path.to_string_lossy(),
+    }))
+}
+
+/// Append every agent defined directly in `dir` (non-recursive).
+fn scan_agent_dir(dir: &std::path::Path, kind: &str, source: Option<&str>, out: &mut Vec<Value>) {
+    let entries = match std::fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("md") { continue; }
+        if let Some(agent) = read_agent_file(&path, kind, source) { out.push(agent); }
+    }
+}
+
+/// `(plugin name, install path)` for each plugin in `installed_plugins.json`.
+fn installed_plugin_paths(home: &std::path::Path) -> Vec<(String, std::path::PathBuf)> {
+    let manifest = home.join(".claude").join("plugins").join("installed_plugins.json");
+    let content = match std::fs::read_to_string(&manifest) {
+        Ok(c) => c,
+        Err(_) => return Vec::new(),
+    };
+    let json: Value = match serde_json::from_str(&content) {
+        Ok(v) => v,
+        Err(_) => return Vec::new(),
+    };
+    let mut out = Vec::new();
+    let plugins = json.get("plugins").and_then(|p| p.as_object());
+    for (key, installs) in plugins.into_iter().flatten() {
+        // Keys are `name@marketplace`; the display name is the part before `@`.
+        let name = key.split('@').next().unwrap_or(key).to_string();
+        for install in installs.as_array().into_iter().flatten() {
+            if let Some(p) = install.get("installPath").and_then(|v| v.as_str()) {
+                out.push((name.clone(), std::path::PathBuf::from(p)));
+            }
         }
     }
-    Value::Array(agents)
+    out
 }
 
 // ─── Auth ───
@@ -215,10 +305,35 @@ pub async fn save_claude_settings(settings: Value) -> Result<(), String> {
 }
 
 // ─── Agents ───
+/// Agent definitions discovered on disk, from `~/.claude/agents` and the
+/// `agents/` directory of each installed plugin.
+///
+/// The CLI has no non-interactive listing for definitions — `claude agents` is
+/// the background-agent TUI and requires a TTY, and its `--json` mode reports
+/// running sessions rather than definitions — so these are read directly.
+/// Agents built into the CLI live in no file and are therefore not listed.
 #[tauri::command]
 pub async fn list_agents() -> Result<Value, String> {
-    let out = run_claude(vec!["agents".into()]).await?;
-    Ok(parse_agents(&out))
+    tauri::async_runtime::spawn_blocking(|| {
+        let home = dirs_home();
+        let mut agents = Vec::new();
+        scan_agent_dir(&home.join(".claude").join("agents"), "user", None, &mut agents);
+        for (plugin, path) in installed_plugin_paths(&home) {
+            scan_agent_dir(&path.join("agents"), "plugin", Some(&plugin), &mut agents);
+        }
+        agents.sort_by(|a, b| {
+            let key = |v: &Value| {
+                (
+                    v["source"].as_str().unwrap_or_default().to_lowercase(),
+                    v["name"].as_str().unwrap_or_default().to_lowercase(),
+                )
+            };
+            key(a).cmp(&key(b))
+        });
+        Ok(Value::Array(agents))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 // ─── Version ───
@@ -835,4 +950,139 @@ fn dirs_home() -> std::path::PathBuf {
         .or_else(|_| std::env::var("HOME"))
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|_| std::path::PathBuf::from("."))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn front_matter_splits_on_closing_delimiter() {
+        let (fm, body) = split_front_matter("---\nname: a\n---\nBody text\n");
+        assert_eq!(fm, "\nname: a");
+        assert_eq!(body, "Body text\n");
+    }
+
+    #[test]
+    fn front_matter_absent_leaves_body_intact() {
+        let (fm, body) = split_front_matter("# Just markdown\n");
+        assert!(fm.is_empty());
+        assert_eq!(body, "# Just markdown\n");
+    }
+
+    #[test]
+    fn yaml_field_reads_inline_scalars() {
+        let fm = "\nname: code-reviewer\nmodel: opus\ncolor: green";
+        assert_eq!(yaml_field(fm, "name").as_deref(), Some("code-reviewer"));
+        assert_eq!(yaml_field(fm, "model").as_deref(), Some("opus"));
+        assert_eq!(yaml_field(fm, "missing"), None);
+    }
+
+    #[test]
+    fn yaml_field_strips_surrounding_quotes() {
+        assert_eq!(yaml_field("\nname: \"quoted\"", "name").as_deref(), Some("quoted"));
+        assert_eq!(yaml_field("\nname: 'single'", "name").as_deref(), Some("single"));
+    }
+
+    #[test]
+    fn yaml_field_folds_block_scalars_onto_one_line() {
+        let fm = "\ndescription: |\n  First line.\n\n  Second line.\nmodel: opus";
+        assert_eq!(
+            yaml_field(fm, "description").as_deref(),
+            Some("First line. Second line.")
+        );
+        // The key after the block is still reachable.
+        assert_eq!(yaml_field(fm, "model").as_deref(), Some("opus"));
+    }
+
+    #[test]
+    fn yaml_field_joins_list_items_with_commas() {
+        let fm = "\ntools:\n  - Read\n  - Edit\n";
+        assert_eq!(yaml_field(fm, "tools").as_deref(), Some("Read, Edit"));
+    }
+
+    #[test]
+    fn yaml_field_ignores_nested_keys() {
+        // `name` appears only under `metadata`, so it must not be picked up.
+        let fm = "\nmetadata:\n  name: nested\ndescription: top";
+        assert_eq!(yaml_field(fm, "name"), None);
+        assert_eq!(yaml_field(fm, "description").as_deref(), Some("top"));
+    }
+
+    #[test]
+    fn read_agent_file_defaults_name_to_stem_and_model_to_inherit() {
+        let dir = std::env::temp_dir().join("claude_board_agent_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("my-agent.md");
+        std::fs::write(&path, "---\ndescription: does things\n---\nBody").unwrap();
+
+        let agent = read_agent_file(&path, "user", None).expect("agent parsed");
+        assert_eq!(agent["name"], "my-agent");
+        assert_eq!(agent["model"], "inherit");
+        assert_eq!(agent["description"], "does things");
+        assert_eq!(agent["type"], "user");
+        assert!(agent["source"].is_null());
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn scan_agent_dir_collects_only_markdown() {
+        let dir = std::env::temp_dir().join("claude_board_agent_scan_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("a.md"), "---\nname: a\nmodel: opus\n---\n").unwrap();
+        std::fs::write(dir.join("notes.txt"), "ignore me").unwrap();
+
+        let mut found = Vec::new();
+        scan_agent_dir(&dir, "plugin", Some("my-plugin"), &mut found);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0]["name"], "a");
+        assert_eq!(found[0]["source"], "my-plugin");
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn installed_plugin_paths_reads_manifest_and_strips_marketplace() {
+        let home = std::env::temp_dir().join("claude_board_plugin_manifest_test");
+        let plugins = home.join(".claude").join("plugins");
+        std::fs::create_dir_all(&plugins).unwrap();
+        std::fs::write(
+            plugins.join("installed_plugins.json"),
+            r#"{"version":2,"plugins":{
+                "code-simplifier@claude-plugins-official":[
+                    {"scope":"user","installPath":"/tmp/cs/1.0.0"}
+                ],
+                "superpowers@claude-plugins-official":[
+                    {"scope":"user","installPath":"/tmp/sp/6.2.0"}
+                ]
+            }}"#,
+        )
+        .unwrap();
+
+        let mut found = installed_plugin_paths(&home);
+        found.sort();
+        assert_eq!(
+            found,
+            vec![
+                ("code-simplifier".to_string(), std::path::PathBuf::from("/tmp/cs/1.0.0")),
+                ("superpowers".to_string(), std::path::PathBuf::from("/tmp/sp/6.2.0")),
+            ]
+        );
+
+        std::fs::remove_dir_all(&home).ok();
+    }
+
+    #[test]
+    fn installed_plugin_paths_tolerates_missing_manifest() {
+        let home = std::env::temp_dir().join("claude_board_no_manifest_test");
+        assert!(installed_plugin_paths(&home).is_empty());
+    }
+
+    #[test]
+    fn scan_agent_dir_tolerates_missing_directory() {
+        let mut found = Vec::new();
+        scan_agent_dir(std::path::Path::new("/nonexistent/agents"), "user", None, &mut found);
+        assert!(found.is_empty());
+    }
 }
