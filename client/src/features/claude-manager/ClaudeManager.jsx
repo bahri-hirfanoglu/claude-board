@@ -496,13 +496,9 @@ function AgentCard({ agent }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium text-surface-200 truncate">{agent.name}</span>
-          {agent.source && (
-            <span className="text-[10px] font-mono text-surface-500 shrink-0">{agent.source}</span>
-          )}
+          {agent.source && <span className="text-[10px] font-mono text-surface-500 shrink-0">{agent.source}</span>}
         </div>
-        {agent.description && (
-          <p className="text-xs text-surface-500 line-clamp-2 mt-0.5">{agent.description}</p>
-        )}
+        {agent.description && <p className="text-xs text-surface-500 line-clamp-2 mt-0.5">{agent.description}</p>}
       </div>
       <span className={`text-[10px] font-mono shrink-0 mt-0.5 ${colors[agent.model] || 'text-surface-400'}`}>
         {agent.model}
