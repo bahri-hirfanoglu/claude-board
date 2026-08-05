@@ -135,8 +135,13 @@ pub fn run() {
                 .center()
                 .disable_drag_drop_handler();
 
+                // `hidden_title` suppresses only the text drawn in the title bar.
+                // The window keeps its title for the Window menu, Mission Control
+                // and the app switcher.
                 #[cfg(target_os = "macos")]
-                let win_builder = win_builder.title_bar_style(tauri::TitleBarStyle::Overlay);
+                let win_builder = win_builder
+                    .title_bar_style(tauri::TitleBarStyle::Overlay)
+                    .hidden_title(true);
 
                 let main_window = win_builder.build()?;
 

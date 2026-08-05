@@ -162,8 +162,12 @@ pub async fn finish(
     .center()
     .disable_drag_drop_handler();
 
+    // Matches the window built in lib.rs, so the title bar looks the same whether
+    // the app opens through first-run setup or straight into the board.
     #[cfg(target_os = "macos")]
-    let win_builder = win_builder.title_bar_style(tauri::TitleBarStyle::Overlay);
+    let win_builder = win_builder
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true);
 
     let _main_win = win_builder.build().ok();
 
