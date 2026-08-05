@@ -192,7 +192,10 @@ export const api = {
   listModels: () => call('list_models', 'GET', '/api/models'),
   addCustomModel: (data) => call('add_custom_model', 'POST', '/api/models', data, data),
   updateCustomModel: (id, data) => call('update_custom_model', 'PUT', `/api/models/${id}`, { id, ...data }, data),
-  deleteCustomModel: (id) => call('delete_custom_model', 'DELETE', `/api/models/${id}`, { id }),
+  deleteModel: (modelId) => call('delete_model', 'DELETE', `/api/models/${modelId}`, { modelId }),
+  resetModel: (modelId) => call('reset_model', 'POST', `/api/models/${modelId}/reset`, { modelId }),
+  refreshModels: () => call('refresh_models', 'POST', '/api/models/refresh'),
+  modelsSyncedAt: () => call('models_synced_at', 'GET', '/api/models/synced-at'),
 
   // ─── Logs (bug reports) ───
   // Tauri-only: the HTTP shim has no filesystem access.
