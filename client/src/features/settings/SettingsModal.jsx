@@ -22,8 +22,11 @@ import {
   Edit2,
   Check,
   Loader2,
+  RefreshCw,
+  RotateCcw,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { formatTimeAgo } from '../../lib/formatters';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { IS_TAURI } from '../../lib/tauriEvents';
 import { EFFORT_OPTIONS } from '../../lib/constants';
@@ -214,12 +217,38 @@ function NotificationsTab({ settings, onChange, t }) {
   );
 }
 
+// SQLite datetimes use a space separator, which WebKit refuses to parse.
+const isoish = (ts) => String(ts).replace(' ', 'T');
+
 function ModelsTab({ t, models }) {
-  const builtins = models.filter((m) => m.source === 'builtin');
+  const synced = models.filter((m) => m.source === 'upstream');
   const customs = models.filter((m) => m.source === 'custom');
   const [editing, setEditing] = useState(null); // null | 'new' | { id, ...row }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [syncedAt, setSyncedAt] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    api
+      .modelsSyncedAt()
+      .then(setSyncedAt)
+      .catch(() => setSyncedAt(null));
+  }, []);
+
+  const doRefresh = async () => {
+    setSyncing(true);
+    setError(null);
+    try {
+      await api.refreshModels();
+      await refreshModels();
+      setSyncedAt(await api.modelsSyncedAt().catch(() => null));
+    } catch (e) {
+      setError(e?.message || String(e));
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const startNew = () =>
     setEditing({
@@ -230,15 +259,19 @@ function ModelsTab({ t, models }) {
       input_cost_per_mtok: '',
       output_cost_per_mtok: '',
     });
+  // Editing a synced row has no custom_id to update, so `save` turns it into a
+  // new override row instead. sort_order carries over so the override keeps its
+  // place in the list.
   const startEdit = (m) =>
     setEditing({
       mode: 'edit',
-      id: m.custom_id ?? m.id,
+      id: m.custom_id ?? null,
       model_id: m.value,
       label: m.label,
       color: m.color || '',
       input_cost_per_mtok: m.input_cost_per_mtok ?? '',
       output_cost_per_mtok: m.output_cost_per_mtok ?? '',
+      sort_order: m.sort_order ?? 0,
     });
 
   const cancelEdit = () => {
@@ -257,9 +290,10 @@ function ModelsTab({ t, models }) {
         color: editing.color?.trim() || null,
         inputCostPerMtok: editing.input_cost_per_mtok === '' ? null : Number(editing.input_cost_per_mtok),
         outputCostPerMtok: editing.output_cost_per_mtok === '' ? null : Number(editing.output_cost_per_mtok),
-        sortOrder: 0,
+        sortOrder: editing.sort_order ?? 0,
       };
-      if (editing.mode === 'new') {
+      // A synced row has no override row yet, so editing one creates it.
+      if (editing.mode === 'new' || editing.id == null) {
         await api.addCustomModel(payload);
       } else {
         await api.updateCustomModel(editing.id, payload);
@@ -273,11 +307,24 @@ function ModelsTab({ t, models }) {
     }
   };
 
-  const remove = async (id) => {
+  const remove = async (modelId) => {
     if (!confirm(t('settings.confirmDeleteModel'))) return;
     setBusy(true);
     try {
-      await api.deleteCustomModel(id);
+      await api.deleteModel(modelId);
+      await refreshModels();
+    } catch (e) {
+      setError(e?.message || String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reset = async (modelId) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.resetModel(modelId);
       await refreshModels();
     } catch (e) {
       setError(e?.message || String(e));
@@ -376,38 +423,86 @@ function ModelsTab({ t, models }) {
 
   return (
     <div className="space-y-5">
-      {builtins.length > 0 && (
-        <div>
-          <div className="text-xs uppercase tracking-wide text-surface-500 font-semibold mb-2">
-            {t('settings.builtinModels')}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs uppercase tracking-wide text-surface-500 font-semibold">
+            {t('settings.syncedModels')}
           </div>
-          <div className="space-y-1.5">
-            {builtins.map((m) => (
-              <div
-                key={m.value}
-                className="flex items-center justify-between px-3 py-2 rounded-lg bg-surface-800/40 border border-surface-700/30"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono ${m.color || 'bg-surface-700/50 text-surface-300'}`}
-                  >
-                    {m.value}
-                  </span>
-                  <span className="text-sm text-surface-200">{m.label}</span>
-                </div>
-                <div className="text-[10px] text-surface-500 font-mono">
-                  ${m.input_cost_per_mtok ?? '?'} / ${m.output_cost_per_mtok ?? '?'} per Mtok
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-surface-500">
+              {syncedAt
+                ? t('settings.lastSynced', { when: formatTimeAgo(isoish(syncedAt)) })
+                : t('settings.neverSynced')}
+            </span>
+            <button
+              type="button"
+              onClick={doRefresh}
+              disabled={syncing || busy}
+              className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-md bg-surface-700/50 hover:bg-surface-700 text-surface-300 disabled:opacity-50 transition-colors"
+            >
+              <RefreshCw size={11} className={syncing ? 'animate-spin' : ''} /> {t('settings.refreshModels')}
+            </button>
           </div>
         </div>
-      )}
+        {synced.length === 0 ? (
+          <div className="text-[11px] text-surface-500 px-3 py-3 rounded-lg bg-surface-800/30 border border-dashed border-surface-700/40">
+            {t('settings.noSyncedModels')}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {synced.map((m) =>
+              editing?.mode === 'edit' && editing.model_id === m.value ? (
+                <div key={m.value}>{renderForm()}</div>
+              ) : (
+                <div
+                  key={m.value}
+                  className="flex items-center justify-between px-3 py-2 rounded-lg bg-surface-800/40 border border-surface-700/30"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono ${m.color || 'bg-surface-700/50 text-surface-300'}`}
+                    >
+                      {m.value}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-sm text-surface-200 truncate">{m.label}</div>
+                      <div className="text-[10px] text-surface-500 font-mono">
+                        ${m.input_cost_per_mtok ?? '—'} / ${m.output_cost_per_mtok ?? '—'} per Mtok
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9px] uppercase tracking-wide text-surface-600 px-1.5">
+                      {t('settings.sourceSynced')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => startEdit(m)}
+                      disabled={busy || editing !== null}
+                      className="p-1.5 rounded-md text-surface-400 hover:text-surface-200 hover:bg-surface-700/50 disabled:opacity-50"
+                    >
+                      <Edit2 size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => remove(m.value)}
+                      disabled={busy || editing !== null}
+                      className="p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      <Trash size={12} />
+                    </button>
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+        )}
+      </div>
 
       <div>
         <div className="flex items-center justify-between mb-2">
           <div className="text-xs uppercase tracking-wide text-surface-500 font-semibold">
-            {t(builtins.length > 0 ? 'settings.customModels' : 'settings.models')}
+            {t('settings.customModels')}
           </div>
           <button
             type="button"
@@ -426,7 +521,7 @@ function ModelsTab({ t, models }) {
         {editing?.mode === 'new' && <div className="mb-2">{renderForm()}</div>}
         <div className="space-y-1.5">
           {customs.map((m) =>
-            editing?.mode === 'edit' && editing.id === (m.custom_id ?? m.id) ? (
+            editing?.mode === 'edit' && editing.model_id === m.value ? (
               <div key={m.value}>{renderForm()}</div>
             ) : (
               <div
@@ -447,6 +542,18 @@ function ModelsTab({ t, models }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
+                  <span className="text-[9px] uppercase tracking-wide text-claude/70 px-1.5">
+                    {t('settings.sourceCustom')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => reset(m.value)}
+                    disabled={busy || editing !== null}
+                    title={t('settings.resetModel')}
+                    className="p-1.5 rounded-md text-surface-400 hover:text-surface-200 hover:bg-surface-700/50 disabled:opacity-50"
+                  >
+                    <RotateCcw size={12} />
+                  </button>
                   <button
                     type="button"
                     onClick={() => startEdit(m)}
@@ -457,7 +564,7 @@ function ModelsTab({ t, models }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => remove(m.custom_id)}
+                    onClick={() => remove(m.value)}
                     disabled={busy || editing !== null}
                     className="p-1.5 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 disabled:opacity-50"
                   >

@@ -950,13 +950,21 @@ export default {
   'settings.defaultEffortDesc':
     'Yeni g\u00f6revler i\u00e7in varsay\u0131lan d\u00fc\u015f\u00fcnme \u00e7abas\u0131 seviyesi',
   'settings.modelsTab': 'Modeller',
-  'settings.builtinModels': 'Yerle\u015fik Modeller',
+  'settings.syncedModels': 'E\u015fitlenen modeller',
   'settings.models': 'Modeller',
   'settings.customModels': '\u00d6zel Modeller',
   'settings.addModel': 'Model Ekle',
   'settings.noCustomModels':
     "Hen\u00fcz \u00f6zel model yok. Belirli bir Claude model id (\u00f6rn. claude-opus-4-7) veya CLI'\u0131n\u0131z\u0131n destekledi\u011fi ba\u015fka bir modeli kullanmak i\u00e7in ekleyin.",
-  'settings.confirmDeleteModel': 'Bu \u00f6zel modeli silmek istedi\u011finize emin misiniz?',
+  'settings.noSyncedModels':
+    "Hen\u00fcz e\u015fitlenen model yok. G\u00fcncel listeyi almak i\u00e7in Yenile'ye bas\u0131n.",
+  'settings.confirmDeleteModel': 'Bu model listeden kald\u0131r\u0131ls\u0131n m\u0131?',
+  'settings.refreshModels': 'Yenile',
+  'settings.lastSynced': 'Son e\u015fitleme {when}',
+  'settings.neverSynced': 'Hi\u00e7 e\u015fitlenmedi',
+  'settings.sourceSynced': 'E\u015fitlendi',
+  'settings.sourceCustom': '\u00d6zel',
+  'settings.resetModel': 'E\u015fitlenen s\u00fcr\u00fcme d\u00f6n',
   'settings.modelId': 'Model ID',
   'settings.modelLabel': 'G\u00f6r\u00fcnen Ad',
   'settings.modelColor': 'Tailwind Renk S\u0131n\u0131flar\u0131',
