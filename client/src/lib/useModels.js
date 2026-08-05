@@ -93,6 +93,18 @@ export function getModelCosts(modelId, models) {
   return { input: entry.input_cost_per_mtok ?? 0, output: entry.output_cost_per_mtok ?? 0 };
 }
 
+// Mirrors family_color() in src-tauri/src/services/model_catalog.rs. Used for
+// model ids that never came from the catalog — a stale task row, say — so an
+// unrecognized id still renders a readable badge.
+export function modelFamilyColor(modelId) {
+  const id = String(modelId || '');
+  if (id.includes('opus')) return 'bg-purple-500/20 text-purple-300';
+  if (id.includes('sonnet')) return 'bg-blue-500/20 text-blue-300';
+  if (id.includes('haiku')) return 'bg-green-500/20 text-green-300';
+  if (id.includes('fable')) return 'bg-amber-500/20 text-amber-300';
+  return 'bg-surface-700/50 text-surface-300';
+}
+
 export function getModelColor(modelId, models) {
-  return findModel(modelId, models)?.color || 'bg-surface-700/50 text-surface-300';
+  return findModel(modelId, models)?.color || modelFamilyColor(modelId);
 }

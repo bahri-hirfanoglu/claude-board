@@ -18,6 +18,7 @@ import {
 import Avatar from 'boring-avatars';
 import { formatTokens } from '../../lib/formatters';
 import { TYPE_COLORS, MODEL_COSTS, AVATAR_COLORS } from '../../lib/constants';
+import { useModels, getModelCosts } from '../../lib/useModels';
 import { IS_TAURI, tauriListen } from '../../lib/tauriEvents';
 
 const TOOL_ICONS = {
@@ -55,11 +56,11 @@ function formatElapsed(ms) {
   return `${s}s`;
 }
 
-function estimateCost(model, inputTokens, outputTokens) {
-  const normalizedModel = (model || '').toLowerCase();
-  let costs = MODEL_COSTS.sonnet;
-  if (normalizedModel.includes('haiku')) costs = MODEL_COSTS.haiku;
-  else if (normalizedModel.includes('opus')) costs = MODEL_COSTS.opus;
+// Prices from the synced catalog when it knows the model, so a pinned id like
+// claude-opus-4-8 is priced exactly rather than by substring guesswork.
+// MODEL_COSTS covers the case where the catalog has not loaded yet.
+function estimateCost(model, inputTokens, outputTokens, models) {
+  const costs = getModelCosts(model, models) || MODEL_COSTS.sonnet;
   return (inputTokens / 1e6) * costs.input + (outputTokens / 1e6) * costs.output;
 }
 
@@ -72,6 +73,11 @@ function shortenPath(path) {
 
 export default function AgentCard({ task, onStop, onViewLogs }) {
   const model = task.model_used || task.model || 'sonnet';
+  // Read through a ref so a late-arriving catalog does not re-subscribe the
+  // task:usage listener below.
+  const { models } = useModels();
+  const modelsRef = useRef(models);
+  modelsRef.current = models;
   const typeColor = TYPE_COLORS[task.task_type] || TYPE_COLORS.feature;
   const isTesting = task.status === 'testing' && task.is_running;
   const agentName = task.agent_name || `Agent ${task.id}`;
@@ -100,7 +106,9 @@ export default function AgentCard({ task, onStop, onViewLogs }) {
       setLiveUsage({
         input: payload.input_tokens || 0,
         output: payload.output_tokens || 0,
-        cost: payload.total_cost || estimateCost(model, payload.input_tokens || 0, payload.output_tokens || 0),
+        cost:
+          payload.total_cost ||
+          estimateCost(model, payload.input_tokens || 0, payload.output_tokens || 0, modelsRef.current),
       });
     });
   }, [task.id, model]);
