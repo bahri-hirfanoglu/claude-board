@@ -1,24 +1,12 @@
-use serde::{Deserialize, Serialize};
 use crate::db::{self, custom_models};
 
-/// A model entry the UI can render: built-in alias or user-defined.
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ModelEntry {
-    pub value: String,            // canonical id passed to claude --model
-    pub label: String,
-    pub color: Option<String>,    // tailwind class fragment
-    pub source: String,           // "builtin" or "custom"
-    pub input_cost_per_mtok: Option<f64>,
-    pub output_cost_per_mtok: Option<f64>,
-    pub custom_id: Option<i64>,   // present for source="custom"
-}
+pub use crate::services::model_catalog::ModelEntry;
 
-/// Canonical default model list, seeded once into the editable `custom_models`
-/// table (see `db::schema::seed_default_models`). Generic aliases route to the
-/// "latest" of each family; specific ids pin a version. Costs are USD per
-/// million tokens (Anthropic public pricing). Users edit or delete these from
-/// Settings → Models — to ship a new default, add a row here; it lands on the
-/// next fresh install (existing installs keep the user's edited list).
+/// Compiled-in catalog used only until the first successful models.dev sync
+/// (see `services::model_catalog`), and as the reference list the one-time
+/// `migrate_models_v2` uses to tell a formerly-seeded default apart from a row
+/// the user typed. It is not a seed: nothing inserts these rows into
+/// `custom_models` any more.
 ///
 /// Tuple shape: `(model_id, label, tailwind_color, input_cost, output_cost)`.
 pub fn default_seed_models() -> Vec<(&'static str, &'static str, &'static str, f64, f64)> {
@@ -54,6 +42,7 @@ pub fn list_models() -> Result<Vec<ModelEntry>, String> {
             input_cost_per_mtok: c.input_cost_per_mtok,
             output_cost_per_mtok: c.output_cost_per_mtok,
             custom_id: Some(c.id),
+            sort_order: c.sort_order,
         })
         .collect();
     Ok(out)
