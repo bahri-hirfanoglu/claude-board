@@ -77,6 +77,30 @@ Uygulama görünüm dilini değiştirin. Şu anda desteklenen diller:
 
 Dil değişikliği, bildirim mesajları dahil tüm arayüz öğelerinde anında yürürlüğe girer.
 
+## Modeller
+
+Modeller sekmesi, görev ve şablon model seçicilerinde bulunan tüm modelleri iki grup halinde listeler.
+
+### Eşitlenen modeller
+
+Bu liste [models.dev](https://models.dev) adresinden gelir ve arka planda en fazla 24 saatte bir yenilenir; böylece yeni çıkan Claude modelleri ve fiyat değişiklikleri uygulama güncellemesi olmadan ulaşır. **Yenile** eşitlemeyi hemen başlatır ve başlıkta listenin en son ne zaman güncellendiği gösterilir.
+
+Yayınlanan modellerin yanında liste, models.dev'in yayınlamadığı iki tür kayıt taşır — bunlar API model id'leri değil, Claude Code CLI söz dizimidir:
+
+- **Aile takma adları** — `haiku`, `sonnet`, `opus`, `fable`. Her biri ailesindeki en yeni sürümü izler ve o modelin fiyatlandırmasını devralır.
+- **1M bağlam çeşitleri** — `claude-opus-4-8[1m]` gibi; bağlam penceresi 1M olan her model için üretilir. Temel modelin fiyatlandırmasını devralırlar; 200k token üzerinde geçerli olan ek ücret üst kaynakta yayınlanmadığı için burada modellenmemiştir.
+
+Eşitleme başarısız olduğunda — ağ yoksa veya yanıt okunamıyorsa — önceki liste yerinde kalır ve hata bir uyarı olarak gösterilmek yerine günlüğe kaydedilir.
+
+### Özel modeller
+
+**Model Ekle**, eşitlenen listede bulunmayan bir model id'si için kayıt oluşturur. Eşitlenen bir modeli düzenlemek de özel bir kayıt üretir: sizin sürümünüz eşitlenen sürümü geçersiz kılar ve sonraki eşitlemelerde asla üzerine yazılmaz.
+
+Özel kayıtlar için iki denetim vardır:
+
+- **Sıfırla** değişikliklerinizi atar ve modeli eşitlenen listeye geri verir.
+- **Sil** modeli seçicilerden kalıcı olarak kaldırır. Silinen model silinmiş kalır — sonraki eşitleme onu geri getirmez. Fikrinizi değiştirirseniz **Model Ekle** ile yeniden ekleyin.
+
 ## Ayar Depolama
 
 Ayarlar yerel SQLite veritabanında (`app_settings` tablosu) anahtar-değer çiftleri olarak saklanır. Değişiklikler değiştirildiğinde anında kaydedilir — ayrı bir "Kaydet" butonu yoktur.

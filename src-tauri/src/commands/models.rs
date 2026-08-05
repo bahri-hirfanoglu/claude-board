@@ -149,34 +149,45 @@ pub fn update_custom_model(
         .ok_or_else(|| "Failed to fetch updated model".into())
 }
 
+/// Drops the user's override row for `model_id` if there is one. Shared by
+/// delete (which then tombstones) and reset (which then clears the tombstone).
+fn drop_override(db: &db::DbPool, model_id: &str) -> Result<(), String> {
+    if let Some(row) = custom_models::list(db).into_iter().find(|m| m.model_id == model_id) {
+        custom_models::delete(db, row.id)?;
+    }
+    Ok(())
+}
+
 /// Removes a model from the list. Drops the user's override row if there is one
 /// and writes a tombstone so the next sync does not bring the model back.
-#[tauri::command]
-pub fn delete_model(model_id: String) -> Result<(), String> {
+pub fn delete_model_in(db: &db::DbPool, model_id: &str) -> Result<(), String> {
     let model_id = model_id.trim();
     if model_id.is_empty() {
         return Err("Model id is required".into());
     }
-    let db = db::get_db();
-    if let Some(row) = custom_models::list(&db).into_iter().find(|m| m.model_id == model_id) {
-        custom_models::delete(&db, row.id)?;
-    }
-    db::model_catalog::add_tombstone(&db, model_id)
+    drop_override(db, model_id)?;
+    db::model_catalog::add_tombstone(db, model_id)
 }
 
 /// Discards a user override and any tombstone, handing the model back to the
 /// upstream catalog.
-#[tauri::command]
-pub fn reset_model(model_id: String) -> Result<(), String> {
+pub fn reset_model_in(db: &db::DbPool, model_id: &str) -> Result<(), String> {
     let model_id = model_id.trim();
     if model_id.is_empty() {
         return Err("Model id is required".into());
     }
-    let db = db::get_db();
-    if let Some(row) = custom_models::list(&db).into_iter().find(|m| m.model_id == model_id) {
-        custom_models::delete(&db, row.id)?;
-    }
-    db::model_catalog::remove_tombstone(&db, model_id)
+    drop_override(db, model_id)?;
+    db::model_catalog::remove_tombstone(db, model_id)
+}
+
+#[tauri::command]
+pub fn delete_model(model_id: String) -> Result<(), String> {
+    delete_model_in(&db::get_db(), &model_id)
+}
+
+#[tauri::command]
+pub fn reset_model(model_id: String) -> Result<(), String> {
+    reset_model_in(&db::get_db(), &model_id)
 }
 
 /// Forces a sync now, ignoring the TTL. Backs the Refresh button in Settings.
@@ -261,5 +272,124 @@ mod merge_tests {
     fn empty_upstream_still_returns_custom_rows() {
         let out = merge_catalog(vec![], vec![row("my-model", "custom", 5)], &[]);
         assert_eq!(out.len(), 1);
+    }
+}
+
+/// End-to-end checks over a real database, covering the delete/reset lifecycle
+/// that `merge_tests` can only see one half of.
+#[cfg(test)]
+mod lifecycle_tests {
+    use super::*;
+    use crate::services::model_catalog::derive_models;
+    use parking_lot::Mutex;
+    use std::sync::Arc;
+
+    const FIXTURE: &str = include_str!("../services/testdata/models_dev_anthropic.json");
+
+    fn pool() -> db::DbPool {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        crate::db::schema::create_tables(&conn);
+        Arc::new(Mutex::new(conn))
+    }
+
+    /// Writes the upstream cache exactly as a sync would.
+    fn sync(db: &db::DbPool) {
+        let rows = derive_models(FIXTURE);
+        db::model_catalog::replace_upstream(db, &rows).unwrap();
+    }
+
+    /// The visible catalog, as `list_models` assembles it.
+    fn visible(db: &db::DbPool) -> Vec<String> {
+        let custom: Vec<ModelEntry> = custom_models::list(db)
+            .into_iter()
+            .map(|c| ModelEntry {
+                value: c.model_id,
+                label: c.label,
+                color: c.color,
+                source: "custom".into(),
+                input_cost_per_mtok: c.input_cost_per_mtok,
+                output_cost_per_mtok: c.output_cost_per_mtok,
+                custom_id: Some(c.id),
+                sort_order: c.sort_order,
+            })
+            .collect();
+        merge_catalog(
+            db::model_catalog::list_upstream(db),
+            custom,
+            &db::model_catalog::list_tombstones(db),
+        )
+        .into_iter()
+        .map(|r| r.value)
+        .collect()
+    }
+
+    #[test]
+    fn a_deleted_synced_model_stays_gone_across_a_resync() {
+        let db = pool();
+        sync(&db);
+        assert!(visible(&db).contains(&"claude-opus-4-8".to_string()));
+
+        delete_model_in(&db, "claude-opus-4-8").unwrap();
+        assert!(!visible(&db).contains(&"claude-opus-4-8".to_string()));
+
+        // The whole point: the next sync must not resurrect it.
+        sync(&db);
+        assert!(!visible(&db).contains(&"claude-opus-4-8".to_string()));
+        // Its siblings are untouched.
+        assert!(visible(&db).contains(&"claude-opus-4-7".to_string()));
+    }
+
+    #[test]
+    fn an_override_survives_a_resync_and_reset_restores_upstream() {
+        let db = pool();
+        sync(&db);
+        custom_models::create(&db, "claude-opus-4-8", "My Opus", None, Some(1.0), Some(2.0), 30)
+            .unwrap();
+
+        let priced = |db: &db::DbPool| {
+            let custom = custom_models::list(db);
+            custom
+                .iter()
+                .find(|m| m.model_id == "claude-opus-4-8")
+                .map(|m| (m.label.clone(), m.input_cost_per_mtok))
+        };
+        assert_eq!(priced(&db), Some(("My Opus".into(), Some(1.0))));
+
+        sync(&db);
+        assert_eq!(
+            priced(&db),
+            Some(("My Opus".into(), Some(1.0))),
+            "a sync must not overwrite a user's edit"
+        );
+        // The model appears once, not twice.
+        let seen: Vec<String> = visible(&db)
+            .into_iter()
+            .filter(|v| v == "claude-opus-4-8")
+            .collect();
+        assert_eq!(seen.len(), 1);
+
+        reset_model_in(&db, "claude-opus-4-8").unwrap();
+        assert_eq!(priced(&db), None, "reset must drop the override");
+        assert!(visible(&db).contains(&"claude-opus-4-8".to_string()));
+    }
+
+    #[test]
+    fn re_adding_a_deleted_model_clears_the_tombstone_path() {
+        let db = pool();
+        sync(&db);
+        delete_model_in(&db, "claude-opus-4-8").unwrap();
+        assert!(!visible(&db).contains(&"claude-opus-4-8".to_string()));
+
+        // Re-adding it as a custom row must beat the tombstone.
+        custom_models::create(&db, "claude-opus-4-8", "Back", None, Some(5.0), Some(25.0), 30)
+            .unwrap();
+        assert!(visible(&db).contains(&"claude-opus-4-8".to_string()));
+    }
+
+    #[test]
+    fn rejects_a_blank_model_id() {
+        let db = pool();
+        assert!(delete_model_in(&db, "   ").is_err());
+        assert!(reset_model_in(&db, "").is_err());
     }
 }

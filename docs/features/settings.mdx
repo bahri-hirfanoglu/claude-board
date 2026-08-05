@@ -77,6 +77,30 @@ Switch the application display language. Currently supported:
 
 The language change takes effect immediately across all UI elements, including notification messages.
 
+## Models
+
+The Models tab lists every model available in the task and template model pickers, split into two groups.
+
+### Synced models
+
+This list comes from [models.dev](https://models.dev) and refreshes in the background at most once every 24 hours, so newly released Claude models and price changes arrive without an app update. **Refresh** forces a sync immediately, and the header shows when the list was last updated.
+
+Alongside each released model, the list carries two kinds of entry that models.dev does not publish, because they are Claude Code CLI syntax rather than API model ids:
+
+- **Family aliases** — `haiku`, `sonnet`, `opus`, `fable`. Each tracks the newest release in its family and inherits that model's pricing.
+- **1M-context variants** — `claude-opus-4-8[1m]` and the like, generated for every model whose context window is 1M. They inherit the base model's pricing; the premium rate that applies above 200k tokens is not published upstream and so is not modelled here.
+
+When a sync fails — no network, or an unreadable response — the previous list stays in place and the failure is recorded in the log rather than shown as an error.
+
+### Custom models
+
+**Add Model** creates an entry for a model id the synced list does not carry. Editing a synced model also produces a custom entry: your version overrides the synced one and is never overwritten by a later sync.
+
+Two controls apply to custom entries:
+
+- **Reset** discards your changes and hands the model back to the synced list.
+- **Delete** removes a model from the pickers for good. A deleted model stays deleted — the next sync will not bring it back. Re-add it with **Add Model** if you change your mind.
+
 ## Settings Storage
 
 Settings are stored in the local SQLite database (`app_settings` table) as key-value pairs. Changes are saved immediately when toggled — there is no separate "Save" button.
