@@ -425,7 +425,8 @@ pub fn run() {
             commands::models::list_models,
             commands::models::add_custom_model,
             commands::models::update_custom_model,
-            commands::models::delete_custom_model,
+            commands::models::delete_model,
+            commands::models::reset_model,
         ])
         .on_menu_event(|app, event| {
             match event.id().as_ref() {
