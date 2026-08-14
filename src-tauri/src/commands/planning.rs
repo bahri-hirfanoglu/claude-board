@@ -51,7 +51,7 @@ pub fn start_planning(
     activity::add(&db, project_id, None, "plan_started", &format!("Planning started: {}", topic.trim()), None);
 
     std::thread::spawn(move || {
-        log::info!("Planning: spawning claude in {}", &working_dir);
+        log::info!("Planning: spawning claude in {}", working_dir);
         let mut cmd = Command::new("claude");
         cmd.args(&args)
             .current_dir(&working_dir)
@@ -84,7 +84,7 @@ pub fn start_planning(
             for line in reader.lines().map_while(Result::ok) {
                 let line = line.trim().to_string();
                 if line.is_empty() { continue; }
-                log::warn!("Planning stderr: {}", &line);
+                log::warn!("Planning stderr: {}", line);
                 app_err.emit("plan:log", &serde_json::json!({
                     "projectId": project_id, "planId": &pid_clone,
                     "type": "error", "message": line
