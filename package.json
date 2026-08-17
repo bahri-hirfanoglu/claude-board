@@ -29,11 +29,11 @@
   "devDependencies": {
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/cli": "^2.11.4",
-    "eslint": "^10.6.0",
+    "eslint": "^10.8.1",
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.8",
-    "prettier": "^3.9.3"
+    "lint-staged": "^17.3.0",
+    "prettier": "^3.9.6"
   },
   "lint-staged": {
     "client/src/**/*.{js,jsx}": [
