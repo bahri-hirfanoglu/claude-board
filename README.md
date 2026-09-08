@@ -1,3 +1,5 @@
+
+
 <p align="center">
   <img src="web/icon.png" width="128" height="128" alt="Claude Board">
 </p>
@@ -103,15 +105,14 @@ See the [Documentation](https://docs.claboard.dev) for detailed guides.
 ```bash
 git clone https://github.com/bahri-hirfanoglu/claude-board.git
 cd claude-board
-npm install
-cd client && npm install && cd ..
-npx tauri dev
+npm run setup
+npm run tauri:dev
 ```
 
 ### Build Desktop Installers
 
 ```bash
-npx tauri build
+npm run tauri:build
 ```
 
 Built artifacts are saved to `src-tauri/target/release/bundle/`.
