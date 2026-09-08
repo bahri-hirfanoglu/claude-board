@@ -14,7 +14,7 @@
     "@tauri-apps/plugin-log": "^2.9.1",
     "@uiw/react-md-editor": "^4.1.2",
     "boring-avatars": "^2.0.4",
-    "lucide-react": "^0.460.0",
+    "lucide-react": "^1.41.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
